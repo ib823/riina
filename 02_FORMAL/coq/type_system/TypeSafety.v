@@ -39,7 +39,6 @@ Qed.
 
 (** Multi-step safety: well-typed terms stay well-typed after any
     number of steps. This is a direct consequence of preservation.
-    NOTE: Admitted due to complexity of induction. TODO: Complete.
 *)
 Theorem multi_step_safety : forall e e' T ε st st' ctx ctx',
   has_type nil nil Public e T ε ->
@@ -48,6 +47,20 @@ Theorem multi_step_safety : forall e e' T ε st st' ctx ctx',
 Proof.
   intros e e' T ε st st' ctx ctx' Hty Hmulti.
   (* Proof by induction on multi-step relation, using preservation at each step *)
-Admitted.
+  remember (e, st, ctx) as cfg1 eqn:Heq1.
+  remember (e', st', ctx') as cfg2 eqn:Heq2.
+  generalize dependent ctx'. generalize dependent st'. generalize dependent e'.
+  generalize dependent ε. generalize dependent T.
+  generalize dependent ctx. generalize dependent st. generalize dependent e.
+  induction Hmulti; intros e1 st1 ctx1 Heq1 T ε Hty e2 st2 ctx2 Heq2.
+  - (* MS_Refl: cfg = cfg' *)
+    inversion Heq1; inversion Heq2; subst.
+    eapply type_safety; eassumption.
+  - (* MS_Step: cfg1 --> cfg2 --> cfg3 *)
+    inversion Heq1; subst.
+    destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply IHHmulti; try reflexivity.
+    eapply preservation; eassumption.
+Qed.
 
 (** End of TypeSafety.v *)
