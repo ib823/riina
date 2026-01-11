@@ -149,12 +149,9 @@ Inductive multi_step : (expr * store * effect_ctx) -> (expr * store * effect_ctx
       multi_step cfg2 cfg3 ->
       multi_step cfg1 cfg3.
 
-Notation "cfg1 '-->*' cfg2" := (multi_step cfg1 cfg2) (at level 40).
+Notation "cfg1 '-->*' cfg2" := (multi_step cfg1 cfg2) (at level 50).
 
-(** ** Determinism
-    
-    The semantics is deterministic.
-*)
+(** ** Determinism *)
 
 Lemma value_not_step : forall v st ctx cfg,
   value v -> ~ ((v, st, ctx) --> cfg).
@@ -163,22 +160,39 @@ Proof.
   generalize dependent ctx.
   generalize dependent st.
   generalize dependent cfg.
-  induction Hv; intros cfg st ctx Hstep; inversion Hstep; subst.
-  - (* VPair, ST_Pair1 *) eapply IHHv1; eauto.
-  - (* VPair, ST_Pair2 *) eapply IHHv2; eauto.
-  - (* VInl, ST_InlStep *) eapply IHHv; eauto.
-  - (* VInr, ST_InrStep *) eapply IHHv; eauto.
+  induction Hv; intros cfg st ctx Hstep; inversion Hstep; subst;
+  try match goal with
+  | [ H : value ?v, H' : (?v, _, _) --> _ |- _ ] => apply (value_not_step v _ _ _) in H'; assumption
+  end; eauto.
+  (* Recursive cases *)
+  - eapply IHHv1; eauto.
+  - eapply IHHv2; eauto.
+  - eapply IHHv; eauto.
+  - eapply IHHv; eauto.
 Qed.
 
-(** The determinism proof requires careful case analysis. Each step rule
-    must be shown to produce a unique result. The proof follows by induction
-    on the first derivation and case analysis on the second.
+(** Helper tactic for solving contradictions where a value steps *)
+Ltac solve_val_step :=
+  match goal with
+  | [ H : (?v, _, _) --> _, Hv : value ?v |- _ ] =>
+      exfalso; eapply value_not_step; [ apply Hv | apply H ]
+  | [ H : (ELam _ _ _, _, _) --> _ |- _ ] =>
+      exfalso; eapply value_not_step; [ constructor | apply H ]
+  | [ H : (EPair _ _, _, _) --> _, Hv1 : value _, Hv2 : value _ |- _ ] =>
+      exfalso; eapply value_not_step; [ apply VPair; assumption | apply H ]
+  | [ H : (EInl _ _, _, _) --> _, Hv : value _ |- _ ] =>
+      exfalso; eapply value_not_step; [ apply VInl; assumption | apply H ]
+  | [ H : (EInr _ _, _, _) --> _, Hv : value _ |- _ ] =>
+      exfalso; eapply value_not_step; [ apply VInr; assumption | apply H ]
+  end.
 
-    TODO: Complete this proof. The key cases involve showing that:
-    1. Values cannot step (proven in value_not_step)
-    2. When the same redex matches two rules, they must be the same rule
-    3. The IH applies for congruence rules
-*)
+(** Helper tactic for applying IH *)
+Ltac solve_ih :=
+  match goal with
+  | [ H : (?e, _, _) --> ?cfg2, IH : forall c, (?e, _, _) --> c -> _ = c |- _ ] =>
+      apply IH in H; injection H as Heq Hst Hctx; subst; reflexivity
+  end.
+
 Lemma step_deterministic : forall cfg cfg1 cfg2,
   cfg --> cfg1 ->
   cfg --> cfg2 ->
@@ -186,7 +200,78 @@ Lemma step_deterministic : forall cfg cfg1 cfg2,
 Proof.
   intros cfg cfg1 cfg2 H1 H2.
   generalize dependent cfg2.
-  induction H1; intros cfg2 H2; inversion H2; subst; try reflexivity; try admit.
-Admitted.
+  induction H1; intros cfg2 H2; inversion H2; subst; try reflexivity.
+
+  (* ST_AppAbs *)
+  - solve_val_step. (* H2=App1 *)
+  - solve_val_step. (* H2=App2 *)
+
+  (* ST_App1 *)
+  - solve_val_step. (* H2=AppAbs *)
+  - solve_ih.       (* H2=App1 *)
+  - solve_val_step. (* H2=App2 *)
+
+  (* ST_App2 *)
+  - solve_val_step. (* H2=AppAbs *)
+  - solve_val_step. (* H2=App1 *)
+  - solve_ih.       (* H2=App2 *)
+
+  (* ST_Pair1 *)
+  - solve_ih.
+  - solve_val_step.
+
+  (* ST_Pair2 *)
+  - solve_val_step.
+  - solve_ih.
+
+  (* ST_Fst *)
+  - match goal with | H : (EPair _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
+
+  (* ST_Snd *)
+  - match goal with | H : (EPair _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
+
+  (* ST_FstStep *)
+  - inversion H1; subst; solve_val_step.
+  - solve_ih.
+
+  (* ST_SndStep *)
+  - inversion H1; subst; solve_val_step.
+  - solve_ih.
+
+  (* ST_CaseInl *)
+  - match goal with | H : (EInl _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
+
+  (* ST_CaseInr *)
+  - match goal with | H : (EInr _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
+
+  (* ST_CaseStep *)
+  - inversion H1; subst; solve_val_step.
+  - inversion H1; subst; solve_val_step.
+  - solve_ih.
+
+  (* ST_InlStep *)
+  - solve_ih.
+
+  (* ST_InrStep *)
+  - solve_ih.
+
+  (* ST_IfTrue *)
+  - match goal with | H : (EBool _, _, _) --> _ |- _ => inversion H end.
+
+  (* ST_IfFalse *)
+  - match goal with | H : (EBool _, _, _) --> _ |- _ => inversion H end.
+
+  (* ST_IfStep *)
+  - inversion H1.
+  - inversion H1.
+  - solve_ih.
+
+  (* ST_LetValue *)
+  - solve_val_step.
+
+  (* ST_LetStep *)
+  - solve_val_step.
+  - solve_ih.
+Qed.
 
 (** End of Semantics.v *)
