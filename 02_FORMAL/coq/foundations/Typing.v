@@ -144,10 +144,6 @@ Inductive has_type : type_env -> store_ty -> security_level ->
 
     The type system is syntax-directed, so each expression has at most
     one type derivable from a given context.
-
-    NOTE: Proof temporarily admitted. The proof strategy is standard
-    induction on the first typing derivation with inversion on the second.
-    TODO: Complete this proof.
 *)
 
 Lemma type_uniqueness : forall Γ Σ Δ e T1 T2 ε1 ε2,
