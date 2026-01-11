@@ -1,35 +1,30 @@
-//! Lexer error types
+//! Lexer Errors
 
 use std::fmt;
 
-/// Errors that can occur during lexing
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LexError {
-    UnexpectedCharacter(char, usize, usize),
+    UnexpectedChar(char, usize),
     UnterminatedString(usize),
-    InvalidEscape(char, usize),
-    InvalidNumber(String, usize),
-    NotImplemented(&'static str),
+    UnterminatedChar(usize),
+    UnterminatedComment(usize),
+    InvalidEscapeSequence(usize),
+    InvalidNumericLiteral(String, usize),
+    EmptyCharLiteral(usize),
+    Unknown(String, usize),
 }
 
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            LexError::UnexpectedCharacter(c, line, col) => {
-                write!(f, "Unexpected character '{}' at line {}, column {}", c, line, col)
-            }
-            LexError::UnterminatedString(line) => {
-                write!(f, "Unterminated string at line {}", line)
-            }
-            LexError::InvalidEscape(c, line) => {
-                write!(f, "Invalid escape sequence '\\{}' at line {}", c, line)
-            }
-            LexError::InvalidNumber(s, line) => {
-                write!(f, "Invalid number '{}' at line {}", s, line)
-            }
-            LexError::NotImplemented(feature) => {
-                write!(f, "Not implemented: {}", feature)
-            }
+            LexError::UnexpectedChar(c, pos) => write!(f, "Unexpected character '{}' at position {}", c, pos),
+            LexError::UnterminatedString(pos) => write!(f, "Unterminated string starting at position {}", pos),
+            LexError::UnterminatedChar(pos) => write!(f, "Unterminated char literal starting at position {}", pos),
+            LexError::UnterminatedComment(pos) => write!(f, "Unterminated block comment starting at position {}", pos),
+            LexError::InvalidEscapeSequence(pos) => write!(f, "Invalid escape sequence at position {}", pos),
+            LexError::InvalidNumericLiteral(s, pos) => write!(f, "Invalid numeric literal '{}' at position {}", s, pos),
+            LexError::EmptyCharLiteral(pos) => write!(f, "Empty char literal at position {}", pos),
+            LexError::Unknown(s, pos) => write!(f, "Unknown error '{}' at position {}", s, pos),
         }
     }
 }
