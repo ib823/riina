@@ -4,9 +4,9 @@ foundations/Syntax.vos foundations/Syntax.vok foundations/Syntax.required_vos: f
 foundations/Semantics.vo foundations/Semantics.glob foundations/Semantics.v.beautified foundations/Semantics.required_vo: foundations/Semantics.v foundations/Syntax.vo
 foundations/Semantics.vio: foundations/Semantics.v foundations/Syntax.vio
 foundations/Semantics.vos foundations/Semantics.vok foundations/Semantics.required_vos: foundations/Semantics.v foundations/Syntax.vos
-foundations/Typing.vo foundations/Typing.glob foundations/Typing.v.beautified foundations/Typing.required_vo: foundations/Typing.v foundations/Syntax.vo
-foundations/Typing.vio: foundations/Typing.v foundations/Syntax.vio
-foundations/Typing.vos foundations/Typing.vok foundations/Typing.required_vos: foundations/Typing.v foundations/Syntax.vos
+foundations/Typing.vo foundations/Typing.glob foundations/Typing.v.beautified foundations/Typing.required_vo: foundations/Typing.v foundations/Syntax.vo foundations/Semantics.vo
+foundations/Typing.vio: foundations/Typing.v foundations/Syntax.vio foundations/Semantics.vio
+foundations/Typing.vos foundations/Typing.vok foundations/Typing.required_vos: foundations/Typing.v foundations/Syntax.vos foundations/Semantics.vos
 type_system/Progress.vo type_system/Progress.glob type_system/Progress.v.beautified type_system/Progress.required_vo: type_system/Progress.v foundations/Syntax.vo foundations/Semantics.vo foundations/Typing.vo
 type_system/Progress.vio: type_system/Progress.v foundations/Syntax.vio foundations/Semantics.vio foundations/Typing.vio
 type_system/Progress.vos type_system/Progress.vok type_system/Progress.required_vos: type_system/Progress.v foundations/Syntax.vos foundations/Semantics.vos foundations/Typing.vos
