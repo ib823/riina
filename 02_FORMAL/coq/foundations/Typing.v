@@ -153,14 +153,168 @@ Inductive has_type : type_env -> store_ty -> security_level ->
 Lemma type_uniqueness : forall Γ Σ Δ e T1 T2 ε1 ε2,
   has_type Γ Σ Δ e T1 ε1 ->
   has_type Γ Σ Δ e T2 ε2 ->
-  T1 = T2.
+  T1 = T2 /\ ε1 = ε2.
 Proof.
   intros Γ Σ Δ e T1 T2 ε1 ε2 H1 H2.
-  generalize dependent ε2.
   generalize dependent T2.
-  induction H1; intros T2' ε2' H2; inversion H2; subst;
-    try reflexivity;
-    eauto.
-Admitted. (* TODO: Complete type uniqueness proof *)
+  generalize dependent ε2.
+  induction H1 as [
+    (* T_Unit *)   G S D
+    (* T_Bool *) | G S D b
+    (* T_Int *)  | G S D n
+    (* T_String *) | G S D s
+    (* T_Var *)  | G S D x T Hlookup
+    (* T_Lam *)  | G S D x T1 T2 e eps Ht IHt
+    (* T_App *)  | G S D e1 e2 T1 T2 eps eps1 eps2 Ht1 IHt1 Ht2 IHt2
+    (* T_Pair *) | G S D e1 e2 T1 T2 eps1 eps2 Ht1 IHt1 Ht2 IHt2
+    (* T_Fst *)  | G S D e T1 T2 eps Ht IHt
+    (* T_Snd *)  | G S D e T1 T2 eps Ht IHt
+    (* T_Inl *)  | G S D e T1 T2 eps Ht IHt
+    (* T_Inr *)  | G S D e T1 T2 eps Ht IHt
+    (* T_Case *) | G S D e x1 e1 x2 e2 T1 T2 T eps eps1 eps2 Ht1 IHt1 Ht2 IHt2 Ht3 IHt3
+    (* T_If *)   | G S D e1 e2 e3 T eps1 eps2 eps3 Ht1 IHt1 Ht2 IHt2 Ht3 IHt3
+    (* T_Let *)  | G S D x e1 e2 T1 T2 eps1 eps2 Ht1 IHt1 Ht2 IHt2
+  ]; intros eps' T2' H2; inversion H2; subst; split; try reflexivity.
+
+  - (* T_Var *)
+    match goal with
+    | [ H : lookup _ _ = Some _ |- _ ] => rewrite Hlookup in H; injection H as H; assumption
+    end.
+
+  - (* T_Lam - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H; subst
+    end; reflexivity.
+
+  - (* T_App - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt1 in H; destruct H as [HT Heps];
+      injection HT; intros; subst
+    end; reflexivity.
+  - (* T_App - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt1 in H; destruct H as [HT Heps];
+      injection HT; intros; subst
+    end; reflexivity.
+
+  - (* T_Pair - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H; subst
+      | apply IHt2 in H; destruct H; subst
+      ]
+    end; reflexivity.
+
+  - (* T_Fst - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H as [HT Heps];
+      injection HT; intros; subst
+    end; reflexivity.
+  - (* T_Fst - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H as [HT Heps];
+      injection HT; intros; subst
+    end; reflexivity.
+
+  - (* T_Snd - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H as [HT Heps];
+      injection HT; intros; subst
+    end; reflexivity.
+  - (* T_Snd - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H as [HT Heps];
+      injection HT; intros; subst
+    end; reflexivity.
+
+  - (* T_Inl - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H; subst
+    end; reflexivity.
+  - (* T_Inl - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H; subst
+    end; reflexivity.
+
+  - (* T_Inr - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H; subst
+    end; reflexivity.
+  - (* T_Inr - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      apply IHt in H; destruct H; subst
+    end; reflexivity.
+
+  - (* T_Case - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H as [HT1 Heps1];
+        injection HT1; intros; subst
+      | apply IHt2 in H; destruct H; subst
+      ]
+    end; reflexivity.
+
+  - (* T_Case - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H as [HT1 Heps1];
+        injection HT1; intros; subst
+      | apply IHt2 in H; destruct H; subst
+      | apply IHt3 in H; destruct H; subst
+      ]
+    end; reflexivity.
+
+  - (* T_If - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H; subst
+      | apply IHt2 in H; destruct H; subst
+      | apply IHt3 in H; destruct H; subst
+      ]
+    end; reflexivity.
+
+  - (* T_If - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H; subst
+      | apply IHt2 in H; destruct H; subst
+      | apply IHt3 in H; destruct H; subst
+      ]
+    end; reflexivity.
+
+  - (* T_Let - Type *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H; subst
+      | apply IHt2 in H; destruct H; subst
+      ]
+    end; reflexivity.
+
+  - (* T_Let - Effect *)
+    repeat match goal with
+    | [ H : has_type _ _ _ _ _ _ |- _ ] =>
+      first [
+        apply IHt1 in H; destruct H; subst
+      | apply IHt2 in H; destruct H; subst
+      ]
+    end; reflexivity.
+Qed.
 
 (** End of Typing.v *)
