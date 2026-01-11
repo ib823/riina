@@ -88,13 +88,13 @@
 | `type_system/Preservation.v` | `free_in_context`, `context_invariance`, `closed_typing_weakening`, `substitution_preserves_typing`, `value_has_pure_effect`, `preservation_helper`, `preservation` | ✅ COMPLETE |
 | `type_system/TypeSafety.v` | `type_safety`, `multi_step_safety` | ✅ COMPLETE |
 | `foundations/Syntax.v` | `effect_join_pure_l`, `effect_join_pure_r`, `value_not_stuck` | ✅ COMPLETE |
+| `foundations/Typing.v` | `type_uniqueness` | ✅ COMPLETE |
 
 ### 2.2 REMAINING ADMITS (MUST BE FIXED)
 
 | File | Lemma | Line | Reason | Difficulty |
 |------|-------|------|--------|------------|
-| `foundations/Semantics.v` | `step_deterministic` | 255 | Complex case analysis on step relation | MEDIUM |
-| `foundations/Typing.v` | `type_uniqueness` | 164 | Standard induction but tedious | EASY |
+| `foundations/Semantics.v` | `step_deterministic` | 190 | Tactic automation failures in non-interactive mode. Needs manual interactive proof. | MEDIUM |
 
 ### 2.3 STUB FILES (NOT IMPLEMENTED)
 
@@ -223,47 +223,15 @@ make[1]: Leaving directory '/workspaces/proof/02_FORMAL/coq'
 
 ### Priority 1: Fix Remaining Admits in Foundations
 
-#### 5.1.1 `step_deterministic` in Semantics.v (Line 255)
+#### 5.1.1 `step_deterministic` in Semantics.v
 
-**Current State**: Partial proof with `Admitted`
+**Current State**: Admitted to allow build to pass.
 
-**Proof Strategy**:
-1. Induction on first step derivation `H1`
-2. Case analysis (inversion) on second derivation `H2`
-3. For each pair of rules, show they produce the same result
-4. Key helper: `value_not_step` (already proven)
+**Issue**: The non-interactive proof script fails to find hypotheses during contradiction proofs (`solve_contra` tactic) and during substitution in congruence proofs. This likely requires an interactive session to identify exactly how names are generated or how `match goal` behaves with the specific context.
 
-**Known Issues**:
-- Some edge cases with nested `match goal` tactics not firing
-- Need careful handling of value cases where both rules could match
+**Recommendation**: Open the file in CoqIDE or VSCode with Coq extension and step through the proof line by line.
 
-**Estimated Effort**: 2-4 hours
-
-#### 5.1.2 `type_uniqueness` in Typing.v (Line 164)
-
-**Current State**: Partial proof with `Admitted`
-
-**Proof Strategy**:
-1. Induction on first typing derivation `H1`
-2. Inversion on second derivation `H2`
-3. For each constructor, show types must be equal
-4. Use IH for recursive cases
-
-**Current Proof Attempt**:
-```coq
-Proof.
-  intros Γ Σ Δ e T1 T2 ε1 ε2 H1 H2.
-  generalize dependent ε2.
-  generalize dependent T2.
-  induction H1; intros T2' ε2' H2; inversion H2; subst;
-    try reflexivity;
-    eauto.
-Admitted.
-```
-
-**Issue**: The `eauto` doesn't solve all cases. Need explicit case handling for `T_App`, `T_Case`, etc.
-
-**Estimated Effort**: 1-2 hours
+**Estimated Effort**: 2-4 hours (Interactive)
 
 ### Priority 2: Complete Effect System
 
