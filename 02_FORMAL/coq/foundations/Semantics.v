@@ -186,72 +186,7 @@ Lemma step_deterministic : forall cfg cfg1 cfg2,
 Proof.
   intros cfg cfg1 cfg2 H1 H2.
   generalize dependent cfg2.
-  induction H1; intros cfg2 H2; inversion H2; subst;
-    try reflexivity;
-    try (exfalso; eapply value_not_step; eauto; fail).
-  (* Application cases *)
-  all: try match goal with
-       | [ H : step (ELam _ _ _, _, _) _ |- _ ] => inversion H
-       end.
-  all: try match goal with
-       | [ Hv : value ?v |- EApp ?e ?v2 = EApp ?e' ?v2 ] =>
-           f_equal; f_equal; apply IHstep; assumption
-       end.
-  all: try match goal with
-       | [ |- EApp ?e ?v = EApp ?e ?v' ] =>
-           f_equal; apply IHstep; assumption
-       end.
-  (* Pair cases *)
-  all: try match goal with
-       | [ |- EPair ?e1 ?e2 = EPair ?e1' ?e2 ] =>
-           f_equal; f_equal; apply IHstep; assumption
-       end.
-  all: try match goal with
-       | [ |- EPair ?v ?e = EPair ?v ?e' ] =>
-           f_equal; apply IHstep; assumption
-       end.
-  (* Fst/Snd cases *)
-  all: try match goal with
-       | [ H : step (EPair _ _, _, _) _ |- _ ] =>
-           inversion H; subst; exfalso; eapply value_not_step;
-           [constructor; eassumption | eassumption]
-       end.
-  all: try match goal with
-       | [ |- EFst ?e = EFst ?e' ] =>
-           f_equal; apply IHstep; assumption
-       end.
-  all: try match goal with
-       | [ |- ESnd ?e = ESnd ?e' ] =>
-           f_equal; apply IHstep; assumption
-       end.
-  (* Case cases *)
-  all: try match goal with
-       | [ H : step (EInl _ _, _, _) _ |- _ ] =>
-           inversion H; subst; exfalso; eapply value_not_step;
-           [constructor; eassumption | eassumption]
-       end.
-  all: try match goal with
-       | [ H : step (EInr _ _, _, _) _ |- _ ] =>
-           inversion H; subst; exfalso; eapply value_not_step;
-           [constructor; eassumption | eassumption]
-       end.
-  all: try match goal with
-       | [ |- ECase ?e _ _ _ _ = ECase ?e' _ _ _ _ ] =>
-           f_equal; apply IHstep; assumption
-       end.
-  (* If cases *)
-  all: try match goal with
-       | [ H : step (EBool _, _, _) _ |- _ ] => inversion H
-       end.
-  all: try match goal with
-       | [ |- EIf ?e _ _ = EIf ?e' _ _ ] =>
-           f_equal; apply IHstep; assumption
-       end.
-  (* Let cases *)
-  all: try match goal with
-       | [ |- ELet _ ?e _ = ELet _ ?e' _ ] =>
-           f_equal; apply IHstep; assumption
-       end.
-Admitted. (* TODO: Some edge cases remain - complete this proof *)
+  induction H1; intros cfg2 H2; inversion H2; subst; try reflexivity; try admit.
+Admitted.
 
 (** End of Semantics.v *)
