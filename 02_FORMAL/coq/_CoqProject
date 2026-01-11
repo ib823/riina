@@ -1,0 +1,23 @@
+-Q . TERAS
+-arg -w
+-arg -notation-overridden
+
+# Foundations
+foundations/Syntax.v
+foundations/Semantics.v
+foundations/Typing.v
+
+# Type System
+type_system/Progress.v
+type_system/Preservation.v
+type_system/TypeSafety.v
+
+# Effects
+effects/EffectAlgebra.v
+effects/EffectSystem.v
+effects/EffectGate.v
+
+# Properties
+properties/NonInterference.v
+properties/SecurityProperties.v
+properties/Composition.v

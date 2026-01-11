@@ -1,0 +1,15 @@
+[package]
+name = "teras-artifact-sign"
+version.workspace = true
+edition.workspace = true
+description = "TERAS artifact signing tool"
+
+[[bin]]
+name = "teras-artifact-sign"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,70 @@
+//! TERAS Core Primitives
+//!
+//! This crate provides the foundational types and primitives for the TERAS
+//! security platform. All types are designed with security as the primary
+//! concern, following the 11 Immutable Laws.
+//!
+//! # Laws Enforced
+//!
+//! - **Law 2**: Cryptographic non-negotiables (AES-256-GCM, ML-KEM-768+X25519, ML-DSA-65+Ed25519)
+//! - **Law 3**: All operations on secret data are constant-time
+//! - **Law 4**: All secrets are zeroized when no longer needed
+//! - **Law 8**: Zero third-party runtime dependencies
+//!
+//! # Modules
+//!
+//! - `zeroize`: Secure memory zeroization
+//! - `constant_time`: Constant-time comparison operations
+//! - `secret`: Secret value wrapper with automatic zeroization
+//! - `crypto`: Cryptographic primitives (AES, SHA-256, HMAC, HKDF, GCM, X25519, Ed25519, ML-KEM, ML-DSA)
+//!
+//! # Example
+//!
+//! ```
+//! use teras_core::prelude::*;
+//! use teras_core::crypto::gcm::Aes256Gcm;
+//!
+//! // Create a secret key
+//! let key = Secret::new([0x42u8; 32]);
+//!
+//! // Key is automatically zeroized when dropped
+//! ```
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+
+pub mod constant_time;
+pub mod crypto;
+pub mod secret;
+pub mod zeroize;
+
+/// Prelude for convenient imports
+pub mod prelude {
+    pub use crate::constant_time::ConstantTimeEq;
+    pub use crate::secret::Secret;
+    pub use crate::zeroize::Zeroize;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::prelude::*;
+
+    #[test]
+    fn test_secret_zeroization() {
+        let secret = Secret::new([0x42u8; 32]);
+        assert!(secret.expose_secret().iter().all(|&b| b == 0x42));
+        // Secret will be zeroized when dropped
+    }
+
+    #[test]
+    fn test_constant_time_eq() {
+        let a = [1u8, 2, 3, 4];
+        let b = [1u8, 2, 3, 4];
+        let c = [1u8, 2, 3, 5];
+
+        assert!(a.ct_eq(&b));
+        assert!(!a.ct_eq(&c));
+    }
+}

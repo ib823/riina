@@ -1,0 +1,20 @@
+[package]
+name = "terasc"
+version.workspace = true
+edition.workspace = true
+description = "TERAS-LANG compiler"
+
+[[bin]]
+name = "terasc"
+path = "src/main.rs"
+
+[dependencies]
+teras-core.workspace = true
+teras-lang-lexer.workspace = true
+teras-lang-parser.workspace = true
+teras-lang-types.workspace = true
+teras-lang-codegen.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true

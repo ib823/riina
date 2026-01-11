@@ -1,0 +1,169 @@
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TERAS ADA/SPARK PROJECT FILE
+-- Track F Deliverable: TRACK_F-TOOL-BUILD_v1_0_0
+-- ═══════════════════════════════════════════════════════════════════════════════
+--
+-- Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+--
+-- This GPR project file configures the Ada/SPARK build for TERAS components.
+-- Designed for maximum verification with GNATprove.
+
+library project Teras is
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- PROJECT CONFIGURATION
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   for Library_Name use "teras_ada";
+   for Library_Kind use "static";
+   for Library_Dir use "lib";
+   for Object_Dir use "obj";
+
+   -- Source directories
+   for Source_Dirs use (
+      "src",
+      "src/crypto",
+      "src/effect",
+      "src/timing"
+   );
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- BUILD MODES
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   type Build_Mode_Type is ("debug", "release", "verify");
+   Build_Mode : Build_Mode_Type := external ("BUILD_MODE", "verify");
+
+   type SPARK_Mode_Type is ("on", "off");
+   SPARK_Enabled : SPARK_Mode_Type := external ("SPARK_ENABLED", "on");
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- COMPILER OPTIONS
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   Common_Switches := (
+      "-gnatwa",       -- All warnings enabled
+      "-gnatwl",       -- Elaboration warnings
+      "-gnatwe",       -- Warnings as errors
+      "-gnatyy",       -- Enable style checks
+      "-gnaty3",       -- Check indentation (3 spaces)
+      "-gnatyA",       -- Check attribute casing
+      "-gnatyB",       -- Check boolean operators
+      "-gnatyb",       -- Check blanks at end of lines
+      "-gnatyc",       -- Check comments
+      "-gnatyd",       -- Check no DOS line terminators
+      "-gnatye",       -- Check end/exit labels
+      "-gnatyf",       -- Check no form feeds
+      "-gnatyh",       -- Check no horizontal tabs
+      "-gnatyi",       -- Check if/then layout
+      "-gnatyI",       -- Check mode in
+      "-gnatyk",       -- Check casing of keywords
+      "-gnatyl",       -- Check reference layout
+      "-gnatyL6",      -- Check max nesting level
+      "-gnatyM120",    -- Check line length (120)
+      "-gnatyn",       -- Check casing of package Standard
+      "-gnatyO",       -- Check overriding
+      "-gnatyp",       -- Check pragma casing
+      "-gnatyr",       -- Check identifier casing
+      "-gnatys",       -- Check subprogram specs
+      "-gnatyS",       -- Check separate specs
+      "-gnatyt",       -- Check token separation
+      "-gnatyu",       -- Check no unnecessary blank lines
+      "-gnatyx"        -- Check no extra parentheses
+   );
+
+   Debug_Switches := (
+      "-g",            -- Debug info
+      "-O0",           -- No optimization
+      "-gnata"         -- Enable assertions and contracts
+   );
+
+   Release_Switches := (
+      "-O3",           -- Maximum optimization
+      "-gnatp",        -- Suppress all checks (for verified code)
+      "-fdata-sections",
+      "-ffunction-sections"
+   );
+
+   Verify_Switches := (
+      "-g",            -- Debug info for proof
+      "-O0",           -- No optimization
+      "-gnata",        -- Enable all assertions
+      "-gnatVa"        -- Validity checking
+   );
+
+   package Compiler is
+      case Build_Mode is
+         when "debug" =>
+            for Default_Switches ("Ada") use Common_Switches & Debug_Switches;
+         when "release" =>
+            for Default_Switches ("Ada") use Common_Switches & Release_Switches;
+         when "verify" =>
+            for Default_Switches ("Ada") use Common_Switches & Verify_Switches;
+      end case;
+   end Compiler;
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- BINDER OPTIONS
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   package Binder is
+      for Default_Switches ("Ada") use (
+         "-E",            -- Store tracebacks in exceptions
+         "-static"        -- Prefer static linking
+      );
+   end Binder;
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- LINKER OPTIONS
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   package Linker is
+      case Build_Mode is
+         when "debug" =>
+            for Default_Switches ("Ada") use ("-g");
+         when "release" =>
+            for Default_Switches ("Ada") use (
+               "-Wl,--gc-sections",  -- Remove unused sections
+               "-s"                   -- Strip symbols
+            );
+         when "verify" =>
+            for Default_Switches ("Ada") use ("-g");
+      end case;
+   end Linker;
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- PROVE OPTIONS
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   package Prove is
+      --  Proof level meanings:
+      --  0: Compile checks only
+      --  1: Flow analysis only
+      --  2: Basic proofs (default)
+      --  3: All provers, more time
+      --  4: Extended proofs
+      --  5: Maximum assurance
+
+      for Proof_Switches ("Ada") use (
+         "--level=2",           -- Default proof level
+         "--prover=all",        -- Use all available provers
+         "--timeout=60",        -- 60 second timeout per VC
+         "--steps=10000",       -- Maximum proof steps
+         "--checks-as-errors",  -- Treat unproved checks as errors
+         "--warnings=continue", -- Continue on warnings
+         "-j0"                  -- Use all available cores
+      );
+
+      for Proof_Dir use "proof";
+   end Prove;
+
+   -- ═══════════════════════════════════════════════════════════════════════════
+   -- DOCUMENTATION
+   -- ═══════════════════════════════════════════════════════════════════════════
+
+   package Documentation is
+      for Documentation_Dir use "doc";
+   end Documentation;
+
+end Teras;

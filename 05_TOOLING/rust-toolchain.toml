@@ -1,0 +1,23 @@
+# rust-toolchain.toml
+# Pinned Rust version for reproducible builds
+# TERAS Build System v1.0.0
+
+[toolchain]
+channel = "1.84.0"
+profile = "default"
+components = [
+    "rustc",
+    "cargo",
+    "rust-std",
+    "rust-src",           # For verification tools
+    "rustfmt",
+    "clippy",
+    "rust-analyzer",      # For IDE support
+    "llvm-tools-preview", # For coverage
+]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",    # For static linking
+    "aarch64-unknown-linux-musl",   # For static linking
+]

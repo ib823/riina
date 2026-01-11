@@ -1,0 +1,154 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# TERAS DEVELOPMENT CONTAINER
+# Track F Deliverable: TRACK_F-TOOL-DEVENV_v1_0_0
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+#
+# This container provides a complete, reproducible development environment
+# for TERAS development. All tools pre-installed. No excuses.
+#
+# Build: docker build -t teras-dev -f docker/Dockerfile.dev .
+# Run:   docker run -it --rm -v $(pwd):/workspace teras-dev
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM ubuntu:24.04 AS base
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# System packages
+RUN apt-get update && apt-get install -y \
+    # Essential build tools
+    build-essential \
+    clang \
+    lld \
+    cmake \
+    ninja-build \
+    pkg-config \
+    # Version control
+    git \
+    # Utilities
+    curl \
+    wget \
+    unzip \
+    jq \
+    bc \
+    # SSL/TLS
+    libssl-dev \
+    ca-certificates \
+    # Python (for some tools)
+    python3 \
+    python3-pip \
+    python3-venv \
+    # Ada/SPARK support
+    gnat \
+    gprbuild \
+    # Cross-compilation
+    gcc-aarch64-linux-gnu \
+    g++-aarch64-linux-gnu \
+    musl-tools \
+    # Documentation
+    graphviz \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/*
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUST INSTALLATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Install Rust (pinned version)
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH \
+    RUST_VERSION=1.84.0
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
+    -y \
+    --default-toolchain ${RUST_VERSION} \
+    --profile complete \
+    && rustup target add \
+        x86_64-unknown-linux-gnu \
+        x86_64-unknown-linux-musl \
+        aarch64-unknown-linux-gnu \
+    && rustup component add \
+        clippy \
+        rustfmt \
+        rust-src \
+        llvm-tools \
+        rust-analyzer
+
+# Install nightly (for miri, fuzzing)
+RUN rustup toolchain install nightly --profile minimal \
+    && rustup +nightly component add miri rust-src
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CARGO TOOLS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Essential cargo tools
+RUN cargo install \
+    cargo-audit \
+    cargo-deny \
+    cargo-llvm-cov \
+    cargo-nextest \
+    cargo-mutants \
+    cargo-watch \
+    cargo-expand \
+    cargo-outdated \
+    cargo-bloat \
+    cargo-udeps \
+    cargo-tree \
+    just \
+    hyperfine \
+    tokei
+
+# Fuzzing tools (nightly)
+RUN cargo +nightly install cargo-fuzz afl
+
+# Optional: Verification tools (these can be large)
+# Uncomment to include:
+# RUN cargo install kani-verifier && kani setup
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GNATPROVE (SPARK)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# SPARK Pro requires license - using community edition
+# Note: Full SPARK installation requires GNAT Community or SPARK Pro
+# This provides basic GNATprove support
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENVIRONMENT CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Set up reproducible build environment
+ENV SOURCE_DATE_EPOCH=0 \
+    CARGO_INCREMENTAL=0 \
+    CARGO_NET_RETRY=10 \
+    RUST_BACKTRACE=1 \
+    RUSTFLAGS="-D warnings"
+
+# Working directory
+WORKDIR /workspace
+
+# Create non-root user (for better security)
+RUN useradd -m -s /bin/bash teras \
+    && chown -R teras:teras /workspace
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENTRYPOINT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Default to bash
+CMD ["/bin/bash"]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LABELS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+LABEL maintainer="TERAS Team"
+LABEL description="TERAS Development Container - Complete development environment"
+LABEL version="1.0.0"
+LABEL mode="ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS"
