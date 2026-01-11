@@ -10,6 +10,7 @@
 
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
+Require Import Coq.Program.Equality.
 Require Import TERAS.foundations.Syntax.
 Require Import TERAS.foundations.Semantics.
 Require Import TERAS.foundations.Typing.
@@ -393,8 +394,17 @@ Proof.
   (* Remaining expression forms without typing rules - these cases are impossible
      since the expression cannot be well-typed. These expressions have no typing rules
      in the current subset of the language. *)
-  all: try (inversion Hty; fail).
-Admitted. (* TODO: Complete proof - some cases may need explicit handling *)
+  - (* EPerform *) inversion Hty.
+  - (* EHandle *) inversion Hty.
+  - (* ERef *) inversion Hty.
+  - (* EDeref *) inversion Hty.
+  - (* EAssign *) inversion Hty.
+  - (* EClassify *) inversion Hty.
+  - (* EDeclassify *) inversion Hty.
+  - (* EProve *) inversion Hty.
+  - (* ERequire *) inversion Hty.
+  - (* EGrant *) inversion Hty.
+Qed.
 
 (** ** Preservation Theorem
 
@@ -402,32 +412,160 @@ Admitted. (* TODO: Complete proof - some cases may need explicit handling *)
     with the same type and effect.
 *)
 
+(** Helper: values have pure effect when typed in empty context *)
+Lemma value_has_pure_effect : forall v T ε,
+  value v ->
+  has_type nil nil Public v T ε ->
+  has_type nil nil Public v T EffectPure.
+Proof.
+  intros v T ε Hval.
+  generalize dependent ε.
+  generalize dependent T.
+  induction Hval; intros T' ε' Hty; inversion Hty; subst.
+  - (* VUnit *) constructor.
+  - (* VBool *) constructor.
+  - (* VInt *) constructor.
+  - (* VString *) constructor.
+  - (* VLam *) constructor. assumption.
+  - (* VPair *)
+    eapply T_Pair; eassumption.
+  - (* VInl *)
+    eapply T_Inl. eapply IHHval. eassumption.
+  - (* VInr *)
+    eapply T_Inr. eapply IHHval. eassumption.
+Qed.
+
+(** Helper lemma for preservation with proper IH *)
+Lemma preservation_helper : forall cfg1 cfg2,
+  cfg1 --> cfg2 ->
+  forall e st ctx e' st' ctx' T ε,
+    cfg1 = (e, st, ctx) ->
+    cfg2 = (e', st', ctx') ->
+    has_type nil nil Public e T ε ->
+    has_type nil nil Public e' T ε.
+Proof.
+  intros cfg1 cfg2 Hstep.
+  induction Hstep; intros e0 st0 ctx0 e0' st0' ctx0' T0 ε0 Heq1 Heq2 Hty;
+    inversion Heq1; inversion Heq2; subst.
+  (* ST_AppAbs: beta reduction for function application *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (ELam _ _ _) _ _ |- _ ] => inversion H; subst
+    end.
+    eapply substitution_preserves_typing.
+    + eapply value_has_pure_effect; eassumption.
+    + eassumption.
+  (* ST_App1: congruence for application (left) *)
+  - inversion Hty; subst.
+    eapply T_App.
+    + eapply IHHstep; try reflexivity. eassumption.
+    + eassumption.
+  (* ST_App2: congruence for application (right) *)
+  - inversion Hty; subst.
+    eapply T_App.
+    + eassumption.
+    + eapply IHHstep; try reflexivity. eassumption.
+  (* ST_Pair1: congruence for pairs (left) *)
+  - inversion Hty; subst.
+    eapply T_Pair.
+    + eapply IHHstep; try reflexivity. eassumption.
+    + eassumption.
+  (* ST_Pair2: congruence for pairs (right) *)
+  - inversion Hty; subst.
+    eapply T_Pair.
+    + eassumption.
+    + eapply IHHstep; try reflexivity. eassumption.
+  (* ST_Fst: projection from pair (left) *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (EPair _ _) _ _ |- _ ] => inversion H; subst
+    end.
+    (* Result is a value, so use value_has_pure_effect *)
+    eapply value_has_pure_effect; eassumption.
+  (* ST_Snd: projection from pair (right) *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (EPair _ _) _ _ |- _ ] => inversion H; subst
+    end.
+    (* Result is a value, so use value_has_pure_effect *)
+    eapply value_has_pure_effect; eassumption.
+  (* ST_FstStep: congruence for fst *)
+  - inversion Hty; subst.
+    eapply T_Fst.
+    eapply IHHstep; try reflexivity. eassumption.
+  (* ST_SndStep: congruence for snd *)
+  - inversion Hty; subst.
+    eapply T_Snd.
+    eapply IHHstep; try reflexivity. eassumption.
+  (* ST_CaseInl: case analysis on Inl *)
+  (* Note: T_Case gives result effect = scrutinee effect, but branch may have different effect.
+     This requires effect subtyping or refined T_Case rule for full preservation. *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (EInl _ _) _ _ |- _ ] => inversion H; subst
+    end.
+    eapply substitution_preserves_typing.
+    + eapply value_has_pure_effect; eassumption.
+    + (* TODO: Effect mismatch - need effect subtyping or refined T_Case *)
+      admit.
+  (* ST_CaseInr: case analysis on Inr *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (EInr _ _) _ _ |- _ ] => inversion H; subst
+    end.
+    eapply substitution_preserves_typing.
+    + eapply value_has_pure_effect; eassumption.
+    + (* TODO: Effect mismatch - need effect subtyping or refined T_Case *)
+      admit.
+  (* ST_CaseStep: congruence for case *)
+  - inversion Hty; subst.
+    eapply T_Case.
+    + eapply IHHstep; try reflexivity. eassumption.
+    + eassumption.
+    + eassumption.
+  (* ST_InlStep: congruence for Inl *)
+  - inversion Hty; subst.
+    eapply T_Inl.
+    eapply IHHstep; try reflexivity. eassumption.
+  (* ST_InrStep: congruence for Inr *)
+  - inversion Hty; subst.
+    eapply T_Inr.
+    eapply IHHstep; try reflexivity. eassumption.
+  (* ST_IfTrue: if-then-else with true *)
+  (* Note: T_If gives result effect = condition effect, but branch may have different effect *)
+  - inversion Hty; subst.
+    (* TODO: Effect mismatch - need effect join or refined T_If *)
+    admit.
+  (* ST_IfFalse: if-then-else with false *)
+  - inversion Hty; subst.
+    (* TODO: Effect mismatch - need effect join or refined T_If *)
+    admit.
+  (* ST_IfStep: congruence for if *)
+  - inversion Hty; subst.
+    eapply T_If.
+    + eapply IHHstep; try reflexivity. eassumption.
+    + eassumption.
+    + eassumption.
+  (* ST_LetValue: let binding with value *)
+  (* Note: T_Let gives result effect = binding effect, but body may have different effect *)
+  - inversion Hty; subst.
+    eapply substitution_preserves_typing.
+    + eapply value_has_pure_effect; eassumption.
+    + (* TODO: Effect mismatch - need effect join or refined T_Let *)
+      admit.
+  (* ST_LetStep: congruence for let *)
+  - inversion Hty; subst.
+    eapply T_Let.
+    + eapply IHHstep; try reflexivity. eassumption.
+    + eassumption.
+Admitted. (* TODO: Fix effect system for full preservation - see effect mismatch notes above *)
+
 Theorem preservation : preservation_stmt.
 Proof.
   unfold preservation_stmt.
   intros e e' T ε st st' ctx ctx' Hty Hstep.
-  generalize dependent ε.
-  generalize dependent T.
-  induction Hstep; intros T' ε' Hty; inversion Hty; subst;
-    try (eapply T_App; eauto; fail);
-    try (eapply T_Pair; eauto; fail);
-    try (eapply T_Fst; eauto; fail);
-    try (eapply T_Snd; eauto; fail);
-    try (eapply T_Case; eauto; fail);
-    try (eapply T_Inl; eauto; fail);
-    try (eapply T_Inr; eauto; fail);
-    try (eapply T_If; eauto; fail);
-    try (eapply T_Let; eauto; fail);
-    try assumption.
-  (* Beta reduction cases need substitution lemma *)
-  all: try (match goal with
-    | [ H : has_type _ _ _ (ELam _ _ _) _ _ |- _ ] => inversion H; subst
-    | [ H : has_type _ _ _ (EPair _ _) _ _ |- _ ] => inversion H; subst
-    | [ H : has_type _ _ _ (EInl _ _) _ _ |- _ ] => inversion H; subst
-    | [ H : has_type _ _ _ (EInr _ _) _ _ |- _ ] => inversion H; subst
-    end).
-  all: try (eapply substitution_preserves_typing; eauto; fail).
-  all: try assumption.
-Admitted. (* TODO: Complete remaining cases *)
+  eapply preservation_helper with (cfg1 := (e, st, ctx)) (cfg2 := (e', st', ctx'));
+    try reflexivity; eassumption.
+Qed.
 
 (** End of Preservation.v *)
