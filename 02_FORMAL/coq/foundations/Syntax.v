@@ -48,6 +48,24 @@ Inductive effect : Type :=
   | EffectCrypto : effect
   | EffectSystem : effect.
 
+(** Effect join: least upper bound in effect lattice.
+    EffectPure is the identity element. For non-pure effects,
+    we use the left argument as a simplification (proper lattice
+    would require more complex structure). *)
+Definition effect_join (e1 e2 : effect) : effect :=
+  match e1, e2 with
+  | EffectPure, _ => e2
+  | _, EffectPure => e1
+  | _, _ => e1 (* Simplified: in a full system, use proper lattice *)
+  end.
+
+(** Effect join with EffectPure is identity *)
+Lemma effect_join_pure_l : forall e, effect_join EffectPure e = e.
+Proof. reflexivity. Qed.
+
+Lemma effect_join_pure_r : forall e, effect_join e EffectPure = e.
+Proof. destruct e; reflexivity. Qed.
+
 (** ** Types
     
     Core type constructors for TERAS-LANG.

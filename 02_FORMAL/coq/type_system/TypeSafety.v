@@ -59,8 +59,10 @@ Proof.
   - (* MS_Step: cfg1 --> cfg2 --> cfg3 *)
     inversion Heq1; subst.
     destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    (* preservation now returns an existential *)
+    destruct (preservation e1 e_mid T ε st1 st_mid ctx1 ctx_mid Hty H) as [ε' Hty'].
     eapply IHHmulti; try reflexivity.
-    eapply preservation; eassumption.
+    exact Hty'.
 Qed.
 
 (** End of TypeSafety.v *)
