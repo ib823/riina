@@ -22,3 +22,9 @@
 - Cleaned up `Semantics.v` by admitting `step_deterministic` to allow progress.
 - Build is clean.
 
+- Defined `val_equiv` (low-equivalence) and `non_interference` theorem in `properties/NonInterference.v`.
+- All files build successfully.
+- Effect Algebra is fully proven.
+- Typing foundations are fully proven.
+- Semantics is admitted to be non-blocking.
+
