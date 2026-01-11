@@ -1,0 +1,15 @@
+[package]
+name = "teras-verify"
+version.workspace = true
+edition.workspace = true
+description = "TERAS verification orchestrator"
+
+[[bin]]
+name = "teras-verify"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+
+[lints]
+workspace = true

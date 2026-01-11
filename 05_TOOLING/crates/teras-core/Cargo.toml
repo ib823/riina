@@ -1,0 +1,27 @@
+# crates/teras-core/Cargo.toml
+# TERAS Core Primitives
+# Version: 0.1.0
+
+[package]
+name = "teras-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+description = "TERAS core primitives and foundational types"
+
+[dependencies]
+# ZERO runtime dependencies per Law 8
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# Enable additional verification
+verification = []

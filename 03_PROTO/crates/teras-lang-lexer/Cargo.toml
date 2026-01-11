@@ -1,0 +1,13 @@
+[package]
+name = "teras-lang-lexer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "TERAS-LANG lexer/tokenizer"
+
+[dependencies]
+# No dependencies (Law 8)
+
+[dev-dependencies]
+# Testing dependencies only

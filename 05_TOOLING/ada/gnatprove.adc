@@ -1,0 +1,109 @@
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TERAS GNATPROVE CONFIGURATION
+-- Track F Deliverable: TRACK_F-TOOL-BUILD_v1_0_0
+-- ═══════════════════════════════════════════════════════════════════════════════
+--
+-- Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+--
+-- SPARK restrictions for formal verification.
+-- These ensure maximum provability of security properties.
+
+pragma Profile (Ravenscar);
+pragma Partition_Elaboration_Policy (Sequential);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- MEMORY SAFETY RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No dynamic memory allocation (prevents memory leaks and use-after-free)
+pragma Restrictions (No_Allocators);
+pragma Restrictions (No_Implicit_Heap_Allocations);
+
+-- Static storage only (predictable memory usage)
+pragma Restrictions (Static_Storage_Size);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- EXCEPTION RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No exception handling (forces explicit error handling)
+pragma Restrictions (No_Exception_Handlers);
+pragma Restrictions (No_Exception_Propagation);
+
+-- All exceptions must be handled or proven not to occur
+pragma Restrictions (No_Exception_Registration);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- TASKING RESTRICTIONS (Ravenscar Profile)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No dynamic task creation
+pragma Restrictions (No_Task_Allocators);
+pragma Restrictions (No_Dynamic_Priorities);
+pragma Restrictions (No_Abort_Statements);
+pragma Restrictions (No_Asynchronous_Control);
+
+-- Static task configuration
+pragma Restrictions (Max_Tasks => 16);
+pragma Restrictions (Max_Entry_Queue_Length => 1);
+
+-- No select statements (deterministic behavior)
+pragma Restrictions (No_Select_Statements);
+pragma Restrictions (No_Task_Termination);
+pragma Restrictions (Simple_Barriers);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- ELABORATION RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Predictable elaboration order
+pragma Restrictions (No_Elaboration_Code);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- RECURSION RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No recursion (bounded stack usage, enables termination proofs)
+pragma Restrictions (No_Recursion);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- I/O RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No implicit I/O (explicit effect tracking)
+-- Note: Removed for flexibility - enforce via SPARK contracts instead
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- SECONDARY STACK RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No secondary stack (predictable memory)
+pragma Restrictions (No_Secondary_Stack);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- DISPATCHING RESTRICTIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- No dispatching calls in SPARK (deterministic behavior)
+pragma Restrictions (No_Dispatch);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- FLOATING POINT RESTRICTIONS (OPTIONAL)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Uncomment if not using floating point:
+-- pragma Restrictions (No_Floating_Point);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- VALIDITY CHECKING
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Check validity of all scalar values
+pragma Validity_Checks (All_Checks);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- SPARK CONFIGURATION
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Enable SPARK mode by default for all units
+pragma SPARK_Mode (On);

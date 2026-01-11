@@ -1,0 +1,12 @@
+[package]
+name = "teras-lang-parser"
+version.workspace = true
+edition.workspace = true
+description = "TERAS-LANG parser"
+
+[dependencies]
+teras-core.workspace = true
+teras-lang-lexer.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "teras-lang-codegen"
+version.workspace = true
+edition.workspace = true
+description = "TERAS-LANG code generator"
+
+[dependencies]
+teras-core.workspace = true
+teras-lang-types.workspace = true
+
+[lints]
+workspace = true
