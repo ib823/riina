@@ -1,342 +1,416 @@
-//! Lexer implementation for TERAS-LANG
+//! Lexer Implementation
 
 use crate::token::{Token, TokenKind, Span};
 use crate::error::LexError;
+use std::iter::Peekable;
+use std::str::Chars;
 
-/// TERAS-LANG Lexer
-pub struct Lexer<'src> {
-    source: &'src str,
-    chars: std::iter::Peekable<std::str::CharIndices<'src>>,
-    position: usize,
-    line: usize,
-    column: usize,
+pub struct Lexer<'a> {
+    input: Peekable<Chars<'a>>,
+    source: &'a str,
+    pos: usize,
 }
 
-impl<'src> Lexer<'src> {
-    /// Create a new lexer for the given source
-    pub fn new(source: &'src str) -> Self {
+impl<'a> Lexer<'a> {
+    #[must_use]
+    pub fn new(input: &'a str) -> Self {
         Self {
-            source,
-            chars: source.char_indices().peekable(),
-            position: 0,
-            line: 1,
-            column: 1,
+            input: input.chars().peekable(),
+            source: input,
+            pos: 0,
         }
-    }
-
-    /// Tokenize the entire source
-    pub fn tokenize(&mut self) -> Result<Vec<Token>, LexError> {
-        let mut tokens = Vec::new();
-        
-        loop {
-            let token = self.next_token()?;
-            let is_eof = matches!(token.kind, TokenKind::Eof);
-            tokens.push(token);
-            if is_eof {
-                break;
-            }
-        }
-        
-        Ok(tokens)
-    }
-
-    /// Get the next token
-    pub fn next_token(&mut self) -> Result<Token, LexError> {
-        self.skip_whitespace_and_comments();
-        
-        let start = self.position;
-        let start_line = self.line;
-        let start_column = self.column;
-        
-        let kind = match self.advance() {
-            None => TokenKind::Eof,
-            Some((_, c)) => self.lex_char(c)?,
-        };
-        
-        let span = Span {
-            start,
-            end: self.position,
-            line: start_line,
-            column: start_column,
-        };
-        
-        Ok(Token::new(kind, span))
-    }
-
-    fn advance(&mut self) -> Option<(usize, char)> {
-        let next = self.chars.next();
-        if let Some((pos, c)) = next {
-            self.position = pos + c.len_utf8();
-            if c == '\n' {
-                self.line += 1;
-                self.column = 1;
-            } else {
-                self.column += 1;
-            }
-        }
-        next
     }
 
     fn peek(&mut self) -> Option<char> {
-        self.chars.peek().map(|(_, c)| *c)
+        self.input.peek().copied()
     }
 
-    fn skip_whitespace_and_comments(&mut self) {
-        loop {
-            match self.peek() {
-                Some(c) if c.is_whitespace() => {
+    fn advance(&mut self) -> Option<char> {
+        match self.input.next() {
+            Some(c) => {
+                self.pos += c.len_utf8();
+                Some(c)
+            }
+            None => None,
+        }
+    }
+
+    fn advance_n(&mut self, n: usize) {
+        for _ in 0..n {
+            self.advance();
+        }
+    }
+
+    fn consume_while<F>(&mut self, predicate: F) -> String
+    where
+        F: Fn(char) -> bool,
+    {
+        let mut s = String::new();
+        while let Some(c) = self.peek() {
+            if predicate(c) {
+                self.advance();
+                s.push(c);
+            } else {
+                break;
+            }
+        }
+        s
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(c) = self.peek() {
+            if c.is_whitespace() {
+                self.advance();
+            } else if c == '/' {
+                // Check for comments
+                // Need to peek next
+                // Cannot peek next easily with simple Peekable<Chars>.
+                // But we can check current position in source.
+                // Or verify next char.
+                // Hack: consume / then peek. If not /, put back? No.
+
+                // Let's look at source slice if possible, or just standard lookahead.
+                // peek() gives current char.
+                // clone iter?
+                let mut lookahead = self.input.clone();
+                lookahead.next(); // consume current '/'
+                match lookahead.next() {
+                    Some('/') => {
+                        // Line comment
+                        self.advance(); // /
+                        self.advance(); // /
+                        while let Some(c) = self.peek() {
+                            if c == '\n' {
+                                break;
+                            }
+                            self.advance();
+                        }
+                    }
+                    Some('*') => {
+                        // Block comment
+                        self.advance(); // /
+                        self.advance(); // *
+                        let mut depth = 1;
+                        while depth > 0 {
+                            match self.advance() {
+                                Some('/') => {
+                                    if let Some('*') = self.peek() {
+                                        self.advance();
+                                        depth += 1;
+                                    }
+                                }
+                                Some('*') => {
+                                    if let Some('/') = self.peek() {
+                                        self.advance();
+                                        depth -= 1;
+                                    }
+                                }
+                                Some(_) => {} // Ignore other characters
+                                None => break, // Unterminated, handled by next_token logic?
+                            }
+                        }
+                    }
+                    _ => break, // Not a comment
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    pub fn next_token(&mut self) -> Result<Token, LexError> {
+        self.skip_whitespace();
+
+        let start = self.pos;
+        let c = match self.advance() {
+            Some(c) => c,
+            None => return Ok(Token::new(TokenKind::Eof, Span::new(start, start))),
+        };
+
+        let kind = match c {
+            '(' => TokenKind::LParen,
+            ')' => TokenKind::RParen,
+            '[' => TokenKind::LBracket,
+            ']' => TokenKind::RBracket,
+            '{' => TokenKind::LBrace,
+            '}' => TokenKind::RBrace,
+            ',' => TokenKind::Comma,
+            ';' => TokenKind::Semi,
+            '?' => TokenKind::Question,
+            '@' => TokenKind::At,
+            '#' => TokenKind::Hash,
+            '$' => TokenKind::Dollar,
+            
+            '.' => {
+                if let Some('.') = self.peek() {
                     self.advance();
+                    if let Some('=') = self.peek() {
+                        self.advance();
+                        TokenKind::DotDotEq
+                    } else {
+                        TokenKind::DotDot
+                    }
+                } else {
+                    TokenKind::Dot
                 }
-                Some('/') => {
-                    // TODO: Handle comments
-                    break;
+            }
+            
+            ':' => {
+                if let Some(':') = self.peek() {
+                    self.advance();
+                    TokenKind::ColonColon
+                } else {
+                    TokenKind::Colon
                 }
-                _ => break,
             }
-        }
-    }
 
-    fn lex_char(&mut self, c: char) -> Result<TokenKind, LexError> {
-        match c {
-            // Single-character tokens
-            '(' => Ok(TokenKind::LParen),
-            ')' => Ok(TokenKind::RParen),
-            '[' => Ok(TokenKind::LBracket),
-            ']' => Ok(TokenKind::RBracket),
-            '{' => Ok(TokenKind::LBrace),
-            '}' => Ok(TokenKind::RBrace),
-            ',' => Ok(TokenKind::Comma),
-            '.' => Ok(TokenKind::Dot),
-            ';' => Ok(TokenKind::Semicolon),
-            '@' => Ok(TokenKind::At),
-            '#' => Ok(TokenKind::Hash),
-            '+' => Ok(TokenKind::Plus),
-            '*' => Ok(TokenKind::Star),
-            '/' => Ok(TokenKind::Slash),
-            '%' => Ok(TokenKind::Percent),
-            '&' => Ok(TokenKind::Ampersand),
-            '|' => Ok(TokenKind::Pipe),
-            '^' => Ok(TokenKind::Caret),
-            '~' => Ok(TokenKind::Tilde),
-            '?' => Ok(TokenKind::Question),
+            '+' => if let Some('=') = self.peek() { self.advance(); TokenKind::PlusEq } else { TokenKind::Plus },
+            '-' => if let Some('=') = self.peek() { self.advance(); TokenKind::MinusEq }
+                   else if let Some('>') = self.peek() { self.advance(); TokenKind::Arrow }
+                   else { TokenKind::Minus },
+            '*' => if let Some('=') = self.peek() { self.advance(); TokenKind::StarEq } else { TokenKind::Star },
+            '/' => if let Some('=') = self.peek() { self.advance(); TokenKind::SlashEq } else { TokenKind::Slash },
+            '%' => if let Some('=') = self.peek() { self.advance(); TokenKind::PercentEq } else { TokenKind::Percent },
+            '^' => if let Some('=') = self.peek() { self.advance(); TokenKind::CaretEq } else { TokenKind::Caret },
             
-            // Multi-character tokens
-            '-' => self.lex_minus(),
-            '=' => self.lex_equals(),
-            ':' => self.lex_colon(),
-            '<' => self.lex_less(),
-            '>' => self.lex_greater(),
-            '!' => self.lex_bang(),
+            '&' => if let Some('=') = self.peek() { self.advance(); TokenKind::AndEq }
+                   else if let Some('&') = self.peek() { self.advance(); TokenKind::AndAnd }
+                   else { TokenKind::And },
             
-            // Literals
-            '"' => self.lex_string(),
-            '\'' => self.lex_char_or_byte(),
+            '|' => if let Some('=') = self.peek() { self.advance(); TokenKind::OrEq }
+                   else if let Some('|') = self.peek() { self.advance(); TokenKind::OrOr }
+                   else { TokenKind::Or },
+
+            '!' => if let Some('=') = self.peek() { self.advance(); TokenKind::Ne } else { TokenKind::Not },
+            '=' => if let Some('=') = self.peek() { self.advance(); TokenKind::EqEq }
+                   else if let Some('>') = self.peek() { self.advance(); TokenKind::FatArrow }
+                   else { TokenKind::Eq },
             
-            // Numbers
-            c if c.is_ascii_digit() => self.lex_number(c),
+            '<' => if let Some('=') = self.peek() { self.advance(); TokenKind::Le }
+                   else if let Some('<') = self.peek() { 
+                       self.advance(); 
+                       if let Some('=') = self.peek() { self.advance(); TokenKind::ShlEq } else { TokenKind::Shl }
+                   } else { TokenKind::Lt },
             
-            // Identifiers and keywords
-            c if c.is_alphabetic() || c == '_' => self.lex_identifier(c),
+            '>' => if let Some('=') = self.peek() { self.advance(); TokenKind::Ge }
+                   else if let Some('>') = self.peek() { 
+                       self.advance(); 
+                       if let Some('=') = self.peek() { self.advance(); TokenKind::ShrEq } else { TokenKind::Shr }
+                   } else { TokenKind::Gt },
+
+            '"' => self.read_string(start)?,
+            '\'' => self.read_char_or_lifetime(start)?,
             
-            _ => Err(LexError::UnexpectedCharacter(c, self.line, self.column)),
-        }
+            _ if c.is_ascii_digit() => self.read_number(c, start)?,
+            _ if is_ident_start(c) => self.read_identifier(c, start),
+            
+            _ => return Err(LexError::UnexpectedChar(c, start)),
+        };
+
+        Ok(Token::new(kind, Span::new(start, self.pos)))
     }
 
-    fn lex_minus(&mut self) -> Result<TokenKind, LexError> {
-        match self.peek() {
-            Some('>') => {
-                self.advance();
-                Ok(TokenKind::Arrow)
-            }
-            _ => Ok(TokenKind::Minus),
-        }
-    }
-
-    fn lex_equals(&mut self) -> Result<TokenKind, LexError> {
-        match self.peek() {
-            Some('=') => {
-                self.advance();
-                Ok(TokenKind::Eq)
-            }
-            Some('>') => {
-                self.advance();
-                Ok(TokenKind::FatArrow)
-            }
-            _ => Ok(TokenKind::Assign),
-        }
-    }
-
-    fn lex_colon(&mut self) -> Result<TokenKind, LexError> {
-        match self.peek() {
-            Some('=') => {
-                self.advance();
-                Ok(TokenKind::ColonEq)
-            }
-            _ => Ok(TokenKind::Colon),
-        }
-    }
-
-    fn lex_less(&mut self) -> Result<TokenKind, LexError> {
-        match self.peek() {
-            Some('=') => {
-                self.advance();
-                Ok(TokenKind::Le)
-            }
-            _ => Ok(TokenKind::Lt),
-        }
-    }
-
-    fn lex_greater(&mut self) -> Result<TokenKind, LexError> {
-        match self.peek() {
-            Some('=') => {
-                self.advance();
-                Ok(TokenKind::Ge)
-            }
-            _ => Ok(TokenKind::Gt),
-        }
-    }
-
-    fn lex_bang(&mut self) -> Result<TokenKind, LexError> {
-        match self.peek() {
-            Some('=') => {
-                self.advance();
-                Ok(TokenKind::Ne)
-            }
-            _ => Ok(TokenKind::Bang),
-        }
-    }
-
-    fn lex_string(&mut self) -> Result<TokenKind, LexError> {
+    fn read_string(&mut self, start: usize) -> Result<TokenKind, LexError> {
         let mut value = String::new();
-        
         loop {
             match self.advance() {
-                None => return Err(LexError::UnterminatedString(self.line)),
-                Some((_, '"')) => break,
-                Some((_, '\\')) => {
-                    // Handle escape sequences
+                Some('"') => break,
+                Some('\\') => {
                     match self.advance() {
-                        Some((_, 'n')) => value.push('\n'),
-                        Some((_, 't')) => value.push('\t'),
-                        Some((_, 'r')) => value.push('\r'),
-                        Some((_, '\\')) => value.push('\\'),
-                        Some((_, '"')) => value.push('"'),
-                        Some((_, c)) => {
-                            return Err(LexError::InvalidEscape(c, self.line));
-                        }
-                        None => return Err(LexError::UnterminatedString(self.line)),
+                        Some('n') => value.push('\n'),
+                        Some('r') => value.push('\r'),
+                        Some('t') => value.push('\t'),
+                        Some('0') => value.push('\0'),
+                        Some('\\') => value.push('\\'),
+                        Some('"') => value.push('"'),
+                        Some('\'') => value.push('\''),
+                        Some(c) => value.push(c), // Should handle unicode/hex
+                        None => return Err(LexError::UnterminatedString(start)),
                     }
                 }
-                Some((_, c)) => value.push(c),
+                Some(c) => value.push(c),
+                None => return Err(LexError::UnterminatedString(start)),
             }
         }
-        
-        Ok(TokenKind::StringLiteral(value))
+        Ok(TokenKind::LiteralString(value))
     }
 
-    fn lex_char_or_byte(&mut self) -> Result<TokenKind, LexError> {
-        // TODO: Implement char/byte literals
-        Err(LexError::NotImplemented("char/byte literals"))
-    }
-
-    fn lex_number(&mut self, first: char) -> Result<TokenKind, LexError> {
-        let mut value = String::from(first);
+    fn read_char_or_lifetime(&mut self, start: usize) -> Result<TokenKind, LexError> {
+        // If it's a lifetime: 'ident
+        // If it's a char: 'c' or '\n'
         
-        while let Some(c) = self.peek() {
-            if c.is_ascii_digit() {
+        // Peek next
+        let c1 = self.peek();
+        match c1 {
+            Some(c) if is_ident_start(c) => {
+                // Could be lifetime OR char 'a'
+                // Consume char
                 self.advance();
-                value.push(c);
-            } else if c == '.' {
-                // Float literal
-                self.advance();
-                value.push('.');
-                while let Some(c) = self.peek() {
-                    if c.is_ascii_digit() {
-                        self.advance();
-                        value.push(c);
-                    } else {
-                        break;
-                    }
+                let c2 = self.peek();
+                if c2 == Some('\'') {
+                    self.advance();
+                    Ok(TokenKind::LiteralChar(c))
+                } else {
+                    // It is a lifetime
+                    let rest = self.consume_while(is_ident_continue);
+                    let mut name = String::new();
+                    name.push(c);
+                    name.push_str(&rest);
+                    Ok(TokenKind::Lifetime(name))
                 }
-                let f: f64 = value.parse().map_err(|_| {
-                    LexError::InvalidNumber(value.clone(), self.line)
-                })?;
-                return Ok(TokenKind::FloatLiteral(f));
-            } else {
-                break;
             }
+            Some('\\') => {
+                // Escape char
+                self.advance();
+                let esc = self.advance().ok_or(LexError::UnterminatedChar(start))?;
+                let c_val = match esc {
+                    'n' => '\n',
+                    'r' => '\r',
+                    't' => '\t',
+                    '0' => '\0',
+                    '\\' => '\\',
+                    '\'' => '\'',
+                    '"' => '"',
+                    _ => return Err(LexError::InvalidEscapeSequence(start)),
+                };
+                if self.advance() != Some('\'') {
+                    return Err(LexError::UnterminatedChar(start));
+                }
+                Ok(TokenKind::LiteralChar(c_val))
+            }
+            Some(c) => {
+                self.advance();
+                if self.advance() != Some('\'') {
+                    return Err(LexError::UnterminatedChar(start));
+                }
+                Ok(TokenKind::LiteralChar(c))
+            }
+            None => Err(LexError::UnterminatedChar(start)),
         }
-        
-        let n: i64 = value.parse().map_err(|_| {
-            LexError::InvalidNumber(value.clone(), self.line)
-        })?;
-        Ok(TokenKind::IntLiteral(n))
     }
 
-    fn lex_identifier(&mut self, first: char) -> Result<TokenKind, LexError> {
-        let mut value = String::from(first);
+    fn read_number(&mut self, first: char, _start: usize) -> Result<TokenKind, LexError> {
+        let mut s = String::new();
+        s.push(first);
         
-        while let Some(c) = self.peek() {
-            if c.is_alphanumeric() || c == '_' {
-                self.advance();
-                value.push(c);
-            } else {
-                break;
+        // Hex/Oct/Bin
+        if first == '0' {
+            if let Some(c) = self.peek() {
+                if c == 'x' || c == 'o' || c == 'b' {
+                    self.advance();
+                    s.push(c);
+                    s.push_str(&self.consume_while(|c| c.is_ascii_hexdigit() || c == '_'));
+                    // Check suffix
+                    // ...
+                    return Ok(TokenKind::LiteralInt(s, None)); // TODO: Suffix
+                }
+            }
+        }
+
+        s.push_str(&self.consume_while(|c| c.is_ascii_digit() || c == '_'));
+
+        // Float?
+        if let Some('.') = self.peek() {
+            // Need to distinguish range ..
+            // Peek next next?
+            let mut lookahead = self.input.clone();
+            lookahead.next(); // consume .
+            if let Some(c) = lookahead.next() {
+                if c != '.' && !is_ident_start(c) { // 1.e5, 1.2
+                    self.advance();
+                    s.push('.');
+                    s.push_str(&self.consume_while(|c| c.is_ascii_digit() || c == '_'));
+                    // Exponent
+                    // ...
+                    return Ok(TokenKind::LiteralFloat(s, None));
+                }
             }
         }
         
-        // Check for keywords
-        let kind = match value.as_str() {
-            // Types
-            "unit" => TokenKind::KwUnit,
-            "bool" => TokenKind::KwBool,
-            "int" => TokenKind::KwInt,
-            "float" => TokenKind::KwFloat,
-            "string" => TokenKind::KwString,
-            "bytes" => TokenKind::KwBytes,
-            
-            // Control
+        Ok(TokenKind::LiteralInt(s, None)) // Default
+    }
+
+    fn read_identifier(&mut self, first: char, _start: usize) -> TokenKind {
+        let mut s = String::new();
+        s.push(first);
+        s.push_str(&self.consume_while(is_ident_continue));
+
+        match s.as_str() {
+            "true" => TokenKind::LiteralBool(true),
+            "false" => TokenKind::LiteralBool(false),
+            "fn" => TokenKind::KwFn,
+            "let" => TokenKind::KwLet,
+            "mut" => TokenKind::KwMut,
+            "const" => TokenKind::KwConst,
+            "static" => TokenKind::KwStatic,
+            "type" => TokenKind::KwType,
+            "struct" => TokenKind::KwStruct,
+            "enum" => TokenKind::KwEnum,
+            "union" => TokenKind::KwUnion,
+            "trait" => TokenKind::KwTrait,
+            "impl" => TokenKind::KwImpl,
+            "where" => TokenKind::KwWhere,
+            "for" => TokenKind::KwFor,
             "if" => TokenKind::KwIf,
-            "then" => TokenKind::KwThen,
             "else" => TokenKind::KwElse,
             "match" => TokenKind::KwMatch,
-            "with" => TokenKind::KwWith,
-            "let" => TokenKind::KwLet,
-            "in" => TokenKind::KwIn,
-            "fn" => TokenKind::KwFn,
+            "loop" => TokenKind::KwLoop,
+            "while" => TokenKind::KwWhile,
+            "break" => TokenKind::KwBreak,
+            "continue" => TokenKind::KwContinue,
             "return" => TokenKind::KwReturn,
-            
-            // Effects
+            "mod" => TokenKind::KwMod,
+            "pub" => TokenKind::KwPub,
+            "use" => TokenKind::KwUse,
+            "as" => TokenKind::KwAs,
+            "self" => TokenKind::KwSelfValue,
+            "Self" => TokenKind::KwSelfType,
+            "super" => TokenKind::KwSuper,
+            "crate" => TokenKind::KwCrate,
+            "extern" => TokenKind::KwExtern,
+            "async" => TokenKind::KwAsync,
+            "await" => TokenKind::KwAwait,
+            "move" => TokenKind::KwMove,
+            "ref" => TokenKind::KwRef,
+            "unsafe" => TokenKind::KwUnsafe,
             "effect" => TokenKind::KwEffect,
-            "perform" => TokenKind::KwPerform,
             "handle" => TokenKind::KwHandle,
             "resume" => TokenKind::KwResume,
-            
-            // Security
-            "public" => TokenKind::KwPublic,
+            "abort" => TokenKind::KwAbort,
             "secret" => TokenKind::KwSecret,
-            "classify" => TokenKind::KwClassify,
+            "public" => TokenKind::KwPublic,
+            "tainted" => TokenKind::KwTainted,
             "declassify" => TokenKind::KwDeclassify,
-            "prove" => TokenKind::KwProve,
-            
-            // Capabilities
-            "require" => TokenKind::KwRequire,
-            "grant" => TokenKind::KwGrant,
-            "cap" => TokenKind::KwCap,
-            
-            // Booleans
-            "true" => TokenKind::BoolLiteral(true),
-            "false" => TokenKind::BoolLiteral(false),
-            
-            // Type identifier (starts with uppercase)
-            _ if value.chars().next().unwrap().is_uppercase() => {
-                TokenKind::TypeIdentifier(value)
-            }
-            
-            // Regular identifier
-            _ => TokenKind::Identifier(value),
-        };
-        
-        Ok(kind)
+            "sanitize" => TokenKind::KwSanitize,
+            "session" => TokenKind::KwSession,
+            "send" => TokenKind::KwSend,
+            "recv" => TokenKind::KwRecv,
+            "select" => TokenKind::KwSelect,
+            "branch" => TokenKind::KwBranch,
+            "end" => TokenKind::KwEnd,
+            "capability" => TokenKind::KwCapability,
+            "revoke" => TokenKind::KwRevoke,
+            "atomic" => TokenKind::KwAtomic,
+            "fence" => TokenKind::KwFence,
+            "acquire" => TokenKind::KwAcquire,
+            "release" => TokenKind::KwRelease,
+            "seqcst" => TokenKind::KwSeqCst,
+            "relaxed" => TokenKind::KwRelaxed,
+            "acqrel" => TokenKind::KwAcqRel,
+            "product" => TokenKind::KwProduct,
+            "ct" => TokenKind::KwCt,
+            "speculation_safe" => TokenKind::KwSpeculationSafe,
+            "combined" => TokenKind::KwCombined,
+            "zeroize" => TokenKind::KwZeroize,
+            _ => TokenKind::Identifier(s),
+        }
     }
+}
+
+fn is_ident_start(c: char) -> bool {
+    c.is_alphabetic() || c == '_'
+}
+
+fn is_ident_continue(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
 }
