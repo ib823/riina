@@ -13,8 +13,10 @@ Definition effect_leq (e1 e2 : effect) : Prop :=
 
 (** Effect join (least upper bound) *)
 Definition effect_join (e1 e2 : effect) : effect :=
-  if decide (e1 = EffectPure) then e2
-  else if decide (e2 = EffectPure) then e1
-  else e1. (* TODO: proper join *)
+  match e1, e2 with
+  | EffectPure, _ => e2
+  | _, EffectPure => e1
+  | _, _ => e1 (* TODO: proper join for non-pure effects *)
+  end.
 
 (** End of EffectAlgebra.v *)

@@ -1,7 +1,7 @@
 (** * Non-Interference for TERAS-LANG
-    
+
     Information flow security property.
-    
+
     TODO: Define and prove non-interference.
 *)
 
@@ -16,8 +16,8 @@ Definition low_equiv (e1 e2 : expr) : Prop :=
 
 (** Non-interference statement *)
 Definition non_interference := forall e1 e2 e1' e2' T st1 st2 st1' st2' ctx,
-  nil; nil; Public ⊢ e1 : T ! EffectPure ->
-  nil; nil; Public ⊢ e2 : T ! EffectPure ->
+  has_type nil nil Public e1 T EffectPure ->
+  has_type nil nil Public e2 T EffectPure ->
   low_equiv e1 e2 ->
   (e1, st1, ctx) -->* (e1', st1', ctx) ->
   (e2, st2, ctx) -->* (e2', st2', ctx) ->
