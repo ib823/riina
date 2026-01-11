@@ -126,19 +126,19 @@ Inductive has_type : type_env -> store_ty -> security_level ->
       has_type Γ Σ Δ e (TSum T1 T2) ε ->
       has_type ((x1, T1) :: Γ) Σ Δ e1 T ε1 ->
       has_type ((x2, T2) :: Γ) Σ Δ e2 T ε2 ->
-      has_type Γ Σ Δ (ECase e x1 e1 x2 e2) T ε
+      has_type Γ Σ Δ (ECase e x1 e1 x2 e2) T (effect_join ε (effect_join ε1 ε2))
 
   (* Control *)
   | T_If : forall Γ Σ Δ e1 e2 e3 T ε1 ε2 ε3,
       has_type Γ Σ Δ e1 TBool ε1 ->
       has_type Γ Σ Δ e2 T ε2 ->
       has_type Γ Σ Δ e3 T ε3 ->
-      has_type Γ Σ Δ (EIf e1 e2 e3) T ε1
+      has_type Γ Σ Δ (EIf e1 e2 e3) T (effect_join ε1 (effect_join ε2 ε3))
 
   | T_Let : forall Γ Σ Δ x e1 e2 T1 T2 ε1 ε2,
       has_type Γ Σ Δ e1 T1 ε1 ->
       has_type ((x, T1) :: Γ) Σ Δ e2 T2 ε2 ->
-      has_type Γ Σ Δ (ELet x e1 e2) T2 ε1.
+      has_type Γ Σ Δ (ELet x e1 e2) T2 (effect_join ε1 ε2).
 
 (** ** Type Uniqueness
 
