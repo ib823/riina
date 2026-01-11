@@ -216,14 +216,12 @@ Proof.
   - right. right. right. right. right. right. right. exists v, T. reflexivity.
 Qed.
 
-Lemma subst_value : forall x v e,
-  value e -> [x := v] e = e.
-Proof.
-  intros x v e Hv.
-  induction Hv; simpl; try reflexivity.
-  - rewrite IHHv1. rewrite IHHv2. reflexivity.
-  - rewrite IHHv. reflexivity.
-  - rewrite IHHv. reflexivity.
-Qed.
+(** Note: A lemma about substitution into values requires either:
+    1. A 'closed' predicate ensuring values have no free variables, or
+    2. A 'free_vars' function to check if x is free in e.
+
+    The naive statement "forall x v e, value e -> [x := v] e = e" is false
+    because lambda bodies can contain free variables. We will add the
+    correct formulation in Preservation.v when needed for type safety. *)
 
 (** End of Syntax.v *)
