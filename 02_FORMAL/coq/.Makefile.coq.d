@@ -22,9 +22,9 @@ effects/EffectAlgebra.vos effects/EffectAlgebra.vok effects/EffectAlgebra.requir
 effects/EffectSystem.vo effects/EffectSystem.glob effects/EffectSystem.v.beautified effects/EffectSystem.required_vo: effects/EffectSystem.v foundations/Syntax.vo foundations/Typing.vo effects/EffectAlgebra.vo
 effects/EffectSystem.vio: effects/EffectSystem.v foundations/Syntax.vio foundations/Typing.vio effects/EffectAlgebra.vio
 effects/EffectSystem.vos effects/EffectSystem.vok effects/EffectSystem.required_vos: effects/EffectSystem.v foundations/Syntax.vos foundations/Typing.vos effects/EffectAlgebra.vos
-effects/EffectGate.vo effects/EffectGate.glob effects/EffectGate.v.beautified effects/EffectGate.required_vo: effects/EffectGate.v foundations/Syntax.vo foundations/Semantics.vo effects/EffectSystem.vo
-effects/EffectGate.vio: effects/EffectGate.v foundations/Syntax.vio foundations/Semantics.vio effects/EffectSystem.vio
-effects/EffectGate.vos effects/EffectGate.vok effects/EffectGate.required_vos: effects/EffectGate.v foundations/Syntax.vos foundations/Semantics.vos effects/EffectSystem.vos
+effects/EffectGate.vo effects/EffectGate.glob effects/EffectGate.v.beautified effects/EffectGate.required_vo: effects/EffectGate.v foundations/Syntax.vo foundations/Semantics.vo effects/EffectAlgebra.vo effects/EffectSystem.vo
+effects/EffectGate.vio: effects/EffectGate.v foundations/Syntax.vio foundations/Semantics.vio effects/EffectAlgebra.vio effects/EffectSystem.vio
+effects/EffectGate.vos effects/EffectGate.vok effects/EffectGate.required_vos: effects/EffectGate.v foundations/Syntax.vos foundations/Semantics.vos effects/EffectAlgebra.vos effects/EffectSystem.vos
 properties/NonInterference.vo properties/NonInterference.glob properties/NonInterference.v.beautified properties/NonInterference.required_vo: properties/NonInterference.v foundations/Syntax.vo foundations/Semantics.vo foundations/Typing.vo
 properties/NonInterference.vio: properties/NonInterference.v foundations/Syntax.vio foundations/Semantics.vio foundations/Typing.vio
 properties/NonInterference.vos properties/NonInterference.vok properties/NonInterference.required_vos: properties/NonInterference.v foundations/Syntax.vos foundations/Semantics.vos foundations/Typing.vos
