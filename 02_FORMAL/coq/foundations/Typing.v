@@ -28,6 +28,42 @@ Fixpoint lookup (x : ident) (Γ : type_env) : option ty :=
 
 Definition store_ty := list (loc * ty * security_level).
 
+(** ** Free Variables
+
+    Predicate to check if a variable occurs free in an expression.
+    This is essential for the substitution lemma.
+*)
+
+Fixpoint free_in (x : ident) (e : expr) : Prop :=
+  match e with
+  | EUnit => False
+  | EBool _ => False
+  | EInt _ => False
+  | EString _ => False
+  | EVar y => x = y
+  | ELam y _ body => x <> y /\ free_in x body
+  | EApp e1 e2 => free_in x e1 \/ free_in x e2
+  | EPair e1 e2 => free_in x e1 \/ free_in x e2
+  | EFst e0 => free_in x e0
+  | ESnd e0 => free_in x e0
+  | EInl e0 _ => free_in x e0
+  | EInr e0 _ => free_in x e0
+  | ECase e0 y1 e1 y2 e2 =>
+      free_in x e0 \/ (x <> y1 /\ free_in x e1) \/ (x <> y2 /\ free_in x e2)
+  | EIf e1 e2 e3 => free_in x e1 \/ free_in x e2 \/ free_in x e3
+  | ELet y e1 e2 => free_in x e1 \/ (x <> y /\ free_in x e2)
+  | EPerform _ e0 => free_in x e0
+  | EHandle e0 y h => free_in x e0 \/ (x <> y /\ free_in x h)
+  | ERef e0 _ => free_in x e0
+  | EDeref e0 => free_in x e0
+  | EAssign e1 e2 => free_in x e1 \/ free_in x e2
+  | EClassify e0 => free_in x e0
+  | EDeclassify e1 e2 => free_in x e1 \/ free_in x e2
+  | EProve e0 => free_in x e0
+  | ERequire _ e0 => free_in x e0
+  | EGrant _ e0 => free_in x e0
+  end.
+
 (** ** Typing Judgment
 
     has_type Γ Σ Δ e T ε means: under environment Γ, store typing Σ,
