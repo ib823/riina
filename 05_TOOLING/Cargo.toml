@@ -1,0 +1,140 @@
+# teras/Cargo.toml
+# TERAS Workspace Root Configuration
+# Version: 1.0.0
+# 
+# CRITICAL: This file defines the ENTIRE Rust workspace.
+# ALL crates must be members of this workspace.
+# NO external dependencies at runtime (Law 8).
+
+[workspace]
+resolver = "2"
+
+members = [
+    "crates/teras-core",
+    "crates/teras-effect",
+    "crates/teras-lang-lexer",
+    "crates/teras-lang-parser",
+    "crates/teras-lang-types",
+    "crates/teras-lang-codegen",
+    "crates/terasc",
+    "crates/teras-build",
+    "crates/teras-verify",
+    "tools/hash-chain",
+    "tools/build-manifest",
+    "tools/artifact-sign",
+]
+
+# Exclude test crates from main build
+exclude = [
+    "tests/fuzzing",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.84.0"
+license = "PROPRIETARY"
+repository = "https://internal.teras.my/git/teras"
+authors = ["TERAS Team <security@teras.my>"]
+
+[workspace.dependencies]
+# =============================================================================
+# INTERNAL DEPENDENCIES (from workspace)
+# =============================================================================
+teras-core = { path = "crates/teras-core" }
+teras-effect = { path = "crates/teras-effect" }
+teras-lang-lexer = { path = "crates/teras-lang-lexer" }
+teras-lang-parser = { path = "crates/teras-lang-parser" }
+teras-lang-types = { path = "crates/teras-lang-types" }
+teras-lang-codegen = { path = "crates/teras-lang-codegen" }
+
+# =============================================================================
+# BUILD-TIME ONLY DEPENDENCIES
+# =============================================================================
+# These are used during build/test but NOT linked into runtime binaries
+
+# Testing
+proptest = "1.4"
+criterion = "0.5"
+arbitrary = "1.3"
+
+# Serialization (build-time configuration only)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# Async runtime (build tools only)
+tokio = { version = "1.36", features = ["full"] }
+
+# CLI (build tools only)
+clap = { version = "4.5", features = ["derive"] }
+
+# Cryptography (hash computation)
+sha2 = "0.10"
+
+# Time
+chrono = "0.4"
+
+# =============================================================================
+# RUNTIME DEPENDENCIES — ZERO EXTERNAL
+# =============================================================================
+# Per Law 8: ZERO third-party runtime dependencies.
+# All runtime code is implemented from scratch in the workspace.
+
+[workspace.lints.rust]
+# Strictest warnings
+unsafe_code = "deny"
+missing_docs = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unused_results = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+
+[workspace.lints.clippy]
+# Enable all clippy lints
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+
+# Deny dangerous patterns
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unreachable = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = "unwind"
+incremental = true
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = true  # Keep for safety
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+strip = "symbols"
+
+[profile.test]
+opt-level = 1
+debug = true
+debug-assertions = true
+overflow-checks = true
+
+[profile.paranoid]
+inherits = "release"
+overflow-checks = true
+debug-assertions = true  # Enable assertions even in release
+lto = "fat"
+codegen-units = 1

@@ -1,0 +1,17 @@
+[package]
+name = "terasc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "TERAS-LANG Compiler Driver"
+
+[[bin]]
+name = "terasc"
+path = "src/main.rs"
+
+[dependencies]
+teras-lang-lexer.workspace = true
+teras-lang-parser.workspace = true
+teras-lang-types.workspace = true
+teras-lang-codegen.workspace = true

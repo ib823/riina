@@ -1,0 +1,19 @@
+[package]
+name = "teras-build-manifest"
+version.workspace = true
+edition.workspace = true
+description = "TERAS build manifest generator"
+
+[[bin]]
+name = "teras-build-manifest"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+chrono.workspace = true
+
+[lints]
+workspace = true
