@@ -16,3 +16,4 @@
 - Verified that `make` succeeds for all formal proofs.
 - Track A status: Core Type Safety verified.
 
+- Attempted to fix `step_deterministic` in `foundations/Semantics.v`. Congruence cases solved, but contradiction cases remain fragile in non-interactive mode. Admitted to prioritize build stability.
