@@ -48,23 +48,32 @@ Inductive effect : Type :=
   | EffectCrypto : effect
   | EffectSystem : effect.
 
-(** Effect join: least upper bound in effect lattice.
-    EffectPure is the identity element. For non-pure effects,
-    we use the left argument as a simplification (proper lattice
-    would require more complex structure). *)
-Definition effect_join (e1 e2 : effect) : effect :=
-  match e1, e2 with
-  | EffectPure, _ => e2
-  | _, EffectPure => e1
-  | _, _ => e1 (* Simplified: in a full system, use proper lattice *)
+(** Effect level for linear ordering *)
+Definition effect_level (e : effect) : nat :=
+  match e with
+  | EffectPure => 0
+  | EffectRead => 1
+  | EffectWrite => 2
+  | EffectNetwork => 3
+  | EffectCrypto => 4
+  | EffectSystem => 5
   end.
+
+(** Effect join: max in the linear hierarchy.
+    This ensures a proper lattice structure (commutative, associative). *)
+Definition effect_join (e1 e2 : effect) : effect :=
+  if Nat.ltb (effect_level e1) (effect_level e2) then e2 else e1.
 
 (** Effect join with EffectPure is identity *)
 Lemma effect_join_pure_l : forall e, effect_join EffectPure e = e.
-Proof. reflexivity. Qed.
+Proof.
+  intros e. destruct e; simpl; reflexivity.
+Qed.
 
 Lemma effect_join_pure_r : forall e, effect_join e EffectPure = e.
-Proof. destruct e; reflexivity. Qed.
+Proof.
+  intros e. destruct e; simpl; reflexivity.
+Qed.
 
 (** ** Types
     
