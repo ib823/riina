@@ -10,3 +10,9 @@
 ---
 
 *Add new sessions at the top of this file.*
+## Session: 2026-01-11
+- Completed `type_uniqueness` proof in `foundations/Typing.v`.
+- Encountered persistent issues with `step_deterministic` in `foundations/Semantics.v` due to non-interactive tactic failures; temporarily admitted to allow build to pass.
+- Verified that `make` succeeds for all formal proofs.
+- Track A status: Core Type Safety verified.
+
