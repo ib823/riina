@@ -4,6 +4,10 @@
     
     We define observational equivalence (low-equivalence) and state the
     Non-Interference theorem: "Low-equivalent inputs produce low-equivalent outputs".
+    
+    STATUS: Definitions only. Theorem is stated but proof is deferred.
+    To comply with "Zero Trust" protocol, we do not admit the theorem but leave it
+    as a comment for future implementation.
 *)
 
 Require Import TERAS.foundations.Syntax.
@@ -72,29 +76,26 @@ Inductive val_equiv : ty -> expr -> expr -> Prop :=
 Definition low_equiv_expr (T : ty) (e1 e2 : expr) : Prop :=
   forall st1 st2 ctx,
   exists v1 v2 st1' st2',
-    (e1, st1, ctx) -->* (v1, st1', ctx) /\
-    (e2, st2, ctx) -->* (v2, st2', ctx) /\
+    (e1, st1, ctx) -->* (v1, st1', ctx) /\ 
+    (e2, st2, ctx) -->* (v2, st2', ctx) /\ 
     val_equiv T v1 v2.
 
-(** ** Non-Interference
+(** ** Non-Interference Theorem (FUTURE WORK)
     
     "Well-typed programs map low-equivalent inputs to low-equivalent outputs."
     
-    Here we state it for a program 'e' with free variables substituted by equivalent values.
-    But for a closed program 'e', it means 'e' reduces to a value that is self-equivalent?
-    Actually, NI implies that if we substitute variables with equivalent values, results are equivalent.
-    
-    Since we define substitution, we can state:
-    forall x v1 v2 e, val_equiv T v1 v2 -> low_equiv_expr T_res ([x:=v1]e) ([x:=v2]e).
+    Note: Proof requires logical relations model.
 *)
 
+(*
 Theorem non_interference : forall x T_in T_out v1 v2 e,
   val_equiv T_in v1 v2 ->
   has_type ((x, T_in) :: nil) nil Public e T_out EffectPure ->
   low_equiv_expr T_out ([x := v1] e) ([x := v2] e).
 Proof.
   (* Proof requires induction on typing derivation and step relation. *)
-  (* Complex proof, leaving as future work for interactive session. *)
-Admitted.
+  (* Complex proof, leaving as future work. *)
+(* Proof deferred. *)
+*)
 
 (** End of NonInterference.v *)
