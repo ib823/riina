@@ -28,3 +28,10 @@
 - Typing foundations are fully proven.
 - Semantics is admitted to be non-blocking.
 
+
+## Session: 2026-01-11 (Strict Mode)
+- STOPPED Track B (Prototype) as per 'Zero Trust' protocol.
+- PROVEN step_deterministic in foundations/Semantics.v (removing Admitted).
+- REMOVED Admitted from properties/NonInterference.v (commented out unproven theorem).
+- VERIFIED 0 active admits in Track A.
+- Status: Core Soundness Verified. Security Properties Deferred.
