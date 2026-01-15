@@ -251,6 +251,9 @@ Proof.
   - eapply IHHv2; eauto.
   - eapply IHHv; eauto.
   - eapply IHHv; eauto.
+  - eapply IHHv; eauto.
+  - eapply IHHv; eauto.
+  - eapply IHHv; eauto.
 Qed.
 
 (** Helper tactic for solving contradictions where a value steps *)
