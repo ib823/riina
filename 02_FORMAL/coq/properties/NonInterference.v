@@ -84,10 +84,10 @@ Qed.
 (** Type-structural value relation at a fixed step index.
     Products/sums recurse at the SAME level - no index decrement. *)
 Section ValRelAtN.
-  Variable n : nat.
   Variable Σ : store_ty.
   Variable store_rel_pred : store -> store -> Prop.
   Variable val_rel_lower : ty -> expr -> expr -> Prop. (* for function results *)
+  Variable store_rel_lower : store_ty -> store -> store -> Prop. (* for result stores *)
 
   Fixpoint val_rel_at_type (T : ty) (v1 v2 : expr) {struct T} : Prop :=
     match T with
@@ -115,8 +115,8 @@ Section ValRelAtN.
               store_ty_extends Σ Σ' /\
               (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
               (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
-              val_rel_lower T2 v1' v2'
-              (* Note: store relation for result handled separately *)
+              val_rel_lower T2 v1' v2' /\
+              store_rel_lower Σ' st1' st2'
     | TCapability _ => True
     | TProof _ => True
     end.
@@ -128,7 +128,7 @@ Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} 
   | 0 => True
   | S n' =>
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-      val_rel_at_type Σ (store_rel_n n' Σ) (val_rel_n n' Σ) T v1 v2
+      val_rel_at_type Σ (store_rel_n n' Σ) (val_rel_n n' Σ) (store_rel_n n') T v1 v2
   end
 with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
   match n with
