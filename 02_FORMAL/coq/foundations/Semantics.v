@@ -159,6 +159,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e, st, ctx) --> (e', st', ctx') ->
       (ERef e l, st, ctx) --> (ERef e' l, st', ctx')
 
+  | ST_DerefStep : forall e e' st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (EDeref e, st, ctx) --> (EDeref e', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -324,6 +328,9 @@ Proof.
     end.
 
   (* ST_RefStep *)
+  - solve_ih.
+
+  (* ST_DerefStep *)
   - solve_ih.
 Qed.
 
