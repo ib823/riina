@@ -1,17 +1,12 @@
 [package]
 name = "terasc"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-license.workspace = true
-description = "TERAS-LANG Compiler Driver"
-
-[[bin]]
-name = "terasc"
-path = "src/main.rs"
+version = "0.1.0"
+edition = "2021"
 
 [dependencies]
-teras-lang-lexer.workspace = true
-teras-lang-parser.workspace = true
-teras-lang-types.workspace = true
-teras-lang-codegen.workspace = true
+teras-lang-parser = { path = "../teras-lang-parser" }
+teras-lang-typechecker = { path = "../teras-lang-typechecker" }
+teras-lang-types = { path = "../teras-lang-types" }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+

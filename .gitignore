@@ -1,0 +1,17 @@
+# Rust
+**/target/
+**/*.rs.bk
+
+# Coq
+**/*.vo
+**/*.vos
+**/*.vok
+**/*.glob
+**/.Makefile.coq.d
+**/Makefile.coq
+**/Makefile.coq.conf
+**/_CoqProject.bak
+
+# General
+.DS_Store
+.gemini/

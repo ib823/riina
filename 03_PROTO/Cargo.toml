@@ -4,10 +4,11 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/teras-lang-codegen",
     "crates/teras-lang-lexer",
     "crates/teras-lang-parser",
+    "crates/teras-lang-typechecker",
     "crates/teras-lang-types",
-    "crates/teras-lang-codegen",
     "crates/terasc",
 ]
 
