@@ -1,11 +1,12 @@
-//! TERAS-LANG Parser
+//! RIINA Parser
 //!
-//! Parses token streams into ASTs defined in `teras-lang-types`.
+//! Parses token streams into ASTs defined in `riina-types`.
+//! RIINA = Rigorous Immutable Integrity No-attack Assured
 //!
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
-use teras_lang_lexer::{Token, TokenKind, Lexer, Span};
-use teras_lang_types::{Expr, Ty, Ident, SecurityLevel, Effect};
+use riina_lexer::{Token, TokenKind, Lexer, Span};
+use riina_types::{Expr, Ty, Ident, SecurityLevel, Effect};
 use std::iter::Peekable;
 
 #[derive(Debug, Clone, PartialEq)]

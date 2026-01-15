@@ -1,0 +1,10 @@
+[package]
+name = "riina-typechecker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA type checker"
+
+[dependencies]
+riina-types.workspace = true
