@@ -163,6 +163,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e, st, ctx) --> (e', st', ctx') ->
       (EDeref e, st, ctx) --> (EDeref e', st', ctx')
 
+  | ST_DerefRef : forall v l st ctx,
+      value v ->
+      (EDeref (ERef v l), st, ctx) --> (v, st, ctx)
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -332,6 +336,27 @@ Proof.
 
   (* ST_DerefStep *)
   - solve_ih.
+  - match goal with
+    | Hs : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ =>
+        inversion Hs; subst;
+        match goal with
+        | Hs' : (?v, _, _) --> _ |- _ =>
+            exfalso; eapply value_not_step; [ exact Hv | exact Hs' ]
+        end
+    end.
+
+  (* ST_DerefRef *)
+  - all: (
+      match goal with
+      | Hs : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ =>
+          inversion Hs; subst;
+          match goal with
+          | Hs' : (?v, _, _) --> _ |- _ =>
+              exfalso; eapply value_not_step; [ exact Hv | exact Hs' ]
+          end
+      | _ => reflexivity
+      end
+    ).
 Qed.
 
 (** End of Semantics.v *)
