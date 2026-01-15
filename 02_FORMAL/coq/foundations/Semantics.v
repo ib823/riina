@@ -176,6 +176,11 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e2, st, ctx) --> (e2', st', ctx') ->
       (EAssign v1 e2, st, ctx) --> (EAssign v1 e2', st', ctx')
 
+  | ST_AssignRef : forall v1 v2 l st ctx,
+      value v1 ->
+      value v2 ->
+      (EAssign (ERef v1 l) v2, st, ctx) --> (EUnit, st, ctx)
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -219,6 +224,12 @@ Ltac solve_val_step :=
       exfalso; eapply value_not_step; [ constructor | apply H ]
   | [ H : (EPair _ _, _, _) --> _, Hv1 : value _, Hv2 : value _ |- _ ] =>
       exfalso; eapply value_not_step; [ apply VPair; assumption | apply H ]
+  | [ H : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ ] =>
+      inversion H; subst;
+      match goal with
+      | Hs : (?v, _, _) --> _ |- _ =>
+          exfalso; eapply value_not_step; [ apply Hv | apply Hs ]
+      end
   | [ H : (EInl _ _, _, _) --> _, Hv : value _ |- _ ] =>
       exfalso; eapply value_not_step; [ apply VInl; assumption | apply H ]
   | [ H : (EInr _ _, _, _) --> _, Hv : value _ |- _ ] =>
@@ -369,17 +380,27 @@ Proof.
 
   (* ST_Assign1 *)
   - solve_ih.
-  - match goal with
-    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
-        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
-    end.
+  - solve_val_step.
+  - solve_val_step.
 
   (* ST_Assign2 *)
+  - solve_val_step.
+  - solve_ih.
+  - solve_val_step.
+
+  (* ST_AssignRef *)
+  - match goal with
+    | Hs : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ =>
+        inversion Hs; subst;
+        match goal with
+        | Hs' : (?v, _, _) --> _ |- _ =>
+            exfalso; eapply value_not_step; [ exact Hv | exact Hs' ]
+        end
+    end.
   - match goal with
     | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
         exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
     end.
-  - solve_ih.
 Qed.
 
 (** End of Semantics.v *)
