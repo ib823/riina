@@ -159,6 +159,9 @@ impl<'a> Lexer<'a> {
                 if let Some(':') = self.peek() {
                     self.advance();
                     TokenKind::ColonColon
+                } else if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::ColonEq
                 } else {
                     TokenKind::Colon
                 }
@@ -356,6 +359,7 @@ impl<'a> Lexer<'a> {
             "match" => TokenKind::KwMatch,
             "loop" => TokenKind::KwLoop,
             "while" => TokenKind::KwWhile,
+            "with" => TokenKind::KwWith,
             "break" => TokenKind::KwBreak,
             "continue" => TokenKind::KwContinue,
             "return" => TokenKind::KwReturn,
@@ -374,13 +378,18 @@ impl<'a> Lexer<'a> {
             "ref" => TokenKind::KwRef,
             "unsafe" => TokenKind::KwUnsafe,
             "effect" => TokenKind::KwEffect,
+            "perform" => TokenKind::KwPerform,
             "handle" => TokenKind::KwHandle,
             "resume" => TokenKind::KwResume,
             "abort" => TokenKind::KwAbort,
             "secret" => TokenKind::KwSecret,
+            "classify" => TokenKind::KwClassify,
             "public" => TokenKind::KwPublic,
             "tainted" => TokenKind::KwTainted,
             "declassify" => TokenKind::KwDeclassify,
+            "prove" => TokenKind::KwProve,
+            "inl" => TokenKind::KwInl,
+            "inr" => TokenKind::KwInr,
             "sanitize" => TokenKind::KwSanitize,
             "session" => TokenKind::KwSession,
             "send" => TokenKind::KwSend,

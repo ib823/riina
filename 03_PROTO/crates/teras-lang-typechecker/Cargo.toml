@@ -1,0 +1,8 @@
+[package]
+name = "teras-lang-typechecker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+teras-lang-types = { path = "../teras-lang-types" }
+thiserror = "1.0"
