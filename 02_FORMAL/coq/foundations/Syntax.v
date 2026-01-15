@@ -232,15 +232,38 @@ Notation "[ x := v ] e" := (subst x v e) (at level 20).
 (** ** Basic Lemmas *)
 
 Definition declass_ok (e1 e2 : expr) : Prop :=
-  exists v, e1 = EClassify v /\ e2 = EProve (EClassify v).
+  exists v, value v /\ e1 = EClassify v /\ e2 = EProve (EClassify v).
+
+Lemma value_subst : forall x v1 v2,
+  value v1 ->
+  value v2 ->
+  value ([x := v2] v1).
+Proof.
+  intros x v1 v2 Hv1 Hv2.
+  induction Hv1; simpl.
+  - constructor.
+  - constructor.
+  - constructor.
+  - constructor.
+  - constructor.
+  - destruct (String.eqb x x0) eqn:Heq; apply VLam.
+  - constructor; eauto.
+  - constructor; eauto.
+  - constructor; eauto.
+  - constructor; eauto.
+  - constructor; eauto.
+Qed.
 
 Lemma declass_ok_subst : forall x v e1 e2,
+  value v ->
   declass_ok e1 e2 ->
   declass_ok ([x := v] e1) ([x := v] e2).
 Proof.
-  intros x v e1 e2 Hok.
-  destruct Hok as [v0 [He1 He2]]; subst.
-  simpl. exists ([x := v] v0). split; reflexivity.
+  intros x v e1 e2 Hv Hok.
+  destruct Hok as [v0 [Hv0 [He1 He2]]]; subst.
+  simpl. exists ([x := v] v0). split.
+  - apply value_subst; assumption.
+  - split; reflexivity.
 Qed.
 
 Lemma value_not_stuck : forall e,

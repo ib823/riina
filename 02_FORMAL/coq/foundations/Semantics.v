@@ -459,17 +459,17 @@ Proof.
   - (* ST_CaseInl vs ST_CaseStep *)
     rewrite H in H5; inversion H5; subst; reflexivity.
   - (* ST_CaseInr vs ST_CaseStep *)
-    destruct H8 as [v0 [He1 He2]]; inversion He1; subst.
+    destruct H8 as [v0 [Hv0 [He1 He2]]]; inversion He1; subst.
     exfalso.
     pose proof (value_not_step (EProve (EClassify v0)) st ctx (e2', st', ctx')
-                  (VProve (EClassify v0) (VClassify v0 H7))) as Hns.
+                  (VProve (EClassify v0) (VClassify v0 Hv0))) as Hns.
     apply Hns in H1.
     exact H1.
   - (* ST_CaseStep vs ST_CaseInl *)
-    destruct H0 as [v0 [He1 He2]]; inversion He1; subst.
+    destruct H0 as [v0 [Hv0 [He1 He2]]]; inversion He1; subst.
     exfalso.
     pose proof (value_not_step (EProve (EClassify v0)) st ctx (e2', st', ctx')
-                  (VProve (EClassify v0) (VClassify v0 H))) as Hns.
+                  (VProve (EClassify v0) (VClassify v0 Hv0))) as Hns.
     apply Hns in H8.
     exact H8.
 Qed.
