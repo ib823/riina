@@ -73,7 +73,7 @@ Qed.
     R_E(T) is defined as "reduces to values related by R_V(T)".
 *)
 
-Fixpoint val_rel (T : ty) (v1 v2 : expr) {struct T} : Prop :=
+Fixpoint val_rel (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct T} : Prop :=
   value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
   match T with
   | TUnit => v1 = EUnit /\ v2 = EUnit
@@ -81,59 +81,62 @@ Fixpoint val_rel (T : ty) (v1 v2 : expr) {struct T} : Prop :=
   | TInt => exists n, v1 = EInt n /\ v2 = EInt n
   | TString => exists s, v1 = EString s /\ v2 = EString s
   | TBytes => v1 = v2
-  
   | TSecret T' => True
-      
-  | TRef T' l =>
-      True
-      
+  | TRef T' _ =>
+      exists l, v1 = ELoc l /\ v2 = ELoc l
   | TProd T1 T2 =>
       exists x1 y1 x2 y2,
         v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
-        val_rel T1 x1 x2 /\ val_rel T2 y1 y2
-        
+        val_rel Σ T1 x1 x2 /\ val_rel Σ T2 y1 y2
   | TSum T1 T2 =>
-      (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel T1 x1 x2) \/
-      (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel T2 y1 y2)
-      
+      (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel Σ T1 x1 x2) \/
+      (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel Σ T2 y1 y2)
   | TFn T1 T2 eff =>
-      forall x y, val_rel T1 x y -> 
+      forall x y, val_rel Σ T1 x y ->
         forall st1 st2 ctx,
           exists (v1' : expr) (v2' : expr) (st1' : store) (st2' : store) (ctx' : effect_ctx),
             (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
             (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
-            val_rel T2 v1' v2'
-
+            val_rel Σ T2 v1' v2'
   | TCapability _ => True
   | TProof _ => True
   end.
 
-Lemma val_rel_closed_left : forall T v1 v2,
-  val_rel T v1 v2 ->
+Definition store_rel (Σ : store_ty) (st1 st2 : store) : Prop :=
+  store_max st1 = store_max st2 /\
+  (forall l T sl,
+    store_ty_lookup l Σ = Some (T, sl) ->
+    exists v1 v2,
+      store_lookup l st1 = Some v1 /\
+      store_lookup l st2 = Some v2 /\
+      val_rel Σ T v1 v2).
+
+Lemma val_rel_closed_left : forall Σ T v1 v2,
+  val_rel Σ T v1 v2 ->
   closed_expr v1.
 Proof.
   induction T; simpl; intros v1 v2 Hrel;
-    destruct Hrel as [_ [_ [Hc1 [Hc2 _]]]]; exact Hc1.
+    destruct Hrel as [_ [_ [Hc1 _]]]; exact Hc1.
 Qed.
 
-Lemma val_rel_closed_right : forall T v1 v2,
-  val_rel T v1 v2 ->
+Lemma val_rel_closed_right : forall Σ T v1 v2,
+  val_rel Σ T v1 v2 ->
   closed_expr v2.
 Proof.
   induction T; simpl; intros v1 v2 Hrel;
-    destruct Hrel as [_ [_ [Hc1 [Hc2 _]]]]; exact Hc2.
+    destruct Hrel as [_ [_ [_ [Hc2 _]]]]; exact Hc2.
 Qed.
 
-Lemma val_rel_value_left : forall T v1 v2,
-  val_rel T v1 v2 ->
+Lemma val_rel_value_left : forall Σ T v1 v2,
+  val_rel Σ T v1 v2 ->
   value v1.
 Proof.
   induction T; simpl; intros v1 v2 Hrel;
     destruct Hrel as [Hv1 _]; exact Hv1.
 Qed.
 
-Lemma val_rel_value_right : forall T v1 v2,
-  val_rel T v1 v2 ->
+Lemma val_rel_value_right : forall Σ T v1 v2,
+  val_rel Σ T v1 v2 ->
   value v2.
 Proof.
   induction T; simpl; intros v1 v2 Hrel;
@@ -141,15 +144,19 @@ Proof.
 Qed.
 
 (** Expression Relation: Related expressions reduce to related values *)
-Definition exp_rel (T : ty) (e1 e2 : expr) : Prop :=
+Definition exp_rel (Σ : store_ty) (T : ty) (e1 e2 : expr) : Prop :=
   forall st1 st2 ctx,
-    exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store) (ctx' : effect_ctx),
+    store_rel Σ st1 st2 ->
+    exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store)
+           (ctx' : effect_ctx) (Σ' : store_ty),
+      store_ty_extends Σ Σ' /\
       (e1, st1, ctx) -->* (v1, st1', ctx') /\
       (e2, st2, ctx) -->* (v2, st2', ctx') /\
-      val_rel T v1 v2.
+      val_rel Σ' T v1 v2 /\
+      store_rel Σ' st1' st2'.
 
-Notation "e1 '~' e2 ':' T" := (exp_rel T e1 e2) (at level 40).
-Notation "v1 '~~' v2 ':' T" := (val_rel T v1 v2) (at level 40).
+Notation "e1 '~' e2 ':' T ':' Σ" := (exp_rel Σ T e1 e2) (at level 40).
+Notation "v1 '~~' v2 ':' T ':' Σ" := (val_rel Σ T v1 v2) (at level 40).
 
 (** ** Environment Substitution *)
 
@@ -313,8 +320,8 @@ Proof.
     exists y. split. exact Hy. exact Hrho.
 Qed.
 
-Definition env_rel (G : type_env) (rho1 rho2 : ident -> expr) : Prop :=
-  forall x T, lookup x G = Some T -> val_rel T (rho1 x) (rho2 x).
+Definition env_rel (Σ : store_ty) (G : type_env) (rho1 rho2 : ident -> expr) : Prop :=
+  forall x T, lookup x G = Some T -> val_rel Σ T (rho1 x) (rho2 x).
 
 Definition rho_closed_on (G : type_env) (rho : ident -> expr) : Prop :=
   forall x T, lookup x G = Some T -> closed_expr (rho x).
@@ -339,22 +346,22 @@ Proof.
   - simpl. intro Hfree. apply Hneq. symmetry. exact Hfree.
 Qed.
 
-Lemma env_rel_closed_left : forall G rho1 rho2,
-  env_rel G rho1 rho2 ->
+Lemma env_rel_closed_left : forall Σ G rho1 rho2,
+  env_rel Σ G rho1 rho2 ->
   rho_closed_on G rho1.
 Proof.
-  intros G rho1 rho2 Henv x T Hlook.
+  intros Σ G rho1 rho2 Henv x T Hlook.
   specialize (Henv x T Hlook) as Hrel.
-  exact (val_rel_closed_left T (rho1 x) (rho2 x) Hrel).
+  exact (val_rel_closed_left Σ T (rho1 x) (rho2 x) Hrel).
 Qed.
 
-Lemma env_rel_closed_right : forall G rho1 rho2,
-  env_rel G rho1 rho2 ->
+Lemma env_rel_closed_right : forall Σ G rho1 rho2,
+  env_rel Σ G rho1 rho2 ->
   rho_closed_on G rho2.
 Proof.
-  intros G rho1 rho2 Henv x T Hlook.
+  intros Σ G rho1 rho2 Henv x T Hlook.
   specialize (Henv x T Hlook) as Hrel.
-  exact (val_rel_closed_right T (rho1 x) (rho2 x) Hrel).
+  exact (val_rel_closed_right Σ T (rho1 x) (rho2 x) Hrel).
 Qed.
 
 Lemma closed_except_subst_rho_shadow : forall G Σ Δ rho x e T1 T2 eps,
@@ -754,12 +761,12 @@ Proof.
   - rewrite (IHe rho0 x0 v0 Hno). reflexivity.
 Qed.
 
-Lemma env_rel_extend : forall G rho1 rho2 x T v1 v2,
-  env_rel G rho1 rho2 ->
-  val_rel T v1 v2 ->
-  env_rel ((x, T) :: G) (rho_extend rho1 x v1) (rho_extend rho2 x v2).
+Lemma env_rel_extend : forall Σ G rho1 rho2 x T v1 v2,
+  env_rel Σ G rho1 rho2 ->
+  val_rel Σ T v1 v2 ->
+  env_rel Σ ((x, T) :: G) (rho_extend rho1 x v1) (rho_extend rho2 x v2).
 Proof.
-  intros G rho1 rho2 x T v1 v2 Henv Hv.
+  intros Σ G rho1 rho2 x T v1 v2 Henv Hv.
   unfold env_rel in *. intros y Ty Hlook.
   simpl in Hlook.
   destruct (String.eqb y x) eqn:Heq.
@@ -936,17 +943,21 @@ Proof.
     + apply (IHmulti_step e_mid e1' st_mid st' ctx_mid ctx'); reflexivity.
 Qed.
 
-Lemma exp_rel_of_val_rel : forall T v1 v2,
-  val_rel T v1 v2 ->
-  exp_rel T v1 v2.
+Lemma exp_rel_of_val_rel : forall Σ T v1 v2,
+  val_rel Σ T v1 v2 ->
+  exp_rel Σ T v1 v2.
 Proof.
-  intros T v1 v2 Hrel st1 st2 ctx.
-  exists v1, v2, st1, st2, ctx.
+  intros Σ T v1 v2 Hrel st1 st2 ctx Hstore.
+  exists v1, v2, st1, st2, ctx, Σ.
   split.
-  - apply MS_Refl.
+  - unfold store_ty_extends. intros l T' sl Hlook. exact Hlook.
   - split.
     + apply MS_Refl.
-    + exact Hrel.
+    + split.
+      * apply MS_Refl.
+      * split.
+        -- exact Hrel.
+        -- exact Hstore.
 Qed.
 
 Fixpoint lookup_val (x : ident) (s : list (ident * expr)) : option expr :=
@@ -955,23 +966,23 @@ Fixpoint lookup_val (x : ident) (s : list (ident * expr)) : option expr :=
   | (y, v) :: s' => if String.eqb x y then Some v else lookup_val x s'
   end.
 
-Definition subst_rel (G : type_env) (s1 s2 : list (ident * expr)) : Prop :=
+Definition subst_rel (Σ : store_ty) (G : type_env) (s1 s2 : list (ident * expr)) : Prop :=
   forall x T, lookup x G = Some T ->
-    exists v1 v2, 
-      lookup_val x s1 = Some v1 /\ 
-      lookup_val x s2 = Some v2 /\ 
-      val_rel T v1 v2.
+    exists v1 v2,
+      lookup_val x s1 = Some v1 /\
+      lookup_val x s2 = Some v2 /\
+      val_rel Σ T v1 v2.
 
 (** ** Fundamental Theorem *)
 
-Theorem logical_relation : forall G e T eps rho1 rho2,
-  has_type G nil Public e T eps ->
-  env_rel G rho1 rho2 ->
+Theorem logical_relation : forall G Σ e T eps rho1 rho2,
+  has_type G Σ Public e T eps ->
+  env_rel Σ G rho1 rho2 ->
   rho_no_free_all rho1 ->
   rho_no_free_all rho2 ->
-  exp_rel T (subst_rho rho1 e) (subst_rho rho2 e).
+  exp_rel Σ T (subst_rho rho1 e) (subst_rho rho2 e).
 Proof.
-  intros G e T eps rho1 rho2 Hty.
+  intros G Σ e T eps rho1 rho2 Hty.
   generalize dependent rho1.
   generalize dependent rho2.
   induction Hty; intros rho2 rho1 Henv Hno2 Hno1; simpl.
@@ -1004,7 +1015,8 @@ Proof.
     + exists s. auto.
   - (* T_Loc *)
     apply exp_rel_of_val_rel. simpl.
-    repeat split; try constructor; try (intros x; simpl; auto); try (intros _; reflexivity).
+    repeat split; try constructor; try (intros x; simpl; auto).
+    + exists l. split; reflexivity.
   - apply exp_rel_of_val_rel. apply Henv. assumption.
   - (* T_Lam *)
     apply exp_rel_of_val_rel.
@@ -1014,16 +1026,16 @@ Proof.
     + apply VLam.
     + apply closed_expr_lam. eapply closed_except_subst_rho_shadow.
       { match goal with H : has_type _ _ _ _ _ _ |- _ => exact H end. }
-      { apply (env_rel_closed_left _ _ _ Henv). }
+      { apply (env_rel_closed_left Σ _ _ _ Henv). }
     + apply closed_expr_lam. eapply closed_except_subst_rho_shadow.
       { match goal with H : has_type _ _ _ _ _ _ |- _ => exact H end. }
-      { apply (env_rel_closed_right _ _ _ Henv). }
+      { apply (env_rel_closed_right Σ _ _ _ Henv). }
     + intros vx vy Hrelxy st1 st2 ctx.
-      pose proof (env_rel_extend _ _ _ x T1 vx vy Henv Hrelxy) as Henv'.
+      pose proof (env_rel_extend Σ _ _ _ x T1 vx vy Henv Hrelxy) as Henv'.
       assert (rho_no_free_all (rho_extend rho1 x vx)) as Hno1'.
-      { apply rho_no_free_extend. assumption. apply (val_rel_closed_left _ _ _ Hrelxy). }
+      { apply rho_no_free_extend. assumption. apply (val_rel_closed_left Σ _ _ _ Hrelxy). }
       assert (rho_no_free_all (rho_extend rho2 x vy)) as Hno2'.
-      { apply rho_no_free_extend. assumption. apply (val_rel_closed_right _ _ _ Hrelxy). }
+      { apply rho_no_free_extend. assumption. apply (val_rel_closed_right Σ _ _ _ Hrelxy). }
       specialize (IHHty _ _ Henv' Hno1' Hno2').
       unfold exp_rel in IHHty.
       specialize (IHHty st1 st2 ctx).
@@ -1035,11 +1047,11 @@ Proof.
       exists v1', v2', st1', st2', ctx'.
       split.
       * eapply MS_Step.
-        -- apply ST_AppAbs. apply (val_rel_value_left _ _ _ Hrelxy).
+        -- apply ST_AppAbs. apply (val_rel_value_left Σ _ _ _ Hrelxy).
         -- exact Hms1.
       * split.
         -- eapply MS_Step.
-           ++ apply ST_AppAbs. apply (val_rel_value_right _ _ _ Hrelxy).
+           ++ apply ST_AppAbs. apply (val_rel_value_right Σ _ _ _ Hrelxy).
            ++ exact Hms2.
         -- exact Hval.
   - (* T_App *)
@@ -1089,19 +1101,19 @@ Proof.
     + eapply multi_step_trans.
       * apply multi_step_pair1. exact Hms1a.
       * eapply multi_step_pair2.
-        { apply (val_rel_value_left _ _ _ Hrela). }
+        { apply (val_rel_value_left Σ _ _ _ Hrela). }
         { exact Hms1b. }
     + split.
       * eapply multi_step_trans.
         -- apply multi_step_pair1. exact Hms2a.
         -- eapply multi_step_pair2.
-           { apply (val_rel_value_right _ _ _ Hrela). }
+           { apply (val_rel_value_right Σ _ _ _ Hrela). }
            { exact Hms2b. }
       * unfold val_rel. repeat split.
-        -- apply VPair. apply (val_rel_value_left _ _ _ Hrela). apply (val_rel_value_left _ _ _ Hrelb).
-        -- apply VPair. apply (val_rel_value_right _ _ _ Hrela). apply (val_rel_value_right _ _ _ Hrelb).
-        -- apply closed_expr_pair. apply (val_rel_closed_left _ _ _ Hrela). apply (val_rel_closed_left _ _ _ Hrelb).
-        -- apply closed_expr_pair. apply (val_rel_closed_right _ _ _ Hrela). apply (val_rel_closed_right _ _ _ Hrelb).
+        -- apply VPair. apply (val_rel_value_left Σ _ _ _ Hrela). apply (val_rel_value_left Σ _ _ _ Hrelb).
+        -- apply VPair. apply (val_rel_value_right Σ _ _ _ Hrela). apply (val_rel_value_right Σ _ _ _ Hrelb).
+        -- apply closed_expr_pair. apply (val_rel_closed_left Σ _ _ _ Hrela). apply (val_rel_closed_left Σ _ _ _ Hrelb).
+        -- apply closed_expr_pair. apply (val_rel_closed_right Σ _ _ _ Hrela). apply (val_rel_closed_right Σ _ _ _ Hrelb).
         -- exists v1a, v1b, v2a, v2b.
            repeat split; try reflexivity; assumption.
   - (* T_Fst *)
@@ -1118,16 +1130,16 @@ Proof.
       * apply multi_step_fst. exact Hms1.
       * eapply MS_Step.
         -- apply ST_Fst.
-           ++ apply (val_rel_value_left _ _ _ Hrela).
-           ++ apply (val_rel_value_left _ _ _ Hrelb).
+           ++ apply (val_rel_value_left Σ _ _ _ Hrela).
+           ++ apply (val_rel_value_left Σ _ _ _ Hrelb).
         -- apply MS_Refl.
     + split.
       * eapply multi_step_trans.
         -- apply multi_step_fst. exact Hms2.
         -- eapply MS_Step.
            ++ apply ST_Fst.
-              ** apply (val_rel_value_right _ _ _ Hrela).
-              ** apply (val_rel_value_right _ _ _ Hrelb).
+              ** apply (val_rel_value_right Σ _ _ _ Hrela).
+              ** apply (val_rel_value_right Σ _ _ _ Hrelb).
            ++ apply MS_Refl.
       * exact Hrela.
   - (* T_Snd *)
@@ -1144,16 +1156,16 @@ Proof.
       * apply multi_step_snd. exact Hms1.
       * eapply MS_Step.
         -- apply ST_Snd.
-           ++ apply (val_rel_value_left _ _ _ Hrela).
-           ++ apply (val_rel_value_left _ _ _ Hrelb).
+           ++ apply (val_rel_value_left Σ _ _ _ Hrela).
+           ++ apply (val_rel_value_left Σ _ _ _ Hrelb).
         -- apply MS_Refl.
     + split.
       * eapply multi_step_trans.
         -- apply multi_step_snd. exact Hms2.
         -- eapply MS_Step.
            ++ apply ST_Snd.
-              ** apply (val_rel_value_right _ _ _ Hrela).
-              ** apply (val_rel_value_right _ _ _ Hrelb).
+              ** apply (val_rel_value_right Σ _ _ _ Hrela).
+              ** apply (val_rel_value_right Σ _ _ _ Hrelb).
            ++ apply MS_Refl.
       * exact Hrelb.
   - (* T_Inl *)
@@ -1171,10 +1183,10 @@ Proof.
         -- apply multi_step_inl. exact Hms2.
         -- apply MS_Refl.
       * unfold val_rel. repeat split.
-        -- apply VInl. apply (val_rel_value_left _ _ _ Hrelv).
-        -- apply VInl. apply (val_rel_value_right _ _ _ Hrelv).
-        -- apply closed_expr_inl. apply (val_rel_closed_left _ _ _ Hrelv).
-        -- apply closed_expr_inl. apply (val_rel_closed_right _ _ _ Hrelv).
+        -- apply VInl. apply (val_rel_value_left Σ _ _ _ Hrelv).
+        -- apply VInl. apply (val_rel_value_right Σ _ _ _ Hrelv).
+        -- apply closed_expr_inl. apply (val_rel_closed_left Σ _ _ _ Hrelv).
+        -- apply closed_expr_inl. apply (val_rel_closed_right Σ _ _ _ Hrelv).
         -- left. exists v1, v2. repeat split; try reflexivity; exact Hrelv.
   - (* T_Inr *)
     unfold exp_rel in IHHty. specialize (IHHty rho2 rho1 Henv Hno2 Hno1).
@@ -1191,10 +1203,10 @@ Proof.
         -- apply multi_step_inr. exact Hms2.
         -- apply MS_Refl.
       * unfold val_rel. repeat split.
-        -- apply VInr. apply (val_rel_value_left _ _ _ Hrelv).
-        -- apply VInr. apply (val_rel_value_right _ _ _ Hrelv).
-        -- apply closed_expr_inr. apply (val_rel_closed_left _ _ _ Hrelv).
-        -- apply closed_expr_inr. apply (val_rel_closed_right _ _ _ Hrelv).
+        -- apply VInr. apply (val_rel_value_left Σ _ _ _ Hrelv).
+        -- apply VInr. apply (val_rel_value_right Σ _ _ _ Hrelv).
+        -- apply closed_expr_inr. apply (val_rel_closed_left Σ _ _ _ Hrelv).
+        -- apply closed_expr_inr. apply (val_rel_closed_right Σ _ _ _ Hrelv).
         -- right. exists v1, v2. repeat split; try reflexivity; exact Hrelv.
   - (* T_Case *)
     unfold exp_rel in IHHty1. specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1).
@@ -1205,8 +1217,8 @@ Proof.
     destruct Hsum as [[a1 [a2 [Heq1 [Heq2 Hrela]]]] | [b1 [b2 [Heq1 [Heq2 Hrelb]]]]];
       subst.
     + (* inl *)
-      pose proof (val_rel_value_left _ _ _ Hrela) as Ha1.
-      pose proof (val_rel_value_right _ _ _ Hrela) as Ha2.
+      pose proof (val_rel_value_left Σ _ _ _ Hrela) as Ha1.
+      pose proof (val_rel_value_right Σ _ _ _ Hrela) as Ha2.
       pose proof (env_rel_extend _ _ _ x1 T1 a1 a2 Henv Hrela) as Henv'.
       assert (rho_no_free_all (rho_extend rho1 x1 a1)) as Hno1'.
       { apply rho_no_free_extend; assumption. }
@@ -1235,8 +1247,8 @@ Proof.
            ++ rewrite <- (subst_rho_extend rho2 x1 a2 e1 Hno1) in Hms2'. exact Hms2'.
         -- exact Hrelr.
     + (* inr *)
-      pose proof (val_rel_value_left _ _ _ Hrelb) as Hb1.
-      pose proof (val_rel_value_right _ _ _ Hrelb) as Hb2.
+      pose proof (val_rel_value_left Σ _ _ _ Hrelb) as Hb1.
+      pose proof (val_rel_value_right Σ _ _ _ Hrelb) as Hb2.
       pose proof (env_rel_extend _ _ _ x2 T2 b1 b2 Henv Hrelb) as Henv'.
       assert (rho_no_free_all (rho_extend rho1 x2 b1)) as Hno1'.
       { apply rho_no_free_extend; assumption. }
@@ -1321,13 +1333,13 @@ Proof.
     intros st1 st2 ctx.
     destruct (IHHty1 st1 st2 ctx) as
       [v1 [v2 [st1' [st2' [ctx' [Hms1 [Hms2 Hrelv]]]]]]].
-    pose proof (val_rel_value_left _ _ _ Hrelv) as Hv1.
-    pose proof (val_rel_value_right _ _ _ Hrelv) as Hv2.
+    pose proof (val_rel_value_left Σ _ _ _ Hrelv) as Hv1.
+    pose proof (val_rel_value_right Σ _ _ _ Hrelv) as Hv2.
     pose proof (env_rel_extend _ _ _ x T1 v1 v2 Henv Hrelv) as Henv'.
     assert (rho_no_free_all (rho_extend rho1 x v1)) as Hno1'.
-    { apply rho_no_free_extend. assumption. apply (val_rel_closed_left _ _ _ Hrelv). }
+    { apply rho_no_free_extend. assumption. apply (val_rel_closed_left Σ _ _ _ Hrelv). }
     assert (rho_no_free_all (rho_extend rho2 x v2)) as Hno2'.
-    { apply rho_no_free_extend. assumption. apply (val_rel_closed_right _ _ _ Hrelv). }
+    { apply rho_no_free_extend. assumption. apply (val_rel_closed_right Σ _ _ _ Hrelv). }
     specialize (IHHty2 _ _ Henv' Hno1' Hno2') as Hexp.
     unfold exp_rel in Hexp.
     specialize (Hexp st1' st2' ctx').
@@ -1370,9 +1382,9 @@ Proof.
     - simpl in Hlook. discriminate.
   }
   assert (rho_no_free_all (rho_single x v1)) as Hno1.
-  { apply rho_no_free_all_single. apply (val_rel_closed_left _ _ _ Hrel_full). }
+  { apply rho_no_free_all_single. apply (val_rel_closed_left Σ _ _ _ Hrel_full). }
   assert (rho_no_free_all (rho_single x v2)) as Hno2.
-  { apply rho_no_free_all_single. apply (val_rel_closed_right _ _ _ Hrel_full). }
+  { apply rho_no_free_all_single. apply (val_rel_closed_right Σ _ _ _ Hrel_full). }
   specialize (Hlr Henv Hno1 Hno2).
   rewrite subst_rho_single in Hlr.
   rewrite subst_rho_single in Hlr.
