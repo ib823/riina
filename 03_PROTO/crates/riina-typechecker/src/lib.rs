@@ -1,31 +1,47 @@
-//! TERAS-LANG Typechecker
+//! RIINA Typechecker
 //!
 //! Implements the typing rules defined in `foundations/Typing.v`.
+//! RIINA = Rigorous Immutable Integrity No-attack Assured
 //!
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
-use teras_lang_types::{Expr, Ty, SecurityLevel, Effect, Ident};
+use riina_types::{Expr, Ty, SecurityLevel, Effect, Ident};
 use std::collections::HashMap;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeError {
-    #[error("Variable not found: {0}")]
     VarNotFound(Ident),
-    #[error("Type mismatch: expected {expected:?}, found {found:?}")]
     TypeMismatch { expected: Ty, found: Ty },
-    #[error("Expected function type, found {0:?}")]
     ExpectedFunction(Ty),
-    #[error("Expected product type, found {0:?}")]
     ExpectedProduct(Ty),
-    #[error("Expected sum type, found {0:?}")]
     ExpectedSum(Ty),
-    #[error("Expected reference type, found {0:?}")]
     ExpectedRef(Ty),
-    #[error("Effect violation: allowed {allowed:?}, found {found:?}")]
     EffectViolation { allowed: Effect, found: Effect },
-    #[error("Annotation mismatch: expected {expected:?}, found {found:?}")]
     AnnotationMismatch { expected: Ty, found: Ty },
 }
+
+impl std::fmt::Display for TypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TypeError::VarNotFound(id) => write!(f, "Variable not found: {}", id),
+            TypeError::TypeMismatch { expected, found } => {
+                write!(f, "Type mismatch: expected {:?}, found {:?}", expected, found)
+            }
+            TypeError::ExpectedFunction(ty) => write!(f, "Expected function type, found {:?}", ty),
+            TypeError::ExpectedProduct(ty) => write!(f, "Expected product type, found {:?}", ty),
+            TypeError::ExpectedSum(ty) => write!(f, "Expected sum type, found {:?}", ty),
+            TypeError::ExpectedRef(ty) => write!(f, "Expected reference type, found {:?}", ty),
+            TypeError::EffectViolation { allowed, found } => {
+                write!(f, "Effect violation: allowed {:?}, found {:?}", allowed, found)
+            }
+            TypeError::AnnotationMismatch { expected, found } => {
+                write!(f, "Annotation mismatch: expected {:?}, found {:?}", expected, found)
+            }
+        }
+    }
+}
+
+impl std::error::Error for TypeError {}
 
 pub struct Context {
     vars: HashMap<Ident, Ty>,

@@ -1,0 +1,14 @@
+[package]
+name = "riina-parser"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA parser - Bahasa Melayu syntax"
+
+[dependencies]
+riina-lexer.workspace = true
+riina-types.workspace = true
+
+[dev-dependencies]
+# No external deps, standard test harness

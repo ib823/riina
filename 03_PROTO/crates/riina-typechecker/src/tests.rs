@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{Context, type_check, TypeError};
-    use teras_lang_types::{Expr, Ty, Effect, SecurityLevel};
+    use riina_types::{Expr, Ty, Effect, SecurityLevel};
 
     #[test]
     fn test_literals() {

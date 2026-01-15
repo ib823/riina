@@ -1,10 +1,10 @@
 [package]
-name = "teras-lang-lexer"
+name = "riina-lexer"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "TERAS-LANG lexer/tokenizer"
+description = "RIINA lexer/tokenizer - Bahasa Melayu syntax"
 
 [dependencies]
 # No dependencies (Law 8)

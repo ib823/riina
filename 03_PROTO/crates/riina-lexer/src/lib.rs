@@ -1,8 +1,10 @@
-//! TERAS-LANG Lexer
+//! RIINA Lexer
 //!
-//! Tokenizes TERAS-LANG source code.
+//! Tokenizes RIINA source code.
+//! RIINA = Rigorous Immutable Integrity No-attack Assured
+//! Named for: Reena + Isaac + Imaan
 //!
-//! Reference: TERAS-LANG-LEXER-SPEC_v1_0_0.md
+//! Reference: RIINA-LANG-LEXER-SPEC_v1_0_0.md
 //!
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
