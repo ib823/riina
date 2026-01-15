@@ -1,12 +1,15 @@
-# TERAS Coordination Log
+# RIINA Coordination Log
 
-## Version: 1.1.0
+## Version: 1.2.0
 ## Last Updated: 2026-01-15
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                  ║
-║                    TERAS CROSS-TRACK COORDINATION LOG                            ║
+║                    RIINA CROSS-TRACK COORDINATION LOG                            ║
+║                                                                                  ║
+║  Rigorous Immutable Integrity No-attack Assured                                  ║
+║  Named for: Reena + Isaac + Imaan                                                ║
 ║                                                                                  ║
 ║  Purpose: Track dependencies, contracts, and handoffs between tracks            ║
 ║                                                                                  ║
@@ -14,6 +17,19 @@
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## LANGUAGE IDENTITY
+
+| Property | Value |
+|----------|-------|
+| Name | RIINA |
+| Full Name | Rigorous Immutable Integrity No-attack Assured |
+| Named For | Reena (wife) + Isaac (son) + Imaan (son) |
+| Syntax | Bahasa Melayu (Malaysian Malay) |
+| File Extension | `.rii` |
+| Compiler | `riinac` |
 
 ---
 
@@ -40,7 +56,7 @@
 | Track T (Hermetic Build) | ⚪ DEFINED | 2026-01-15 | - |
 | Track U (Runtime Guardian) | ⚪ DEFINED | 2026-01-15 | - |
 
-### Completeness Tracks (V-Z) — NEW
+### Completeness Tracks (V-Z)
 
 | Track | Status | Last Update | Owner |
 |-------|--------|-------------|-------|
@@ -89,7 +105,7 @@
 ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
 │   Track B           │     │   Track F           │     │   Track R           │
 │   Prototype         │     │   Tooling/Crypto    │     │   Translation       │
-│   Compiler          │     │                     │     │   Validation        │
+│   Compiler (riinac) │     │                     │     │   Validation        │
 └─────────────────────┘     └─────────────────────┘     └─────────────────────┘
           │                               │                               │
           └───────────────────────────────┼───────────────────────────────┘
@@ -120,7 +136,7 @@
 ### Contract A→B: Type System Definitions
 
 **From**: Track A (02_FORMAL/coq/foundations/Syntax.v)
-**To**: Track B (03_PROTO/crates/teras-lang-types/)
+**To**: Track B (03_PROTO/crates/riina-lang-types/)
 
 **Status**: ACTIVE
 
@@ -128,6 +144,7 @@
 - Track A defines canonical syntax in Coq
 - Track B implements matching Rust types
 - Any change to Track A syntax MUST be reflected in Track B
+- Bahasa Melayu keywords in Track B must match specification
 
 **Current Definitions**:
 - `ty` → `Type` (Rust enum)
@@ -177,7 +194,7 @@
 **Status**: DEFINED
 
 **Contract**:
-- Track Z extends `EDeclassify` with policy language
+- Track Z extends `EDeclassify` with policy language (`dedah` in Bahasa Melayu)
 - Track Z proves robust declassification
 - Track Z maintains bounded information release
 
@@ -201,7 +218,7 @@
 
 **Contract**:
 - Track T bootstrap chain validated by Track R at each stage
-- Final TERAS binary must pass Track R validation
+- Final RIINA binary must pass Track R validation
 
 ### Contract S→U: Hardware Model for Runtime
 
@@ -224,7 +241,7 @@
 
 2. **Track F → All**: Crypto interfaces
    - When Track F completes ML-KEM and ML-DSA
-   - All tracks can use `teras-core` crypto
+   - All tracks can use `riina-core` crypto
 
 3. **Track V → Track A**: Termination measures
    - When Track V defines sized types
@@ -238,11 +255,50 @@
    - When Track W completes allocator proofs
    - Track B runtime uses extracted allocator
 
+6. **Track B → Syntax**: Bahasa Melayu keywords
+   - Lexer must support all keywords from specification
+   - Parser must handle Bahasa Melayu syntax
+
+---
+
+## BAHASA MELAYU INTEGRATION
+
+### Keyword Mapping (Track B Lexer)
+
+| Bahasa Melayu | English | Token |
+|---------------|---------|-------|
+| `fungsi` | fn | KW_FUNGSI |
+| `biar` | let | KW_BIAR |
+| `ubah` | mut | KW_UBAH |
+| `tetap` | const | KW_TETAP |
+| `kalau` | if | KW_KALAU |
+| `lain` | else | KW_LAIN |
+| `pulang` | return | KW_PULANG |
+| `rahsia` | secret | KW_RAHSIA |
+| `dedah` | declassify | KW_DEDAH |
+| `kesan` | effect | KW_KESAN |
+| `bersih` | pure | KW_BERSIH |
+
+### File Extension
+
+- Source files: `.rii`
+- Compiled output: `.riic` (RIINA Intermediate Code)
+
 ---
 
 ## CHANGE LOG
 
-### 2026-01-15
+### 2026-01-15 (RIINA Branding)
+
+- **MAJOR**: Renamed from TERAS to RIINA
+  - Full name: Rigorous Immutable Integrity No-attack Assured
+  - Named for: Reena + Isaac + Imaan
+- Updated all track references
+- Added Bahasa Melayu integration section
+- Updated dependency graph with `riinac`
+- Version bumped to 1.2.0
+
+### 2026-01-15 (Completeness Tracks)
 
 - **MAJOR**: Added Completeness Tracks V, W, X, Y, Z
   - Track V: Formal Termination Guarantees
@@ -265,3 +321,4 @@
 ---
 
 *Update this log whenever cross-track coordination occurs.*
+*Named for: Reena + Isaac + Imaan — The foundation of everything.*
