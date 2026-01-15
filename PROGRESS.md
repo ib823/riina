@@ -1,10 +1,10 @@
 # TERAS Progress Tracker
 
-## Last Updated: 2026-01-11 (Track A Consolidation)
+## Last Updated: 2026-01-14 (Track A - NonInterference Lemma Audit)
 
 ## Current Focus: Track A (Formal Proofs) - STRICT MODE
 
-**STATUS:** CORE SOUNDNESS VERIFIED. SECURITY PROPERTIES DEFERRED.
+**STATUS:** CORE SOUNDNESS VERIFIED. SECURITY PROPERTIES IN PROGRESS.
 **TRACK B:** PAUSED PENDING FULL FORMAL ASSURANCE.
 
 ### COMPLETED & VERIFIED (0 ADMITS)
@@ -17,11 +17,11 @@
 - [x] `type_system/TypeSafety.v` — **FULLY PROVEN**.
 - [x] `effects/EffectAlgebra.v` — **FULLY PROVEN**.
 
-### DEFERRED (NOT IMPLEMENTED)
+### IN PROGRESS (NOT YET VERIFIED THIS SESSION)
 
 | File | Item | Status | Justification |
 |------|------|--------|---------------|
-| `properties/NonInterference.v` | `non_interference` | **COMMENTED OUT** | Requires logical relations. Removed `Admitted` to comply with zero-trust policy. Feature is NOT verified. |
+| `properties/NonInterference.v` | `non_interference_stmt` | **BLOCKED** | `subst_rho_extend` is not provable without an explicit environment/substitution stability assumption; build currently fails in its `EVar` case. |
 
 ### Summary
 
@@ -29,14 +29,18 @@
 The operational semantics are deterministic, and the type system ensures Progress and Preservation.
 The foundation is mathematically solid for the core language.
 
-**Security Properties: UNVERIFIED**
-Non-Interference is defined but not proven. Any claim of "secure information flow" is currently theoretical and unverified.
+**Security Properties: PARTIAL**
+`non_interference_stmt` proof is present but blocked on `subst_rho_extend`. The lemma is false without a stronger environment invariant (e.g., substitution stability or closedness of `rho` images).
 
-### Next Steps
+### Next Steps (Extreme Rigor Protocol)
 
-1. **Track A**: Investigate logical relations for Non-Interference proof.
-2. **Track A**: Implement Effect System proofs (currently stubs in `EffectSystem.v`).
-3. **Track B**: **REMAIN PAUSED** until Security Properties are advanced or explicitly waived by protocol.
+1. **Assumption Ledger (Required)**: Declare the exact environment invariant needed for `subst_rho_extend`.
+   - Option A: `forall y, y <> x -> [x := v] (rho y) = rho y`.
+   - Option B: Define `closed_expr` using `free_in` and require all `rho y` closed.
+2. **Lemma Repair**: Reprove `subst_rho_extend` with the explicit invariant and thread it through `logical_relation`.
+3. **Security Proof**: Rebuild `non_interference_stmt` with the corrected lemma.
+4. **Verification**: `make -C 02_FORMAL/coq` must pass with 0 admits.
+5. **Track B**: **REMAIN PAUSED** until Track A security property is verified.
 
 ## Track B Progress (PAUSED)
 
