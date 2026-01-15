@@ -1,5 +1,16 @@
 # TERAS Session Log
 
+## Session: 2026-01-14 23:00 UTC
+- Read `PROGRESS.md`, `SESSION_LOG.md`, and `CLAUDE.md`.
+- Ran `make clean && make` in `02_FORMAL/coq`; build failed at `properties/NonInterference.v:270` in `subst_rho_extend` with `Found no subterm matching "(i =? x0)%string"`.
+- Updated `PROGRESS.md` to reflect the Coq build failure in `properties/NonInterference.v`.
+
+## Session: 2026-01-14 23:35 UTC
+- Inspected `properties/NonInterference.v` around `subst_rho_extend`.
+- Identified that the lemma is not provable without an explicit environment invariant.
+- Observed the blocking case: for `EVar i` with `i <> x`, the goal requires `[x := v] (rho i) = rho i`, which is false without a closedness/substitution-stability assumption.
+- Updated `PROGRESS.md` with the corrected blocker and a protocol-compliant next-step plan.
+
 ## Session: 2026-01-11 00:00 UTC
 
 **Started**: Repository initialization
