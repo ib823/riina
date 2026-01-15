@@ -75,7 +75,7 @@ Qed.
 
 Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} : Prop :=
   match n with
-  | 0 => value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2
+  | 0 => True
   | S n' =>
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
       match T with
@@ -154,7 +154,7 @@ Lemma val_rel_closed_left_n : forall n Σ T v1 v2,
   closed_expr v1.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - simpl in Hrel. destruct Hrel as [_ [_ [Hc1 _]]]. exact Hc1.
+  - unfold closed_expr. intros x Hfree. contradiction.
   - simpl in Hrel. destruct Hrel as [_ [_ [Hc1 _]]]. exact Hc1.
 Qed.
 
@@ -163,7 +163,7 @@ Lemma val_rel_closed_right_n : forall n Σ T v1 v2,
   closed_expr v2.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - simpl in Hrel. destruct Hrel as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
+  - unfold closed_expr. intros x Hfree. contradiction.
   - simpl in Hrel. destruct Hrel as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
 Qed.
 
@@ -172,7 +172,7 @@ Lemma val_rel_value_left_n : forall n Σ T v1 v2,
   value v1.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - simpl in Hrel. destruct Hrel as [Hv1 _]. exact Hv1.
+  - inversion Hrel.
   - simpl in Hrel. destruct Hrel as [Hv1 _]. exact Hv1.
 Qed.
 
@@ -181,7 +181,7 @@ Lemma val_rel_value_right_n : forall n Σ T v1 v2,
   value v2.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - simpl in Hrel. destruct Hrel as [_ [Hv2 _]]. exact Hv2.
+  - inversion Hrel.
   - simpl in Hrel. destruct Hrel as [_ [Hv2 _]]. exact Hv2.
 Qed.
 
@@ -1188,102 +1188,112 @@ Proof.
               ** exact Hms2.
            ++ split; assumption.
   - (* T_App *)
-    destruct n' as [| n'']; simpl.
+    destruct n' as [| n1]; simpl.
     + exact I.
-    + specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1 (S n'')).
-      specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1 (S n'')).
-      intros st1 st2 ctx Hstore.
-      specialize (IHHty1 st1 st2 ctx Hstore).
-      destruct IHHty1 as
-        [vf1 [vf2 [st1' [st2' [ctx' [Σ' [Hext1 [Hmsf1 [Hmsf2 [Hrelf Hstoref]]]]]]]]]].
-      assert (Hstoref_weak : store_rel_n n'' Σ st1' st2') as Hstoref_weak.
-      { apply store_rel_n_weaken with (Σ' := Σ'); [exact Hext1 | exact Hstoref]. }
-      specialize (IHHty2 st1' st2' ctx' Hstoref_weak).
-      destruct IHHty2 as
-        [va1 [va2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hmsa1 [Hmsa2 [Hrela Hstorea]]]]]]]]]].
-      simpl in Hrelf.
-      destruct Hrelf as [Hf1 [Hf2 [Hc1 [Hc2 Hfrel]]]].
-      assert (Hstorea_weak : store_rel_n n'' Σ st1'' st2'') as Hstorea_weak.
-      { apply store_rel_n_weaken with (Σ' := Σ''); [exact Hext2 | exact Hstorea]. }
-      destruct (Hfrel va1 va2 Hrela st1'' st2'' ctx'' Hstorea_weak) as
-        [vr1 [vr2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hms1 [Hms2 [Hrelr Hstorer]]]]]]]]]].
-      exists vr1, vr2, st1''', st2''', ctx''', Σ'''.
-      split; [exact Hext3 |].
-      split.
-      * eapply multi_step_trans with (cfg2 := (EApp vf1 (subst_rho rho1 e2), st1', ctx')).
-        { apply multi_step_app1. exact Hmsf1. }
-        { eapply multi_step_trans with (cfg2 := (EApp vf1 va1, st1'', ctx'')).
-          { apply multi_step_app2; assumption. }
-          { exact Hms1. }
-        }
-      * split.
-        { eapply multi_step_trans with (cfg2 := (EApp vf2 (subst_rho rho2 e2), st2', ctx')).
-          { apply multi_step_app1. exact Hmsf2. }
-          { eapply multi_step_trans with (cfg2 := (EApp vf2 va2, st2'', ctx'')).
-            { apply multi_step_app2; assumption. }
-            { exact Hms2. }
-          }
-        }
-        { split; assumption. }
-  - (* T_Pair *)
-    destruct n' as [| n'']; simpl.
-    + exact I.
-    + specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1 (S n'')).
-      specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1 (S n'')).
-      intros st1 st2 ctx Hstore.
-      specialize (IHHty1 st1 st2 ctx Hstore).
-      destruct IHHty1 as
-        [v1a [v2a [st1' [st2' [ctx' [Σ' [Hext1 [Hms1a [Hms2a [Hrela Hstorea]]]]]]]]]].
-      assert (Hstorea_weak : store_rel_n n'' Σ st1' st2') as Hstorea_weak.
-      { apply store_rel_n_weaken with (Σ' := Σ'); [exact Hext1 | exact Hstorea]. }
-      specialize (IHHty2 st1' st2' ctx' Hstorea_weak).
-      destruct IHHty2 as
-        [v1b [v2b [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hms1b [Hms2b [Hrelb Hstoreb]]]]]]]]]].
-      exists (EPair v1a v1b), (EPair v2a v2b), st1'', st2'', ctx'', Σ''.
-      split; [exact Hext2 |].
-      split.
-      * eapply multi_step_trans.
-        -- apply multi_step_pair1. exact Hms1a.
-        -- eapply multi_step_pair2.
-           { apply (val_rel_value_left_n n'' Σ _ _ _ Hrela). }
-           { exact Hms1b. }
-      * split.
-        -- eapply multi_step_trans.
-           ++ apply multi_step_pair1. exact Hms2a.
-           ++ eapply multi_step_pair2.
-              ** apply (val_rel_value_right_n n'' Σ _ _ _ Hrela).
-              ** exact Hms2b.
+    + destruct n1 as [| n2]; simpl.
+      * intros st1 st2 ctx Hstore.
+        exists (EApp (subst_rho rho1 e1) (subst_rho rho1 e2)),
+               (EApp (subst_rho rho2 e1) (subst_rho rho2 e2)),
+               st1, st2, ctx, Σ.
+        split.
+        -- unfold store_ty_extends. intros l T sl Hlook. exact Hlook.
         -- split.
-           ++ destruct n'' as [| n''']; simpl.
-              ** repeat split.
+           ++ apply MS_Refl.
+           ++ split.
+              ** apply MS_Refl.
+              ** split; [exact I | exact Hstore].
+      * specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1 (S (S n2))).
+        specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1 (S (S n2))).
+        intros st1 st2 ctx Hstore.
+        specialize (IHHty1 st1 st2 ctx Hstore).
+        destruct IHHty1 as
+          [vf1 [vf2 [st1' [st2' [ctx' [Σ' [Hext1 [Hmsf1 [Hmsf2 [Hrelf Hstoref]]]]]]]]]].
+        assert (Hstoref_weak : store_rel_n (S n2) Σ st1' st2') as Hstoref_weak.
+        { apply store_rel_n_weaken with (Σ' := Σ'); [exact Hext1 | exact Hstoref]. }
+        specialize (IHHty2 st1' st2' ctx' Hstoref_weak).
+        destruct IHHty2 as
+          [va1 [va2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hmsa1 [Hmsa2 [Hrela Hstorea]]]]]]]]]].
+        simpl in Hrelf.
+        destruct Hrelf as [Hf1 [Hf2 [Hc1 [Hc2 Hfrel]]]].
+        assert (Hstorea_weak : store_rel_n (S n2) Σ st1'' st2'') as Hstorea_weak.
+        { apply store_rel_n_weaken with (Σ' := Σ''); [exact Hext2 | exact Hstorea]. }
+        destruct (Hfrel va1 va2 Hrela st1'' st2'' ctx'' Hstorea_weak) as
+          [vr1 [vr2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hms1 [Hms2 [Hrelr Hstorer]]]]]]]]]].
+        exists vr1, vr2, st1''', st2''', ctx''', Σ'''.
+        split; [exact Hext3 |].
+        split.
+        -- eapply multi_step_trans with (cfg2 := (EApp vf1 (subst_rho rho1 e2), st1', ctx')).
+           { apply multi_step_app1. exact Hmsf1. }
+           { eapply multi_step_trans with (cfg2 := (EApp vf1 va1, st1'', ctx'')).
+             { apply multi_step_app2; assumption. }
+             { exact Hms1. }
+           }
+        -- split.
+           { eapply multi_step_trans with (cfg2 := (EApp vf2 (subst_rho rho2 e2), st2', ctx')).
+             { apply multi_step_app1. exact Hmsf2. }
+             { eapply multi_step_trans with (cfg2 := (EApp vf2 va2, st2'', ctx'')).
+               { apply multi_step_app2; assumption. }
+               { exact Hms2. }
+             }
+           }
+           { split; assumption. }
+  - (* T_Pair *)
+    destruct n' as [| n1]; simpl.
+    + exact I.
+    + destruct n1 as [| n2]; simpl.
+      * intros st1 st2 ctx Hstore.
+        exists (EPair (subst_rho rho1 e1) (subst_rho rho1 e2)),
+               (EPair (subst_rho rho2 e1) (subst_rho rho2 e2)),
+               st1, st2, ctx, Σ.
+        split.
+        -- unfold store_ty_extends. intros l T sl Hlook. exact Hlook.
+        -- split.
+           ++ apply MS_Refl.
+           ++ split.
+              ** apply MS_Refl.
+              ** split; [exact I | exact Hstore].
+      * specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1 (S (S n2))).
+        specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1 (S (S n2))).
+        intros st1 st2 ctx Hstore.
+        specialize (IHHty1 st1 st2 ctx Hstore).
+        destruct IHHty1 as
+          [v1a [v2a [st1' [st2' [ctx' [Σ' [Hext1 [Hms1a [Hms2a [Hrela Hstorea]]]]]]]]]].
+        assert (Hstorea_weak : store_rel_n (S n2) Σ st1' st2') as Hstorea_weak.
+        { apply store_rel_n_weaken with (Σ' := Σ'); [exact Hext1 | exact Hstorea]. }
+        specialize (IHHty2 st1' st2' ctx' Hstorea_weak).
+        destruct IHHty2 as
+          [v1b [v2b [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hms1b [Hms2b [Hrelb Hstoreb]]]]]]]]]].
+        exists (EPair v1a v1b), (EPair v2a v2b), st1'', st2'', ctx'', Σ''.
+        split; [exact Hext2 |].
+        split.
+        -- eapply multi_step_trans.
+           ++ apply multi_step_pair1. exact Hms1a.
+           ++ eapply multi_step_pair2.
+              ** apply (val_rel_value_left_n (S n2) Σ _ _ _ Hrela).
+              ** exact Hms1b.
+        -- split.
+           ++ eapply multi_step_trans.
+              ** apply multi_step_pair1. exact Hms2a.
+              ** eapply multi_step_pair2.
+                 - apply (val_rel_value_right_n (S n2) Σ _ _ _ Hrela).
+                 - exact Hms2b.
+           ++ split.
+              ** simpl. repeat split.
                  - apply VPair.
-                   apply (val_rel_value_left_n 0 Σ _ _ _ Hrela).
-                   apply (val_rel_value_left_n 0 Σ _ _ _ Hrelb).
+                   apply (val_rel_value_left_n (S n2) Σ _ _ _ Hrela).
+                   apply (val_rel_value_left_n (S n2) Σ _ _ _ Hrelb).
                  - apply VPair.
-                   apply (val_rel_value_right_n 0 Σ _ _ _ Hrela).
-                   apply (val_rel_value_right_n 0 Σ _ _ _ Hrelb).
+                   apply (val_rel_value_right_n (S n2) Σ _ _ _ Hrela).
+                   apply (val_rel_value_right_n (S n2) Σ _ _ _ Hrelb).
                  - apply closed_expr_pair.
-                   apply (val_rel_closed_left_n 0 Σ _ _ _ Hrela).
-                   apply (val_rel_closed_left_n 0 Σ _ _ _ Hrelb).
+                   apply (val_rel_closed_left_n (S n2) Σ _ _ _ Hrela).
+                   apply (val_rel_closed_left_n (S n2) Σ _ _ _ Hrelb).
                  - apply closed_expr_pair.
-                   apply (val_rel_closed_right_n 0 Σ _ _ _ Hrela).
-                   apply (val_rel_closed_right_n 0 Σ _ _ _ Hrelb).
-              ** repeat split.
-                 - apply VPair.
-                   apply (val_rel_value_left_n (S n''') Σ _ _ _ Hrela).
-                   apply (val_rel_value_left_n (S n''') Σ _ _ _ Hrelb).
-                 - apply VPair.
-                   apply (val_rel_value_right_n (S n''') Σ _ _ _ Hrela).
-                   apply (val_rel_value_right_n (S n''') Σ _ _ _ Hrelb).
-                 - apply closed_expr_pair.
-                   apply (val_rel_closed_left_n (S n''') Σ _ _ _ Hrela).
-                   apply (val_rel_closed_left_n (S n''') Σ _ _ _ Hrelb).
-                 - apply closed_expr_pair.
-                   apply (val_rel_closed_right_n (S n''') Σ _ _ _ Hrela).
-                   apply (val_rel_closed_right_n (S n''') Σ _ _ _ Hrelb).
+                   apply (val_rel_closed_right_n (S n2) Σ _ _ _ Hrela).
+                   apply (val_rel_closed_right_n (S n2) Σ _ _ _ Hrelb).
                  - exists v1a, v1b, v2a, v2b.
                    repeat split; try reflexivity; assumption.
-           ++ exact Hstoreb.
+              ** exact Hstoreb.
   - (* T_Fst *)
     unfold exp_rel in IHHty. specialize (IHHty rho2 rho1 Henv Hno2 Hno1).
     intros st1 st2 ctx.
