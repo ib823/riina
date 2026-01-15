@@ -16,6 +16,7 @@
 Require Import TERAS.foundations.Syntax.
 Require Import TERAS.foundations.Typing.
 Require Import TERAS.effects.EffectAlgebra.
+Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Import ListNotations.

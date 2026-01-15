@@ -257,13 +257,13 @@ Proof.
   - right. left. exists b. reflexivity.
   - right. right. left. exists n. reflexivity.
   - right. right. right. left. exists s. reflexivity.
-  - right. right. right. right. left. exists x, T, e0. reflexivity.
+  - right. right. right. right. right. right. right. right. left. exists l. reflexivity.
+  - right. right. right. right. left. eexists; eexists; eexists; reflexivity.
   - right. right. right. right. right. left. exists v1, v2. reflexivity.
   - right. right. right. right. right. right. left. exists v, T. reflexivity.
   - right. right. right. right. right. right. right. left. exists v, T. reflexivity.
-  - right. right. right. right. right. right. right. left. exists l. reflexivity.
-  - right. right. right. right. right. right. right. right. left. exists v. reflexivity.
-  - right. right. right. right. right. right. right. right. right. exists v. reflexivity.
+  - right. right. right. right. right. right. right. right. right. left. exists v. reflexivity.
+  - right. right. right. right. right. right. right. right. right. right. exists v. reflexivity.
 Qed.
 
 (** Note: A lemma about substitution into values requires either:
