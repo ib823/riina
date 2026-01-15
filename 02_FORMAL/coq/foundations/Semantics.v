@@ -199,6 +199,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       value p ->
       (EDeclassify (EClassify v) p, st, ctx) --> (v, st, ctx)
 
+  | ST_ProveStep : forall e e' st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (EProve e, st, ctx) --> (EProve e', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -442,6 +446,9 @@ Proof.
   (* ST_DeclassifyValue *)
   - solve_val_step.
   - solve_val_step.
+
+  (* ST_ProveStep *)
+  - solve_ih.
 Qed.
 
 (** End of Semantics.v *)
