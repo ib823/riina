@@ -207,6 +207,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e, st, ctx) --> (e', st', ctx') ->
       (ERequire eff e, st, ctx) --> (ERequire eff e', st', ctx')
 
+  | ST_RequireValue : forall eff v st ctx,
+      value v ->
+      (ERequire eff v, st, ctx) --> (v, st, ctx)
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -456,6 +460,10 @@ Proof.
 
   (* ST_RequireStep *)
   - solve_ih.
+  - solve_val_step.
+
+  (* ST_RequireValue *)
+  - solve_val_step.
 Qed.
 
 (** End of Semantics.v *)
