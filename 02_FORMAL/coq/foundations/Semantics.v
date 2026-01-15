@@ -167,6 +167,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       value v ->
       (EDeref (ERef v l), st, ctx) --> (v, st, ctx)
 
+  | ST_Assign1 : forall e1 e1' e2 st st' ctx ctx',
+      (e1, st, ctx) --> (e1', st', ctx') ->
+      (EAssign e1 e2, st, ctx) --> (EAssign e1' e2, st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -357,6 +361,9 @@ Proof.
       | _ => reflexivity
       end
     ).
+
+  (* ST_Assign1 *)
+  - solve_ih.
 Qed.
 
 (** End of Semantics.v *)
