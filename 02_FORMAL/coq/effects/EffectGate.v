@@ -23,7 +23,10 @@ Definition is_gate (eff : effect) (e_gate : expr) : Prop :=
   (* Conceptual definition:
      For any expression e that performs 'eff',
      embedding it in e_gate traps or handles the effect. *)
-  True.
+  forall e T eff_used,
+    has_type_full nil nil Public e T eff_used ->
+    effect_leq eff_used eff ->
+    performs_within (EApp e_gate e) eff.
 
 (** ** Non-Leakage Property
     
@@ -34,10 +37,12 @@ Definition is_gate (eff : effect) (e_gate : expr) : Prop :=
 Theorem gate_enforcement : forall G S D e T eff_allowed eff_used,
   has_type_full G S D e T eff_used ->
   effect_level eff_used <= effect_level eff_allowed ->
-  (* Execution trace property would go here *)
-  True.
+  performs_within e eff_allowed.
 Proof.
-  intros. exact I.
+  intros G S D e T eff_allowed eff_used Hty Hle.
+  apply performs_within_mono with (eff1 := eff_used).
+  - exact Hle.
+  - apply effect_safety. exact Hty.
 Qed.
 
 (** End of EffectGate.v *)
