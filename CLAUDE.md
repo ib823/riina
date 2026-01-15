@@ -9,7 +9,7 @@
 ║                                                                                  ║
 ║  Repository: https://github.com/ib823/proof                                      ║
 ║  Purpose: Formal proofs and prototype for TERAS-LANG                             ║
-║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS               ║
+║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -40,7 +40,11 @@ are mathematically guaranteed at compile time.
 │       └── verify_setup.sh      ← Verification script
 │
 ├── 01_RESEARCH/                 ← Research track archive (READ-ONLY reference)
-│   └── [132 research files]
+│   ├── ... (Domains A-Q)
+│   ├── 18_DOMAIN_R_CERTIFIED_COMPILATION/  ← Track R: Translation Validation
+│   ├── 19_DOMAIN_S_HARDWARE_CONTRACTS/     ← Track S: HW/SW Co-Verification
+│   ├── 20_DOMAIN_T_HERMETIC_BUILD/         ← Track T: Binary Bootstrap
+│   └── 21_DOMAIN_U_RUNTIME_GUARDIAN/       ← Track U: Verified Micro-Hypervisor
 │
 ├── 02_FORMAL/                   ← Track A: Formal proofs
 │   ├── coq/                     ← Coq proofs (PRIMARY)
@@ -311,6 +315,14 @@ cd /workspaces/proof/05_TOOLING/crates/teras-core/src/crypto
 # - ml_dsa.rs (NTT, rejection sampling)
 ```
 
+### 4.4 New Zero-Trust Tracks (R, S, T, U)
+
+- **Track R (Certified Compilation):** Verify binary equivalence.
+- **Track S (Hardware Contracts):** Model CPU side-channels.
+- **Track T (Hermetic Build):** Bootstrap from `hex0`.
+- **Track U (Runtime Guardian):** Verified micro-hypervisor.
+*(See 01_RESEARCH for definitive plans)*
+
 ---
 
 ## 5. VERIFICATION REQUIREMENTS
@@ -458,6 +470,10 @@ git add -A && git commit -m "[RECOVERY] Uncommitted work from disconnect"
 - `TERAS-LANG-LEXER-SPEC_v1_0_0.md` — Lexer specification
 - `TERAS-LANG-GRAMMAR-*.md` — Grammar specifications
 - `TERAS-LANG-AST_v1_0_0.md` — AST specification
+- `RESEARCH_R01_FOUNDATION.md` — Translation Validation
+- `RESEARCH_S01_FOUNDATION.md` — Hardware Contracts
+- `RESEARCH_T01_FOUNDATION.md` — Hermetic Bootstrap
+- `RESEARCH_U01_FOUNDATION.md` — Runtime Guardian
 
 ### 9.2 Architecture Documents
 
@@ -478,4 +494,4 @@ If blocked or uncertain:
 ---
 
 *This CLAUDE.md follows ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS principles.*
-*Last updated: 2026-01-11*
+*Last updated: 2026-01-15*
