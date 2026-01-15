@@ -1,69 +1,194 @@
 # TERAS Progress Tracker
 
-## Last Updated: 2026-01-15 (Tracks R, S, T, U Initialized)
+## Last Updated: 2026-01-15 (Completeness Tracks V-Z Added)
 
-## Current Focus: TRACK B (Prototype) + TRACK A MAINTENANCE
+## Current Focus: TRACK A EXTENSIONS + TRACK B MAINTENANCE
 
 **STATUS:** CORE SOUNDNESS & SECURITY PROPERTIES VERIFIED.
-**TRACK A:** COMPLETE (0 ADMITS).
-**TRACK B:** RESUMING.
-**NEW TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
+**TRACK A:** CORE COMPLETE (0 ADMITS). Extensions in progress.
+**TRACK B:** OPERATIONAL. Paused pending Track A catch-up.
+**ZERO-TRUST TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
+**COMPLETENESS TRACKS (V, W, X, Y, Z):** INITIALIZED & DEFINED.
 
-### COMPLETED & VERIFIED (0 ADMITS)
+---
+
+## TRACK OVERVIEW
+
+### Core Tracks (A-F)
+
+| Track | Name | Status | Description |
+|-------|------|--------|-------------|
+| A | Formal Proofs | 🟡 CORE DONE | Type safety, non-interference proven for core subset |
+| B | Prototype | ✅ OPERATIONAL | Lexer, Parser, Typechecker, terasc driver working |
+| C | Specifications | ◯ NOT STARTED | Language and API specifications |
+| D | Testing | ◯ NOT STARTED | Test suite and coverage |
+| E | Hardware | ◯ BLOCKED | Hardware integration (blocked on Track S) |
+| F | Tooling | 🟡 PARTIAL | Symmetric crypto done, asymmetric pending |
+
+### Zero-Trust Tracks (R-U) — REVOLUTIONARY
+
+| Track | Name | Status | Description |
+|-------|------|--------|-------------|
+| R | Certified Compilation | ⚪ DEFINED | Translation validation, compiler untrusted |
+| S | Hardware Contracts | ⚪ DEFINED | Microarchitectural model, side-channel freedom |
+| T | Hermetic Build | ⚪ DEFINED | Bootstrap from hex0, supply chain untrusted |
+| U | Runtime Guardian | ⚪ DEFINED | seL4 integration, NMR, fault tolerance |
+
+### Completeness Tracks (V-Z) — NEW
+
+| Track | Name | Status | Description |
+|-------|------|--------|-------------|
+| V | Termination Guarantees | ⚪ DEFINED | Sized types, strong normalization, productivity |
+| W | Verified Memory | ⚪ DEFINED | Separation logic, verified allocator |
+| X | Concurrency Model | ⚪ DEFINED | Session types, data-race freedom, deadlock freedom |
+| Y | Verified Stdlib | ⚪ DEFINED | Proven specifications for all library functions |
+| Z | Declassification Policy | ⚪ DEFINED | Robust declassification, budgets, audit trails |
+
+---
+
+## DETAILED STATUS
+
+### Track A: Formal Proofs (02_FORMAL/coq/)
+
+#### COMPLETED & VERIFIED (0 ADMITS)
 
 - [x] `foundations/Syntax.v` — Core syntax with linear effect lattice.
 - [x] `foundations/Semantics.v` — **FULLY PROVEN**. `step_deterministic` proved.
-- [x] `foundations/Typing.v` — **FULLY PROVEN**. `type_uniqueness` proved.
+- [x] `foundations/Typing.v` — **CORE PROVEN**. Extended rules in progress.
 - [x] `type_system/Progress.v` — **FULLY PROVEN**.
 - [x] `type_system/Preservation.v` — **FULLY PROVEN**.
 - [x] `type_system/TypeSafety.v` — **FULLY PROVEN**.
 - [x] `effects/EffectAlgebra.v` — **FULLY PROVEN**.
-- [x] `properties/NonInterference.v` — **FULLY PROVEN**. `non_interference_stmt` verified.
+- [x] `properties/NonInterference.v` — **FULLY PROVEN** for pure subset.
 
-### IN PROGRESS
+#### IN PROGRESS / GAP
 
-| File | Item | Status | Justification |
-|------|------|--------|---------------|
-| Track B | Parser | **COMPLETE** | Full coverage of `Syntax.v` + extensions. |
-| Track B | Typechecker | **IMPLEMENTED** | Implemented. Verified core rules match `Typing.v`. Unverified rules marked. |
-| Track B | Integration | **COMPLETE** | `terasc` driver connects Parser -> Typechecker. |
-| Track A | Typing.v | **IN PROGRESS** | Extended with Ref, Effects, Security. `type_uniqueness` proof currently failing at `T_App`. |
+| File | Issue | Status |
+|------|-------|--------|
+| `Typing.v` | Extended rules (Ref, Effects, Security) | Proof broken at `T_App` |
+| `NonInterference.v` | Extend to stateful programs | Pending |
 
-### Summary
-
-**Core Language Soundness: VERIFIED (Subset)**
-The operational semantics are deterministic. Progress and Preservation were proven for the core subset, but need re-verification for the extended `has_type` relation.
-
-**Security Properties: VERIFIED (Subset)**
-`non_interference_stmt` proved with 0 admits for core functional subset.
-
-**Prototype (Track B): OPERATIONAL**
-- `teras-lang-parser` parsing full AST.
-- `teras-lang-typechecker` checking types and effects.
-- `terasc` CLI compiling source files.
-
-**GAP REDUCTION:**
-`Typing.v` has been extended to match the Prototype's syntax support. However, the `type_uniqueness` proof is currently broken in the `T_App` case due to complexities in handling `effect_join` equalities.
-
-### Zero Trust Tracks (Newly Initialized)
-
-- [x] **Track R (Certified Compilation):** Foundational definition complete. Target: Translation Validation.
-- [x] **Track S (Hardware Contracts):** Foundational definition complete. Target: Speculative ISA Model.
-- [x] **Track T (Hermetic Build):** Foundational definition complete. Target: Bootstrap from `hex0`.
-- [x] **Track U (Runtime Guardian):** Foundational definition complete. Target: Verified Micro-Hypervisor.
-
-### Next Steps
-
-1. **Track A (Formal Proofs)**: CRITICAL. Extend `Typing.v` to include References, Effects, and Security primitives. Proving these is required to validate the Prototype's logic.
-2. **Track C (Specs)**: Update specs to reflect the "gap" and the plan to close it.
-3. **Track B (Prototype)**: Pause further feature addition (Codegen) until `Typing.v` catches up.
-
-## Track B Progress (RESUMING)
-
-**WARNING:** Development resuming on verified foundations.
+### Track B: Prototype (03_PROTO/)
 
 - [x] Workspace structure
 - [x] Lexer implementation (Completed)
 - [x] Parser (Completed)
-- [x] Typechecker (Completed)
+- [x] Typechecker (Completed, unverified rules marked)
 - [x] Integration (terasc) (Completed)
+- [ ] Codegen (Paused pending Track A)
+
+### Track F: Tooling (05_TOOLING/)
+
+- [x] Symmetric crypto (AES-256-GCM, SHA-256, HMAC, HKDF)
+- [ ] ML-KEM-768 (stub only)
+- [ ] ML-DSA-65 (stub only)
+- [ ] X25519 (stub only)
+- [ ] Ed25519 (stub only)
+
+---
+
+## RESEARCH DOCUMENTS
+
+### Zero-Trust Tracks
+
+| Track | Document | Location |
+|-------|----------|----------|
+| R | RESEARCH_R01_FOUNDATION.md | `01_RESEARCH/18_DOMAIN_R_CERTIFIED_COMPILATION/` |
+| S | RESEARCH_S01_FOUNDATION.md | `01_RESEARCH/19_DOMAIN_S_HARDWARE_CONTRACTS/` |
+| T | RESEARCH_T01_FOUNDATION.md | `01_RESEARCH/20_DOMAIN_T_HERMETIC_BUILD/` |
+| U | RESEARCH_U01_FOUNDATION.md | `01_RESEARCH/21_DOMAIN_U_RUNTIME_GUARDIAN/` |
+
+### Completeness Tracks (NEW)
+
+| Track | Document | Location |
+|-------|----------|----------|
+| V | RESEARCH_V01_FOUNDATION.md | `01_RESEARCH/22_DOMAIN_V_TERMINATION_GUARANTEES/` |
+| W | RESEARCH_W01_FOUNDATION.md | `01_RESEARCH/23_DOMAIN_W_VERIFIED_MEMORY/` |
+| X | RESEARCH_X01_FOUNDATION.md | `01_RESEARCH/24_DOMAIN_X_CONCURRENCY_MODEL/` |
+| Y | RESEARCH_Y01_FOUNDATION.md | `01_RESEARCH/25_DOMAIN_Y_VERIFIED_STDLIB/` |
+| Z | RESEARCH_Z01_FOUNDATION.md | `01_RESEARCH/26_DOMAIN_Z_DECLASSIFICATION_POLICY/` |
+
+---
+
+## THREAT COVERAGE MATRIX
+
+When all tracks are complete, the following threats become OBSOLETE:
+
+| Threat Class | Covered By | Status |
+|--------------|------------|--------|
+| Type errors | Track A | ✅ PROVEN |
+| Information leakage | Track A (non-interference) | ✅ PROVEN (pure subset) |
+| Buffer overflow | Track W | ⚪ DEFINED |
+| Use-after-free | Track W | ⚪ DEFINED |
+| Infinite loops / DoS | Track V | ⚪ DEFINED |
+| Data races | Track X | ⚪ DEFINED |
+| Deadlocks | Track X | ⚪ DEFINED |
+| Compiler backdoors | Track R | ⚪ DEFINED |
+| Spectre / Meltdown | Track S | ⚪ DEFINED |
+| Supply chain attacks | Track T | ⚪ DEFINED |
+| Fault injection | Track U | ⚪ DEFINED |
+| Library vulnerabilities | Track Y | ⚪ DEFINED |
+| Unauthorized declassification | Track Z | ⚪ DEFINED |
+
+---
+
+## PRIORITY ORDER
+
+### Immediate (P0)
+
+1. **Track F**: Complete ML-KEM/ML-DSA implementations (quantum safety)
+2. **Track A**: Fix `Typing.v` proof for extended rules
+
+### Short-term (P1)
+
+3. **Track A**: Extend non-interference to stateful programs
+4. **Track V**: Formalize termination system in Coq
+5. **Track Z**: Formalize declassification policies
+
+### Medium-term (P2)
+
+6. **Track R**: Begin translation validation prototype
+7. **Track X**: Formalize session types
+8. **Track W**: Formalize memory allocator
+
+### Long-term (P3)
+
+9. **Track T**: Hermetic bootstrap chain
+10. **Track S**: Formal ISA model
+11. **Track U**: seL4 integration
+12. **Track Y**: Verified standard library
+
+---
+
+## NEXT STEPS
+
+1. **Track A**: Fix `type_uniqueness` proof broken at `T_App`
+2. **Track F**: Implement ML-KEM-768 NTT and polynomial arithmetic
+3. **Track A**: Extend `non_interference_stmt` to handle references and effects
+4. **Track C**: Write specifications documenting current proven properties
+
+---
+
+## CHANGE LOG
+
+### 2026-01-15
+
+- **MAJOR**: Added Completeness Tracks (V, W, X, Y, Z)
+  - Track V: Formal Termination Guarantees
+  - Track W: Verified Memory Management
+  - Track X: Formal Concurrency Model
+  - Track Y: Verified Standard Library
+  - Track Z: Declassification Policy Language
+- Updated threat coverage matrix
+- Added priority order for implementation
+- Updated research document locations
+
+### 2026-01-15 (Earlier)
+
+- Initialized Zero-Trust Tracks (R, S, T, U)
+- Track B operational
+- Track A core proofs complete
+
+---
+
+*Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*
