@@ -27,10 +27,14 @@ Import ListNotations.
     since what matters is that the result is well-typed (any effect is fine).
 *)
 
-Definition preservation_stmt := forall e e' T ε st st' ctx ctx',
-  has_type nil nil Public e T ε ->
+Definition preservation_stmt := forall e e' T ε st st' ctx ctx' Σ,
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
   (e, st, ctx) --> (e', st', ctx') ->
-  exists ε', has_type nil nil Public e' T ε'.
+  exists Σ' ε',
+    store_ty_extends Σ Σ' /\
+    store_wf Σ' st' /\
+    has_type nil Σ' Public e' T ε'.
 
 (** ** Auxiliary Lemma 1: Free Variables in Context
 
@@ -124,6 +128,151 @@ Proof.
       destruct (String.eqb x i) eqn:Heq.
       * apply String.eqb_eq in Heq. contradiction.
       * exists T'. assumption.
+Qed.
+
+(** ** Store Typing Lemmas *)
+
+Lemma store_lookup_update_eq : forall st l v,
+  store_lookup l (store_update l v st) = Some v.
+Proof.
+  induction st as [| [l' v'] st' IH]; intros l v; simpl.
+  - rewrite Nat.eqb_refl. reflexivity.
+  - destruct (Nat.eqb l l') eqn:Heq.
+    + reflexivity.
+    + apply IH.
+Qed.
+
+Lemma store_lookup_update_neq : forall st l l' v,
+  l <> l' ->
+  store_lookup l (store_update l' v st) = store_lookup l st.
+Proof.
+  induction st as [| [l0 v0] st' IH]; intros l l' v Hneq; simpl.
+  - reflexivity.
+  - destruct (Nat.eqb l' l0) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst.
+      rewrite Nat.eqb_neq; auto.
+    + rewrite Nat.eqb_neq; auto. apply IH. exact Hneq.
+Qed.
+
+Lemma store_ty_extends_update_fresh : forall Σ l T sl,
+  store_ty_lookup l Σ = None ->
+  store_ty_extends Σ (store_ty_update l T sl Σ).
+Proof.
+  induction Σ as [| [l' T' sl'] Σ' IH]; intros l T sl Hnone.
+  - intros l0 T0 sl0 Hlookup. inversion Hlookup.
+  - simpl in Hnone.
+    destruct (Nat.eqb l l') eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst. discriminate.
+    + intros l0 T0 sl0 Hlookup.
+      simpl in Hlookup.
+      destruct (Nat.eqb l0 l') eqn:Heq0.
+      * exact Hlookup.
+      * apply IH. exact Hnone. exact Hlookup.
+Qed.
+
+Lemma store_ty_extends_preserves_typing : forall Γ Σ Σ' Δ e T ε,
+  store_ty_extends Σ Σ' ->
+  has_type Γ Σ Δ e T ε ->
+  has_type Γ Σ' Δ e T ε.
+Proof.
+  intros Γ Σ Σ' Δ e T ε Hext Hty.
+  induction Hty; eauto.
+  - (* T_Loc *)
+    apply T_Loc. apply Hext. assumption.
+Qed.
+
+Lemma store_ty_extends_refl : forall Σ, store_ty_extends Σ Σ.
+Proof.
+  intros Σ l T sl Hlookup. exact Hlookup.
+Qed.
+
+Lemma store_wf_update_existing : forall Σ st l T sl v,
+  store_wf Σ st ->
+  store_ty_lookup l Σ = Some (T, sl) ->
+  has_type nil Σ Public v T EffectPure ->
+  store_wf Σ (store_update l v st).
+Proof.
+  intros Σ st l T sl v [HΣtoSt HSttoΣ] Hlookup Hv.
+  split.
+  - intros l0 T0 sl0 Hlookup0.
+    destruct (Nat.eqb l0 l) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst.
+      exists v. split.
+      * apply store_lookup_update_eq.
+      * exact Hv.
+    + apply Nat.eqb_neq in Heq.
+      destruct (HΣtoSt l0 T0 sl0 Hlookup0) as [v0 [Hst Hty]].
+      exists v0. split.
+      * rewrite store_lookup_update_neq; auto.
+      * exact Hty.
+  - intros l0 v0 Hst.
+    destruct (Nat.eqb l0 l) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst.
+      exists T, sl. split.
+      * exact Hlookup.
+      * assert (store_lookup l (store_update l v st) = Some v) as Hst'.
+        { apply store_lookup_update_eq. }
+        rewrite Hst' in Hst. inversion Hst. subst. exact Hv.
+    + apply Nat.eqb_neq in Heq.
+      rewrite store_lookup_update_neq in Hst; auto.
+      exact (HSttoΣ l0 v0 Hst).
+Qed.
+
+Lemma store_wf_update_fresh : forall Σ st l T sl v,
+  store_wf Σ st ->
+  store_lookup l st = None ->
+  store_ty_lookup l Σ = None ->
+  has_type nil Σ Public v T EffectPure ->
+  store_wf (store_ty_update l T sl Σ) (store_update l v st).
+Proof.
+  intros Σ st l T sl v [HΣtoSt HSttoΣ] Hstnone Htynone Hv.
+  split.
+  - intros l0 T0 sl0 Hlookup.
+    simpl in Hlookup.
+    destruct (Nat.eqb l0 l) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst.
+      inversion Hlookup; subst.
+      exists v. split.
+      * apply store_lookup_update_eq.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ).
+        -- apply store_ty_extends_update_fresh. exact Htynone.
+        -- exact Hv.
+    + apply Nat.eqb_neq in Heq.
+      destruct (HΣtoSt l0 T0 sl0 Hlookup) as [v0 [Hst Hty]].
+      exists v0. split.
+      * rewrite store_lookup_update_neq; auto.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ).
+        -- apply store_ty_extends_update_fresh. exact Htynone.
+        -- exact Hty.
+  - intros l0 v0 Hst.
+    destruct (Nat.eqb l0 l) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst.
+      exists T, sl. split.
+      * simpl. rewrite Nat.eqb_refl. reflexivity.
+      * assert (store_lookup l (store_update l v st) = Some v) as Hst'.
+        { apply store_lookup_update_eq. }
+        rewrite Hst' in Hst. inversion Hst. subst.
+        apply store_ty_extends_preserves_typing with (Σ := Σ).
+        -- apply store_ty_extends_update_fresh. exact Htynone.
+        -- exact Hv.
+    + apply Nat.eqb_neq in Heq.
+      rewrite store_lookup_update_neq in Hst; auto.
+      destruct (HSttoΣ l0 v0 Hst) as [T0 [sl0 [Hlookup0 Hty0]]].
+      exists T0, sl0. split.
+      * simpl. rewrite Nat.eqb_neq; auto.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ).
+        -- apply store_ty_extends_update_fresh. exact Htynone.
+        -- exact Hty0.
+Qed.
+
+Lemma store_ty_lookup_fresh_none : forall Σ st,
+  store_wf Σ st ->
+  store_ty_lookup (fresh_loc st) Σ = None.
+Proof.
+  intros Σ st [HΣtoSt _].
+  destruct (store_ty_lookup (fresh_loc st) Σ) as [[T sl] |] eqn:Hlookup; auto.
+  destruct (HΣtoSt _ _ _ Hlookup) as [v [Hst _]].
+  rewrite store_lookup_fresh in Hst. discriminate.
 Qed.
 
 (** ** Auxiliary Lemma 2: Context Invariance
@@ -254,8 +403,10 @@ Proof.
   - inversion Hty; subst. constructor.
   (* EString *)
   - inversion Hty; subst. constructor.
+  (* ELoc *)
+  - inversion Hty; subst. constructor. assumption.
   (* EVar *)
-  - inversion Hty as [ | | | | ? ? ? ? ? Hlook | | | | | | | | | | ]; subst.
+  - inversion Hty as [ | | | | | ? ? ? ? ? Hlook | | | | | | | | | | ]; subst.
     (* Hlook : lookup i ((z, T1) :: Γ) = Some T2 *)
     simpl.
     simpl in Hlook.
@@ -400,19 +551,54 @@ Proof.
                 rewrite String.eqb_refl in Heq. discriminate. }
               rewrite Hne. reflexivity.
            ++ destruct (String.eqb y z) eqn:Heq3; reflexivity.
-  (* Remaining expression forms without typing rules - these cases are impossible
-     since the expression cannot be well-typed. These expressions have no typing rules
-     in the current subset of the language. *)
-  - (* EPerform *) inversion Hty.
-  - (* EHandle *) inversion Hty.
-  - (* ERef *) inversion Hty.
-  - (* EDeref *) inversion Hty.
-  - (* EAssign *) inversion Hty.
-  - (* EClassify *) inversion Hty.
-  - (* EDeclassify *) inversion Hty.
-  - (* EProve *) inversion Hty.
-  - (* ERequire *) inversion Hty.
-  - (* EGrant *) inversion Hty.
+  (* EPerform *)
+  - inversion Hty; subst.
+    eapply T_Perform. eapply IHe. eassumption.
+  (* EHandle *)
+  - inversion Hty; subst.
+    eapply T_Handle.
+    + eapply IHe1; eassumption.
+    + destruct (String.eqb z i) eqn:Heq.
+      * apply String.eqb_eq in Heq. subst.
+        eapply context_invariance.
+        -- eassumption.
+        -- intros y Hfr. simpl. destruct (String.eqb y i); reflexivity.
+      * eapply IHe2.
+        eapply context_invariance.
+        -- eassumption.
+        -- intros y Hfr. simpl.
+           destruct (String.eqb y i) eqn:Heq2.
+           ++ apply String.eqb_eq in Heq2. subst.
+              assert ((i =? z)%string = false) as Hne.
+              { destruct (String.eqb i z) eqn:E; auto.
+                apply String.eqb_eq in E. subst.
+                rewrite String.eqb_refl in Heq. discriminate. }
+              rewrite Hne. reflexivity.
+           ++ destruct (String.eqb y z) eqn:Heq3; reflexivity.
+  (* ERef *)
+  - inversion Hty; subst.
+    eapply T_Ref. eapply IHe. eassumption.
+  (* EDeref *)
+  - inversion Hty; subst.
+    eapply T_Deref. eapply IHe. eassumption.
+  (* EAssign *)
+  - inversion Hty; subst.
+    eapply T_Assign; eauto.
+  (* EClassify *)
+  - inversion Hty; subst.
+    eapply T_Classify. eapply IHe. eassumption.
+  (* EDeclassify *)
+  - inversion Hty; subst.
+    eapply T_Declassify; eauto.
+  (* EProve *)
+  - inversion Hty; subst.
+    eapply T_Prove. eapply IHe. eassumption.
+  (* ERequire *)
+  - inversion Hty; subst.
+    eapply T_Require. eapply IHe. eassumption.
+  (* EGrant *)
+  - inversion Hty; subst.
+    eapply T_Grant. eapply IHe. eassumption.
 Qed.
 
 (** ** Preservation Theorem
@@ -422,12 +608,12 @@ Qed.
 *)
 
 (** Helper: values have pure effect when typed in empty context *)
-Lemma value_has_pure_effect : forall v T ε,
+Lemma value_has_pure_effect : forall v T ε Σ,
   value v ->
-  has_type nil nil Public v T ε ->
-  has_type nil nil Public v T EffectPure.
+  has_type nil Σ Public v T ε ->
+  has_type nil Σ Public v T EffectPure.
 Proof.
-  intros v T ε Hval.
+  intros v T ε Σ Hval.
   generalize dependent ε.
   generalize dependent T.
   induction Hval; intros T' ε' Hty; inversion Hty; subst.
@@ -435,6 +621,7 @@ Proof.
   - (* VBool *) constructor.
   - (* VInt *) constructor.
   - (* VString *) constructor.
+  - (* VLoc *) constructor. assumption.
   - (* VLam *) constructor. assumption.
   - (* VPair *)
     eapply T_Pair; eassumption.
@@ -442,128 +629,361 @@ Proof.
     eapply T_Inl. eapply IHHval. eassumption.
   - (* VInr *)
     eapply T_Inr. eapply IHHval. eassumption.
+  - (* VClassify *)
+    eapply T_Classify. eapply IHHval. eassumption.
+  - (* VProve *)
+    eapply T_Prove. eapply IHHval. eassumption.
 Qed.
 
 (** Helper lemma for preservation with proper IH *)
 Lemma preservation_helper : forall cfg1 cfg2,
   cfg1 --> cfg2 ->
-  forall e st ctx e' st' ctx' T ε,
+  forall e st ctx e' st' ctx' T ε Σ,
     cfg1 = (e, st, ctx) ->
     cfg2 = (e', st', ctx') ->
-    has_type nil nil Public e T ε ->
-    exists ε', has_type nil nil Public e' T ε'.
+    has_type nil Σ Public e T ε ->
+    store_wf Σ st ->
+    exists Σ' ε',
+      store_ty_extends Σ Σ' /\
+      store_wf Σ' st' /\
+      has_type nil Σ' Public e' T ε'.
 Proof.
   intros cfg1 cfg2 Hstep.
-  induction Hstep; intros e0 st0 ctx0 e0' st0' ctx0' T0 ε0 Heq1 Heq2 Hty;
+  induction Hstep; intros e0 st0 ctx0 e0' st0' ctx0' T0 ε0 Σ Heq1 Heq2 Hty Hwf;
     inversion Heq1; inversion Heq2; subst.
   (* ST_AppAbs: beta reduction for function application *)
   - inversion Hty; subst.
     match goal with
     | [ H : has_type _ _ _ (ELam _ _ _) _ _ |- _ ] => inversion H; subst
     end.
-    eexists. eapply substitution_preserves_typing.
-    + eapply value_has_pure_effect; eassumption.
-    + eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eapply substitution_preserves_typing.
+      * eapply value_has_pure_effect; eassumption.
+      * eassumption.
   (* ST_App1: congruence for application (left) *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_App; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty1']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_App.
+      * exact Hty1'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
   (* ST_App2: congruence for application (right) *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_App; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty2']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_App.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+      * exact Hty2'.
   (* ST_Pair1: congruence for pairs (left) *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Pair; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty1']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Pair.
+      * exact Hty1'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
   (* ST_Pair2: congruence for pairs (right) *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Pair; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty2']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Pair.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+      * exact Hty2'.
   (* ST_Fst: projection from pair (left) *)
   - inversion Hty; subst.
     match goal with
     | [ H : has_type _ _ _ (EPair _ _) _ _ |- _ ] => inversion H; subst
     end.
-    eexists. eapply value_has_pure_effect; eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + assumption.
   (* ST_Snd: projection from pair (right) *)
   - inversion Hty; subst.
     match goal with
     | [ H : has_type _ _ _ (EPair _ _) _ _ |- _ ] => inversion H; subst
     end.
-    eexists. eapply value_has_pure_effect; eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + assumption.
   (* ST_FstStep: congruence for fst *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Fst; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Fst. exact Hty'.
   (* ST_SndStep: congruence for snd *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Snd; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Snd. exact Hty'.
   (* ST_CaseInl: case analysis on Inl *)
   - inversion Hty; subst.
     match goal with
     | [ H : has_type _ _ _ (EInl _ _) _ _ |- _ ] => inversion H; subst
     end.
-    eexists. eapply substitution_preserves_typing.
-    + eapply value_has_pure_effect; eassumption.
-    + eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eapply substitution_preserves_typing.
+      * eapply value_has_pure_effect; eassumption.
+      * eassumption.
   (* ST_CaseInr: case analysis on Inr *)
   - inversion Hty; subst.
     match goal with
     | [ H : has_type _ _ _ (EInr _ _) _ _ |- _ ] => inversion H; subst
     end.
-    eexists. eapply substitution_preserves_typing.
-    + eapply value_has_pure_effect; eassumption.
-    + eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eapply substitution_preserves_typing.
+      * eapply value_has_pure_effect; eassumption.
+      * eassumption.
   (* ST_CaseStep: congruence for case *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Case; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Case.
+      * exact Hty'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
   (* ST_InlStep: congruence for Inl *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Inl; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Inl. exact Hty'.
   (* ST_InrStep: congruence for Inr *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_Inr; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Inr. exact Hty'.
   (* ST_IfTrue: if-then-else with true *)
   - inversion Hty; subst.
-    eexists. eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eassumption.
   (* ST_IfFalse: if-then-else with false *)
   - inversion Hty; subst.
-    eexists. eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eassumption.
   (* ST_IfStep: congruence for if *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
-    + eassumption.
-    + eexists. eapply T_If; eassumption.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_If.
+      * exact Hty'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
   (* ST_LetValue: let binding with value *)
   - inversion Hty; subst.
-    eexists. eapply substitution_preserves_typing.
-    + eapply value_has_pure_effect; eassumption.
-    + eassumption.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eapply substitution_preserves_typing.
+      * eapply value_has_pure_effect; eassumption.
+      * eassumption.
   (* ST_LetStep: congruence for let *)
   - inversion Hty; subst.
-    edestruct IHHstep as [ε' He']; try reflexivity.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Let.
+      * exact Hty'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+  (* ST_PerformStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Perform. exact Hty'.
+  (* ST_PerformValue *)
+  - inversion Hty; subst.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
     + eassumption.
-    + eexists. eapply T_Let; eassumption.
+  (* ST_HandleStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Handle.
+      * exact Hty'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+  (* ST_HandleValue *)
+  - inversion Hty; subst.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eapply substitution_preserves_typing.
+      * eapply value_has_pure_effect; eassumption.
+      * eassumption.
+  (* ST_RefStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Ref. exact Hty'.
+  (* ST_RefValue *)
+  - inversion Hty; subst.
+    assert (has_type nil Σ Public v T EffectPure) as Hvty.
+    { eapply value_has_pure_effect; eassumption. }
+    assert (store_ty_lookup (fresh_loc st) Σ = None) as Hfresh_none.
+    { apply store_ty_lookup_fresh_none. exact Hwf. }
+    set (Σ' := store_ty_update (fresh_loc st) T sl Σ).
+    exists Σ'. eexists. repeat split.
+    + subst Σ'. apply store_ty_extends_update_fresh. exact Hfresh_none.
+    + subst Σ'. eapply store_wf_update_fresh; eauto.
+      * apply store_lookup_fresh.
+    + subst Σ'. apply T_Loc. simpl. rewrite Nat.eqb_refl. reflexivity.
+  (* ST_DerefStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Deref. exact Hty'.
+  (* ST_DerefLoc *)
+  - inversion Hty; subst.
+    destruct Hwf as [HΣtoSt HSttoΣ].
+    destruct (HSttoΣ l v H) as [T0 [sl0 [Hlookup Htyv]]].
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact (conj HΣtoSt HSttoΣ).
+    + match goal with
+      | Hloc : store_ty_lookup l Σ = Some (T, sl) |- _ =>
+          rewrite Hloc in Hlookup; inversion Hlookup; subst; exact Htyv
+      end.
+  (* ST_Assign1 *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Assign.
+      * exact Hty'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+  (* ST_Assign2 *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty2']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Assign.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+      * exact Hty2'.
+  (* ST_AssignLoc *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (ELoc _) _ _ |- _ ] => inversion H; subst
+    end.
+    assert (has_type nil Σ Public v2 T EffectPure) as Hvty.
+    { eapply value_has_pure_effect; eassumption. }
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + eapply store_wf_update_existing; eauto.
+    + constructor.
+  (* ST_ClassifyStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Classify. exact Hty'.
+  (* ST_Declassify1 *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty1']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Declassify.
+      * exact Hty1'.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+  (* ST_Declassify2 *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty2']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Declassify.
+      * apply store_ty_extends_preserves_typing with (Σ := Σ); [exact Hext | eassumption].
+      * exact Hty2'.
+  (* ST_DeclassifyValue *)
+  - inversion Hty; subst.
+    match goal with
+    | [ H : has_type _ _ _ (EClassify _) _ _ |- _ ] => inversion H; subst
+    end.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eassumption.
+  (* ST_ProveStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Prove. exact Hty'.
+  (* ST_RequireStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Require. exact Hty'.
+  (* ST_RequireValue *)
+  - inversion Hty; subst.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eassumption.
+  (* ST_GrantStep *)
+  - inversion Hty; subst.
+    edestruct IHHstep as [Σ' [ε' [Hext [Hwf' Hty']]]]; try reflexivity; eauto.
+    exists Σ'. eexists. repeat split; try assumption.
+    + exact Hext.
+    + exact Hwf'.
+    + eapply T_Grant. exact Hty'.
+  (* ST_GrantValue *)
+  - inversion Hty; subst.
+    exists Σ. eexists. repeat split.
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + eassumption.
 Qed.
 
 Theorem preservation : preservation_stmt.
 Proof.
   unfold preservation_stmt.
-  intros e e' T ε st st' ctx ctx' Hty Hstep.
+  intros e e' T ε st st' ctx ctx' Σ Hty Hwf Hstep.
   eapply preservation_helper with (cfg1 := (e, st, ctx)) (cfg2 := (e', st', ctx'));
     try reflexivity; eassumption.
 Qed.
