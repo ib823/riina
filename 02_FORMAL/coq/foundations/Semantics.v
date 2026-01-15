@@ -150,6 +150,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e, st, ctx) --> (e', st', ctx') ->
       (EHandle e x h, st, ctx) --> (EHandle e' x h, st', ctx')
 
+  | ST_HandleValue : forall v x h st ctx,
+      value v ->
+      (EHandle v x h, st, ctx) --> ([x := v] h, st, ctx)
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -302,6 +306,17 @@ Proof.
 
   (* ST_HandleStep *)
   - solve_ih.
+  - match goal with
+    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
+        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
+    end.
+
+  (* ST_HandleValue *)
+  - try reflexivity.
+    match goal with
+    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
+        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
+    end.
 Qed.
 
 (** End of Semantics.v *)
