@@ -70,6 +70,7 @@ pub enum TokenKind {
     KwMatch,
     KwLoop,
     KwWhile,
+    KwWith,
     KwBreak,
     KwContinue,
     KwReturn,
@@ -88,13 +89,18 @@ pub enum TokenKind {
     KwRef,
     KwUnsafe,
     KwEffect,
+    KwPerform,
     KwHandle,
     KwResume,
     KwAbort,
     KwSecret,
+    KwClassify,
     KwPublic,
     KwTainted,
     KwDeclassify,
+    KwProve,
+    KwInl,
+    KwInr,
     KwSanitize,
     KwSession,
     KwSend,
@@ -157,6 +163,7 @@ pub enum TokenKind {
     DotDotEq,   // ..=
     Comma,      // ,
     Colon,      // :
+    ColonEq,    // :=
     Semi,       // ;
     Question,   // ?
     At,         // @

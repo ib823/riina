@@ -8,3 +8,7 @@ description = "TERAS-LANG parser"
 
 [dependencies]
 teras-lang-lexer.workspace = true
+teras-lang-types.workspace = true
+
+[dev-dependencies]
+# No external deps, standard test harness
