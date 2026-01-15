@@ -118,7 +118,7 @@ Proof.
   (* T_String *)
   1: { left. constructor. }
   (* T_Var - impossible: lookup in empty context gives None *)
-  1: { simpl in H. discriminate H. }
+  1: { rewrite HΓ in H. simpl in H. discriminate H. }
   (* T_Lam - lambdas are values *)
   1: { left. exact (VLam x T1 e). }
   - (* T_App *)
