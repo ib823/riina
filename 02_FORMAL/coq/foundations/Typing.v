@@ -1,6 +1,6 @@
-(** * TERAS-LANG Typing Rules
+(** * RIINA Typing Rules
 
-    Type system for TERAS-LANG.
+    Type system for RIINA.
 
     Reference: CTSS_v1_0_1.md, Section 4
 
@@ -9,8 +9,8 @@
 
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
-Require Import TERAS.foundations.Syntax.
-Require Import TERAS.foundations.Semantics.
+Require Import RIINA.foundations.Syntax.
+Require Import RIINA.foundations.Semantics.
 Import ListNotations.
 
 (** ** Type Environments *)

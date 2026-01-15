@@ -1,4 +1,4 @@
-(** * Progress Theorem for TERAS-LANG
+(** * Progress Theorem for RIINA
 
     If a closed, well-typed expression is not a value,
     then it can take a step.
@@ -10,9 +10,9 @@
 
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
-Require Import TERAS.foundations.Syntax.
-Require Import TERAS.foundations.Semantics.
-Require Import TERAS.foundations.Typing.
+Require Import RIINA.foundations.Syntax.
+Require Import RIINA.foundations.Semantics.
+Require Import RIINA.foundations.Typing.
 Import ListNotations.
 
 (** ** Progress Statement *)
