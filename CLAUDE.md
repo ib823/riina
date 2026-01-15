@@ -1,25 +1,83 @@
-# CLAUDE.md — TERAS Proof Repository
+# CLAUDE.md — RIINA Proof Repository
 
 ## CRITICAL: READ THIS ENTIRE FILE BEFORE ANY ACTION
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
 ║                                                                                  ║
-║                    TERAS PROOF REPOSITORY — CLAUDE CODE GUIDE                    ║
+║  ██████╗ ██╗██╗███╗   ██╗ █████╗                                                ║
+║  ██╔══██╗██║██║████╗  ██║██╔══██╗                                               ║
+║  ██████╔╝██║██║██╔██╗ ██║███████║                                               ║
+║  ██╔══██╗██║██║██║╚██╗██║██╔══██║                                               ║
+║  ██║  ██║██║██║██║ ╚████║██║  ██║                                               ║
+║  ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                               ║
+║                                                                                  ║
+║  Rigorous Immutable Integrity No-attack Assured                                  ║
+║                                                                                  ║
+║  RIINA PROOF REPOSITORY — CLAUDE CODE GUIDE                                      ║
 ║                                                                                  ║
 ║  Repository: https://github.com/ib823/proof                                      ║
-║  Purpose: Formal proofs and prototype for TERAS-LANG                             ║
+║  Purpose: Formal proofs and prototype for RIINA                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
+║                                                                                  ║
+║  "Security proven. Family driven."                                               ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
 
+## 0. ABOUT RIINA
+
+### 0.1 Name Origin
+
+```
+RIINA = Reena + Isaac + Imaan + No-attack + Assured
+
+R  — Reena (foundation, the queen)
+I  — Isaac (first pillar)
+I  — Imaan (second pillar)
+NA — No-attack Assured (the guarantee)
+
+Technical Acronym:
+RIINA = Rigorous Immutable Integrity No-attack Assured
+```
+
+### 0.2 What Is RIINA?
+
+RIINA is the world's **first formally verified programming language** with:
+
+1. **Mathematical guarantees** — All security properties proven in Coq
+2. **Bahasa Melayu syntax** — Native Malaysian language keywords
+3. **Zero-trust architecture** — Compiler, hardware, and supply chain untrusted
+4. **Family legacy** — Named for Reena, Isaac, and Imaan
+
+### 0.3 File Extension
+
+| Extension | Purpose |
+|-----------|---------|
+| `.rii` | RIINA source files |
+| `.riih` | RIINA header/interface files |
+
+### 0.4 Key Syntax (Bahasa Melayu)
+
+| Bahasa Melayu | English | Example |
+|---------------|---------|---------|
+| `fungsi` | fn | `fungsi tambah(x: Nombor) -> Nombor` |
+| `biar` | let | `biar nama = "Ahmad";` |
+| `kalau` | if | `kalau x > 0 { ... }` |
+| `pulang` | return | `pulang hasil;` |
+| `rahsia` | secret | `biar kunci: Rahsia<Teks>` |
+| `dedah` | declassify | `dedah(nilai, dasar: "..."}` |
+
+**Full syntax specification:** `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md`
+
+---
+
 ## 1. REPOSITORY OVERVIEW
 
-This repository contains the **formal foundations** and **prototype implementation** 
-for TERAS-LANG, a security-focused programming language where security properties 
+This repository contains the **formal foundations** and **prototype implementation**
+for RIINA, a security-focused programming language where security properties
 are mathematically guaranteed at compile time.
 
 ### 1.1 Directory Structure
@@ -44,7 +102,13 @@ are mathematically guaranteed at compile time.
 │   ├── 18_DOMAIN_R_CERTIFIED_COMPILATION/  ← Track R: Translation Validation
 │   ├── 19_DOMAIN_S_HARDWARE_CONTRACTS/     ← Track S: HW/SW Co-Verification
 │   ├── 20_DOMAIN_T_HERMETIC_BUILD/         ← Track T: Binary Bootstrap
-│   └── 21_DOMAIN_U_RUNTIME_GUARDIAN/       ← Track U: Verified Micro-Hypervisor
+│   ├── 21_DOMAIN_U_RUNTIME_GUARDIAN/       ← Track U: Verified Micro-Hypervisor
+│   ├── 22_DOMAIN_V_TERMINATION_GUARANTEES/ ← Track V: Termination Proofs
+│   ├── 23_DOMAIN_W_VERIFIED_MEMORY/        ← Track W: Memory Safety
+│   ├── 24_DOMAIN_X_CONCURRENCY_MODEL/      ← Track X: Concurrency
+│   ├── 25_DOMAIN_Y_VERIFIED_STDLIB/        ← Track Y: Verified Library
+│   ├── 26_DOMAIN_Z_DECLASSIFICATION_POLICY/← Track Z: Declassification
+│   └── specs/bahasa/                       ← Bahasa Melayu syntax specs
 │
 ├── 02_FORMAL/                   ← Track A: Formal proofs
 │   ├── coq/                     ← Coq proofs (PRIMARY)
@@ -60,10 +124,10 @@ are mathematically guaranteed at compile time.
 ├── 03_PROTO/                    ← Track B: Rust prototype
 │   ├── Cargo.toml               ← Workspace configuration
 │   └── crates/
-│       ├── teras-lang-lexer/    ← Lexer implementation
-│       ├── teras-lang-parser/   ← Parser implementation
-│       ├── teras-lang-types/    ← Type system implementation
-│       └── terasc/              ← Compiler driver
+│       ├── riina-lexer/         ← Lexer implementation
+│       ├── riina-parser/        ← Parser implementation
+│       ├── riina-types/         ← Type system implementation
+│       └── riinac/              ← Compiler driver
 │
 ├── 04_SPECS/                    ← Track C: Specifications
 │   ├── language/                ← Language specifications
@@ -73,12 +137,17 @@ are mathematically guaranteed at compile time.
 ├── 05_TOOLING/                  ← Track F: Build tools & crypto
 │   ├── Cargo.toml               ← Tooling workspace
 │   ├── crates/
-│   │   ├── teras-core/          ← Cryptographic primitives
-│   │   ├── teras-build/         ← Build orchestrator
-│   │   └── teras-verify/        ← Verification orchestrator
+│   │   ├── riina-core/          ← Cryptographic primitives
+│   │   ├── riina-build/         ← Build orchestrator
+│   │   └── riina-verify/        ← Verification orchestrator
 │   ├── tools/                   ← Standalone tools
 │   ├── ada/                     ← Ada/SPARK sources
 │   └── .github/workflows/       ← CI/CD configuration
+│
+├── 07_EXAMPLES/                 ← Example .rii files
+│   ├── hello_dunia.rii          ← Hello World in RIINA
+│   ├── pengesahan.rii           ← Authentication example
+│   └── kripto.rii               ← Cryptography example
 │
 └── 06_COORDINATION/             ← Cross-track coordination
     ├── COORDINATION_LOG.md      ← Master coordination state
@@ -111,8 +180,8 @@ If the repository is empty or only contains this CLAUDE.md:
 cd /workspaces/proof
 
 # Check if archive exists
-if [ -f "TERAS_PROOF_REPOSITORY_COMPLETE.zip" ]; then
-    unzip -o TERAS_PROOF_REPOSITORY_COMPLETE.zip
+if [ -f "RIINA_PROOF_REPOSITORY_COMPLETE.zip" ]; then
+    unzip -o RIINA_PROOF_REPOSITORY_COMPLETE.zip
     echo "Archive extracted successfully"
 else
     echo "ERROR: Archive not found. Request upload from user."
@@ -237,7 +306,7 @@ cd /workspaces/proof/02_FORMAL/coq
 make
 
 # Build specific file
-coqc -Q . TERAS foundations/Syntax.v
+coqc -Q . RIINA foundations/Syntax.v
 
 # Check for admits (FORBIDDEN in final)
 grep -r "Admitted\|admit\|todo" *.v
@@ -283,10 +352,10 @@ cargo fmt --check
 
 #### Implementation Order
 
-1. `teras-lang-lexer/` — Tokenizer
-2. `teras-lang-parser/` — AST construction
-3. `teras-lang-types/` — Type checker
-4. `terasc/` — Compiler driver
+1. `riina-lexer/` — Tokenizer (Bahasa Melayu keywords)
+2. `riina-parser/` — AST construction
+3. `riina-types/` — Type checker
+4. `riinac/` — Compiler driver
 
 #### Coordination with Track A
 
@@ -306,7 +375,7 @@ cargo fmt --check
 #### Remaining Work
 
 ```bash
-cd /workspaces/proof/05_TOOLING/crates/teras-core/src/crypto
+cd /workspaces/proof/05_TOOLING/crates/riina-core/src/crypto
 
 # Files needing implementation:
 # - x25519.rs (Montgomery ladder)
@@ -315,12 +384,21 @@ cd /workspaces/proof/05_TOOLING/crates/teras-core/src/crypto
 # - ml_dsa.rs (NTT, rejection sampling)
 ```
 
-### 4.4 New Zero-Trust Tracks (R, S, T, U)
+### 4.4 Zero-Trust Tracks (R, S, T, U)
 
 - **Track R (Certified Compilation):** Verify binary equivalence.
 - **Track S (Hardware Contracts):** Model CPU side-channels.
 - **Track T (Hermetic Build):** Bootstrap from `hex0`.
 - **Track U (Runtime Guardian):** Verified micro-hypervisor.
+
+### 4.5 Completeness Tracks (V, W, X, Y, Z)
+
+- **Track V (Termination Guarantees):** Sized types, strong normalization.
+- **Track W (Verified Memory):** Separation logic, verified allocator.
+- **Track X (Concurrency Model):** Session types, data-race freedom.
+- **Track Y (Verified Stdlib):** Proven standard library functions.
+- **Track Z (Declassification Policy):** Robust declassification with budgets.
+
 *(See 01_RESEARCH for definitive plans)*
 
 ---
@@ -357,11 +435,13 @@ TYPE:
 - FIX: Bug fix
 - DOCS: Documentation
 - REFACTOR: Code restructuring
+- RENAME: TERAS → RIINA migration
 
 Examples:
 [TRACK_A] PROOF: Complete Progress lemma for function application
-[TRACK_B] IMPL: Lexer tokenizes all keyword tokens
+[TRACK_B] IMPL: Lexer tokenizes Bahasa Melayu keywords
 [TRACK_F] FIX: Constant-time comparison in HMAC verify
+[ALL] RENAME: Migrate TERAS references to RIINA
 ```
 
 ---
@@ -377,7 +457,7 @@ Examples:
 5. **NEVER add third-party crypto dependencies**
 6. **NEVER skip verification before commit**
 7. **NEVER force push to main**
-8. **NEVER modify 01_RESEARCH/** (read-only reference)
+8. **NEVER modify 01_RESEARCH/** (read-only reference, except for new tracks)
 
 ### 6.2 ALWAYS Do These
 
@@ -387,6 +467,7 @@ Examples:
 4. **ALWAYS commit and push frequently**
 5. **ALWAYS document assumptions and axioms**
 6. **ALWAYS cross-reference Track A proofs with Track B implementations**
+7. **ALWAYS use Bahasa Melayu keywords in .rii example files**
 
 ---
 
@@ -440,24 +521,31 @@ git add -A && git commit -m "[RECOVERY] Uncommitted work from disconnect"
 
 ## 8. CURRENT PRIORITIES
 
-### Immediate (This Session)
+### Immediate (P0)
 
-1. **Verify repository structure** — Ensure all directories exist
-2. **Run setup scripts** — Install Coq, Rust, Lean
-3. **Build existing code** — Verify everything compiles
-4. **Start Track A** — Begin `foundations/Syntax.v`
+1. **Complete TERAS → RIINA rename** — All crates, modules, documentation
+2. **Track F** — Complete ML-KEM/ML-DSA implementations
+3. **Track A** — Fix `Typing.v` proof for extended rules
 
-### Short-term (This Week)
+### Short-term (P1)
 
-1. Complete `foundations/Syntax.v` and `foundations/Semantics.v`
-2. Begin `type_system/Typing.v`
-3. Start Track B lexer implementation
+1. **Track A** — Extend non-interference to stateful programs
+2. **Track V** — Formalize termination system in Coq
+3. **Track Z** — Formalize declassification policies
+4. **Create example .rii files** — Demonstrate Bahasa Melayu syntax
 
-### Medium-term (This Month)
+### Medium-term (P2)
 
-1. Complete Progress and Preservation theorems
-2. Complete lexer and parser
-3. Begin type checker implementation
+1. **Track R** — Begin translation validation prototype
+2. **Track X** — Formalize session types
+3. **Track W** — Formalize memory allocator
+
+### Long-term (P3)
+
+1. **Track T** — Hermetic bootstrap chain
+2. **Track S** — Formal ISA model
+3. **Track U** — seL4 integration
+4. **Track Y** — Verified standard library
 
 ---
 
@@ -465,20 +553,42 @@ git add -A && git commit -m "[RECOVERY] Uncommitted work from disconnect"
 
 ### 9.1 Key Specifications (in 01_RESEARCH/)
 
-- `teras-lang-foundation-v0_3_1.md` — Language foundation
+- `RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md` — **Bahasa Melayu syntax specification**
 - `CTSS_v1_0_1.md` — Core Type System Specification
-- `TERAS-LANG-LEXER-SPEC_v1_0_0.md` — Lexer specification
-- `TERAS-LANG-GRAMMAR-*.md` — Grammar specifications
-- `TERAS-LANG-AST_v1_0_0.md` — AST specification
+- `RIINA-LANG-LEXER-SPEC_v1_0_0.md` — Lexer specification
+- `RIINA-LANG-GRAMMAR-*.md` — Grammar specifications
+- `RIINA-LANG-AST_v1_0_0.md` — AST specification
 - `RESEARCH_R01_FOUNDATION.md` — Translation Validation
 - `RESEARCH_S01_FOUNDATION.md` — Hardware Contracts
 - `RESEARCH_T01_FOUNDATION.md` — Hermetic Bootstrap
 - `RESEARCH_U01_FOUNDATION.md` — Runtime Guardian
+- `RESEARCH_V01_FOUNDATION.md` — Termination Guarantees
+- `RESEARCH_W01_FOUNDATION.md` — Verified Memory
+- `RESEARCH_X01_FOUNDATION.md` — Concurrency Model
+- `RESEARCH_Y01_FOUNDATION.md` — Verified Stdlib
+- `RESEARCH_Z01_FOUNDATION.md` — Declassification Policy
 
-### 9.2 Architecture Documents
+### 9.2 Bahasa Melayu Quick Reference
 
-- `TERAS_MASTER_ARCHITECTURE_v3_2_2_CONSOLIDATED.md` — Master architecture
-- `TERAS_DEFINITIVE_PLAN_v1_0_0.md` — Development roadmap
+| Bahasa Melayu | English | Usage |
+|---------------|---------|-------|
+| `fungsi` | fn | Function declaration |
+| `biar` | let | Variable binding |
+| `ubah` | mut | Mutable modifier |
+| `tetap` | const | Constant |
+| `kalau` | if | Conditional |
+| `lain` | else | Alternative |
+| `untuk` | for | For loop |
+| `selagi` | while | While loop |
+| `ulang` | loop | Infinite loop |
+| `pulang` | return | Return value |
+| `padan` | match | Pattern match |
+| `betul` | true | True value |
+| `salah` | false | False value |
+| `rahsia` | secret | Secret type |
+| `dedah` | declassify | Declassify |
+| `kesan` | effect | Effect annotation |
+| `bersih` | pure | Pure effect |
 
 ---
 
@@ -493,5 +603,28 @@ If blocked or uncertain:
 
 ---
 
-*This CLAUDE.md follows ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS principles.*
+## 11. LEGACY NAME MIGRATION
+
+The language was previously named "TERAS". All references are being migrated to "RIINA".
+
+| Old Name | New Name |
+|----------|----------|
+| TERAS | RIINA |
+| TERAS-LANG | RIINA |
+| teras-lang-* | riina-* |
+| .teras | .rii |
+| terasc | riinac |
+
+When encountering old references, update them to the new naming.
+
+---
+
+*This CLAUDE.md follows ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE principles.*
+
+*RIINA: Rigorous Immutable Integrity No-attack Assured*
+
+*Reena. Isaac. Imaan. Forever in code.*
+
+*"Security proven. Family driven."*
+
 *Last updated: 2026-01-15*

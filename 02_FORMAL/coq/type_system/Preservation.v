@@ -515,11 +515,12 @@ Qed.
 *)
 
 Lemma substitution_preserves_typing : forall Γ Σ Δ z v e T1 T2 ε2,
+  value v ->
   has_type nil Σ Δ v T1 EffectPure ->
   has_type ((z, T1) :: Γ) Σ Δ e T2 ε2 ->
   has_type Γ Σ Δ ([z := v] e) T2 ε2.
 Proof.
-  intros Γ Σ Δ z v e T1 T2 ε2 Hv Hty.
+  intros Γ Σ Δ z v e T1 T2 ε2 Hval Htyv.
   generalize dependent Γ.
   generalize dependent ε2.
   generalize dependent T2.
@@ -544,7 +545,7 @@ Proof.
     + apply String.eqb_eq in Heq; subst.
       rewrite String.eqb_refl in Hlook.
       inversion Hlook; subst.
-      apply closed_typing_weakening; exact Hv.
+      apply closed_typing_weakening; exact Htyv.
     + apply T_Var.
       assert (String.eqb i z = false) as Heq'.
       { destruct (String.eqb i z) eqn:Heq'.
@@ -715,7 +716,7 @@ Proof.
   (* EDeclassify *)
   - inversion Hty; subst.
     eapply T_Declassify; eauto.
-    apply declass_ok_subst; assumption.
+    apply declass_ok_subst; [exact Hval | assumption].
   (* EProve *)
   - inversion Hty; subst.
     eapply T_Prove. eapply IHe. eassumption.
@@ -792,6 +793,7 @@ Proof.
     + split.
       * exact Hwf.
       * eapply substitution_preserves_typing.
+        -- eassumption.
         -- eapply value_has_pure_effect; eassumption.
         -- eassumption.
   (* ST_App1: congruence for application (left) *)
@@ -889,6 +891,7 @@ Proof.
     + split.
       * exact Hwf.
       * eapply substitution_preserves_typing.
+        -- eassumption.
         -- eapply value_has_pure_effect; eassumption.
         -- eassumption.
   (* ST_CaseInr: case analysis on Inr *)
@@ -902,6 +905,7 @@ Proof.
     + split.
       * exact Hwf.
       * eapply substitution_preserves_typing.
+        -- eassumption.
         -- eapply value_has_pure_effect; eassumption.
         -- eassumption.
   (* ST_CaseStep: congruence for case *)
@@ -970,6 +974,7 @@ Proof.
     + split.
       * exact Hwf.
       * eapply substitution_preserves_typing.
+        -- eassumption.
         -- eapply value_has_pure_effect; eassumption.
         -- eassumption.
   (* ST_LetStep: congruence for let *)
@@ -1019,6 +1024,7 @@ Proof.
     + split.
       * exact Hwf.
       * eapply substitution_preserves_typing.
+        -- eassumption.
         -- eapply value_has_pure_effect; eassumption.
         -- eassumption.
   (* ST_RefStep *)
@@ -1113,18 +1119,20 @@ Proof.
       * eapply T_Classify. exact Hty'.
   (* ST_Declassify1 *)
   - inversion Hty; subst.
-    destruct H8 as [v0 Hok0].
-    destruct Hok0 as [Hv0 Hok1].
-    destruct Hok1 as [He1 He2].
-    subst.
-    Show.
+    match goal with
+    | Hdeclass : declass_ok _ _ |- _ =>
+        destruct Hdeclass as [v0 [Hv0 [He1 He2]]]; subst
+    end.
     exfalso.
     pose proof (value_not_step (EClassify v0) st0 ctx0 (e1', st0', ctx0')
                   (VClassify v0 Hv0)) as Hns.
     exact (Hns Hstep).
   (* ST_Declassify2 *)
   - inversion Hty; subst.
-    destruct H8 as [v0 [Hv0 [He1 He2]]]; subst.
+    match goal with
+    | Hdeclass : declass_ok _ _ |- _ =>
+        destruct Hdeclass as [v0 [Hv0 [He1 He2]]]; subst
+    end.
     exfalso.
     pose proof (value_not_step (EProve (EClassify v0)) st0 ctx0 (e2', st0', ctx0')
                   (VProve (EClassify v0) (VClassify v0 Hv0))) as Hns.
