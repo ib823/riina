@@ -227,7 +227,7 @@ Proof.
     (* T_Prove *)   | G S D e T eps Ht IHt
     (* T_Require *) | G S D eff e T eps Ht IHt
     (* T_Grant *)   | G S D eff e T eps Ht IHt
-  ]; intros eps' T2' H2; inversion H2; subst; split; try reflexivity.
+  ]; intros eps' T2' H2; pose proof H2 as H2'; inversion H2; subst.
 
   - (* T_Var *)
     match goal with
@@ -241,14 +241,16 @@ Proof.
     end; reflexivity.
 
   - (* T_App *)
+    clear Ht1 Ht2.
+    inversion H2'; subst.
     match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt1 in H; destruct H as [HT Heps];
+    | [ Hf : has_type _ _ _ e1 _ _ |- _ ] =>
+      apply IHt1 in Hf; destruct Hf as [HT Heps];
       inversion HT; subst
     end.
     match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
+    | [ Ha : has_type _ _ _ e2 _ _ |- _ ] =>
+      apply IHt2 in Ha; destruct Ha; subst
     end.
     reflexivity.
 
