@@ -9,6 +9,7 @@
 
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
+Require Import Coq.Arith.Arith.
 Require Import TERAS.foundations.Syntax.
 Import ListNotations.
 
@@ -17,7 +18,6 @@ Import ListNotations.
     The store maps locations to values.
 *)
 
-Definition loc := nat.
 Definition store := list (loc * expr).
 
 (** Lookup in store *)
@@ -34,6 +34,44 @@ Fixpoint store_update (l : loc) (v : expr) (st : store) : store :=
   | (l', v') :: st' =>
       if Nat.eqb l l' then (l, v) :: st' else (l', v') :: store_update l v st'
   end.
+
+(** Fresh location allocator *)
+Fixpoint store_max (st : store) : nat :=
+  match st with
+  | nil => 0
+  | (l, _) :: st' => Nat.max l (store_max st')
+  end.
+
+Definition fresh_loc (st : store) : loc :=
+  S (store_max st).
+
+Lemma store_lookup_above_max : forall st l,
+  store_max st < l ->
+  store_lookup l st = None.
+Proof.
+  induction st as [| [l' v'] st' IH]; intros l Hlt; simpl in *.
+  - reflexivity.
+  - assert (l' < l) as Hlt1.
+    { apply Nat.le_lt_trans with (m := Nat.max l' (store_max st')).
+      - apply Nat.le_max_l.
+      - exact Hlt. }
+    assert (store_max st' < l) as Hlt2.
+    { apply Nat.le_lt_trans with (m := Nat.max l' (store_max st')).
+      - apply Nat.le_max_r.
+      - exact Hlt. }
+    simpl. rewrite Nat.eqb_neq.
+    + apply IH. exact Hlt2.
+    + intro Heq. subst. apply (Nat.lt_irrefl l). exact Hlt1.
+Qed.
+
+Lemma store_lookup_fresh : forall st,
+  store_lookup (fresh_loc st) st = None.
+Proof.
+  intro st.
+  unfold fresh_loc.
+  apply store_lookup_above_max.
+  apply Nat.lt_succ_diag_r.
+Qed.
 
 (** ** Effect Context
     
@@ -159,13 +197,18 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e, st, ctx) --> (e', st', ctx') ->
       (ERef e l, st, ctx) --> (ERef e' l, st', ctx')
 
+  | ST_RefValue : forall v sl st ctx l,
+      value v ->
+      l = fresh_loc st ->
+      (ERef v sl, st, ctx) --> (ELoc l, store_update l v st, ctx)
+
   | ST_DerefStep : forall e e' st st' ctx ctx',
       (e, st, ctx) --> (e', st', ctx') ->
       (EDeref e, st, ctx) --> (EDeref e', st', ctx')
 
-  | ST_DerefRef : forall v l st ctx,
-      value v ->
-      (EDeref (ERef v l), st, ctx) --> (v, st, ctx)
+  | ST_DerefLoc : forall v l st ctx,
+      store_lookup l st = Some v ->
+      (EDeref (ELoc l), st, ctx) --> (v, st, ctx)
 
   | ST_Assign1 : forall e1 e1' e2 st st' ctx ctx',
       (e1, st, ctx) --> (e1', st', ctx') ->
@@ -176,10 +219,11 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e2, st, ctx) --> (e2', st', ctx') ->
       (EAssign v1 e2, st, ctx) --> (EAssign v1 e2', st', ctx')
 
-  | ST_AssignRef : forall v1 v2 l st ctx,
-      value v1 ->
-      value v2 ->
-      (EAssign (ERef v1 l) v2, st, ctx) --> (EUnit, st, ctx)
+  | ST_AssignLoc : forall v1 l st ctx,
+      store_lookup l st = Some v1 ->
+      forall v2,
+        value v2 ->
+        (EAssign (ELoc l) v2, st, ctx) --> (EUnit, store_update l v2 st, ctx)
 
   | ST_ClassifyStep : forall e e' st st' ctx ctx',
       (e, st, ctx) --> (e', st', ctx') ->
@@ -265,12 +309,8 @@ Ltac solve_val_step :=
       exfalso; eapply value_not_step; [ constructor | apply H ]
   | [ H : (EPair _ _, _, _) --> _, Hv1 : value _, Hv2 : value _ |- _ ] =>
       exfalso; eapply value_not_step; [ apply VPair; assumption | apply H ]
-  | [ H : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ ] =>
-      inversion H; subst;
-      match goal with
-      | Hs : (?v, _, _) --> _ |- _ =>
-          exfalso; eapply value_not_step; [ apply Hv | apply Hs ]
-      end
+  | [ H : (ELoc _, _, _) --> _ |- _ ] =>
+      exfalso; eapply value_not_step; [ constructor | apply H ]
   | [ H : (EClassify ?v, _, _) --> _, Hv : value ?v |- _ ] =>
       inversion H; subst;
       match goal with
@@ -401,26 +441,22 @@ Proof.
   (* ST_RefStep *)
   - solve_ih.
 
+  (* ST_RefValue *)
+  - solve_val_step.
+  - inversion H2; subst. reflexivity.
+
   (* ST_DerefStep *)
   - solve_ih.
   - match goal with
-    | Hs : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ =>
-        inversion Hs; subst;
-        match goal with
-        | Hs' : (?v, _, _) --> _ |- _ =>
-            exfalso; eapply value_not_step; [ exact Hv | exact Hs' ]
-        end
+    | Hs : (ELoc _, _, _) --> _ |- _ =>
+        exfalso; eapply value_not_step; [ constructor | apply Hs ]
     end.
 
-  (* ST_DerefRef *)
+  (* ST_DerefLoc *)
   - all: (
       match goal with
-      | Hs : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ =>
-          inversion Hs; subst;
-          match goal with
-          | Hs' : (?v, _, _) --> _ |- _ =>
-              exfalso; eapply value_not_step; [ exact Hv | exact Hs' ]
-          end
+      | Hs : (ELoc _, _, _) --> _ |- _ =>
+          inversion Hs
       | _ => reflexivity
       end
     ).
@@ -435,14 +471,10 @@ Proof.
   - solve_ih.
   - solve_val_step.
 
-  (* ST_AssignRef *)
+  (* ST_AssignLoc *)
   - match goal with
-    | Hs : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ =>
-        inversion Hs; subst;
-        match goal with
-        | Hs' : (?v, _, _) --> _ |- _ =>
-            exfalso; eapply value_not_step; [ exact Hv | exact Hs' ]
-        end
+    | Hs : (ELoc _, _, _) --> _ |- _ =>
+        inversion Hs
     end.
   - match goal with
     | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>

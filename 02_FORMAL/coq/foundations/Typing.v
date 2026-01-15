@@ -28,6 +28,38 @@ Fixpoint lookup (x : ident) (Γ : type_env) : option ty :=
 
 Definition store_ty := list (loc * ty * security_level).
 
+(** Lookup in store typing *)
+Fixpoint store_ty_lookup (l : loc) (Σ : store_ty) : option (ty * security_level) :=
+  match Σ with
+  | nil => None
+  | (l', T, sl) :: Σ' =>
+      if Nat.eqb l l' then Some (T, sl) else store_ty_lookup l Σ'
+  end.
+
+(** Update store typing *)
+Fixpoint store_ty_update (l : loc) (T : ty) (sl : security_level) (Σ : store_ty) : store_ty :=
+  match Σ with
+  | nil => (l, T, sl) :: nil
+  | (l', T', sl') :: Σ' =>
+      if Nat.eqb l l' then (l, T, sl) :: Σ' else (l', T', sl') :: store_ty_update l T sl Σ'
+  end.
+
+(** Well-typed store: every typed location has a well-typed value in the store. *)
+Definition store_wf (Σ : store_ty) (st : store) : Prop :=
+  (forall l T sl,
+     store_ty_lookup l Σ = Some (T, sl) ->
+     exists v, store_lookup l st = Some v /\ has_type nil Σ Public v T EffectPure)
+  /\
+  (forall l v,
+     store_lookup l st = Some v ->
+     exists T sl, store_ty_lookup l Σ = Some (T, sl) /\ has_type nil Σ Public v T EffectPure).
+
+(** Store typing extension *)
+Definition store_ty_extends (Σ Σ' : store_ty) : Prop :=
+  forall l T sl,
+    store_ty_lookup l Σ = Some (T, sl) ->
+    store_ty_lookup l Σ' = Some (T, sl).
+
 (** ** Free Variables
 
     Predicate to check if a variable occurs free in an expression.
@@ -40,6 +72,7 @@ Fixpoint free_in (x : ident) (e : expr) : Prop :=
   | EBool _ => False
   | EInt _ => False
   | EString _ => False
+  | ELoc _ => False
   | EVar y => x = y
   | ELam y _ body => x <> y /\ free_in x body
   | EApp e1 e2 => free_in x e1 \/ free_in x e2
@@ -84,6 +117,10 @@ Inductive has_type : type_env -> store_ty -> security_level ->
 
   | T_String : forall Γ Σ Δ s,
       has_type Γ Σ Δ (EString s) TString EffectPure
+
+  | T_Loc : forall Γ Σ Δ l T sl,
+      store_ty_lookup l Σ = Some (T, sl) ->
+      has_type Γ Σ Δ (ELoc l) (TRef T sl) EffectPure
 
   | T_Var : forall Γ Σ Δ x T,
       lookup x Γ = Some T ->
@@ -206,6 +243,7 @@ Proof.
     (* T_Bool *) | G S D b
     (* T_Int *)  | G S D n
     (* T_String *) | G S D s
+    (* T_Loc *) | G S D l T sl Hlookup
     (* T_Var *)  | G S D x T Hlookup
     (* T_Lam *)  | G S D x T1 T2 e eps Ht IHt
     (* T_App *)  | G S D e1 e2 T1 T2 eps eps1 eps2 Ht1 IHt1 Ht2 IHt2
@@ -230,26 +268,23 @@ Proof.
   ]; intros eps' T2' H2; pose proof H2 as H2'; inversion H2; subst.
 
   - (* T_Var *)
-    match goal with
-    | [ H : lookup _ _ = Some _ |- _ ] => rewrite Hlookup in H; injection H as H; assumption
-    end.
+    split; reflexivity.
+
+  - (* T_Loc *)
+    split; reflexivity.
 
   - (* T_Lam - Type *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
+    split; reflexivity.
 
   - (* T_App *)
-    clear Ht1 Ht2.
     inversion H2'; subst.
     match goal with
-    | [ Hf : has_type _ _ _ e1 _ _ |- _ ] =>
+    | [ Hf : has_type _ _ _ _ _ _ |- _ ] =>
       apply IHt1 in Hf; destruct Hf as [HT Heps];
       inversion HT; subst
     end.
     match goal with
-    | [ Ha : has_type _ _ _ e2 _ _ |- _ ] =>
+    | [ Ha : has_type _ _ _ _ _ _ |- _ ] =>
       apply IHt2 in Ha; destruct Ha; subst
     end.
     reflexivity.
