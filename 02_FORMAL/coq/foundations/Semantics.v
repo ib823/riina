@@ -189,6 +189,11 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e1, st, ctx) --> (e1', st', ctx') ->
       (EDeclassify e1 e2, st, ctx) --> (EDeclassify e1' e2, st', ctx')
 
+  | ST_Declassify2 : forall v1 e2 e2' st st' ctx ctx',
+      value v1 ->
+      (e2, st, ctx) --> (e2', st', ctx') ->
+      (EDeclassify v1 e2, st, ctx) --> (EDeclassify v1 e2', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -414,6 +419,11 @@ Proof.
   - solve_ih.
 
   (* ST_Declassify1 *)
+  - solve_ih.
+  - solve_val_step.
+
+  (* ST_Declassify2 *)
+  - solve_val_step.
   - solve_ih.
 Qed.
 
