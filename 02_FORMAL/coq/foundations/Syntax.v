@@ -15,6 +15,7 @@ Import ListNotations.
 (** ** Identifiers *)
 
 Definition ident := string.
+Definition loc := nat.
 
 (** ** Security Levels
     
@@ -105,6 +106,7 @@ Inductive expr : Type :=
   | EBool   : bool -> expr
   | EInt    : nat -> expr
   | EString : string -> expr
+  | ELoc    : loc -> expr
   | EVar    : ident -> expr
   
   (* Functions *)
@@ -153,11 +155,11 @@ Inductive value : expr -> Prop :=
   | VBool   : forall b, value (EBool b)
   | VInt    : forall n, value (EInt n)
   | VString : forall s, value (EString s)
+  | VLoc    : forall l, value (ELoc l)
   | VLam    : forall x T e, value (ELam x T e)
   | VPair   : forall v1 v2, value v1 -> value v2 -> value (EPair v1 v2)
   | VInl    : forall v T, value v -> value (EInl v T)
   | VInr    : forall v T, value v -> value (EInr v T)
-  | VRef    : forall v l, value v -> value (ERef v l)
   | VClassify : forall v, value v -> value (EClassify v)
   | VProve  : forall v, value v -> value (EProve v).
 
@@ -192,6 +194,7 @@ Fixpoint subst (x : ident) (v : expr) (e : expr) : expr :=
   | EBool b => EBool b
   | EInt n => EInt n
   | EString s => EString s
+  | ELoc l => ELoc l
   | EVar y => if String.eqb x y then v else EVar y
   | ELam y T body =>
       if String.eqb x y then ELam y T body
@@ -233,7 +236,7 @@ Lemma value_not_stuck : forall e,
              (exists s, e = EString s) \/ (exists x T body, e = ELam x T body) \/
              (exists v1 v2, e = EPair v1 v2) \/
              (exists v T, e = EInl v T) \/ (exists v T, e = EInr v T) \/
-             (exists v l, e = ERef v l) \/ (exists v, e = EClassify v) \/
+             (exists l, e = ELoc l) \/ (exists v, e = EClassify v) \/
              (exists v, e = EProve v).
 Proof.
   intros e Hv.
@@ -246,9 +249,9 @@ Proof.
   - right. right. right. right. right. left. exists v1, v2. reflexivity.
   - right. right. right. right. right. right. left. exists v, T. reflexivity.
   - right. right. right. right. right. right. right. left. exists v, T. reflexivity.
-  - right. right. right. right. right. right. right. right. left. exists v, l. reflexivity.
-  - right. right. right. right. right. right. right. right. right. left. exists v. reflexivity.
-  - right. right. right. right. right. right. right. right. right. right. exists v. reflexivity.
+  - right. right. right. right. right. right. right. left. exists l. reflexivity.
+  - right. right. right. right. right. right. right. right. left. exists v. reflexivity.
+  - right. right. right. right. right. right. right. right. right. exists v. reflexivity.
 Qed.
 
 (** Note: A lemma about substitution into values requires either:

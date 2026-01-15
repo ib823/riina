@@ -165,6 +165,7 @@ Fixpoint subst_rho (rho : ident -> expr) (e : expr) : expr :=
   | EBool b => EBool b
   | EInt n => EInt n
   | EString s => EString s
+  | ELoc l => ELoc l
   | EVar x => rho x
   | ELam x T body => ELam x T (subst_rho (rho_shadow rho x) body)
   | EApp e1 e2 => EApp (subst_rho rho e1) (subst_rho rho e2)
