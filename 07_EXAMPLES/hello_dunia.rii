@@ -1,0 +1,65 @@
+// hello_dunia.rii
+// RIINA = Rigorous Immutable Integrity No-attack Assured
+// Named for: Reena + Isaac + Imaan
+//
+// Basic "Hello World" in Bahasa Melayu syntax
+
+// Module declaration
+modul hello_dunia;
+
+// Import I/O operations
+guna std::io;
+
+// Main function with effect annotation
+// kesan Tulis = this function has Write effect
+awam fungsi utama() -> kesan Tulis {
+    // Variable binding using 'biar' (let)
+    biar mesej = "Selamat datang ke RIINA!";
+    biar nama = "Dunia";
+
+    // String interpolation
+    biar salam = format!("{} Hello, {}!", mesej, nama);
+
+    // Output with effect
+    laku Tulis cetak_baris(salam);
+
+    // Return unit value
+    pulang ();
+}
+
+// Pure function (no effects)
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    pulang x + y;
+}
+
+// Function with mutable parameter
+fungsi kira_senarai(ubah senarai: Senarai<Nombor>) -> Nombor {
+    biar ubah jumlah = 0;
+
+    // For loop using 'untuk' and 'dalam'
+    untuk nilai dalam senarai {
+        jumlah = jumlah + nilai;
+    }
+
+    pulang jumlah;
+}
+
+// Conditional logic
+fungsi semak_positif(n: Nombor) -> Benar {
+    kalau n > 0 {
+        pulang betul;
+    } lain {
+        pulang salah;
+    }
+}
+
+// Pattern matching with 'padan'
+fungsi gambar_nombor(n: Nombor) -> Teks {
+    padan n {
+        0 => "kosong",
+        1 => "satu",
+        2 => "dua",
+        3 => "tiga",
+        _ => "banyak",
+    }
+}

@@ -1,0 +1,130 @@
+// pengesahan.rii
+// RIINA = Rigorous Immutable Integrity No-attack Assured
+// Named for: Reena + Isaac + Imaan
+//
+// Authentication example demonstrating security features
+
+modul pengesahan;
+
+guna std::kripto;
+guna std::io;
+
+// Security levels: Terbuka (Public) and Rahsia (Secret)
+// Data marked 'rahsia' cannot leak to 'terbuka' without declassification
+
+// Structure for user credentials
+bentuk Kelayakan {
+    nama_pengguna: Teks,
+    kata_laluan: Rahsia<Teks>,  // Password is secret!
+    garam: Bait,                 // Salt for hashing
+}
+
+// Structure for authentication result
+pilihan HasilPengesahan {
+    Berjaya(TokenSesi),
+    Gagal(SebabGagal),
+}
+
+pilihan SebabGagal {
+    PenggunaTidakDitemui,
+    KataLaluanSalah,
+    AkaunDikunci,
+}
+
+bentuk TokenSesi {
+    id: Teks,
+    tamat: Masa,
+}
+
+// Hash password with constant-time comparison
+// kesan Kripto = cryptographic operation effect
+fungsi hash_kata_laluan(
+    kata: Rahsia<Teks>,
+    garam: Bait
+) -> Rahsia<Bait> kesan Kripto {
+    // Constant-time block prevents timing attacks
+    masa_tetap {
+        biar derivasi = kripto::argon2id(kata, garam);
+        pulang derivasi;
+    }
+}
+
+// Verify password - returns proof if successful
+// The proof can be used for declassification
+fungsi sahkan_kata_laluan(
+    input: Rahsia<Teks>,
+    tersimpan: Rahsia<Bait>,
+    garam: Bait
+) -> Mungkin<BuktiSahKataLaluan> kesan Kripto {
+    masa_tetap {
+        biar hash_input = hash_kata_laluan(input, garam);
+
+        // Constant-time comparison
+        kalau kripto::banding_tetap(hash_input, tersimpan) {
+            pulang Ada(bukti KeselamatanSahKataLaluan);
+        } lain {
+            pulang Tiada;
+        }
+    }
+}
+
+// Main authentication function
+awam fungsi sahkan_pengguna(
+    nama: Teks,
+    kata: Rahsia<Teks>,
+    pangkalan: Pangkalan
+) -> HasilPengesahan kesan Baca + Kripto {
+    // Look up user in database
+    padan pangkalan.cari_pengguna(nama) {
+        Tiada => pulang HasilPengesahan::Gagal(SebabGagal::PenggunaTidakDitemui),
+
+        Ada(pengguna) => {
+            // Check if account is locked
+            kalau pengguna.dikunci {
+                pulang HasilPengesahan::Gagal(SebabGagal::AkaunDikunci);
+            }
+
+            // Verify password
+            padan sahkan_kata_laluan(kata, pengguna.hash_kata, pengguna.garam) {
+                Tiada => pulang HasilPengesahan::Gagal(SebabGagal::KataLaluanSalah),
+
+                Ada(bukti_sah) => {
+                    // Create session token
+                    biar token = cipta_token_sesi(pengguna.id);
+                    pulang HasilPengesahan::Berjaya(token);
+                }
+            }
+        }
+    }
+}
+
+// Example of controlled declassification
+// dedah() requires proof that operation is safe
+fungsi log_percubaan_log_masuk(
+    nama: Teks,
+    berjaya: Benar,
+    bukti: BuktiAuditSah
+) kesan Tulis {
+    // Only the username (public) can be logged
+    // The password (secret) is never exposed
+    biar mesej = kalau berjaya {
+        format!("Log masuk berjaya: {}", nama)
+    } lain {
+        format!("Log masuk gagal: {}", nama)
+    };
+
+    laku Tulis log_keselamatan(mesej);
+}
+
+// Effect handling example
+fungsi dengan_perlindungan_gagal<T>(
+    operasi: fungsi() -> T kesan Kripto
+) -> Hasil<T, Ralat> {
+    kendali operasi() dengan {
+        // Handle cryptographic failures gracefully
+        ralat: RalatKripto => {
+            log_ralat(ralat);
+            pulang Gagal(ralat);
+        }
+    }
+}
