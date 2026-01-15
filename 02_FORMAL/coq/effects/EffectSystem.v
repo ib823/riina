@@ -223,7 +223,8 @@ Inductive has_type_full : type_env -> store_ty -> security_level ->
 
   | T_Declassify : forall G S D e1 e2 T eff1 eff2,
       has_type_full G S D e1 (TSecret T) eff1 ->
-      has_type_full G S D e2 (TProof T) eff2 -> (* Proof of safety *)
+      has_type_full G S D e2 (TProof (TSecret T)) eff2 -> (* Proof of safety *)
+      declass_ok e1 e2 ->
       has_type_full G S D (EDeclassify e1 e2) T (effect_join eff1 eff2)
 
   | T_Prove : forall G S D e T eff,
