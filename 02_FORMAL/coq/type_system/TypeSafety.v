@@ -22,14 +22,15 @@ Definition stuck (cfg : expr * store * effect_ctx) : Prop :=
   let '(e, st, ctx) := cfg in
   ~ value e /\ ~ exists cfg', cfg --> cfg'.
 
-Theorem type_safety : forall e T ε st ctx,
-  has_type nil nil Public e T ε ->
+Theorem type_safety : forall e T ε st ctx Σ,
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
   ~ stuck (e, st, ctx).
 Proof.
-  intros e T ε st ctx Hty.
+  intros e T ε st ctx Σ Hty Hwf.
   unfold stuck. unfold not.
   intros [Hnval Hnstep].
-  destruct (progress e T ε st ctx Hty) as [Hval | Hstep].
+  destruct (progress e T ε st ctx Σ Hty Hwf) as [Hval | Hstep].
   - apply Hnval. assumption.
   - destruct Hstep as [e' [st' [ctx' Hstep']]].
     apply Hnstep. exists (e', st', ctx'). assumption.
@@ -40,29 +41,33 @@ Qed.
 (** Multi-step safety: well-typed terms stay well-typed after any
     number of steps. This is a direct consequence of preservation.
 *)
-Theorem multi_step_safety : forall e e' T ε st st' ctx ctx',
-  has_type nil nil Public e T ε ->
+Theorem multi_step_safety : forall e e' T ε st st' ctx ctx' Σ,
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
   (e, st, ctx) -->* (e', st', ctx') ->
-  ~ stuck (e', st', ctx').
+  exists Σ', store_wf Σ' st' /\ ~ stuck (e', st', ctx').
 Proof.
-  intros e e' T ε st st' ctx ctx' Hty Hmulti.
+  intros e e' T ε st st' ctx ctx' Σ Hty Hwf Hmulti.
   (* Proof by induction on multi-step relation, using preservation at each step *)
   remember (e, st, ctx) as cfg1 eqn:Heq1.
   remember (e', st', ctx') as cfg2 eqn:Heq2.
   generalize dependent ctx'. generalize dependent st'. generalize dependent e'.
   generalize dependent ε. generalize dependent T.
   generalize dependent ctx. generalize dependent st. generalize dependent e.
-  induction Hmulti; intros e1 st1 ctx1 Heq1 T ε Hty e2 st2 ctx2 Heq2.
+  generalize dependent Σ.
+  induction Hmulti; intros Σ e1 st1 ctx1 Heq1 T ε Hty Hwf e2 st2 ctx2 Heq2.
   - (* MS_Refl: cfg = cfg' *)
     inversion Heq1; inversion Heq2; subst.
-    eapply type_safety; eassumption.
+    exists Σ. split; [exact Hwf | eapply type_safety; eassumption].
   - (* MS_Step: cfg1 --> cfg2 --> cfg3 *)
     inversion Heq1; subst.
     destruct cfg2 as [[e_mid st_mid] ctx_mid].
     (* preservation now returns an existential *)
-    destruct (preservation e1 e_mid T ε st1 st_mid ctx1 ctx_mid Hty H) as [ε' Hty'].
+    destruct (preservation e1 e_mid T ε st1 st_mid ctx1 ctx_mid Σ Hty Hwf H)
+      as [Σ' [ε' [Hext [Hwf' Hty']]]].
     eapply IHHmulti; try reflexivity.
     exact Hty'.
+    exact Hwf'.
 Qed.
 
 (** End of TypeSafety.v *)
