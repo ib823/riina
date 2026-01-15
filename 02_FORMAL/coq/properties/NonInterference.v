@@ -1125,8 +1125,30 @@ Definition subst_rel (Σ : store_ty) (G : type_env) (s1 s2 : list (ident * expr)
 
 (** ** Fundamental Theorem *)
 
+(** Helper: extract product component relation from val_rel_n.
+    These extract the first/second component relation from a product relation,
+    preserving the step index (key benefit of the new structure). *)
+Lemma val_rel_n_prod_fst : forall n Σ T1 T2 v1 v2,
+  n > 0 ->
+  val_rel_n n Σ (TProd T1 T2) v1 v2 ->
+  exists a1 b1 a2 b2,
+    v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
+    val_rel_n n Σ T1 a1 a2.
+Proof.
+  (* Technical lemma - proof involves careful reasoning about value/closed *)
+Admitted.
 
-(* TODO: This proof needs refactoring after val_rel_n changes *)
+Lemma val_rel_n_prod_snd : forall n Σ T1 T2 v1 v2,
+  n > 0 ->
+  val_rel_n n Σ (TProd T1 T2) v1 v2 ->
+  exists a1 b1 a2 b2,
+    v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
+    val_rel_n n Σ T2 b1 b2.
+Proof.
+  (* Technical lemma - proof involves careful reasoning about value/closed *)
+Admitted.
+
+(* The fundamental theorem - proof by induction on typing derivation *)
 Theorem logical_relation : forall G Σ e T eps rho1 rho2,
   has_type G Σ Public e T eps ->
   env_rel Σ G rho1 rho2 ->
@@ -1134,7 +1156,10 @@ Theorem logical_relation : forall G Σ e T eps rho1 rho2,
   rho_no_free_all rho2 ->
   exp_rel Σ T (subst_rho rho1 e) (subst_rho rho2 e).
 Proof.
-  (* Temporarily admitted - proof needs refactoring after val_rel_n precondition changes *)
+  intros G Σ e T eps rho1 rho2 Hty.
+  generalize dependent rho2. generalize dependent rho1.
+  induction Hty; intros rho1 rho2 Henv Hno1 Hno2.
+  (* Most cases require careful handling - admit for now while we verify structure *)
 Admitted.
 
 
