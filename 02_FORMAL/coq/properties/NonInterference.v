@@ -73,90 +73,167 @@ Qed.
     R_E(T) is defined as "reduces to values related by R_V(T)".
 *)
 
-Fixpoint val_rel (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct T} : Prop :=
-  value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-  match T with
-  | TUnit => v1 = EUnit /\ v2 = EUnit
-  | TBool => exists b, v1 = EBool b /\ v2 = EBool b
-  | TInt => exists n, v1 = EInt n /\ v2 = EInt n
-  | TString => exists s, v1 = EString s /\ v2 = EString s
-  | TBytes => v1 = v2
-  | TSecret T' => True
-  | TRef T' _ =>
-      exists l, v1 = ELoc l /\ v2 = ELoc l
-  | TProd T1 T2 =>
-      exists x1 y1 x2 y2,
-        v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
-        val_rel Σ T1 x1 x2 /\ val_rel Σ T2 y1 y2
-  | TSum T1 T2 =>
-      (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel Σ T1 x1 x2) \/
-      (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel Σ T2 y1 y2)
-  | TFn T1 T2 eff =>
-      forall x y, val_rel Σ T1 x y ->
-        forall st1 st2 ctx,
-          exists (v1' : expr) (v2' : expr) (st1' : store) (st2' : store) (ctx' : effect_ctx),
-            (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
-            (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
-            val_rel Σ T2 v1' v2'
-  | TCapability _ => True
-  | TProof _ => True
+Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} : Prop :=
+  match n with
+  | 0 => True
+  | S n' =>
+      value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+      match T with
+      | TUnit => v1 = EUnit /\ v2 = EUnit
+      | TBool => exists b, v1 = EBool b /\ v2 = EBool b
+      | TInt => exists n, v1 = EInt n /\ v2 = EInt n
+      | TString => exists s, v1 = EString s /\ v2 = EString s
+      | TBytes => v1 = v2
+      | TSecret T' => True
+      | TRef T' _ =>
+          exists l, v1 = ELoc l /\ v2 = ELoc l
+      | TProd T1 T2 =>
+          exists x1 y1 x2 y2,
+            v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
+            val_rel_n n' Σ T1 x1 x2 /\ val_rel_n n' Σ T2 y1 y2
+      | TSum T1 T2 =>
+          (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel_n n' Σ T1 x1 x2) \/
+          (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel_n n' Σ T2 y1 y2)
+      | TFn T1 T2 eff =>
+          forall x y, val_rel_n n' Σ T1 x y ->
+            forall st1 st2 ctx,
+              store_rel_n n' Σ st1 st2 ->
+              exists (v1' : expr) (v2' : expr) (st1' : store) (st2' : store)
+                     (ctx' : effect_ctx) (Σ' : store_ty),
+                store_ty_extends Σ Σ' /\
+                (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
+                (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
+                val_rel_n n' Σ T2 v1' v2' /\
+                store_rel_n n' Σ' st1' st2'
+      | TCapability _ => True
+      | TProof _ => True
+      end
+  end
+with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
+  match n with
+  | 0 => True
+  | S n' =>
+      store_max st1 = store_max st2 /\
+      (forall l T sl,
+        store_ty_lookup l Σ = Some (T, sl) ->
+        exists v1 v2,
+          store_lookup l st1 = Some v1 /\
+          store_lookup l st2 = Some v2 /\
+          val_rel_n n' Σ T v1 v2)
   end.
 
+Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} : Prop :=
+  match n with
+  | 0 => True
+  | S n' =>
+      forall st1 st2 ctx,
+        store_rel_n n' Σ st1 st2 ->
+        exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store)
+               (ctx' : effect_ctx) (Σ' : store_ty),
+          store_ty_extends Σ Σ' /\
+          (e1, st1, ctx) -->* (v1, st1', ctx') /\
+          (e2, st2, ctx) -->* (v2, st2', ctx') /\
+          val_rel_n n' Σ T v1 v2 /\
+          store_rel_n n' Σ' st1' st2'
+  end.
+
+Definition val_rel (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
+  forall n, val_rel_n n Σ T v1 v2.
+
 Definition store_rel (Σ : store_ty) (st1 st2 : store) : Prop :=
-  store_max st1 = store_max st2 /\
-  (forall l T sl,
-    store_ty_lookup l Σ = Some (T, sl) ->
-    exists v1 v2,
-      store_lookup l st1 = Some v1 /\
-      store_lookup l st2 = Some v2 /\
-      val_rel Σ T v1 v2).
+  forall n, store_rel_n n Σ st1 st2.
+
+Definition exp_rel (Σ : store_ty) (T : ty) (e1 e2 : expr) : Prop :=
+  forall n, exp_rel_n n Σ T e1 e2.
+
+Notation "e1 '~' e2 ':' T ':' Σ" := (exp_rel Σ T e1 e2) (at level 40).
+Notation "v1 '~~' v2 ':' T ':' Σ" := (val_rel Σ T v1 v2) (at level 40).
+
+Lemma val_rel_closed_left_n : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  closed_expr v1.
+Proof.
+  destruct n as [| n']; intros Σ T v1 v2 Hrel.
+  - unfold closed_expr. intros x Hfree. contradiction.
+  - simpl in Hrel. destruct Hrel as [_ [_ [Hc1 _]]]. exact Hc1.
+Qed.
+
+Lemma val_rel_closed_right_n : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  closed_expr v2.
+Proof.
+  destruct n as [| n']; intros Σ T v1 v2 Hrel.
+  - unfold closed_expr. intros x Hfree. contradiction.
+  - simpl in Hrel. destruct Hrel as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
+Qed.
+
+Lemma val_rel_value_left_n : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  value v1.
+Proof.
+  destruct n as [| n']; intros Σ T v1 v2 Hrel.
+  - inversion Hrel.
+  - simpl in Hrel. destruct Hrel as [Hv1 _]. exact Hv1.
+Qed.
+
+Lemma val_rel_value_right_n : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  value v2.
+Proof.
+  destruct n as [| n']; intros Σ T v1 v2 Hrel.
+  - inversion Hrel.
+  - simpl in Hrel. destruct Hrel as [_ [Hv2 _]]. exact Hv2.
+Qed.
 
 Lemma val_rel_closed_left : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   closed_expr v1.
 Proof.
-  induction T; simpl; intros v1 v2 Hrel;
-    destruct Hrel as [_ [_ [Hc1 _]]]; exact Hc1.
+  intros Σ T v1 v2 Hrel.
+  apply (val_rel_closed_left_n 1 Σ T v1 v2).
+  exact (Hrel 1).
 Qed.
 
 Lemma val_rel_closed_right : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   closed_expr v2.
 Proof.
-  induction T; simpl; intros v1 v2 Hrel;
-    destruct Hrel as [_ [_ [_ [Hc2 _]]]]; exact Hc2.
+  intros Σ T v1 v2 Hrel.
+  apply (val_rel_closed_right_n 1 Σ T v1 v2).
+  exact (Hrel 1).
 Qed.
 
 Lemma val_rel_value_left : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   value v1.
 Proof.
-  induction T; simpl; intros v1 v2 Hrel;
-    destruct Hrel as [Hv1 _]; exact Hv1.
+  intros Σ T v1 v2 Hrel.
+  apply (val_rel_value_left_n 1 Σ T v1 v2).
+  exact (Hrel 1).
 Qed.
 
 Lemma val_rel_value_right : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   value v2.
 Proof.
-  induction T; simpl; intros v1 v2 Hrel;
-    destruct Hrel as [_ [Hv2 _]]; exact Hv2.
+  intros Σ T v1 v2 Hrel.
+  apply (val_rel_value_right_n 1 Σ T v1 v2).
+  exact (Hrel 1).
 Qed.
 
-(** Expression Relation: Related expressions reduce to related values *)
-Definition exp_rel (Σ : store_ty) (T : ty) (e1 e2 : expr) : Prop :=
-  forall st1 st2 ctx,
-    store_rel Σ st1 st2 ->
-    exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store)
-           (ctx' : effect_ctx) (Σ' : store_ty),
-      store_ty_extends Σ Σ' /\
-      (e1, st1, ctx) -->* (v1, st1', ctx') /\
-      (e2, st2, ctx) -->* (v2, st2', ctx') /\
-      val_rel Σ' T v1 v2 /\
-      store_rel Σ' st1' st2'.
-
-Notation "e1 '~' e2 ':' T ':' Σ" := (exp_rel Σ T e1 e2) (at level 40).
-Notation "v1 '~~' v2 ':' T ':' Σ" := (val_rel Σ T v1 v2) (at level 40).
+Lemma store_rel_n_weaken : forall n Σ Σ' st1 st2,
+  store_ty_extends Σ Σ' ->
+  store_rel_n n Σ' st1 st2 ->
+  store_rel_n n Σ st1 st2.
+Proof.
+  induction n as [| n']; intros Σ Σ' st1 st2 Hext Hrel; simpl in *.
+  - exact I.
+  - destruct Hrel as [Hmax Hrel].
+    split; [exact Hmax |].
+    intros l T sl Hlookup.
+    apply Hext in Hlookup.
+    exact (Hrel l T sl Hlookup).
+Qed.
 
 (** ** Environment Substitution *)
 
@@ -320,8 +397,11 @@ Proof.
     exists y. split. exact Hy. exact Hrho.
 Qed.
 
+Definition env_rel_n (n : nat) (Σ : store_ty) (G : type_env) (rho1 rho2 : ident -> expr) : Prop :=
+  forall x T, lookup x G = Some T -> val_rel_n n Σ T (rho1 x) (rho2 x).
+
 Definition env_rel (Σ : store_ty) (G : type_env) (rho1 rho2 : ident -> expr) : Prop :=
-  forall x T, lookup x G = Some T -> val_rel Σ T (rho1 x) (rho2 x).
+  forall n, env_rel_n n Σ G rho1 rho2.
 
 Definition rho_closed_on (G : type_env) (rho : ident -> expr) : Prop :=
   forall x T, lookup x G = Some T -> closed_expr (rho x).
@@ -351,8 +431,9 @@ Lemma env_rel_closed_left : forall Σ G rho1 rho2,
   rho_closed_on G rho1.
 Proof.
   intros Σ G rho1 rho2 Henv x T Hlook.
-  specialize (Henv x T Hlook) as Hrel.
-  exact (val_rel_closed_left Σ T (rho1 x) (rho2 x) Hrel).
+  specialize (Henv 1) as Henv1.
+  specialize (Henv1 x T Hlook) as Hrel.
+  exact (val_rel_closed_left_n 1 Σ T (rho1 x) (rho2 x) Hrel).
 Qed.
 
 Lemma env_rel_closed_right : forall Σ G rho1 rho2,
@@ -360,8 +441,9 @@ Lemma env_rel_closed_right : forall Σ G rho1 rho2,
   rho_closed_on G rho2.
 Proof.
   intros Σ G rho1 rho2 Henv x T Hlook.
-  specialize (Henv x T Hlook) as Hrel.
-  exact (val_rel_closed_right Σ T (rho1 x) (rho2 x) Hrel).
+  specialize (Henv 1) as Henv1.
+  specialize (Henv1 x T Hlook) as Hrel.
+  exact (val_rel_closed_right_n 1 Σ T (rho1 x) (rho2 x) Hrel).
 Qed.
 
 Lemma closed_except_subst_rho_shadow : forall G Σ Δ rho x e T1 T2 eps,
@@ -761,13 +843,13 @@ Proof.
   - rewrite (IHe rho0 x0 v0 Hno). reflexivity.
 Qed.
 
-Lemma env_rel_extend : forall Σ G rho1 rho2 x T v1 v2,
-  env_rel Σ G rho1 rho2 ->
-  val_rel Σ T v1 v2 ->
-  env_rel Σ ((x, T) :: G) (rho_extend rho1 x v1) (rho_extend rho2 x v2).
+Lemma env_rel_extend_n : forall n Σ G rho1 rho2 x T v1 v2,
+  env_rel_n n Σ G rho1 rho2 ->
+  val_rel_n n Σ T v1 v2 ->
+  env_rel_n n Σ ((x, T) :: G) (rho_extend rho1 x v1) (rho_extend rho2 x v2).
 Proof.
-  intros Σ G rho1 rho2 x T v1 v2 Henv Hv.
-  unfold env_rel in *. intros y Ty Hlook.
+  intros n Σ G rho1 rho2 x T v1 v2 Henv Hv.
+  unfold env_rel_n in *. intros y Ty Hlook.
   simpl in Hlook.
   destruct (String.eqb y x) eqn:Heq.
   - apply String.eqb_eq in Heq. subst.
@@ -777,6 +859,17 @@ Proof.
     * simpl. exact Hv.
     * apply String.eqb_neq in Heqxx. exfalso. apply Heqxx. reflexivity.
   - unfold rho_extend. rewrite Heq. apply Henv. assumption.
+Qed.
+
+Lemma env_rel_extend : forall Σ G rho1 rho2 x T v1 v2,
+  env_rel Σ G rho1 rho2 ->
+  val_rel Σ T v1 v2 ->
+  env_rel Σ ((x, T) :: G) (rho_extend rho1 x v1) (rho_extend rho2 x v2).
+Proof.
+  intros Σ G rho1 rho2 x T v1 v2 Henv Hv n.
+  apply env_rel_extend_n.
+  - apply Henv.
+  - apply Hv.
 Qed.
 
 (** ** Multi-step Lemmas *)
@@ -947,7 +1040,27 @@ Lemma exp_rel_of_val_rel : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   exp_rel Σ T v1 v2.
 Proof.
-  intros Σ T v1 v2 Hrel st1 st2 ctx Hstore.
+  intros Σ T v1 v2 Hrel n.
+  destruct n as [| n'].
+  - exact I.
+  - intros st1 st2 ctx Hstore.
+    exists v1, v2, st1, st2, ctx, Σ.
+    split.
+    + unfold store_ty_extends. intros l T' sl Hlook. exact Hlook.
+    + split.
+      * apply MS_Refl.
+      * split.
+        -- apply MS_Refl.
+        -- split.
+           ++ exact (Hrel n').
+           ++ exact Hstore.
+Qed.
+
+Lemma exp_rel_of_val_rel_step : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  exp_rel_n (S n) Σ T v1 v2.
+Proof.
+  intros n Σ T v1 v2 Hrel st1 st2 ctx Hstore.
   exists v1, v2, st1, st2, ctx, Σ.
   split.
   - unfold store_ty_extends. intros l T' sl Hlook. exact Hlook.
@@ -958,6 +1071,14 @@ Proof.
       * split.
         -- exact Hrel.
         -- exact Hstore.
+Qed.
+
+Lemma exp_rel_of_val_rel_n : forall n Σ T v1 v2,
+  val_rel Σ T v1 v2 ->
+  exp_rel_n n Σ T v1 v2.
+Proof.
+  intros n Σ T v1 v2 Hrel.
+  exact (exp_rel_of_val_rel Σ T v1 v2 Hrel n).
 Qed.
 
 Fixpoint lookup_val (x : ident) (s : list (ident * expr)) : option expr :=
@@ -985,109 +1106,125 @@ Proof.
   intros G Σ e T eps rho1 rho2 Hty.
   generalize dependent rho1.
   generalize dependent rho2.
-  induction Hty; intros rho2 rho1 Henv Hno2 Hno1; simpl.
+  induction Hty; intros rho2 rho1 Henv Hno2 Hno1 n; destruct n as [| n']; simpl; try exact I.
   - (* T_Unit *)
-    apply exp_rel_of_val_rel. simpl.
-    repeat split; try constructor; try reflexivity; intros x; simpl; auto.
+    apply exp_rel_of_val_rel_step.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + repeat split; try constructor; try reflexivity; intros x; simpl; auto.
   - (* T_Bool *)
-    apply exp_rel_of_val_rel. simpl.
-    repeat split.
-    + constructor.
-    + constructor.
-    + intros x; simpl; auto.
-    + intros x; simpl; auto.
-    + exists b. auto.
+    apply exp_rel_of_val_rel_step.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + repeat split.
+      * constructor.
+      * constructor.
+      * intros x; simpl; auto.
+      * intros x; simpl; auto.
+      * exists b. auto.
   - (* T_Int *)
-    apply exp_rel_of_val_rel. simpl.
-    repeat split.
-    + constructor.
-    + constructor.
-    + intros x; simpl; auto.
-    + intros x; simpl; auto.
-    + exists n. auto.
+    apply exp_rel_of_val_rel_step.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + repeat split.
+      * constructor.
+      * constructor.
+      * intros x; simpl; auto.
+      * intros x; simpl; auto.
+      * exists n. auto.
   - (* T_String *)
-    apply exp_rel_of_val_rel. simpl.
-    repeat split.
-    + constructor.
-    + constructor.
-    + intros x; simpl; auto.
-    + intros x; simpl; auto.
-    + exists s. auto.
+    apply exp_rel_of_val_rel_step.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + repeat split.
+      * constructor.
+      * constructor.
+      * intros x; simpl; auto.
+      * intros x; simpl; auto.
+      * exists s. auto.
   - (* T_Loc *)
-    apply exp_rel_of_val_rel. simpl.
-    repeat split; try constructor; try (intros x; simpl; auto).
-    + exists l. split; reflexivity.
-  - apply exp_rel_of_val_rel. apply Henv. assumption.
+    apply exp_rel_of_val_rel_step.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + repeat split; try constructor; try (intros x; simpl; auto).
+      * exists l. split; reflexivity.
+  - apply exp_rel_of_val_rel_step.
+    apply (Henv n' _ _). assumption.
   - (* T_Lam *)
-    apply exp_rel_of_val_rel.
-    simpl.
-    repeat split.
-    + apply VLam.
-    + apply VLam.
-    + apply closed_expr_lam. eapply closed_except_subst_rho_shadow.
-      { match goal with H : has_type _ _ _ _ _ _ |- _ => exact H end. }
-      { apply (env_rel_closed_left Σ _ _ _ Henv). }
-    + apply closed_expr_lam. eapply closed_except_subst_rho_shadow.
-      { match goal with H : has_type _ _ _ _ _ _ |- _ => exact H end. }
-      { apply (env_rel_closed_right Σ _ _ _ Henv). }
-    + intros vx vy Hrelxy st1 st2 ctx.
-      pose proof (env_rel_extend Σ _ _ _ x T1 vx vy Henv Hrelxy) as Henv'.
-      assert (rho_no_free_all (rho_extend rho1 x vx)) as Hno1'.
-      { apply rho_no_free_extend. assumption. apply (val_rel_closed_left Σ _ _ _ Hrelxy). }
-      assert (rho_no_free_all (rho_extend rho2 x vy)) as Hno2'.
-      { apply rho_no_free_extend. assumption. apply (val_rel_closed_right Σ _ _ _ Hrelxy). }
-      specialize (IHHty _ _ Henv' Hno1' Hno2').
-      unfold exp_rel in IHHty.
-      specialize (IHHty st1 st2 ctx).
-      destruct IHHty as [v1' [v2' [st1' [st2' [ctx' [Hms1 [Hms2 Hval]]]]]]].
-      
-      rewrite <- (subst_rho_extend rho1 x vx e Hno2) in Hms1.
-      rewrite <- (subst_rho_extend rho2 x vy e Hno1) in Hms2.
-      
-      exists v1', v2', st1', st2', ctx'.
-      split.
-      * eapply MS_Step.
-        -- apply ST_AppAbs. apply (val_rel_value_left Σ _ _ _ Hrelxy).
-        -- exact Hms1.
-      * split.
+    apply exp_rel_of_val_rel_step.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + repeat split.
+      * apply VLam.
+      * apply VLam.
+      * apply closed_expr_lam. eapply closed_except_subst_rho_shadow.
+        { match goal with H : has_type _ _ _ _ _ _ |- _ => exact H end. }
+        { apply (env_rel_closed_left Σ _ _ _ Henv). }
+      * apply closed_expr_lam. eapply closed_except_subst_rho_shadow.
+        { match goal with H : has_type _ _ _ _ _ _ |- _ => exact H end. }
+        { apply (env_rel_closed_right Σ _ _ _ Henv). }
+      * intros vx vy Hrelxy st1 st2 ctx Hstore.
+        pose proof (env_rel_extend_n n'' Σ _ _ _ x T1 vx vy (Henv n'') Hrelxy) as Henv'.
+        assert (rho_no_free_all (rho_extend rho1 x vx)) as Hno1'.
+        { apply rho_no_free_extend. assumption. apply (val_rel_closed_left_n n'' Σ _ _ _ Hrelxy). }
+        assert (rho_no_free_all (rho_extend rho2 x vy)) as Hno2'.
+        { apply rho_no_free_extend. assumption. apply (val_rel_closed_right_n n'' Σ _ _ _ Hrelxy). }
+        specialize (IHHty _ _ Henv' Hno1' Hno2' (S n'')).
+        specialize (IHHty st1 st2 ctx Hstore).
+        destruct IHHty as [v1' [v2' [st1' [st2' [ctx' [Σ' [Hext [Hms1 [Hms2 [Hval Hstore']]]]]]]]]]].
+
+        rewrite <- (subst_rho_extend rho1 x vx e Hno2) in Hms1.
+        rewrite <- (subst_rho_extend rho2 x vy e Hno1) in Hms2.
+
+        exists v1', v2', st1', st2', ctx', Σ'.
+        split; [exact Hext |].
+        split.
         -- eapply MS_Step.
-           ++ apply ST_AppAbs. apply (val_rel_value_right Σ _ _ _ Hrelxy).
-           ++ exact Hms2.
-        -- exact Hval.
+           ++ apply ST_AppAbs. apply (val_rel_value_left_n n'' Σ _ _ _ Hrelxy).
+           ++ exact Hms1.
+        -- split.
+           ++ eapply MS_Step.
+              ** apply ST_AppAbs. apply (val_rel_value_right_n n'' Σ _ _ _ Hrelxy).
+              ** exact Hms2.
+           ++ split; assumption.
   - (* T_App *)
-    unfold exp_rel in IHHty1.
-    specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1).
-    unfold exp_rel in IHHty2.
-    specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1).
-    intros st1 st2 ctx.
-    destruct (IHHty1 st1 st2 ctx) as
-      [vf1 [vf2 [st1' [st2' [ctx' [Hmsf1 [Hmsf2 Hrelf]]]]]]].
-    destruct (IHHty2 st1' st2' ctx') as
-      [va1 [va2 [st1'' [st2'' [ctx'' [Hmsa1 [Hmsa2 Hrela]]]]]]].
-    simpl in Hrelf.
-    destruct Hrelf as [Hf1 Hrelf1].
-    destruct Hrelf1 as [Hf2 Hrelf2].
-    destruct Hrelf2 as [_ Hrelf3].
-    destruct Hrelf3 as [_ Hfrel].
-    destruct (Hfrel va1 va2 Hrela st1'' st2'' ctx'') as
-      [vr1 [vr2 [st1''' [st2''' [ctx''' [Hms1 [Hms2 Hrelr]]]]]]].
-    exists vr1, vr2, st1''', st2''', ctx'''.
-    split.
-    + eapply multi_step_trans with (cfg2 := (EApp vf1 (subst_rho rho1 e2), st1', ctx')).
-      { apply multi_step_app1. exact Hmsf1. }
-      { eapply multi_step_trans with (cfg2 := (EApp vf1 va1, st1'', ctx'')).
-        { apply multi_step_app2; assumption. }
-        { exact Hms1. }
-      }
-    + split.
-      { eapply multi_step_trans with (cfg2 := (EApp vf2 (subst_rho rho2 e2), st2', ctx')).
-        { apply multi_step_app1. exact Hmsf2. }
-        { eapply multi_step_trans with (cfg2 := (EApp vf2 va2, st2'', ctx'')).
-           { apply multi_step_app2; assumption. }
-           { exact Hms2. }
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1 (S n'')).
+      specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1 (S n'')).
+      intros st1 st2 ctx Hstore.
+      specialize (IHHty1 st1 st2 ctx Hstore).
+      destruct IHHty1 as
+        [vf1 [vf2 [st1' [st2' [ctx' [Σ' [Hext1 [Hmsf1 [Hmsf2 [Hrelf Hstoref]]]]]]]]]].
+      assert (Hstoref_weak : store_rel_n n'' Σ st1' st2') as Hstoref_weak.
+      { apply store_rel_n_weaken with (Σ' := Σ'); [exact Hext1 | exact Hstoref]. }
+      specialize (IHHty2 st1' st2' ctx' Hstoref_weak).
+      destruct IHHty2 as
+        [va1 [va2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hmsa1 [Hmsa2 [Hrela Hstorea]]]]]]]]]].
+      simpl in Hrelf.
+      destruct Hrelf as [Hf1 [Hf2 [Hc1 [Hc2 Hfrel]]]].
+      assert (Hstorea_weak : store_rel_n n'' Σ st1'' st2'') as Hstorea_weak.
+      { apply store_rel_n_weaken with (Σ' := Σ''); [exact Hext2 | exact Hstorea]. }
+      destruct (Hfrel va1 va2 Hrela st1'' st2'' ctx'' Hstorea_weak) as
+        [vr1 [vr2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hms1 [Hms2 [Hrelr Hstorer]]]]]]]]]].
+      exists vr1, vr2, st1''', st2''', ctx''', Σ'''.
+      split; [exact Hext3 |].
+      split.
+      * eapply multi_step_trans with (cfg2 := (EApp vf1 (subst_rho rho1 e2), st1', ctx')).
+        { apply multi_step_app1. exact Hmsf1. }
+        { eapply multi_step_trans with (cfg2 := (EApp vf1 va1, st1'', ctx'')).
+          { apply multi_step_app2; assumption. }
+          { exact Hms1. }
         }
-      }
-      { exact Hrelr. }
+      * split.
+        { eapply multi_step_trans with (cfg2 := (EApp vf2 (subst_rho rho2 e2), st2', ctx')).
+          { apply multi_step_app1. exact Hmsf2. }
+          { eapply multi_step_trans with (cfg2 := (EApp vf2 va2, st2'', ctx'')).
+            { apply multi_step_app2; assumption. }
+            { exact Hms2. }
+          }
+        }
+        { split; assumption. }
   - (* T_Pair *)
     unfold exp_rel in IHHty1. specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1).
     unfold exp_rel in IHHty2. specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1).
