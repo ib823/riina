@@ -240,7 +240,7 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
 
   | ST_DeclassifyValue : forall v p st ctx,
       value v ->
-      value p ->
+      declass_ok (EClassify v) p ->
       (EDeclassify (EClassify v) p, st, ctx) --> (v, st, ctx)
 
   | ST_ProveStep : forall e e' st st' ctx ctx',
