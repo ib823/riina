@@ -1,6 +1,8 @@
-//! TERAS-LANG Types (AST)
+//! RIINA Types (AST)
 //!
 //! Abstract Syntax Tree definitions corresponding to the formal Coq specification.
+//! RIINA = Rigorous Immutable Integrity No-attack Assured
+//! Named for: Reena + Isaac + Imaan
 //!
 //! Reference: `02_FORMAL/coq/foundations/Syntax.v`
 //!
@@ -11,7 +13,7 @@ pub type Ident = String;
 
 /// Security Levels
 ///
-/// TERAS uses a two-point lattice for information flow:
+/// RIINA uses a two-point lattice for information flow:
 /// - Public: Information that can be observed by anyone
 /// - Secret: Information that must be protected
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
@@ -56,7 +58,7 @@ impl Effect {
 
 /// Types
 ///
-/// Core type constructors for TERAS-LANG.
+/// Core type constructors for RIINA.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Ty {
     Unit,

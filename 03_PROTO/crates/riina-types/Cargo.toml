@@ -1,10 +1,10 @@
 [package]
-name = "teras-lang-types"
+name = "riina-types"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "TERAS-LANG types"
+description = "RIINA type system definitions"
 
 [dependencies]
-teras-lang-lexer.workspace = true
+riina-lexer.workspace = true

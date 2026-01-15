@@ -1,15 +1,17 @@
-# TERAS-LANG Prototype Workspace
+# RIINA Prototype Workspace
 # Track B: Compiler Implementation
+# RIINA = Rigorous Immutable Integrity No-attack Assured
+# Named for: Reena + Isaac + Imaan
 
 [workspace]
 resolver = "2"
 members = [
-    "crates/teras-lang-codegen",
-    "crates/teras-lang-lexer",
-    "crates/teras-lang-parser",
-    "crates/teras-lang-typechecker",
-    "crates/teras-lang-types",
-    "crates/terasc",
+    "crates/riina-codegen",
+    "crates/riina-lexer",
+    "crates/riina-parser",
+    "crates/riina-typechecker",
+    "crates/riina-types",
+    "crates/riinac",
 ]
 
 [workspace.package]
@@ -21,10 +23,11 @@ repository = "https://github.com/ib823/proof"
 
 [workspace.dependencies]
 # Internal dependencies
-teras-lang-lexer = { path = "crates/teras-lang-lexer" }
-teras-lang-parser = { path = "crates/teras-lang-parser" }
-teras-lang-types = { path = "crates/teras-lang-types" }
-teras-lang-codegen = { path = "crates/teras-lang-codegen" }
+riina-lexer = { path = "crates/riina-lexer" }
+riina-parser = { path = "crates/riina-parser" }
+riina-types = { path = "crates/riina-types" }
+riina-codegen = { path = "crates/riina-codegen" }
+riina-typechecker = { path = "crates/riina-typechecker" }
 
 # No external dependencies (Law 8)
 

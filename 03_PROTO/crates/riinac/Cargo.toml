@@ -1,0 +1,17 @@
+[package]
+name = "riinac"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA compiler driver"
+
+[[bin]]
+name = "riinac"
+path = "src/main.rs"
+
+[dependencies]
+riina-lexer.workspace = true
+riina-parser.workspace = true
+riina-types.workspace = true
+riina-typechecker.workspace = true

@@ -1,10 +1,10 @@
 [package]
-name = "teras-lang-codegen"
+name = "riina-codegen"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "TERAS-LANG codegen"
+description = "RIINA code generator"
 
 [dependencies]
-teras-lang-lexer.workspace = true
+riina-lexer.workspace = true

@@ -1,6 +1,6 @@
 
 use crate::Parser;
-use teras_lang_types::{Expr, Ty, SecurityLevel, Effect};
+use riina_types::{Expr, Ty, SecurityLevel, Effect};
 
 #[test]
 fn test_parse_literals() {
