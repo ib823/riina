@@ -1,4 +1,4 @@
-(** * Type Safety for TERAS-LANG
+(** * Type Safety for RIINA
 
     Combination of Progress and Preservation.
 
@@ -7,11 +7,11 @@
     Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 *)
 
-Require Import TERAS.foundations.Syntax.
-Require Import TERAS.foundations.Semantics.
-Require Import TERAS.foundations.Typing.
-Require Import TERAS.type_system.Progress.
-Require Import TERAS.type_system.Preservation.
+Require Import RIINA.foundations.Syntax.
+Require Import RIINA.foundations.Semantics.
+Require Import RIINA.foundations.Typing.
+Require Import RIINA.type_system.Progress.
+Require Import RIINA.type_system.Preservation.
 
 (** ** Type Safety Theorem
 

@@ -1,4 +1,4 @@
-(** * Preservation Theorem for TERAS-LANG
+(** * Preservation Theorem for RIINA
 
     If a well-typed expression takes a step,
     the resulting expression is also well-typed with the same type.
@@ -12,9 +12,9 @@ Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Require Import Coq.Program.Equality.
 Require Import Coq.Arith.PeanoNat.
-Require Import TERAS.foundations.Syntax.
-Require Import TERAS.foundations.Semantics.
-Require Import TERAS.foundations.Typing.
+Require Import RIINA.foundations.Syntax.
+Require Import RIINA.foundations.Semantics.
+Require Import RIINA.foundations.Typing.
 Import ListNotations.
 
 (** ** Preservation Statement

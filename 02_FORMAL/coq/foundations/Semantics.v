@@ -1,6 +1,6 @@
-(** * TERAS-LANG Operational Semantics
+(** * RIINA Operational Semantics
     
-    Small-step operational semantics for TERAS-LANG.
+    Small-step operational semantics for RIINA.
     
     Reference: CTSS_v1_0_1.md, Section 5
     
@@ -10,7 +10,7 @@
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.
-Require Import TERAS.foundations.Syntax.
+Require Import RIINA.foundations.Syntax.
 Import ListNotations.
 
 (** ** Store

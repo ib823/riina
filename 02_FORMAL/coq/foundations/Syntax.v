@@ -1,8 +1,8 @@
-(** * TERAS-LANG Syntax
+(** * RIINA Syntax
     
-    Core syntax definitions for TERAS-LANG.
+    Core syntax definitions for RIINA.
     
-    Reference: TERAS-LANG-AST_v1_0_0.md
+    Reference: RIINA-AST_v1_0_0.md
     
     Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 *)
@@ -19,7 +19,7 @@ Definition loc := nat.
 
 (** ** Security Levels
     
-    TERAS uses a two-point lattice for information flow:
+    RIINA uses a two-point lattice for information flow:
     - Public: Information that can be observed by anyone
     - Secret: Information that must be protected
 *)
@@ -78,7 +78,7 @@ Qed.
 
 (** ** Types
     
-    Core type constructors for TERAS-LANG.
+    Core type constructors for RIINA.
 *)
 
 Inductive ty : Type :=

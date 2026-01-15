@@ -1,11 +1,11 @@
-(** * Effect Algebra for TERAS-LANG
+(** * Effect Algebra for RIINA
     
     Algebraic structure of effects.
     
     This module proves that effects form a join-semilattice (linear order).
 *)
 
-Require Import TERAS.foundations.Syntax.
+Require Import RIINA.foundations.Syntax.
 Require Import Coq.Arith.Arith.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Bool.Bool.
