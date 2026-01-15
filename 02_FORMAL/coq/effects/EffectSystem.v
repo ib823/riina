@@ -184,23 +184,14 @@ Inductive has_type_full : type_env -> store_ty -> security_level ->
       has_type_full G S D e T eff
 
   (* Effect Operations *)
-  | T_Perform : forall G S D eff e T,
-      has_type_full G S D e T EffectPure -> (* Payload is pure *)
-      (* Performing an effect 'eff' requires 'eff' in the effect budget *)
-      has_type_full G S D (EPerform eff e) TUnit eff
+  | T_Perform : forall G S D eff e T ε,
+      has_type_full G S D e T ε ->
+      has_type_full G S D (EPerform eff e) T (effect_join ε eff)
 
-  | T_Handle : forall G S D e y h T eff_e eff_h,
-      (* Expression e has some effect eff_e *)
-      has_type_full G S D e T eff_e ->
-      (* Handler h handles it. h gets the resumption or payload.
-         Simplified: y binds the effect payload. *)
-      (* For a full algebraic effect system, we need a refined handler typing.
-         Here we assume a simple exception-like or one-shot handler for now. *)
-      has_type_full ((y, TUnit) :: G) S D h T eff_h ->
-      (* The handle expression eliminates eff_e if h handles it? 
-         Or just wraps it?
-         Let's assume it handles 'eff_e' and returns 'T'. *)
-      has_type_full G S D (EHandle e y h) T eff_h
+  | T_Handle : forall G S D e y h T1 T2 ε1 ε2,
+      has_type_full G S D e T1 ε1 ->
+      has_type_full ((y, T1) :: G) S D h T2 ε2 ->
+      has_type_full G S D (EHandle e y h) T2 (effect_join ε1 ε2)
 
   (* Capabilities *)
   | T_Require : forall G S D eff e T eff_e,
@@ -246,10 +237,12 @@ Proof.
   - eapply core_effects_within. eassumption.
   - (* T_Perform *)
     split.
-    + apply effect_leq_refl.
-    + eapply performs_within_mono; [apply effect_leq_pure | exact IHHty].
+    + apply effect_join_ub_r.
+    + eapply performs_within_mono; [apply effect_join_ub_l | exact IHHty].
   - (* T_Handle *)
-    split; assumption.
+    split.
+    + eapply performs_within_mono; [apply effect_join_ub_l | exact IHHty1].
+    + eapply performs_within_mono; [apply effect_join_ub_r | exact IHHty2].
   - (* T_Require *)
     eapply performs_within_mono; [apply effect_join_ub_r | exact IHHty].
   - (* T_Grant *)
