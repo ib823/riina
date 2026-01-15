@@ -194,6 +194,11 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e2, st, ctx) --> (e2', st', ctx') ->
       (EDeclassify v1 e2, st, ctx) --> (EDeclassify v1 e2', st', ctx')
 
+  | ST_DeclassifyValue : forall v p st ctx,
+      value v ->
+      value p ->
+      (EDeclassify (EClassify v) p, st, ctx) --> (v, st, ctx)
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -238,6 +243,12 @@ Ltac solve_val_step :=
   | [ H : (EPair _ _, _, _) --> _, Hv1 : value _, Hv2 : value _ |- _ ] =>
       exfalso; eapply value_not_step; [ apply VPair; assumption | apply H ]
   | [ H : (ERef ?v ?l, _, _) --> _, Hv : value ?v |- _ ] =>
+      inversion H; subst;
+      match goal with
+      | Hs : (?v, _, _) --> _ |- _ =>
+          exfalso; eapply value_not_step; [ apply Hv | apply Hs ]
+      end
+  | [ H : (EClassify ?v, _, _) --> _, Hv : value ?v |- _ ] =>
       inversion H; subst;
       match goal with
       | Hs : (?v, _, _) --> _ |- _ =>
@@ -421,10 +432,16 @@ Proof.
   (* ST_Declassify1 *)
   - solve_ih.
   - solve_val_step.
+  - solve_val_step.
 
   (* ST_Declassify2 *)
   - solve_val_step.
   - solve_ih.
+  - solve_val_step.
+
+  (* ST_DeclassifyValue *)
+  - solve_val_step.
+  - solve_val_step.
 Qed.
 
 (** End of Semantics.v *)
