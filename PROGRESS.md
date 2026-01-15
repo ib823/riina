@@ -1,11 +1,12 @@
 # TERAS Progress Tracker
 
-## Last Updated: 2026-01-14 (Track A - NonInterference Lemma Audit)
+## Last Updated: 2026-01-15 (Tracks R, S, T, U Initialized)
 
-## Current Focus: Track A (Formal Proofs) - STRICT MODE
+## Current Focus: TRACK A (Proofs) + ZERO TRUST INITIALIZATION
 
 **STATUS:** CORE SOUNDNESS VERIFIED. SECURITY PROPERTIES IN PROGRESS.
 **TRACK B:** PAUSED PENDING FULL FORMAL ASSURANCE.
+**NEW TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
 
 ### COMPLETED & VERIFIED (0 ADMITS)
 
@@ -31,6 +32,13 @@ The foundation is mathematically solid for the core language.
 
 **Security Properties: PARTIAL**
 `non_interference_stmt` proof is present but blocked on `subst_rho_extend`. The lemma is false without a stronger environment invariant (e.g., substitution stability or closedness of `rho` images).
+
+### Zero Trust Tracks (Newly Initialized)
+
+- [x] **Track R (Certified Compilation):** Foundational definition complete. Target: Translation Validation.
+- [x] **Track S (Hardware Contracts):** Foundational definition complete. Target: Speculative ISA Model.
+- [x] **Track T (Hermetic Build):** Foundational definition complete. Target: Bootstrap from `hex0`.
+- [x] **Track U (Runtime Guardian):** Foundational definition complete. Target: Verified Micro-Hypervisor.
 
 ### Next Steps (Extreme Rigor Protocol)
 

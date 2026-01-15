@@ -29,3 +29,31 @@
 **Decision**: Track B starts with complete lexer before parser
 **Rationale**: Lexer is self-contained, enables early testing
 **Status**: IN PROGRESS
+
+### D005: Certified Compilation (Domain R)
+
+**Date**: 2026-01-15
+**Decision**: Implement Translation Validation (TERAS-TV) instead of just a certified compiler.
+**Rationale**: Eliminates "Trusting Trust" attacks. If the compiler lies, the proof fails.
+**Status**: RESEARCH (Foundational)
+
+### D006: Hardware Contracts (Domain S)
+
+**Date**: 2026-01-15
+**Decision**: Verify against an Augmented ISA model (ISA v2.0) that includes microarchitectural leakage.
+**Rationale**: "Normal" proofs are invalid on speculative hardware (Spectre). We must model the hardware as an adversary.
+**Status**: RESEARCH (Foundational)
+
+### D007: Hermetic Recursive Bootstrap (Domain T)
+
+**Date**: 2026-01-15
+**Decision**: Bootstrap the entire toolchain from a single ~512-byte hex seed (`hex0`).
+**Rationale**: Eliminates all supply chain attacks. We trust no binary on Earth.
+**Status**: RESEARCH (Foundational)
+
+### D008: Runtime Guardian (Domain U)
+
+**Date**: 2026-01-15
+**Decision**: Run applications under a formally verified Micro-Hypervisor (Sentinel).
+**Rationale**: Physical faults (cosmic rays) bypass static proofs. The Sentinel enforces invariants at runtime.
+**Status**: RESEARCH (Foundational)
