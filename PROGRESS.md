@@ -91,6 +91,21 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 | Y | Verified Stdlib | ⚪ DEFINED | Proven specifications for all library functions |
 | Z | Declassification Policy | ⚪ DEFINED | Robust declassification, budgets, audit trails |
 
+### Application Tracks (Σ, Π, Δ, Ω) — NEW
+
+| Track | Name | Status | Description |
+|-------|------|--------|-------------|
+| Σ (Sigma) | Verified Storage | ⚪ DEFINED | TigerBeetle-style database, ACID proofs, DST testing |
+| Π (Pi) | Verified Performance | ⚪ DEFINED | SIMD proofs, cache-oblivious, lock-free, io_uring |
+| Δ (Delta) | Verified Distribution | ⚪ DEFINED | IronFleet-style Raft/Paxos, BFT, CRDTs |
+| Ω (Omega) | Network Defense | ⚪ DEFINED | Cryptographic puzzles, capabilities, rate limiting |
+
+### Operational Track (Ψ) — NEW
+
+| Track | Name | Status | Description |
+|-------|------|--------|-------------|
+| Ψ (Psi) | Operational Security | ⚪ DEFINED | Threshold crypto, multi-party auth, duress detection, hardware diversity |
+
 ---
 
 ## DETAILED STATUS
@@ -156,6 +171,21 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 | Y | RESEARCH_Y01_FOUNDATION.md | `01_RESEARCH/25_DOMAIN_Y_VERIFIED_STDLIB/` |
 | Z | RESEARCH_Z01_FOUNDATION.md | `01_RESEARCH/26_DOMAIN_Z_DECLASSIFICATION_POLICY/` |
 
+### Application Tracks (NEW)
+
+| Track | Document | Location |
+|-------|----------|----------|
+| Σ | RESEARCH_SIGMA01_FOUNDATION.md | `01_RESEARCH/27_DOMAIN_SIGMA_VERIFIED_STORAGE/` |
+| Π | RESEARCH_PI01_FOUNDATION.md | `01_RESEARCH/28_DOMAIN_PI_VERIFIED_PERFORMANCE/` |
+| Δ | RESEARCH_DELTA01_FOUNDATION.md | `01_RESEARCH/29_DOMAIN_DELTA_VERIFIED_DISTRIBUTION/` |
+| Ω | RESEARCH_OMEGA01_FOUNDATION.md | `01_RESEARCH/30_DOMAIN_OMEGA_NETWORK_DEFENSE/` |
+
+### Operational Track (NEW)
+
+| Track | Document | Location |
+|-------|----------|----------|
+| Ψ | RESEARCH_PSI01_FOUNDATION.md | `01_RESEARCH/31_DOMAIN_PSI_OPERATIONAL_SECURITY/` |
+
 ### Language Specification
 
 | Document | Location |
@@ -183,6 +213,19 @@ When all tracks are complete, the following threats become OBSOLETE:
 | Fault injection | Track U | ⚪ DEFINED |
 | Library vulnerabilities | Track Y | ⚪ DEFINED |
 | Unauthorized declassification | Track Z | ⚪ DEFINED |
+| SQL injection | Track Σ | ⚪ DEFINED |
+| ACID violations | Track Σ | ⚪ DEFINED |
+| Database corruption | Track Σ | ⚪ DEFINED |
+| Optimization bugs | Track Π | ⚪ DEFINED |
+| SIMD correctness | Track Π | ⚪ DEFINED |
+| Split brain | Track Δ | ⚪ DEFINED |
+| Byzantine faults | Track Δ | ⚪ DEFINED |
+| SYN floods | Track Ω | ⚪ DEFINED |
+| Algorithmic DoS | Track Ω + V | ⚪ DEFINED |
+| Physical coercion | Track Ψ | 🟡 MITIGATED |
+| Social engineering | Track Ψ | 🟡 MITIGATED |
+| Insider threats | Track Ψ | 🟡 MITIGATED |
+| Hardware zero-days | Track Ψ + S | 🟡 MITIGATED |
 
 ---
 
@@ -225,6 +268,18 @@ When all tracks are complete, the following threats become OBSOLETE:
 ---
 
 ## CHANGE LOG
+
+### 2026-01-15 (Application + Operational Tracks)
+
+- **MAJOR**: Added Application Tracks (Σ, Π, Δ, Ω)
+  - Track Σ (Sigma): Verified Persistent Storage (database with proofs)
+  - Track Π (Pi): Verified Performance (SIMD, cache-oblivious, lock-free)
+  - Track Δ (Delta): Verified Distribution (Raft, BFT, CRDTs)
+  - Track Ω (Omega): Network Defense (puzzles, capabilities, rate limiting)
+- **MAJOR**: Added Operational Track (Ψ)
+  - Track Ψ (Psi): Operational Security (threshold crypto, multi-party, duress)
+- Extended threat coverage matrix to include all new threats
+- All previously "impossible" threats now MITIGATED
 
 ### 2026-01-15 (RIINA Branding)
 

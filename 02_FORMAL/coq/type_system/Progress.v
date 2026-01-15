@@ -96,6 +96,15 @@ Proof.
   exists v0. split; auto.
 Qed.
 
+Lemma lookup_nil_contra : forall x T,
+  lookup x nil = Some T ->
+  False.
+Proof.
+  intros x T H.
+  simpl in H.
+  discriminate H.
+Qed.
+
 (** ** Progress Theorem
 
     The progress theorem states that a well-typed closed expression
@@ -109,23 +118,25 @@ Proof.
   remember (@nil (ident * ty)) as Γ eqn:HΓ.
   remember Public as Δ eqn:HΔ.
   induction Hty; subst.
-  (* T_Unit *)
-  1: { left. constructor. }
-  (* T_Bool *)
-  1: { left. constructor. }
-  (* T_Int *)
-  1: { left. constructor. }
-  (* T_String *)
-  1: { left. constructor. }
-  (* T_Var - impossible: lookup in empty context gives None *)
-  1: { rewrite HΓ in H. simpl in H. discriminate H. }
-  (* T_Lam - lambdas are values *)
-  1: { left. exact (VLam x T1 e). }
+  - (* T_Unit *)
+    left. constructor.
+  - (* T_Bool *)
+    left. constructor.
+  - (* T_Int *)
+    left. constructor.
+  - (* T_String *)
+    left. constructor.
+  - (* T_Loc *)
+    left. constructor.
+  - (* T_Var - impossible: lookup in empty context gives None *)
+    simpl in H. discriminate H.
+  - (* T_Lam - lambdas are values *)
+    left. exact (VLam x T1 e).
   - (* T_App *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
-    + destruct (IHHty2 eq_refl eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
+    + destruct (IHHty2 eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
       * (* Both values - can beta reduce *)
-        destruct (canonical_fn e1 T1 T2 ε ε1 Hty1 Hv1) as [x [body Heq]].
+        destruct (canonical_fn e1 T1 T2 ε ε1 Σ Hty1 Hv1) as [x [body Heq]].
         subst. right. exists ([x := e2] body), st, ctx.
         apply ST_AppAbs. assumption.
       * (* e2 steps *)
@@ -135,8 +146,8 @@ Proof.
       right. exists (EApp e1' e2), st1', ctx1'.
       apply ST_App1; assumption.
   - (* T_Pair *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
-    + destruct (IHHty2 eq_refl eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
+    + destruct (IHHty2 eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
       * (* Both values - pair is a value *)
         left. constructor; assumption.
       * (* e2 steps *)
@@ -146,31 +157,31 @@ Proof.
       right. exists (EPair e1' e2), st1', ctx1'.
       apply ST_Pair1; assumption.
   - (* T_Fst *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
     + destruct (canonical_pair e T1 T2 ε Σ Hty Hv) as [v1 [v2 [Heq [Hv1 Hv2]]]].
       subst. right. exists v1, st, ctx.
       apply ST_Fst; assumption.
     + right. exists (EFst e''), st'', ctx''.
       apply ST_FstStep; assumption.
   - (* T_Snd *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
     + destruct (canonical_pair e T1 T2 ε Σ Hty Hv) as [v1 [v2 [Heq [Hv1 Hv2]]]].
       subst. right. exists v2, st, ctx.
       apply ST_Snd; assumption.
     + right. exists (ESnd e''), st'', ctx''.
       apply ST_SndStep; assumption.
   - (* T_Inl *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
     + left. constructor; assumption.
     + right. exists (EInl e'' T2), st'', ctx''.
       apply ST_InlStep; assumption.
   - (* T_Inr *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
     + left. constructor; assumption.
     + right. exists (EInr e'' T1), st'', ctx''.
       apply ST_InrStep; assumption.
   - (* T_Case *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv | [e'' [st'' [ctx'' Hstep]]]].
     + destruct (canonical_sum e T1 T2 ε Σ Hty1 Hv) as [[v' [Heq Hv']] | [v' [Heq Hv']]].
       * subst. right. exists ([x1 := v'] e1), st, ctx.
         apply ST_CaseInl; assumption.
@@ -179,7 +190,7 @@ Proof.
     + right. exists (ECase e'' x1 e1 x2 e2), st'', ctx''.
       apply ST_CaseStep; assumption.
   - (* T_If *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv | [e1'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv | [e1'' [st'' [ctx'' Hstep]]]].
     + destruct (canonical_bool e1 ε1 Σ Hty1 Hv) as [b Heq].
       subst. destruct b.
       * right. exists e2, st, ctx. apply ST_IfTrue.
@@ -187,30 +198,30 @@ Proof.
     + right. exists (EIf e1'' e2 e3), st'', ctx''.
       apply ST_IfStep; assumption.
   - (* T_Let *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv | [e1'' [st'' [ctx'' Hstep]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv | [e1'' [st'' [ctx'' Hstep]]]].
     + right. exists ([x := e1] e2), st, ctx.
       apply ST_LetValue; assumption.
     + right. exists (ELet x e1'' e2), st'', ctx''.
       apply ST_LetStep; assumption.
 
   - (* T_Perform *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + right. exists e, st, ctx. apply ST_PerformValue; assumption.
     + right. exists (EPerform eff e'), st', ctx'. apply ST_PerformStep; assumption.
 
   - (* T_Handle *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + right. exists ([x := e] h), st, ctx. apply ST_HandleValue; assumption.
     + right. exists (EHandle e' x h), st', ctx'. apply ST_HandleStep; assumption.
 
   - (* T_Ref *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + right. exists (ELoc (fresh_loc st)), (store_update (fresh_loc st) e st), ctx.
       apply ST_RefValue; auto.
     + right. exists (ERef e' l), st', ctx'. apply ST_RefStep; assumption.
 
   - (* T_Deref *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + destruct (canonical_ref e T l ε Σ Hty Hv) as [l' Heq]. subst.
       inversion Hty; subst.
       destruct (proj1 Hwf l' T l) as [v [Hlookup Htyv]].
@@ -219,43 +230,49 @@ Proof.
     + right. exists (EDeref e'), st', ctx'. apply ST_DerefStep; assumption.
 
   - (* T_Assign *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
     + destruct (canonical_ref e1 T l ε1 Σ Hty1 Hv1) as [l' Heq]. subst.
       inversion Hty1; subst.
       destruct (proj1 Hwf l' T l) as [v1 [Hlookup Htyv]].
       * assumption.
-      * destruct (IHHty2 eq_refl eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
+      * destruct (IHHty2 eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
         { right. exists EUnit, (store_update l' e2 st), ctx.
-          apply ST_AssignLoc; try assumption. }
+          eapply ST_AssignLoc with (v1 := v1); eauto. }
         { right. exists (EAssign (ELoc l') e2'), st2', ctx2'. apply ST_Assign2; assumption. }
     + right. exists (EAssign e1' e2), st1', ctx1'. apply ST_Assign1; assumption.
 
   - (* T_Classify *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + left. apply VClassify. assumption.
     + right. exists (EClassify e'), st', ctx'. apply ST_ClassifyStep; assumption.
 
   - (* T_Declassify *)
-    destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
+    destruct (IHHty1 eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
     + destruct (canonical_secret e1 T ε1 Σ Hty1 Hv1) as [v1 [Heq Hv1']]. subst.
-      destruct (IHHty2 eq_refl eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
-      * destruct H as [v' [He1 He2]]. inversion He1; subst.
-        right. exists v1, st, ctx. apply ST_DeclassifyValue; auto.
+      destruct (IHHty2 eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
+      * destruct H as [v' [Hv' [He1 He2]]]. inversion He1; subst v'.
+        rewrite He2 in *.
+        right. exists v1, st, ctx.
+        eapply ST_DeclassifyValue.
+        { exact Hv1'. }
+        { exists v1. split.
+          - exact Hv'.
+          - split; reflexivity. }
       * right. exists (EDeclassify (EClassify v1) e2'), st2', ctx2'. apply ST_Declassify2; assumption.
     + right. exists (EDeclassify e1' e2), st1', ctx1'. apply ST_Declassify1; assumption.
 
   - (* T_Prove *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + left. apply VProve. assumption.
     + right. exists (EProve e'), st', ctx'. apply ST_ProveStep; assumption.
 
   - (* T_Require *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + right. exists e, st, ctx. apply ST_RequireValue; assumption.
     + right. exists (ERequire eff e'), st', ctx'. apply ST_RequireStep; assumption.
 
   - (* T_Grant *)
-    destruct (IHHty eq_refl eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
+    destruct (IHHty eq_refl eq_refl Hwf) as [Hv | [e' [st' [ctx' Hstep]]]].
     + right. exists e, st, ctx. apply ST_GrantValue; assumption.
     + right. exists (EGrant eff e'), st', ctx'. apply ST_GrantStep; assumption.
 Qed.
