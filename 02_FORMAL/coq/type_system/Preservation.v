@@ -590,6 +590,7 @@ Proof.
   (* EDeclassify *)
   - inversion Hty; subst.
     eapply T_Declassify; eauto.
+    apply declass_ok_subst. assumption.
   (* EProve *)
   - inversion Hty; subst.
     eapply T_Prove. eapply IHe. eassumption.

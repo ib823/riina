@@ -231,6 +231,18 @@ Notation "[ x := v ] e" := (subst x v e) (at level 20).
 
 (** ** Basic Lemmas *)
 
+Definition declass_ok (e1 e2 : expr) : Prop :=
+  exists v, e1 = EClassify v /\ e2 = EProve (EClassify v).
+
+Lemma declass_ok_subst : forall x v e1 e2,
+  declass_ok e1 e2 ->
+  declass_ok ([x := v] e1) ([x := v] e2).
+Proof.
+  intros x v e1 e2 Hok.
+  destruct Hok as [v0 [He1 He2]]; subst.
+  simpl. exists ([x := v] v0). split; reflexivity.
+Qed.
+
 Lemma value_not_stuck : forall e,
   value e -> e = EUnit \/ (exists b, e = EBool b) \/ (exists n, e = EInt n) \/
              (exists s, e = EString s) \/ (exists x T body, e = ELam x T body) \/

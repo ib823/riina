@@ -209,6 +209,7 @@ Inductive has_type : type_env -> store_ty -> security_level ->
   | T_Declassify : forall Γ Σ Δ e1 e2 T ε1 ε2,
       has_type Γ Σ Δ e1 (TSecret T) ε1 ->
       has_type Γ Σ Δ e2 (TProof (TSecret T)) ε2 ->
+      declass_ok e1 e2 ->
       has_type Γ Σ Δ (EDeclassify e1 e2) T (effect_join ε1 ε2)
 
   | T_Prove : forall Γ Σ Δ e T ε,

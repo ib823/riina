@@ -239,7 +239,8 @@ Proof.
     destruct (IHHty1 eq_refl eq_refl eq_refl Hwf) as [Hv1 | [e1' [st1' [ctx1' Hstep1]]]].
     + destruct (canonical_secret e1 T ε1 Σ Hty1 Hv1) as [v1 [Heq Hv1']]. subst.
       destruct (IHHty2 eq_refl eq_refl eq_refl Hwf) as [Hv2 | [e2' [st2' [ctx2' Hstep2]]]].
-      * right. exists v1, st, ctx. apply ST_DeclassifyValue; assumption.
+      * destruct H as [v' [He1 He2]]. inversion He1; subst.
+        right. exists v1, st, ctx. apply ST_DeclassifyValue; auto.
       * right. exists (EDeclassify (EClassify v1) e2'), st2', ctx2'. apply ST_Declassify2; assumption.
     + right. exists (EDeclassify e1' e2), st1', ctx1'. apply ST_Declassify1; assumption.
 
