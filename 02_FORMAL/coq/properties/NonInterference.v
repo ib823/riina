@@ -75,7 +75,7 @@ Qed.
 
 Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} : Prop :=
   match n with
-  | 0 => True
+  | 0 => value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2
   | S n' =>
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
       match T with
@@ -154,7 +154,7 @@ Lemma val_rel_closed_left_n : forall n Σ T v1 v2,
   closed_expr v1.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - unfold closed_expr. intros x Hfree. contradiction.
+  - simpl in Hrel. destruct Hrel as [_ [_ [Hc1 _]]]. exact Hc1.
   - simpl in Hrel. destruct Hrel as [_ [_ [Hc1 _]]]. exact Hc1.
 Qed.
 
@@ -163,7 +163,7 @@ Lemma val_rel_closed_right_n : forall n Σ T v1 v2,
   closed_expr v2.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - unfold closed_expr. intros x Hfree. contradiction.
+  - simpl in Hrel. destruct Hrel as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
   - simpl in Hrel. destruct Hrel as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
 Qed.
 
@@ -172,7 +172,7 @@ Lemma val_rel_value_left_n : forall n Σ T v1 v2,
   value v1.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - inversion Hrel.
+  - simpl in Hrel. destruct Hrel as [Hv1 _]. exact Hv1.
   - simpl in Hrel. destruct Hrel as [Hv1 _]. exact Hv1.
 Qed.
 
@@ -181,7 +181,7 @@ Lemma val_rel_value_right_n : forall n Σ T v1 v2,
   value v2.
 Proof.
   destruct n as [| n']; intros Σ T v1 v2 Hrel.
-  - inversion Hrel.
+  - simpl in Hrel. destruct Hrel as [_ [Hv2 _]]. exact Hv2.
   - simpl in Hrel. destruct Hrel as [_ [Hv2 _]]. exact Hv2.
 Qed.
 
@@ -1226,33 +1226,64 @@ Proof.
         }
         { split; assumption. }
   - (* T_Pair *)
-    unfold exp_rel in IHHty1. specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1).
-    unfold exp_rel in IHHty2. specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1).
-    intros st1 st2 ctx.
-    destruct (IHHty1 st1 st2 ctx) as
-      [v1a [v2a [st1' [st2' [ctx' [Hms1a [Hms2a Hrela]]]]]]].
-    destruct (IHHty2 st1' st2' ctx') as
-      [v1b [v2b [st1'' [st2'' [ctx'' [Hms1b [Hms2b Hrelb]]]]]]].
-    exists (EPair v1a v1b), (EPair v2a v2b), st1'', st2'', ctx''.
-    split.
-    + eapply multi_step_trans.
-      * apply multi_step_pair1. exact Hms1a.
-      * eapply multi_step_pair2.
-        { apply (val_rel_value_left Σ _ _ _ Hrela). }
-        { exact Hms1b. }
-    + split.
+    destruct n' as [| n'']; simpl.
+    + exact I.
+    + specialize (IHHty1 rho2 rho1 Henv Hno2 Hno1 (S n'')).
+      specialize (IHHty2 rho2 rho1 Henv Hno2 Hno1 (S n'')).
+      intros st1 st2 ctx Hstore.
+      specialize (IHHty1 st1 st2 ctx Hstore).
+      destruct IHHty1 as
+        [v1a [v2a [st1' [st2' [ctx' [Σ' [Hext1 [Hms1a [Hms2a [Hrela Hstorea]]]]]]]]]].
+      assert (Hstorea_weak : store_rel_n n'' Σ st1' st2') as Hstorea_weak.
+      { apply store_rel_n_weaken with (Σ' := Σ'); [exact Hext1 | exact Hstorea]. }
+      specialize (IHHty2 st1' st2' ctx' Hstorea_weak).
+      destruct IHHty2 as
+        [v1b [v2b [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hms1b [Hms2b [Hrelb Hstoreb]]]]]]]]]].
+      exists (EPair v1a v1b), (EPair v2a v2b), st1'', st2'', ctx'', Σ''.
+      split; [exact Hext2 |].
+      split.
       * eapply multi_step_trans.
-        -- apply multi_step_pair1. exact Hms2a.
+        -- apply multi_step_pair1. exact Hms1a.
         -- eapply multi_step_pair2.
-           { apply (val_rel_value_right Σ _ _ _ Hrela). }
-           { exact Hms2b. }
-      * unfold val_rel. repeat split.
-        -- apply VPair. apply (val_rel_value_left Σ _ _ _ Hrela). apply (val_rel_value_left Σ _ _ _ Hrelb).
-        -- apply VPair. apply (val_rel_value_right Σ _ _ _ Hrela). apply (val_rel_value_right Σ _ _ _ Hrelb).
-        -- apply closed_expr_pair. apply (val_rel_closed_left Σ _ _ _ Hrela). apply (val_rel_closed_left Σ _ _ _ Hrelb).
-        -- apply closed_expr_pair. apply (val_rel_closed_right Σ _ _ _ Hrela). apply (val_rel_closed_right Σ _ _ _ Hrelb).
-        -- exists v1a, v1b, v2a, v2b.
-           repeat split; try reflexivity; assumption.
+           { apply (val_rel_value_left_n n'' Σ _ _ _ Hrela). }
+           { exact Hms1b. }
+      * split.
+        -- eapply multi_step_trans.
+           ++ apply multi_step_pair1. exact Hms2a.
+           ++ eapply multi_step_pair2.
+              ** apply (val_rel_value_right_n n'' Σ _ _ _ Hrela).
+              ** exact Hms2b.
+        -- split.
+           ++ destruct n'' as [| n''']; simpl.
+              ** repeat split.
+                 - apply VPair.
+                   apply (val_rel_value_left_n 0 Σ _ _ _ Hrela).
+                   apply (val_rel_value_left_n 0 Σ _ _ _ Hrelb).
+                 - apply VPair.
+                   apply (val_rel_value_right_n 0 Σ _ _ _ Hrela).
+                   apply (val_rel_value_right_n 0 Σ _ _ _ Hrelb).
+                 - apply closed_expr_pair.
+                   apply (val_rel_closed_left_n 0 Σ _ _ _ Hrela).
+                   apply (val_rel_closed_left_n 0 Σ _ _ _ Hrelb).
+                 - apply closed_expr_pair.
+                   apply (val_rel_closed_right_n 0 Σ _ _ _ Hrela).
+                   apply (val_rel_closed_right_n 0 Σ _ _ _ Hrelb).
+              ** repeat split.
+                 - apply VPair.
+                   apply (val_rel_value_left_n (S n''') Σ _ _ _ Hrela).
+                   apply (val_rel_value_left_n (S n''') Σ _ _ _ Hrelb).
+                 - apply VPair.
+                   apply (val_rel_value_right_n (S n''') Σ _ _ _ Hrela).
+                   apply (val_rel_value_right_n (S n''') Σ _ _ _ Hrelb).
+                 - apply closed_expr_pair.
+                   apply (val_rel_closed_left_n (S n''') Σ _ _ _ Hrela).
+                   apply (val_rel_closed_left_n (S n''') Σ _ _ _ Hrelb).
+                 - apply closed_expr_pair.
+                   apply (val_rel_closed_right_n (S n''') Σ _ _ _ Hrela).
+                   apply (val_rel_closed_right_n (S n''') Σ _ _ _ Hrelb).
+                 - exists v1a, v1b, v2a, v2b.
+                   repeat split; try reflexivity; assumption.
+           ++ exact Hstoreb.
   - (* T_Fst *)
     unfold exp_rel in IHHty. specialize (IHHty rho2 rho1 Henv Hno2 Hno1).
     intros st1 st2 ctx.
