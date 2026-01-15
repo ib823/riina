@@ -1,0 +1,240 @@
+// kripto.rii
+// RIINA = Rigorous Immutable Integrity No-attack Assured
+// Named for: Reena + Isaac + Imaan
+//
+// Cryptography example with effect annotations and security types
+
+modul kripto;
+
+// ============================================================================
+// POST-QUANTUM CRYPTOGRAPHY (Kriptografi Pasca-Kuantum)
+// ============================================================================
+
+// ML-KEM (Module-Lattice Key Encapsulation Mechanism)
+// Formerly known as CRYSTALS-Kyber
+
+bentuk KunciAwamMLKEM {
+    data: Bait,
+}
+
+bentuk KunciRahsiaMLKEM {
+    data: Rahsia<Bait>,  // Private key is secret!
+}
+
+bentuk TeksCipher {
+    data: Bait,
+}
+
+bentuk RahsiaDikongsi {
+    data: Rahsia<Bait>,
+}
+
+// Generate ML-KEM key pair
+// Effects: Kripto (cryptographic operation)
+awam fungsi jana_kunci_mlkem() -> (KunciAwamMLKEM, KunciRahsiaMLKEM) kesan Kripto {
+    masa_tetap {
+        biar (awam, rahsia) = mlkem_1024::jana_pasangan();
+        pulang (
+            KunciAwamMLKEM { data: awam },
+            KunciRahsiaMLKEM { data: rahsia }
+        );
+    }
+}
+
+// Encapsulate shared secret
+awam fungsi kapsul(kunci_awam: KunciAwamMLKEM) -> (TeksCipher, RahsiaDikongsi) kesan Kripto {
+    masa_tetap {
+        biar (cipher, kongsi) = mlkem_1024::kapsul(kunci_awam.data);
+        pulang (
+            TeksCipher { data: cipher },
+            RahsiaDikongsi { data: kongsi }
+        );
+    }
+}
+
+// Decapsulate shared secret
+awam fungsi dekapsul(
+    kunci_rahsia: KunciRahsiaMLKEM,
+    cipher: TeksCipher
+) -> RahsiaDikongsi kesan Kripto {
+    masa_tetap {
+        biar kongsi = mlkem_1024::dekapsul(kunci_rahsia.data, cipher.data);
+        pulang RahsiaDikongsi { data: kongsi };
+    }
+}
+
+// ============================================================================
+// AUTHENTICATED ENCRYPTION (Penyulitan Tersahkan)
+// ============================================================================
+
+bentuk Kunci {
+    data: Rahsia<Bait>,
+}
+
+bentuk Nonce {
+    data: Bait,
+}
+
+bentuk DataTersahkan {
+    cipher: Bait,
+    tag: Bait,
+}
+
+// Encrypt with authentication using ChaCha20-Poly1305
+awam fungsi sulit(
+    kunci: Kunci,
+    nonce: Nonce,
+    data_berkaitan: Bait,
+    teks_biasa: Rahsia<Bait>
+) -> DataTersahkan kesan Kripto {
+    masa_tetap {
+        biar (cipher, tag) = chacha20_poly1305::sulit(
+            kunci.data,
+            nonce.data,
+            data_berkaitan,
+            teks_biasa
+        );
+
+        pulang DataTersahkan { cipher, tag };
+    }
+}
+
+// Decrypt with authentication verification
+awam fungsi nyahsulit(
+    kunci: Kunci,
+    nonce: Nonce,
+    data_berkaitan: Bait,
+    data_tersahkan: DataTersahkan
+) -> Hasil<Rahsia<Bait>, RalatPenyahsulitan> kesan Kripto {
+    masa_tetap {
+        padan chacha20_poly1305::nyahsulit(
+            kunci.data,
+            nonce.data,
+            data_berkaitan,
+            data_tersahkan.cipher,
+            data_tersahkan.tag
+        ) {
+            Jadi(teks_biasa) => pulang Jadi(teks_biasa),
+            Gagal(_) => pulang Gagal(RalatPenyahsulitan::TagTidakSah),
+        }
+    }
+}
+
+// ============================================================================
+// SECURE KEY DERIVATION (Derivasi Kunci Selamat)
+// ============================================================================
+
+// HKDF for key derivation
+awam fungsi deriv_kunci(
+    ikm: Rahsia<Bait>,     // Input keying material
+    garam: Bait,           // Salt
+    info: Bait,            // Context info
+    panjang: Nombor        // Output length
+) -> Rahsia<Bait> kesan Kripto {
+    masa_tetap {
+        // Extract phase
+        biar prk = hkdf::ekstrak(garam, ikm);
+
+        // Expand phase
+        biar okm = hkdf::kembang(prk, info, panjang);
+
+        pulang okm;
+    }
+}
+
+// ============================================================================
+// DIGITAL SIGNATURES (Tandatangan Digital)
+// ============================================================================
+
+// ML-DSA (Module-Lattice Digital Signature Algorithm)
+// Formerly known as CRYSTALS-Dilithium
+
+bentuk KunciTandatanganAwam {
+    data: Bait,
+}
+
+bentuk KunciTandatanganRahsia {
+    data: Rahsia<Bait>,
+}
+
+bentuk Tandatangan {
+    data: Bait,
+}
+
+// Generate signing key pair
+awam fungsi jana_kunci_tandatangan() -> (KunciTandatanganAwam, KunciTandatanganRahsia) kesan Kripto {
+    masa_tetap {
+        biar (awam, rahsia) = mldsa_87::jana_pasangan();
+        pulang (
+            KunciTandatanganAwam { data: awam },
+            KunciTandatanganRahsia { data: rahsia }
+        );
+    }
+}
+
+// Sign a message
+awam fungsi tandatangan(
+    kunci_rahsia: KunciTandatanganRahsia,
+    mesej: Bait
+) -> Tandatangan kesan Kripto {
+    masa_tetap {
+        biar sig = mldsa_87::tandatangan(kunci_rahsia.data, mesej);
+        pulang Tandatangan { data: sig };
+    }
+}
+
+// Verify a signature
+awam fungsi sahkan_tandatangan(
+    kunci_awam: KunciTandatanganAwam,
+    mesej: Bait,
+    tandatangan: Tandatangan
+) -> Benar kesan Kripto {
+    masa_tetap {
+        pulang mldsa_87::sahkan(kunci_awam.data, mesej, tandatangan.data);
+    }
+}
+
+// ============================================================================
+// SECURE MEMORY (Memori Selamat)
+// ============================================================================
+
+// Secure erasure - zeroize sensitive data
+awam fungsi padam_selamat<T>(ubah data: Rahsia<T>) kesan Tulis {
+    // kosongkan ensures memory is securely erased
+    kosongkan data;
+}
+
+// Example: Complete encryption workflow
+awam fungsi contoh_sulit_mesej(
+    mesej: Teks,
+    kunci_penerima: KunciAwamMLKEM
+) -> (TeksCipher, DataTersahkan) kesan Kripto {
+    // 1. Generate ephemeral shared secret via key encapsulation
+    biar (cipher_kem, rahsia_kongsi) = kapsul(kunci_penerima);
+
+    // 2. Derive encryption key from shared secret
+    biar kunci_sulit = Kunci {
+        data: deriv_kunci(
+            rahsia_kongsi.data,
+            b"salt-contoh",
+            b"encryption-key",
+            32
+        )
+    };
+
+    // 3. Generate random nonce
+    biar nonce = Nonce { data: jana_rawak(12) };
+
+    // 4. Encrypt the message
+    biar data_tersahkan = sulit(
+        kunci_sulit,
+        nonce,
+        b"",  // No associated data
+        sulit(mesej.ke_bait())
+    );
+
+    // 5. Securely erase the shared secret
+    padam_selamat(rahsia_kongsi);
+
+    pulang (cipher_kem, data_tersahkan);
+}
