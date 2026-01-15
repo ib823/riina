@@ -55,19 +55,33 @@ Proof.
   generalize dependent ε. generalize dependent T.
   generalize dependent ctx. generalize dependent st. generalize dependent e.
   generalize dependent Σ.
-  induction Hmulti; intros Σ e1 st1 ctx1 Heq1 T ε Hty Hwf e2 st2 ctx2 Heq2.
+  induction Hmulti; intros Σ e1 st1 Hwf1 ctx1 Heq1 T ε Hty e2 st2 ctx2 Heq2.
   - (* MS_Refl: cfg = cfg' *)
-    inversion Heq1; inversion Heq2; subst.
-    exists Σ. split; [exact Hwf | eapply type_safety; eassumption].
+    repeat match goal with
+    | H : (_, _, _) = (_, _, _) |- _ => inversion H; subst; clear H
+    | H : ?x = (_, _, _) |- _ => inversion H; subst; clear H
+    | H : (_, _, _) = ?x |- _ => inversion H; subst; clear H
+    | H : (_, _) = (_, _) |- _ => inversion H; subst; clear H
+    | H : ?x = (_, _) |- _ => inversion H; subst; clear H
+    | H : (_, _) = ?x |- _ => inversion H; subst; clear H
+    end.
+    exists Σ. split; [exact Hwf1 | eapply type_safety; eassumption].
   - (* MS_Step: cfg1 --> cfg2 --> cfg3 *)
-    inversion Heq1; subst.
+    repeat match goal with
+    | H : (_, _, _) = (_, _, _) |- _ => inversion H; subst; clear H
+    | H : ?x = (_, _, _) |- _ => inversion H; subst; clear H
+    | H : (_, _, _) = ?x |- _ => inversion H; subst; clear H
+    | H : (_, _) = (_, _) |- _ => inversion H; subst; clear H
+    | H : ?x = (_, _) |- _ => inversion H; subst; clear H
+    | H : (_, _) = ?x |- _ => inversion H; subst; clear H
+    end.
     destruct cfg2 as [[e_mid st_mid] ctx_mid].
     (* preservation now returns an existential *)
-    destruct (preservation e1 e_mid T ε st1 st_mid ctx1 ctx_mid Σ Hty Hwf H)
+    destruct (preservation e1 e_mid T ε st1 st_mid ctx1 ctx_mid Σ Hty Hwf1 H)
       as [Σ' [ε' [Hext [Hwf' Hty']]]].
-    eapply IHHmulti; try reflexivity.
-    exact Hty'.
-    exact Hwf'.
+    eapply IHHmulti with (Σ := Σ') (e := e_mid) (st := st_mid) (ctx := ctx_mid)
+                         (T := T) (ε := ε') (e' := e2) (st' := st2) (ctx' := ctx2);
+      [exact Hwf' | reflexivity | exact Hty' | reflexivity].
 Qed.
 
 (** End of TypeSafety.v *)

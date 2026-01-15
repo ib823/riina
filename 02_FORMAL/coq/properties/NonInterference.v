@@ -85,7 +85,7 @@ Fixpoint val_rel (T : ty) (v1 v2 : expr) {struct T} : Prop :=
   | TSecret T' => True
       
   | TRef T' l =>
-      sec_leq l observer -> v1 = v2
+      True
       
   | TProd T1 T2 =>
       exists x1 y1 x2 y2,
@@ -447,36 +447,61 @@ Proof.
   destruct (String.eqb y x); reflexivity.
 Qed.
 
+Lemma rho_shadow_identity : forall rho x,
+  (forall y, rho y = EVar y) ->
+  forall y, rho_shadow rho x y = EVar y.
+Proof.
+  intros rho x Hrho y.
+  unfold rho_shadow.
+  destruct (String.eqb y x); [reflexivity | apply Hrho].
+Qed.
+
+Lemma subst_rho_identity : forall e rho,
+  (forall x, rho x = EVar x) ->
+  subst_rho rho e = e.
+Proof.
+  induction e; intros rho Hrho; simpl; try reflexivity.
+  - apply Hrho.
+  - f_equal.
+    apply IHe.
+    intros y. apply rho_shadow_identity; assumption.
+  - rewrite (IHe1 rho Hrho). rewrite (IHe2 rho Hrho). reflexivity.
+  - rewrite (IHe1 rho Hrho). rewrite (IHe2 rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe1 rho Hrho).
+    rewrite (IHe2 (rho_shadow rho i) (rho_shadow_identity rho i Hrho)).
+    rewrite (IHe3 (rho_shadow rho i0) (rho_shadow_identity rho i0 Hrho)).
+    reflexivity.
+  - rewrite (IHe1 rho Hrho).
+    rewrite (IHe2 rho Hrho).
+    rewrite (IHe3 rho Hrho).
+    reflexivity.
+  - rewrite (IHe1 rho Hrho).
+    rewrite (IHe2 (rho_shadow rho i) (rho_shadow_identity rho i Hrho)).
+    reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe1 rho Hrho).
+    rewrite (IHe2 (rho_shadow rho i) (rho_shadow_identity rho i Hrho)).
+    reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe1 rho Hrho). rewrite (IHe2 rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe1 rho Hrho). rewrite (IHe2 rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+  - rewrite (IHe rho Hrho). reflexivity.
+Qed.
+
 Lemma subst_rho_id : forall e,
   subst_rho rho_id e = e.
 Proof.
-  induction e; simpl.
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
-  - unfold rho_id. reflexivity.
-  - rewrite rho_shadow_id. rewrite IHe. reflexivity.
-  - rewrite IHe1, IHe2. reflexivity.
-  - rewrite IHe1, IHe2. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe1. rewrite rho_shadow_id. rewrite IHe2.
-    rewrite rho_shadow_id. rewrite IHe3. reflexivity.
-  - rewrite IHe1, IHe2, IHe3. reflexivity.
-  - rewrite IHe1. rewrite rho_shadow_id. rewrite IHe2. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe1. rewrite rho_shadow_id. rewrite IHe2. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe1, IHe2. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe1, IHe2. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe. reflexivity.
-  - rewrite IHe. reflexivity.
+  intros e.
+  apply (subst_rho_identity e rho_id).
+  intros x. unfold rho_id. reflexivity.
 Qed.
 
 Lemma rho_shadow_single_eq : forall x v i,
@@ -977,6 +1002,9 @@ Proof.
     + intros x; simpl; auto.
     + intros x; simpl; auto.
     + exists s. auto.
+  - (* T_Loc *)
+    apply exp_rel_of_val_rel. simpl.
+    repeat split; try constructor; try (intros x; simpl; auto); try (intros _; reflexivity).
   - apply exp_rel_of_val_rel. apply Henv. assumption.
   - (* T_Lam *)
     apply exp_rel_of_val_rel.
