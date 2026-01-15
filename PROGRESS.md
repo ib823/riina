@@ -1,14 +1,61 @@
-# TERAS Progress Tracker
+# RIINA Progress Tracker
 
-## Last Updated: 2026-01-15 (Completeness Tracks V-Z Added)
+## Last Updated: 2026-01-15 (RIINA Branding + Bahasa Melayu Syntax)
 
 ## Current Focus: TRACK A EXTENSIONS + TRACK B MAINTENANCE
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                  ║
+║     ██████╗ ██╗██╗███╗   ██╗ █████╗                                              ║
+║     ██╔══██╗██║██║████╗  ██║██╔══██╗                                             ║
+║     ██████╔╝██║██║██╔██╗ ██║███████║                                             ║
+║     ██╔══██╗██║██║██║╚██╗██║██╔══██║                                             ║
+║     ██║  ██║██║██║██║ ╚████║██║  ██║                                             ║
+║     ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                             ║
+║                                                                                  ║
+║     Rigorous Immutable Integrity No-attack Assured                               ║
+║     Named for: Reena + Isaac + Imaan                                             ║
+║                                                                                  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+```
 
 **STATUS:** CORE SOUNDNESS & SECURITY PROPERTIES VERIFIED.
 **TRACK A:** CORE COMPLETE (0 ADMITS). Extensions in progress.
 **TRACK B:** OPERATIONAL. Paused pending Track A catch-up.
 **ZERO-TRUST TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** INITIALIZED & DEFINED.
+**SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
+
+---
+
+## LANGUAGE IDENTITY
+
+### Name Origin
+
+| Letter | Family | Technical |
+|--------|--------|-----------|
+| R | **R**eena (wife) | **R**igorous |
+| I | **I**saac (son) | **I**mmutable |
+| I | **I**maan (son) | **I**ntegrity |
+| NA | — | **N**o-attack **A**ssured |
+
+### Syntax Language
+
+RIINA uses **Bahasa Melayu** (Malaysian Malay) for all keywords:
+
+| Bahasa Melayu | English | Purpose |
+|---------------|---------|---------|
+| `fungsi` | fn | Function definition |
+| `biar` | let | Variable binding |
+| `kalau` | if | Conditional |
+| `pulang` | return | Return value |
+| `rahsia` | secret | Secret type |
+| `dedah` | declassify | Declassification |
+| `kesan` | effect | Effect annotation |
+| `bersih` | pure | Pure effect |
+
+Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md`
 
 ---
 
@@ -19,7 +66,7 @@
 | Track | Name | Status | Description |
 |-------|------|--------|-------------|
 | A | Formal Proofs | 🟡 CORE DONE | Type safety, non-interference proven for core subset |
-| B | Prototype | ✅ OPERATIONAL | Lexer, Parser, Typechecker, terasc driver working |
+| B | Prototype | ✅ OPERATIONAL | Lexer, Parser, Typechecker, riinac driver working |
 | C | Specifications | ◯ NOT STARTED | Language and API specifications |
 | D | Testing | ◯ NOT STARTED | Test suite and coverage |
 | E | Hardware | ◯ BLOCKED | Hardware integration (blocked on Track S) |
@@ -34,7 +81,7 @@
 | T | Hermetic Build | ⚪ DEFINED | Bootstrap from hex0, supply chain untrusted |
 | U | Runtime Guardian | ⚪ DEFINED | seL4 integration, NMR, fault tolerance |
 
-### Completeness Tracks (V-Z) — NEW
+### Completeness Tracks (V-Z)
 
 | Track | Name | Status | Description |
 |-------|------|--------|-------------|
@@ -74,8 +121,9 @@
 - [x] Lexer implementation (Completed)
 - [x] Parser (Completed)
 - [x] Typechecker (Completed, unverified rules marked)
-- [x] Integration (terasc) (Completed)
+- [x] Integration (riinac) (Completed)
 - [ ] Codegen (Paused pending Track A)
+- [ ] Bahasa Melayu keyword support (Pending)
 
 ### Track F: Tooling (05_TOOLING/)
 
@@ -98,7 +146,7 @@
 | T | RESEARCH_T01_FOUNDATION.md | `01_RESEARCH/20_DOMAIN_T_HERMETIC_BUILD/` |
 | U | RESEARCH_U01_FOUNDATION.md | `01_RESEARCH/21_DOMAIN_U_RUNTIME_GUARDIAN/` |
 
-### Completeness Tracks (NEW)
+### Completeness Tracks
 
 | Track | Document | Location |
 |-------|----------|----------|
@@ -107,6 +155,12 @@
 | X | RESEARCH_X01_FOUNDATION.md | `01_RESEARCH/24_DOMAIN_X_CONCURRENCY_MODEL/` |
 | Y | RESEARCH_Y01_FOUNDATION.md | `01_RESEARCH/25_DOMAIN_Y_VERIFIED_STDLIB/` |
 | Z | RESEARCH_Z01_FOUNDATION.md | `01_RESEARCH/26_DOMAIN_Z_DECLASSIFICATION_POLICY/` |
+
+### Language Specification
+
+| Document | Location |
+|----------|----------|
+| Bahasa Melayu Syntax | `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md` |
 
 ---
 
@@ -166,12 +220,27 @@ When all tracks are complete, the following threats become OBSOLETE:
 2. **Track F**: Implement ML-KEM-768 NTT and polynomial arithmetic
 3. **Track A**: Extend `non_interference_stmt` to handle references and effects
 4. **Track C**: Write specifications documenting current proven properties
+5. **Track B**: Add Bahasa Melayu keyword support to lexer
 
 ---
 
 ## CHANGE LOG
 
-### 2026-01-15
+### 2026-01-15 (RIINA Branding)
+
+- **MAJOR**: Renamed language from TERAS to RIINA
+  - R = Reena (wife), Rigorous
+  - I = Isaac (son), Immutable
+  - I = Imaan (son), Integrity
+  - NA = No-attack Assured
+- **MAJOR**: Adopted Bahasa Melayu syntax
+  - All keywords in Malaysian Malay
+  - File extension: `.rii`
+  - Full specification created
+- Updated all references from `terasc` to `riinac`
+- Added language identity section
+
+### 2026-01-15 (Completeness Tracks)
 
 - **MAJOR**: Added Completeness Tracks (V, W, X, Y, Z)
   - Track V: Formal Termination Guarantees
@@ -192,3 +261,4 @@ When all tracks are complete, the following threats become OBSOLETE:
 ---
 
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*
+*Named for: Reena + Isaac + Imaan — The foundation of everything.*
