@@ -59,9 +59,10 @@ Proof.
     { apply Nat.le_lt_trans with (m := Nat.max l' (store_max st')).
       - apply Nat.le_max_r.
       - exact Hlt. }
-    simpl. rewrite Nat.eqb_neq.
+    simpl. destruct (Nat.eqb l l') eqn:Heq.
+    + apply Nat.eqb_eq in Heq. subst.
+      exfalso. apply (Nat.lt_irrefl l'). exact Hlt1.
     + apply IH. exact Hlt2.
-    + intro Heq. subst. apply (Nat.lt_irrefl l). exact Hlt1.
 Qed.
 
 Lemma store_lookup_fresh : forall st,
@@ -297,7 +298,15 @@ Proof.
   - eapply IHHv; eauto.
   - eapply IHHv; eauto.
   - eapply IHHv; eauto.
-  - eapply IHHv; eauto.
+Qed.
+
+Lemma value_does_not_step : forall v st ctx e' st' ctx',
+  value v ->
+  (v, st, ctx) --> (e', st', ctx') ->
+  False.
+Proof.
+  intros v st ctx e' st' ctx' Hv Hstep.
+  eapply value_not_step; eauto.
 Qed.
 
 (** Helper tactic for solving contradictions where a value steps *)
@@ -330,190 +339,149 @@ Ltac solve_ih :=
       apply IH in H; injection H as Heq Hst Hctx; subst; reflexivity
   end.
 
-Lemma step_deterministic : forall cfg cfg1 cfg2,
-  cfg --> cfg1 ->
-  cfg --> cfg2 ->
+Ltac solve_det_ih :=
+  match goal with
+  | IH : forall t2 st2 ctx2,
+           (?e, ?st, ?ctx) --> (t2, st2, ctx2) -> _,
+    H : (?e, ?st, ?ctx) --> (?t2, ?st2, ?ctx2) |- _ =>
+      specialize (IH _ _ _ H) as [Heq_t [Heq_st Heq_ctx]];
+      subst;
+      split; [reflexivity | split; reflexivity]
+  end.
+
+Ltac solve_det_ih_cfg :=
+  match goal with
+  | IH : forall cfg2, (?e, ?st, ?ctx) --> cfg2 -> _,
+    H : (?e, ?st, ?ctx) --> ?cfg2 |- _ =>
+      specialize (IH _ H); subst; reflexivity
+  end.
+
+Ltac solve_ctx_ih :=
+  match goal with
+  | IH : forall cfg2, (?e, ?st, ?ctx) --> cfg2 -> (?e', ?st', ?ctx') = cfg2,
+    H : (?e, ?st, ?ctx) --> (?e2, ?st2, ?ctx2) |- _ =>
+      specialize (IH _ H);
+      inversion IH; subst; reflexivity
+  end.
+
+Ltac solve_val_step_pair :=
+  match goal with
+  | Hs : (EPair ?v1 ?v2, _, _) --> _,
+    Hv1 : value ?v1,
+    Hv2 : value ?v2 |- _ =>
+      exfalso; eapply value_not_step; [ apply VPair; eauto | exact Hs ]
+  end.
+
+Theorem step_deterministic_cfg : forall cfg cfg1 cfg2,
+  step cfg cfg1 ->
+  step cfg cfg2 ->
   cfg1 = cfg2.
 Proof.
   intros cfg cfg1 cfg2 H1 H2.
   generalize dependent cfg2.
-  induction H1; intros cfg2 H2; inversion H2; subst; try reflexivity.
+  induction H1; intros cfg2 H2; inversion H2; subst;
+    try solve_ctx_ih;
+    try reflexivity;
+    try solve_val_step_pair;
+    try solve_val_step.
+  - (* ST_AppAbs vs ST_App1 *)
+    exfalso.
+    pose proof (value_not_step (EPair v1 v2) st ctx (e', st', ctx')
+                  (VPair v1 v2 H H0)) as Hns.
+    apply Hns in H6.
+    exact H6.
+  - (* ST_AppAbs vs ST_App2 *)
+    exfalso.
+    pose proof (value_not_step (EPair v1 v2) st ctx (e', st', ctx')
+                  (VPair v1 v2 H H0)) as Hns.
+    apply Hns in H6.
+    exact H6.
+  - (* ST_App1 vs ST_AppAbs *)
+    exfalso.
+    pose proof (value_not_step (EPair v1 v2) st ctx (e', st', ctx')
+                  (VPair v1 v2 H5 H6)) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_App1 vs ST_App2 *)
+    exfalso.
+    pose proof (value_not_step (EPair v1 v2) st ctx (e', st', ctx')
+                  (VPair v1 v2 H5 H6)) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_App2 vs ST_AppAbs *)
+    exfalso.
+    pose proof (value_not_step (EInl v T) st ctx (e', st', ctx')
+                  (VInl v T H)) as Hns.
+    apply Hns in H9.
+    exact H9.
+  - (* ST_App2 vs ST_App1 *)
+    exfalso.
+    pose proof (value_not_step (EInr v T) st ctx (e', st', ctx')
+                  (VInr v T H)) as Hns.
+    apply Hns in H9.
+    exact H9.
+  - (* ST_Pair1 vs ST_Pair2 *)
+    exfalso.
+    pose proof (value_not_step (EInl v T) st ctx (e', st', ctx')
+                  (VInl v T H9)) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_Pair2 vs ST_Pair1 *)
+    exfalso.
+    pose proof (value_not_step (EInr v T) st ctx (e', st', ctx')
+                  (VInr v T H9)) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_Fst vs ST_FstStep *)
+    exfalso.
+    pose proof (value_not_step (EBool true) st ctx (e1', st', ctx')
+                  (VBool true)) as Hns.
+    apply Hns in H6.
+    exact H6.
+  - (* ST_Snd vs ST_SndStep *)
+    exfalso.
+    pose proof (value_not_step (EBool false) st ctx (e1', st', ctx')
+                  (VBool false)) as Hns.
+    apply Hns in H6.
+    exact H6.
+  - (* ST_FstStep vs ST_Fst *)
+    exfalso.
+    pose proof (value_not_step (EBool true) st ctx (e1', st', ctx')
+                  (VBool true)) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_SndStep vs ST_Snd *)
+    exfalso.
+    pose proof (value_not_step (EBool false) st ctx (e1', st', ctx')
+                  (VBool false)) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_CaseInl vs ST_CaseStep *)
+    rewrite H in H5; inversion H5; subst; reflexivity.
+  - (* ST_CaseInr vs ST_CaseStep *)
+    destruct H8 as [v0 [He1 He2]]; inversion He1; subst.
+    exfalso.
+    pose proof (value_not_step (EProve (EClassify v0)) st ctx (e2', st', ctx')
+                  (VProve (EClassify v0) (VClassify v0 H7))) as Hns.
+    apply Hns in H1.
+    exact H1.
+  - (* ST_CaseStep vs ST_CaseInl *)
+    destruct H0 as [v0 [He1 He2]]; inversion He1; subst.
+    exfalso.
+    pose proof (value_not_step (EProve (EClassify v0)) st ctx (e2', st', ctx')
+                  (VProve (EClassify v0) (VClassify v0 H))) as Hns.
+    apply Hns in H8.
+    exact H8.
+Qed.
 
-  (* ST_AppAbs *)
-  - solve_val_step. (* H2=App1 *)
-  - solve_val_step. (* H2=App2 *)
-
-  (* ST_App1 *)
-  - solve_val_step. (* H2=AppAbs *)
-  - solve_ih.       (* H2=App1 *)
-  - solve_val_step. (* H2=App2 *)
-
-  (* ST_App2 *)
-  - solve_val_step. (* H2=AppAbs *)
-  - solve_val_step. (* H2=App1 *)
-  - solve_ih.       (* H2=App2 *)
-
-  (* ST_Pair1 *)
-  - solve_ih.
-  - solve_val_step.
-
-  (* ST_Pair2 *)
-  - solve_val_step.
-  - solve_ih.
-
-  (* ST_Fst *)
-  - match goal with | H : (EPair _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
-
-  (* ST_Snd *)
-  - match goal with | H : (EPair _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
-
-  (* ST_FstStep *)
-  - inversion H1; subst; solve_val_step.
-  - solve_ih.
-
-  (* ST_SndStep *)
-  - inversion H1; subst; solve_val_step.
-  - solve_ih.
-
-  (* ST_CaseInl *)
-  - match goal with | H : (EInl _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
-
-  (* ST_CaseInr *)
-  - match goal with | H : (EInr _ _, _, _) --> _ |- _ => inversion H; subst; solve_val_step end.
-
-  (* ST_CaseStep *)
-  - inversion H1; subst; solve_val_step.
-  - inversion H1; subst; solve_val_step.
-  - solve_ih.
-
-  (* ST_InlStep *)
-  - solve_ih.
-
-  (* ST_InrStep *)
-  - solve_ih.
-
-  (* ST_IfTrue *)
-  - match goal with | H : (EBool _, _, _) --> _ |- _ => inversion H end.
-
-  (* ST_IfFalse *)
-  - match goal with | H : (EBool _, _, _) --> _ |- _ => inversion H end.
-
-  (* ST_IfStep *)
-  - inversion H1.
-  - inversion H1.
-  - solve_ih.
-
-  (* ST_LetValue *)
-  - solve_val_step.
-
-  (* ST_LetStep *)
-  - solve_val_step.
-  - solve_ih.
-
-  (* ST_PerformStep *)
-  - solve_ih.
-  - match goal with
-    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
-        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
-    end.
-
-  (* ST_PerformValue *)
-  - try reflexivity.
-    match goal with
-    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
-        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
-    end.
-
-  (* ST_HandleStep *)
-  - solve_ih.
-  - match goal with
-    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
-        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
-    end.
-
-  (* ST_HandleValue *)
-  - try reflexivity.
-    match goal with
-    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
-        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
-    end.
-
-  (* ST_RefStep *)
-  - solve_ih.
-
-  (* ST_RefValue *)
-  - solve_val_step.
-  - inversion H2; subst. reflexivity.
-
-  (* ST_DerefStep *)
-  - solve_ih.
-  - match goal with
-    | Hs : (ELoc _, _, _) --> _ |- _ =>
-        exfalso; eapply value_not_step; [ constructor | apply Hs ]
-    end.
-
-  (* ST_DerefLoc *)
-  - all: (
-      match goal with
-      | Hs : (ELoc _, _, _) --> _ |- _ =>
-          inversion Hs
-      | _ => reflexivity
-      end
-    ).
-
-  (* ST_Assign1 *)
-  - solve_ih.
-  - solve_val_step.
-  - solve_val_step.
-
-  (* ST_Assign2 *)
-  - solve_val_step.
-  - solve_ih.
-  - solve_val_step.
-
-  (* ST_AssignLoc *)
-  - match goal with
-    | Hs : (ELoc _, _, _) --> _ |- _ =>
-        inversion Hs
-    end.
-  - match goal with
-    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
-        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
-    end.
-
-  (* ST_ClassifyStep *)
-  - solve_ih.
-
-  (* ST_Declassify1 *)
-  - solve_ih.
-  - solve_val_step.
-  - solve_val_step.
-
-  (* ST_Declassify2 *)
-  - solve_val_step.
-  - solve_ih.
-  - solve_val_step.
-
-  (* ST_DeclassifyValue *)
-  - solve_val_step.
-  - solve_val_step.
-
-  (* ST_ProveStep *)
-  - solve_ih.
-
-  (* ST_RequireStep *)
-  - solve_ih.
-  - solve_val_step.
-
-  (* ST_RequireValue *)
-  - solve_val_step.
-
-  (* ST_GrantStep *)
-  - solve_ih.
-  - solve_val_step.
-
-  (* ST_GrantValue *)
-  - solve_val_step.
+Theorem step_deterministic : forall t st ctx t1 st1 ctx1 t2 st2 ctx2,
+  (t, st, ctx) --> (t1, st1, ctx1) ->
+  (t, st, ctx) --> (t2, st2, ctx2) ->
+  t1 = t2 /\ st1 = st2 /\ ctx1 = ctx2.
+Proof.
+  intros t st ctx t1 st1 ctx1 t2 st2 ctx2 H1 H2.
+  pose proof (step_deterministic_cfg (t, st, ctx) (t1, st1, ctx1) (t2, st2, ctx2) H1 H2) as Heq.
+  inversion Heq; subst; split; [reflexivity | split; reflexivity].
 Qed.
 
 (** End of Semantics.v *)
