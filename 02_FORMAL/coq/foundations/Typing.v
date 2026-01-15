@@ -44,22 +44,6 @@ Fixpoint store_ty_update (l : loc) (T : ty) (sl : security_level) (Σ : store_ty
       if Nat.eqb l l' then (l, T, sl) :: Σ' else (l', T', sl') :: store_ty_update l T sl Σ'
   end.
 
-(** Well-typed store: every typed location has a well-typed value in the store. *)
-Definition store_wf (Σ : store_ty) (st : store) : Prop :=
-  (forall l T sl,
-     store_ty_lookup l Σ = Some (T, sl) ->
-     exists v, store_lookup l st = Some v /\ has_type nil Σ Public v T EffectPure)
-  /\
-  (forall l v,
-     store_lookup l st = Some v ->
-     exists T sl, store_ty_lookup l Σ = Some (T, sl) /\ has_type nil Σ Public v T EffectPure).
-
-(** Store typing extension *)
-Definition store_ty_extends (Σ Σ' : store_ty) : Prop :=
-  forall l T sl,
-    store_ty_lookup l Σ = Some (T, sl) ->
-    store_ty_lookup l Σ' = Some (T, sl).
-
 (** ** Free Variables
 
     Predicate to check if a variable occurs free in an expression.
@@ -225,6 +209,22 @@ Inductive has_type : type_env -> store_ty -> security_level ->
       has_type Γ Σ Δ e T ε ->
       has_type Γ Σ Δ (EGrant eff e) T ε.
 
+(** Well-typed store: every typed location has a well-typed value in the store. *)
+Definition store_wf (Σ : store_ty) (st : store) : Prop :=
+  (forall l T sl,
+     store_ty_lookup l Σ = Some (T, sl) ->
+     exists v, store_lookup l st = Some v /\ has_type nil Σ Public v T EffectPure)
+  /\
+  (forall l v,
+     store_lookup l st = Some v ->
+     exists T sl, store_ty_lookup l Σ = Some (T, sl) /\ has_type nil Σ Public v T EffectPure).
+
+(** Store typing extension *)
+Definition store_ty_extends (Σ Σ' : store_ty) : Prop :=
+  forall l T sl,
+    store_ty_lookup l Σ = Some (T, sl) ->
+    store_ty_lookup l Σ' = Some (T, sl).
+
 (** ** Type Uniqueness
 
     The type system is syntax-directed, so each expression has at most
@@ -239,213 +239,235 @@ Proof.
   intros Γ Σ Δ e T1 T2 ε1 ε2 H1 H2.
   generalize dependent T2.
   generalize dependent ε2.
-  induction H1 as [
-    (* T_Unit *)   G S D
-    (* T_Bool *) | G S D b
-    (* T_Int *)  | G S D n
-    (* T_String *) | G S D s
-    (* T_Loc *) | G S D l T sl Hlookup
-    (* T_Var *)  | G S D x T Hlookup
-    (* T_Lam *)  | G S D x T1 T2 e eps Ht IHt
-    (* T_App *)  | G S D e1 e2 T1 T2 eps eps1 eps2 Ht1 IHt1 Ht2 IHt2
-    (* T_Pair *) | G S D e1 e2 T1 T2 eps1 eps2 Ht1 IHt1 Ht2 IHt2
-    (* T_Fst *)  | G S D e T1 T2 eps Ht IHt
-    (* T_Snd *)  | G S D e T1 T2 eps Ht IHt
-    (* T_Inl *)  | G S D e T1 T2 eps Ht IHt
-    (* T_Inr *)  | G S D e T1 T2 eps Ht IHt
-    (* T_Case *) | G S D e x1 e1 x2 e2 T1 T2 T eps eps1 eps2 Ht1 IHt1 Ht2 IHt2 Ht3 IHt3
-    (* T_If *)   | G S D e1 e2 e3 T eps1 eps2 eps3 Ht1 IHt1 Ht2 IHt2 Ht3 IHt3
-    (* T_Let *)  | G S D x e1 e2 T1 T2 eps1 eps2 Ht1 IHt1 Ht2 IHt2
-    (* T_Perform *) | G S D eff e T eps Ht IHt
-    (* T_Handle *)  | G S D e x h T1 T2 eps1 eps2 Ht1 IHt1 Ht2 IHt2
-    (* T_Ref *)     | G S D e T l eps Ht IHt
-    (* T_Deref *)   | G S D e T l eps Ht IHt
-    (* T_Assign *)  | G S D e1 e2 T l eps1 eps2 Ht1 IHt1 Ht2 IHt2
-    (* T_Classify *) | G S D e T eps Ht IHt
-    (* T_Declassify *) | G S D e1 e2 T eps1 eps2 Ht1 IHt1 Ht2 IHt2
-    (* T_Prove *)   | G S D e T eps Ht IHt
-    (* T_Require *) | G S D eff e T eps Ht IHt
-    (* T_Grant *)   | G S D eff e T eps Ht IHt
-  ]; intros eps' T2' H2; pose proof H2 as H2'; inversion H2; subst.
-
-  - (* T_Var *)
-    split; reflexivity.
-
+  induction H1 as
+    [ G S D
+    | G S D b
+    | G S D n
+    | G S D s
+    | G S D l T sl Hlookup
+    | G S D x T Hlookup
+    | G S D x T1 T2 e ε Ht IHt
+    | G S D e1 e2 T1 T2 ε ε1 ε2 Ht1 IHt1 Ht2 IHt2
+    | G S D e1 e2 T1 T2 ε1 ε2 Ht1 IHt1 Ht2 IHt2
+    | G S D e T1 T2 ε Ht IHt
+    | G S D e T1 T2 ε Ht IHt
+    | G S D e T1 T2 ε Ht IHt
+    | G S D e T1 T2 ε Ht IHt
+    | G S D e x1 e1 x2 e2 T1 T2 T ε ε1 ε2 Ht1 IHt1 Ht2 IHt2 Ht3 IHt3
+    | G S D e1 e2 e3 T ε1 ε2 ε3 Ht1 IHt1 Ht2 IHt2 Ht3 IHt3
+    | G S D x e1 e2 T1 T2 ε1 ε2 Ht1 IHt1 Ht2 IHt2
+    | G S D eff e T ε Ht IHt
+    | G S D e x h T1 T2 ε1 ε2 Ht1 IHt1 Ht2 IHt2
+    | G S D e T l ε Ht IHt
+    | G S D e T l ε Ht IHt
+    | G S D e1 e2 T l ε1 ε2 Ht1 IHt1 Ht2 IHt2
+    | G S D e T ε Ht IHt
+    | G S D e1 e2 T ε1 ε2 Ht1 IHt1 Ht2 IHt2 Hok
+    | G S D e T ε Ht IHt
+    | G S D eff e T ε Ht IHt
+    | G S D eff e T ε Ht IHt
+    ]; intros ε2' T2' H2; inversion H2; subst; try (split; reflexivity).
   - (* T_Loc *)
-    split; reflexivity.
-
-  - (* T_Lam - Type *)
-    split; reflexivity.
-
+    match goal with
+    | H1 : store_ty_lookup _ _ = Some _,
+      H2 : store_ty_lookup _ _ = Some _ |- _ =>
+        rewrite H1 in H2; inversion H2; subst; split; reflexivity
+    end.
+  - (* T_Var *)
+    match goal with
+    | H1 : lookup _ _ = Some _,
+      H2 : lookup _ _ = Some _ |- _ =>
+        rewrite H1 in H2; inversion H2; subst; split; reflexivity
+    end.
+  - (* T_Lam *)
+    match goal with
+    | Hb : has_type ((?x, ?T1) :: _) _ _ _ _ _ |- _ =>
+        specialize (IHt _ _ Hb) as [HT Heps]; subst; split; reflexivity
+    end.
   - (* T_App *)
-    inversion H2'; subst.
     match goal with
-    | [ Hf : has_type _ _ _ _ _ _ |- _ ] =>
-      apply IHt1 in Hf; destruct Hf as [HT Heps];
-      inversion HT; subst
+    | Ht1' : has_type _ _ _ _ _ _,
+      Ht2' : has_type _ _ _ _ _ _ |- _ =>
+        specialize (IHt1 _ _ Ht1') as [HT1 Heps1];
+        specialize (IHt2 _ _ Ht2') as [HT2 Heps2];
+        inversion HT1; subst; split; reflexivity
     end.
-    match goal with
-    | [ Ha : has_type _ _ _ _ _ _ |- _ ] =>
-      apply IHt2 in Ha; destruct Ha; subst
-    end.
-    reflexivity.
-
   - (* T_Pair *)
-    match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt1 in H; destruct H; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    reflexivity.
-
+    repeat match goal with
+    | Ht : has_type _ _ _ _ _ _ |- _ =>
+        first
+          [ specialize (IHt1 _ _ Ht) as [HT1 Heps1]; subst
+          | specialize (IHt2 _ _ Ht) as [HT2 Heps2]; subst
+          ]
+    end;
+    split; reflexivity.
   - (* T_Fst *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H as [HT Heps];
-      inversion HT; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    inversion HT; subst; split; reflexivity.
   - (* T_Snd *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H as [HT Heps];
-      inversion HT; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    inversion HT; subst; split; reflexivity.
   - (* T_Inl *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    subst; split; reflexivity.
   - (* T_Inr *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    subst; split; reflexivity.
   - (* T_Case *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt1 in H; destruct H as [HT1 Heps1];
-      inversion HT1; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt3 in H; destruct H; subst
-    end.
-    reflexivity.
-
+    specialize (IHt1 _ _ H10) as [HT0 Heps0].
+    inversion HT0; subst.
+    specialize (IHt2 _ _ H11) as [HT1 Heps1].
+    specialize (IHt3 _ _ H12) as [HT2 Heps2].
+    subst; split; reflexivity.
   - (* T_If *)
-    match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt1 in H; destruct H; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ e3 _ _ |- _ ] =>
-      apply IHt3 in H; destruct H; subst
-    end.
-    reflexivity.
-
+    first
+      [ specialize (IHt1 _ _ H5) as [HT1 Heps1]
+      | specialize (IHt1 _ _ H6) as [HT1 Heps1]
+      | specialize (IHt1 _ _ H7) as [HT1 Heps1]
+      ];
+    first
+      [ specialize (IHt2 _ _ H7) as [HT2 Heps2]
+      | specialize (IHt2 _ _ H8) as [HT2 Heps2]
+      | specialize (IHt2 _ _ H9) as [HT2 Heps2]
+      ];
+    first
+      [ specialize (IHt3 _ _ H8) as [HT3 Heps3]
+      | specialize (IHt3 _ _ H9) as [HT3 Heps3]
+      | specialize (IHt3 _ _ H10) as [HT3 Heps3]
+      ];
+    rewrite HT2.
+    rewrite Heps1, Heps2, Heps3.
+    split; reflexivity.
   - (* T_Let *)
-    match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt1 in H; destruct H; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    reflexivity.
-
+    inversion H2; subst; clear H2.
+    specialize (IHt1 _ _ H7) as [HT1eq Heps1].
+    rewrite HT1eq in *.
+    specialize (IHt2 _ _ H11) as [HT2eq Heps2].
+    rewrite Heps1, Heps2.
+    subst.
+    split; reflexivity.
   - (* T_Perform *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    subst; split; reflexivity.
   - (* T_Handle *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt1 in H; destruct H; subst
-    end.
-    match goal with
-    | [ H : has_type _ _ _ h _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    reflexivity.
-
+    specialize (IHt1 _ _ H8) as [HT1eq Heps1].
+    rewrite HT1eq in *.
+    specialize (IHt2 _ _ H9) as [HT2eq Heps2].
+    rewrite Heps1, Heps2.
+    subst.
+    split; reflexivity.
   - (* T_Ref *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    subst; split; reflexivity.
   - (* T_Deref *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H as [HT Heps];
-      inversion HT; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    inversion HT; subst; split; reflexivity.
   - (* T_Assign *)
     match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt1 in H; destruct H as [HT Heps];
-      inversion HT; subst
+    | Ht1' : has_type _ _ _ _ _ _,
+      Ht2' : has_type _ _ _ _ _ _ |- _ =>
+        specialize (IHt1 _ _ Ht1') as [HT1 Heps1];
+        specialize (IHt2 _ _ Ht2') as [HT2 Heps2];
+        inversion HT1; subst; split; reflexivity
     end.
-    match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    reflexivity.
-
   - (* T_Classify *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    subst; split; reflexivity.
   - (* T_Declassify *)
     match goal with
-    | [ H : has_type _ _ _ e1 _ _ |- _ ] =>
-      apply IHt1 in H; destruct H as [HT Heps];
-      inversion HT; subst
+    | Ht1' : has_type _ _ _ _ _ _,
+      Ht2' : has_type _ _ _ _ _ _ |- _ =>
+        specialize (IHt1 _ _ Ht1') as [HT1 Heps1];
+        specialize (IHt2 _ _ Ht2') as [HT2 Heps2];
+        inversion HT1; subst; split; reflexivity
     end.
-    match goal with
-    | [ H : has_type _ _ _ e2 _ _ |- _ ] =>
-      apply IHt2 in H; destruct H; subst
-    end.
-    reflexivity.
-
   - (* T_Prove *)
-    match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    first
+      [ specialize (IHt _ _ H4) as [HT Heps]
+      | specialize (IHt _ _ H5) as [HT Heps]
+      | specialize (IHt _ _ H6) as [HT Heps]
+      | specialize (IHt _ _ H7) as [HT Heps]
+      | specialize (IHt _ _ H8) as [HT Heps]
+      | specialize (IHt _ _ H9) as [HT Heps]
+      | specialize (IHt _ _ H10) as [HT Heps]
+      ];
+    subst; split; reflexivity.
   - (* T_Require *)
     match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
-
+    | Ht' : has_type _ _ _ _ _ _ |- _ =>
+        specialize (IHt _ _ Ht') as [HT Heps];
+        subst; split; reflexivity
+    end.
   - (* T_Grant *)
     match goal with
-    | [ H : has_type _ _ _ e _ _ |- _ ] =>
-      apply IHt in H; destruct H; subst
-    end; reflexivity.
+    | Ht' : has_type _ _ _ _ _ _ |- _ =>
+        specialize (IHt _ _ Ht') as [HT Heps];
+        subst; split; reflexivity
+    end.
 Qed.
 
 (** End of Typing.v *)
