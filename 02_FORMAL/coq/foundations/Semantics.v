@@ -203,6 +203,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e, st, ctx) --> (e', st', ctx') ->
       (EProve e, st, ctx) --> (EProve e', st', ctx')
 
+  | ST_RequireStep : forall eff e e' st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (ERequire eff e, st, ctx) --> (ERequire eff e', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -448,6 +452,9 @@ Proof.
   - solve_val_step.
 
   (* ST_ProveStep *)
+  - solve_ih.
+
+  (* ST_RequireStep *)
   - solve_ih.
 Qed.
 
