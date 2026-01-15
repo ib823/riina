@@ -171,6 +171,11 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e1, st, ctx) --> (e1', st', ctx') ->
       (EAssign e1 e2, st, ctx) --> (EAssign e1' e2, st', ctx')
 
+  | ST_Assign2 : forall v1 e2 e2' st st' ctx ctx',
+      value v1 ->
+      (e2, st, ctx) --> (e2', st', ctx') ->
+      (EAssign v1 e2, st, ctx) --> (EAssign v1 e2', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -363,6 +368,17 @@ Proof.
     ).
 
   (* ST_Assign1 *)
+  - solve_ih.
+  - match goal with
+    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
+        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
+    end.
+
+  (* ST_Assign2 *)
+  - match goal with
+    | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
+        exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
+    end.
   - solve_ih.
 Qed.
 
