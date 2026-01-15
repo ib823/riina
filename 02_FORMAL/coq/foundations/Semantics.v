@@ -137,6 +137,11 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       (e1, st, ctx) --> (e1', st', ctx') ->
       (ELet x e1 e2, st, ctx) --> (ELet x e1' e2, st', ctx')
 
+  (* Effects *)
+  | ST_PerformStep : forall eff e e' st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (EPerform eff e, st, ctx) --> (EPerform eff e', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -271,6 +276,9 @@ Proof.
 
   (* ST_LetStep *)
   - solve_val_step.
+  - solve_ih.
+
+  (* ST_PerformStep *)
   - solve_ih.
 Qed.
 
