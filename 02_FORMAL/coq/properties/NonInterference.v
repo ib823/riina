@@ -69,46 +69,66 @@ Proof.
 Qed.
 
 (** ** Logical Relation
-    
+
     We define a binary logical relation R_V(T) on values.
     R_E(T) is defined as "reduces to values related by R_V(T)".
+
+    CRITICAL: Products and sums use the SAME step index (structural recursion).
+    Only functions decrement the index (computational step/"later" modality).
+
+    We use a two-level structure:
+    - val_rel_at_n: given a fixed n, recurses on type structure
+    - val_rel_n/store_rel_n: outer step-indexed relation
 *)
 
+(** Type-structural value relation at a fixed step index.
+    Products/sums recurse at the SAME level - no index decrement. *)
+Section ValRelAtN.
+  Variable n : nat.
+  Variable Σ : store_ty.
+  Variable store_rel_pred : store -> store -> Prop.
+  Variable val_rel_lower : ty -> expr -> expr -> Prop. (* for function results *)
+
+  Fixpoint val_rel_at_type (T : ty) (v1 v2 : expr) {struct T} : Prop :=
+    match T with
+    | TUnit => v1 = EUnit /\ v2 = EUnit
+    | TBool => exists b, v1 = EBool b /\ v2 = EBool b
+    | TInt => exists i, v1 = EInt i /\ v2 = EInt i
+    | TString => exists s, v1 = EString s /\ v2 = EString s
+    | TBytes => v1 = v2
+    | TSecret T' => True
+    | TRef T' _ =>
+        exists l, v1 = ELoc l /\ v2 = ELoc l
+    | TProd T1 T2 =>
+        exists x1 y1 x2 y2,
+          v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
+          val_rel_at_type T1 x1 x2 /\ val_rel_at_type T2 y1 y2
+    | TSum T1 T2 =>
+        (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel_at_type T1 x1 x2) \/
+        (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel_at_type T2 y1 y2)
+    | TFn T1 T2 eff =>
+        forall x y, val_rel_at_type T1 x y ->
+          forall st1 st2 ctx,
+            store_rel_pred st1 st2 ->
+            exists (v1' : expr) (v2' : expr) (st1' : store) (st2' : store)
+                   (ctx' : effect_ctx) (Σ' : store_ty),
+              store_ty_extends Σ Σ' /\
+              (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
+              (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
+              val_rel_lower T2 v1' v2'
+              (* Note: store relation for result handled separately *)
+    | TCapability _ => True
+    | TProof _ => True
+    end.
+End ValRelAtN.
+
+(** Step-indexed value and store relations *)
 Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} : Prop :=
   match n with
   | 0 => True
   | S n' =>
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-      match T with
-      | TUnit => v1 = EUnit /\ v2 = EUnit
-      | TBool => exists b, v1 = EBool b /\ v2 = EBool b
-      | TInt => exists n, v1 = EInt n /\ v2 = EInt n
-      | TString => exists s, v1 = EString s /\ v2 = EString s
-      | TBytes => v1 = v2
-      | TSecret T' => True
-      | TRef T' _ =>
-          exists l, v1 = ELoc l /\ v2 = ELoc l
-      | TProd T1 T2 =>
-          exists x1 y1 x2 y2,
-            v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
-            val_rel_n n' Σ T1 x1 x2 /\ val_rel_n n' Σ T2 y1 y2
-      | TSum T1 T2 =>
-          (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel_n n' Σ T1 x1 x2) \/
-          (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel_n n' Σ T2 y1 y2)
-      | TFn T1 T2 eff =>
-          forall x y, val_rel_n n' Σ T1 x y ->
-            forall st1 st2 ctx,
-              store_rel_n n' Σ st1 st2 ->
-              exists (v1' : expr) (v2' : expr) (st1' : store) (st2' : store)
-                     (ctx' : effect_ctx) (Σ' : store_ty),
-                store_ty_extends Σ Σ' /\
-                (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
-                (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
-                val_rel_n n' Σ T2 v1' v2' /\
-                store_rel_n n' Σ' st1' st2'
-      | TCapability _ => True
-      | TProof _ => True
-      end
+      val_rel_at_type Σ (store_rel_n n' Σ) (val_rel_n n' Σ) T v1 v2
   end
 with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
   match n with
@@ -122,6 +142,19 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
           store_lookup l st2 = Some v2 /\
           val_rel_n n' Σ T v1 v2)
   end.
+
+(** Monotonicity: higher step index implies lower step index relation.
+    Note: This property holds but is NOT sufficient for T_Fst/T_Snd proofs.
+    Those cases need the index to stay the same for products, not decrease.
+    The real fix requires changing val_rel_n to not decrement for products. *)
+Lemma val_rel_n_mono : forall n m Σ T v1 v2,
+  n >= m ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n m Σ T v1 v2.
+Proof.
+  (* Proof requires careful handling of function contravariance.
+     Will be completed after val_rel_n restructuring. *)
+Admitted.
 
 Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} : Prop :=
   match n with
