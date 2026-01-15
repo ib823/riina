@@ -181,6 +181,10 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       value v2 ->
       (EAssign (ERef v1 l) v2, st, ctx) --> (EUnit, st, ctx)
 
+  | ST_ClassifyStep : forall e e' st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (EClassify e, st, ctx) --> (EClassify e', st', ctx')
+
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
 (** ** Multi-step reduction *)
@@ -401,6 +405,9 @@ Proof.
     | Hs : (?e, _, _) --> _, Hv : value ?e |- _ =>
         exfalso; eapply value_not_step; [ exact Hv | exact Hs ]
     end.
+
+  (* ST_ClassifyStep *)
+  - solve_ih.
 Qed.
 
 (** End of Semantics.v *)
