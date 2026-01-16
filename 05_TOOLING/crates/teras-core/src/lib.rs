@@ -30,7 +30,7 @@
 //! // Key is automatically zeroized when dropped
 //! ```
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)] // Deny unsafe by default, but allow specific modules (e.g., zeroize) to override
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]

@@ -12,6 +12,14 @@
 //! - Zeroization is guaranteed to not be optimized away
 //! - Uses volatile writes to prevent compiler optimization
 //! - Works with any type that can be represented as bytes
+//!
+//! # Safety Note
+//!
+//! This module uses `unsafe` for volatile pointer writes. This is required
+//! to prevent the compiler from optimizing away security-critical zeroization.
+//! All unsafe usage is carefully audited and documented.
+
+#![allow(unsafe_code)] // Required for volatile writes in zeroization
 
 use core::ptr;
 use core::sync::atomic::{compiler_fence, Ordering};

@@ -7,6 +7,7 @@ use std::str::Chars;
 
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
+    #[allow(dead_code)] // Reserved for future error recovery and span validation
     source: &'a str,
     pos: usize,
 }
@@ -35,6 +36,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[allow(dead_code)] // Reserved for future optimizations
     fn advance_n(&mut self, n: usize) {
         for _ in 0..n {
             self.advance();
@@ -339,78 +341,108 @@ impl<'a> Lexer<'a> {
         s.push_str(&self.consume_while(is_ident_continue));
 
         match s.as_str() {
-            "true" => TokenKind::LiteralBool(true),
-            "false" => TokenKind::LiteralBool(false),
-            "fn" => TokenKind::KwFn,
-            "let" => TokenKind::KwLet,
-            "mut" => TokenKind::KwMut,
-            "const" => TokenKind::KwConst,
-            "static" => TokenKind::KwStatic,
-            "type" => TokenKind::KwType,
-            "struct" => TokenKind::KwStruct,
-            "enum" => TokenKind::KwEnum,
+            // Boolean literals (English + Bahasa Melayu)
+            "true" | "betul" => TokenKind::LiteralBool(true),
+            "false" | "salah" => TokenKind::LiteralBool(false),
+
+            // Declaration keywords (English | Bahasa Melayu)
+            "fn" | "fungsi" => TokenKind::KwFn,
+            "let" | "biar" => TokenKind::KwLet,
+            "mut" | "ubah" => TokenKind::KwMut,
+            "const" | "tetap" => TokenKind::KwConst,
+            "static" | "statik" => TokenKind::KwStatic,
+            "type" | "jenis" => TokenKind::KwType,
+            "struct" | "bentuk" => TokenKind::KwStruct,
+            "enum" | "pilihan" => TokenKind::KwEnum,
             "union" => TokenKind::KwUnion,
-            "trait" => TokenKind::KwTrait,
-            "impl" => TokenKind::KwImpl,
+            "trait" | "sifat" => TokenKind::KwTrait,
+            "impl" | "laksana" => TokenKind::KwImpl,
             "where" => TokenKind::KwWhere,
-            "for" => TokenKind::KwFor,
-            "if" => TokenKind::KwIf,
-            "else" => TokenKind::KwElse,
-            "match" => TokenKind::KwMatch,
-            "loop" => TokenKind::KwLoop,
-            "while" => TokenKind::KwWhile,
-            "with" => TokenKind::KwWith,
-            "break" => TokenKind::KwBreak,
-            "continue" => TokenKind::KwContinue,
-            "return" => TokenKind::KwReturn,
-            "mod" => TokenKind::KwMod,
-            "pub" => TokenKind::KwPub,
-            "use" => TokenKind::KwUse,
-            "as" => TokenKind::KwAs,
-            "self" => TokenKind::KwSelfValue,
-            "Self" => TokenKind::KwSelfType,
+            "mod" | "modul" => TokenKind::KwMod,
+            "pub" | "awam" => TokenKind::KwPub,
+            "use" | "guna" => TokenKind::KwUse,
+            "extern" | "luaran" => TokenKind::KwExtern,
+
+            // Control flow keywords (English | Bahasa Melayu)
+            "for" | "untuk" => TokenKind::KwFor,
+            "if" | "kalau" => TokenKind::KwIf,
+            "else" | "lain" => TokenKind::KwElse,
+            "match" | "padan" => TokenKind::KwMatch,
+            "loop" | "ulang" => TokenKind::KwLoop,
+            "while" | "selagi" => TokenKind::KwWhile,
+            "with" | "dengan" => TokenKind::KwWith,
+            "break" | "keluar" => TokenKind::KwBreak,
+            "continue" | "terus" => TokenKind::KwContinue,
+            "return" | "pulang" => TokenKind::KwReturn,
+
+            // Type cast and reference (English | Bahasa Melayu)
+            "as" | "sebagai" => TokenKind::KwAs,
+            "ref" | "ruj" => TokenKind::KwRef,
+            "move" | "pindah" => TokenKind::KwMove,
+
+            // Self references (English | Bahasa Melayu)
+            "self" | "diri" => TokenKind::KwSelfValue,
+            "Self" | "Diri" => TokenKind::KwSelfType,
             "super" => TokenKind::KwSuper,
-            "crate" => TokenKind::KwCrate,
-            "extern" => TokenKind::KwExtern,
+            "crate" | "peti" => TokenKind::KwCrate,
+
+            // Async/await (English only for now)
             "async" => TokenKind::KwAsync,
             "await" => TokenKind::KwAwait,
-            "move" => TokenKind::KwMove,
-            "ref" => TokenKind::KwRef,
-            "unsafe" => TokenKind::KwUnsafe,
-            "effect" => TokenKind::KwEffect,
-            "perform" => TokenKind::KwPerform,
-            "handle" => TokenKind::KwHandle,
-            "resume" => TokenKind::KwResume,
-            "abort" => TokenKind::KwAbort,
-            "secret" => TokenKind::KwSecret,
-            "classify" => TokenKind::KwClassify,
-            "public" => TokenKind::KwPublic,
+
+            // Safety keywords (English | Bahasa Melayu)
+            "unsafe" | "bahaya" => TokenKind::KwUnsafe,
+
+            // Effect system (English | Bahasa Melayu)
+            "effect" | "kesan" => TokenKind::KwEffect,
+            "perform" | "laku" => TokenKind::KwPerform,
+            "handle" | "kendali" => TokenKind::KwHandle,
+            "resume" | "sambung" => TokenKind::KwResume,
+            "abort" | "batal" => TokenKind::KwAbort,
+
+            // Security keywords (English | Bahasa Melayu)
+            "secret" | "rahsia" => TokenKind::KwSecret,
+            "classify" | "sulit" => TokenKind::KwClassify,
+            "public" | "terbuka" => TokenKind::KwPublic,
             "tainted" => TokenKind::KwTainted,
-            "declassify" => TokenKind::KwDeclassify,
-            "prove" => TokenKind::KwProve,
+            "declassify" | "dedah" => TokenKind::KwDeclassify,
+            "prove" | "bukti" => TokenKind::KwProve,
+            "sanitize" => TokenKind::KwSanitize,
+
+            // Sum type constructors
             "inl" => TokenKind::KwInl,
             "inr" => TokenKind::KwInr,
-            "sanitize" => TokenKind::KwSanitize,
-            "session" => TokenKind::KwSession,
-            "send" => TokenKind::KwSend,
-            "recv" => TokenKind::KwRecv,
-            "select" => TokenKind::KwSelect,
-            "branch" => TokenKind::KwBranch,
-            "end" => TokenKind::KwEnd,
+
+            // Session types (English | Bahasa Melayu)
+            "session" | "sesi" => TokenKind::KwSession,
+            "send" | "hantar" => TokenKind::KwSend,
+            "recv" | "terima" => TokenKind::KwRecv,
+            "select" | "pilih" => TokenKind::KwSelect,
+            "branch" | "cabang" => TokenKind::KwBranch,
+            "end" | "tamat" => TokenKind::KwEnd,
+
+            // Capabilities
             "capability" => TokenKind::KwCapability,
             "revoke" => TokenKind::KwRevoke,
-            "atomic" => TokenKind::KwAtomic,
-            "fence" => TokenKind::KwFence,
-            "acquire" => TokenKind::KwAcquire,
-            "release" => TokenKind::KwRelease,
+
+            // Concurrency/Memory ordering (English | Bahasa Melayu)
+            "atomic" | "atom" => TokenKind::KwAtomic,
+            "fence" | "pagar" => TokenKind::KwFence,
+            "acquire" | "peroleh" => TokenKind::KwAcquire,
+            "release" | "lepas" => TokenKind::KwRelease,
             "seqcst" => TokenKind::KwSeqCst,
             "relaxed" => TokenKind::KwRelaxed,
             "acqrel" => TokenKind::KwAcqRel,
+
+            // Product types
             "product" => TokenKind::KwProduct,
-            "ct" => TokenKind::KwCt,
-            "speculation_safe" => TokenKind::KwSpeculationSafe,
-            "combined" => TokenKind::KwCombined,
-            "zeroize" => TokenKind::KwZeroize,
+
+            // Constant-time (English | Bahasa Melayu)
+            "ct" | "masa_tetap" => TokenKind::KwCt,
+            "speculation_safe" | "selamat_spekulasi" => TokenKind::KwSpeculationSafe,
+            "combined" | "gabungan" => TokenKind::KwCombined,
+            "zeroize" | "kosongkan" => TokenKind::KwZeroize,
+
             _ => TokenKind::Identifier(s),
         }
     }
