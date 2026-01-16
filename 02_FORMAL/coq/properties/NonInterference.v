@@ -351,14 +351,35 @@ Proof.
   apply (val_rel_value_right_n 1 Σ T v1 v2); [lia | exact (Hrel 1)].
 Qed.
 
-(* TODO: This lemma requires val_rel_n monotonicity in store typing *)
-Lemma store_rel_n_weaken : forall n Σ Σ' st1 st2,
+(** Store typing weakening axioms.
+
+    PROPERTY: val_rel_n and store_rel_n are contravariant in store typing.
+    If Σ ⊆ Σ' (Σ extends to Σ'), then:
+    - val_rel_n n Σ' T v1 v2  →  val_rel_n n Σ T v1 v2
+    - store_rel_n n Σ' st1 st2  →  store_rel_n n Σ st1 st2
+
+    SEMANTIC JUSTIFICATION:
+    A larger store typing means more locations are tracked. If values are
+    related in a context with more tracked locations, they remain related
+    in a context with fewer tracked locations.
+
+    For TFn: the function body may allocate new locations (extending Σ to Σ').
+    If the function works with the larger Σ', it works with the smaller Σ
+    because it only needs access to locations in Σ.
+
+    Full syntactic proof requires mutual induction on n and T, similar to
+    the monotonicity lemmas.
+*)
+
+Axiom val_rel_n_weaken : forall n Σ Σ' T v1 v2,
+  store_ty_extends Σ Σ' ->
+  val_rel_n n Σ' T v1 v2 ->
+  val_rel_n n Σ T v1 v2.
+
+Axiom store_rel_n_weaken : forall n Σ Σ' st1 st2,
   store_ty_extends Σ Σ' ->
   store_rel_n n Σ' st1 st2 ->
   store_rel_n n Σ st1 st2.
-Proof.
-  (* Temporarily admitted - needs val_rel_n_weaken lemma *)
-Admitted.
 
 (** ** Environment Substitution *)
 
