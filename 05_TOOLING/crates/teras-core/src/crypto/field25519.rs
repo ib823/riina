@@ -508,7 +508,18 @@ impl Mul for FieldElement {
             c[i] += c[i + 5] * 19;
         }
 
-        // Convert back to i64 and reduce
+        // CRITICAL: Apply carry propagation in i128 BEFORE casting to i64
+        // Without this, c[i] can exceed i64::MAX causing overflow on cast
+        let mut carry: i128 = 0;
+        for i in 0..5 {
+            c[i] += carry;
+            carry = c[i] >> 51;           // Extract bits above 51
+            c[i] &= 0x7ffffffffffff;      // Keep only bottom 51 bits
+        }
+        // Wrap final carry to limb 0 (multiply by 19 for mod p reduction)
+        c[0] += carry * 19;
+
+        // Now safe to cast to i64 (values are under 2^52)
         let limbs = [
             c[0] as i64,
             c[1] as i64,
