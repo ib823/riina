@@ -5,25 +5,39 @@
 **Goal:** Convert proven-derivable axioms to lemmas
 
 **Progress:**
-1. **Wave 1 — Direct Derivations (3 axioms eliminated):**
+1. **Wave 1a — Direct Derivations (3 axioms eliminated):**
    - `env_rel_single`: Axiom → Lemma (singleton env_rel from val_rel)
    - `val_rel_closed`: Axiom → Lemma (extract closed_expr from val_rel_n 1)
    - `env_rel_rho_closed`: Axiom → Lemma (extract closed_expr via env_rel)
 
-2. **Wave 2-4 Analysis — Foundational Axioms (32 remaining):**
-   - **Weakening axioms (4):** Kripke monotonicity, mutual induction required
-   - **Value extraction (8):** Some types have trivial val_rel_at_type
-   - **Step-up axioms (6):** Mutual step-index induction
-   - **Language constructs (6):** Semantic, require operational semantics
-   - **Degenerate cases (6):** Step-1 evaluation, require termination
-   - **Contradiction (2):** Context-dependent typing constraints
+2. **Wave 1b — Language Construct (1 axiom eliminated):**
+   - `logical_relation_perform`: Axiom → PROVEN INLINE
+   - Added helper lemmas: `multi_step_perform`, `multi_step_handle`
+   - Proof: IH + multi_step_perform + ST_PerformValue
+
+3. **Remaining Axioms Analysis (31 remaining):**
+   - **Weakening (4):** Kripke monotonicity - mutual induction required
+   - **Value extraction (8):** TBytes/TSecret have trivial relations
+   - **Step-up (6):** Mutual step-index induction
+   - **Language constructs (5):** Require store manipulation or trust boundaries
+   - **Step-1 evaluation (6):** Require termination proof
+   - **Closedness (2):** Require "free vars in context" lemma
+
+**Blocking Analysis:**
+| Category | Blocker |
+|----------|---------|
+| exp_rel_step1_* | Need termination or typing in relation |
+| logical_relation_ref/deref/assign | Depend on weakening axioms |
+| logical_relation_declassify | Trust boundary (by design) |
+| lam_closedness_* | Need "free vars ⊆ context" lemma |
 
 **CURRENT STATUS:**
-- NonInterference.v: **0 Admitted**, **32 Axioms** (down from 35)
+- NonInterference.v: **0 Admitted**, **31 Axioms** (down from 35)
 - All 12 Coq files compile successfully
 
 **Commits:**
 - 85d71a8: Convert 3 axioms to proven lemmas
+- 4b97189: Eliminate logical_relation_perform axiom
 
 ---
 

@@ -20,8 +20,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**STATUS:** CORE TYPE SAFETY VERIFIED. Extensions: 0 Admitted + 32 Axioms.
-**TRACK A:** Core (0 ADMITS), Composition (0 ADMITS), NonInterference (0 ADMITS + 32 Axioms), Effects (0 ADMITS) ✓
+**STATUS:** CORE TYPE SAFETY VERIFIED. Extensions: 0 Admitted + 31 Axioms.
+**TRACK A:** Core (0 ADMITS), Composition (0 ADMITS), NonInterference (0 ADMITS + 31 Axioms), Effects (0 ADMITS) ✓
 **TRACK B:** OPERATIONAL (compiles with warnings). Paused pending Track A.
 **ZERO-TRUST TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** INITIALIZED & DEFINED.
@@ -129,7 +129,7 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 | `effects/EffectGate.v` | 0 Admitted ✓ | gate_enforcement proven |
 | `effects/EffectSystem.v` | 0 Admitted ✓ | core_effects_within & effect_safety proven |
 | `properties/Composition.v` | 0 Admitted ✓ | All val_rel proofs complete |
-| `properties/NonInterference.v` | 0 Admitted + 32 Axioms ✓ | logical_relation & non_interference_stmt proven |
+| `properties/NonInterference.v` | 0 Admitted + 31 Axioms ✓ | logical_relation & non_interference_stmt proven |
 
 #### DOCUMENTED AXIOMS (Semantically Justified)
 
