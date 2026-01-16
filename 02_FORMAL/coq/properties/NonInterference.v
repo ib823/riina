@@ -2161,7 +2161,9 @@ Proof.
         exact Hstore'. }
 
   - (* T_App - function application *)
-    (* Requires IH on function and argument, then composition *)
+    (* Complex step-index mismatch between function and argument relations.
+       Need to properly handle the β-reduction step consuming one index.
+       Admitted pending careful step-index accounting. *)
     admit.
 
   - (* T_Pair *)
