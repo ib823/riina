@@ -1,5 +1,32 @@
 # Session Log
 
+## 2026-01-16 (Session 7): Track A — Axiom Elimination Phase
+
+**Goal:** Convert proven-derivable axioms to lemmas
+
+**Progress:**
+1. **Wave 1 — Direct Derivations (3 axioms eliminated):**
+   - `env_rel_single`: Axiom → Lemma (singleton env_rel from val_rel)
+   - `val_rel_closed`: Axiom → Lemma (extract closed_expr from val_rel_n 1)
+   - `env_rel_rho_closed`: Axiom → Lemma (extract closed_expr via env_rel)
+
+2. **Wave 2-4 Analysis — Foundational Axioms (32 remaining):**
+   - **Weakening axioms (4):** Kripke monotonicity, mutual induction required
+   - **Value extraction (8):** Some types have trivial val_rel_at_type
+   - **Step-up axioms (6):** Mutual step-index induction
+   - **Language constructs (6):** Semantic, require operational semantics
+   - **Degenerate cases (6):** Step-1 evaluation, require termination
+   - **Contradiction (2):** Context-dependent typing constraints
+
+**CURRENT STATUS:**
+- NonInterference.v: **0 Admitted**, **32 Axioms** (down from 35)
+- All 12 Coq files compile successfully
+
+**Commits:**
+- 85d71a8: Convert 3 axioms to proven lemmas
+
+---
+
 ## 2026-01-16 (Session 6): Track A — ALL ADMITS ELIMINATED ✓✓✓
 
 **Goal:** Eliminate ALL remaining admits from the entire Coq codebase
