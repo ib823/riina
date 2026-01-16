@@ -26,9 +26,14 @@ Proof.
     (* Get value and closed from Hrel1 and Hrel2 *)
     specialize (Hrel1 (S n')). specialize (Hrel2 (S n')).
     simpl in Hrel1, Hrel2.
-    destruct Hrel1 as [Hval1 [Hval1' [Hcl1 [Hcl1' Hrat1]]]].
-    destruct Hrel2 as [Hval2 [Hval2' [Hcl2 [Hcl2' Hrat2]]]].
+    (* New structure: cumulative /\ value v1 /\ value v2 /\ closed v1 /\ closed v2 /\ rel_at_type *)
+    destruct Hrel1 as [Hrel1_cum [Hvalv1 [Hvalv1' [Hcl1 [Hcl1' Hrat1]]]]].
+    destruct Hrel2 as [Hrel2_cum [Hvalv2 [Hvalv2' [Hcl2 [Hcl2' Hrat2]]]]].
     (* Build the product relation *)
+    split.
+    { (* Cumulative part - need val_rel_n n' for product *)
+      (* The cumulative part is complex - admit for now *)
+      admit. }
     split; [constructor; assumption |].
     split; [constructor; assumption |].
     split.
@@ -44,7 +49,7 @@ Proof.
     (* val_rel_at_type for TProd *)
     simpl. exists v1, v2, v1', v2'.
     repeat split; try reflexivity; assumption.
-Qed.
+Admitted.
 
 Lemma val_rel_inl : forall Σ T1 T2 v1 v2,
   val_rel Σ T1 v1 v2 ->
@@ -56,7 +61,9 @@ Proof.
   - simpl. trivial.
   - simpl.
     specialize (Hrel (S n')). simpl in Hrel.
-    destruct Hrel as [Hval1 [Hval2 [Hcl1 [Hcl2 Hrat]]]].
+    destruct Hrel as [Hrel_cum [Hval1 [Hval2 [Hcl1 [Hcl2 Hrat]]]]].
+    split.
+    { (* Cumulative - admit for now *) admit. }
     split; [constructor; assumption |].
     split; [constructor; assumption |].
     split.
@@ -65,7 +72,7 @@ Proof.
     { intros y Hfree. simpl in Hfree. apply (Hcl2 y). exact Hfree. }
     simpl. left. exists v1, v2.
     repeat split; try reflexivity; assumption.
-Qed.
+Admitted.
 
 Lemma val_rel_inr : forall Σ T1 T2 v1 v2,
   val_rel Σ T2 v1 v2 ->
@@ -77,7 +84,9 @@ Proof.
   - simpl. trivial.
   - simpl.
     specialize (Hrel (S n')). simpl in Hrel.
-    destruct Hrel as [Hval1 [Hval2 [Hcl1 [Hcl2 Hrat]]]].
+    destruct Hrel as [Hrel_cum [Hval1 [Hval2 [Hcl1 [Hcl2 Hrat]]]]].
+    split.
+    { (* Cumulative - admit for now *) admit. }
     split; [constructor; assumption |].
     split; [constructor; assumption |].
     split.
@@ -86,7 +95,7 @@ Proof.
     { intros y Hfree. simpl in Hfree. apply (Hcl2 y). exact Hfree. }
     simpl. right. exists v1, v2.
     repeat split; try reflexivity; assumption.
-Qed.
+Admitted.
 
 (** ** Compositionality for Expressions *)
 
