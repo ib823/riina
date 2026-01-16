@@ -1,5 +1,81 @@
 # Session Log
 
+## 2026-01-16 (Session 10): PHASE 1 AXIOM ELIMINATION (Track A)
+
+**Goal:** Eliminate axioms in NonInterference.v with extreme rigour, revolutionary approach
+
+**Branch:** `main`
+
+**Achievements:**
+
+### Axiom Elimination Results: 31 → 29 (Net -2)
+
+1. **`lam_closedness_contradiction` — ELIMINATED**
+   - **Issue:** Original axiom was SEMANTICALLY UNSOUND
+   - Claimed `free_in y (rho1 y) → False` without requiring `y ∈ Γ`
+   - Counterexample: Γ=[], rho1=identity, free_in y (EVar y) = True
+   - **Fix:** Added `lookup y Γ = Some T` premise
+   - **Proof:** Uses `env_rel_rho_closed` → `closed_expr` → contradiction
+   - Status: PROVEN LEMMA ✅
+
+2. **`lam_closedness_contradiction2` — ELIMINATED**
+   - Same fix as above (symmetric case for rho2)
+   - Status: PROVEN LEMMA ✅
+
+3. **`logical_relation_handle` — ELIMINATED**
+   - **Strategy:** Inlined proof following T_Let pattern
+   - Uses IH on guarded computation e, then IH on handler h with extended environment
+   - Key lemmas: `env_rel_extend`, `rho_no_free_extend`, `subst_rho_extend`
+   - Multi-step: `multi_step_handle` + `ST_HandleValue`
+   - Added `exp_rel_step1_handle` for degenerate n=0 case (standard pattern)
+   - Status: PROVEN INLINE ✅
+
+### Remaining Axioms Analysis (29 total)
+
+**Category 1: Value/Closed Extraction (8 axioms)**
+- `val_rel_at_type_value_left/right` (first-order types)
+- `val_rel_at_type_closed_left/right` (first-order types)
+- `val_rel_at_type_value_any_left/right` (all types)
+- `val_rel_at_type_closed_any_left/right` (all types)
+- Complexity: Requires type induction, TSecret edge cases
+
+**Category 2: Kripke Monotonicity (4 axioms)**
+- `val_rel_n_weaken`, `store_rel_n_weaken`
+- `val_rel_n_mono_store`, `store_rel_n_mono_store`
+- Complexity: Mutual induction on step-indexed relations
+
+**Category 3: Step Index Inflation (4 axioms)**
+- `val_rel_n_step_up`, `store_rel_n_step_up`
+- `val_rel_n_lam_cumulative`
+- `val_rel_n_to_val_rel`
+- Complexity: Well-founded recursion, cumulative structure
+
+**Category 4: Degenerate Step-0 Cases (8 axioms)**
+- `exp_rel_step1_fst/snd/case/if/let/handle/app`
+- `tapp_step0_complete`
+- Risk: LOW (val_rel_n 0 = True, mainly asserts termination)
+
+**Category 5: Reference Operations (3 axioms)**
+- `logical_relation_ref`, `logical_relation_deref`, `logical_relation_assign`
+- Complexity: Store typing extensions (Kripke worlds)
+
+**Category 6: Declassification (1 axiom)**
+- `logical_relation_declassify`
+- Complexity: Information flow, TSecret semantics
+
+**Category 7: Higher-Order Relations (1 axiom)**
+- `val_rel_at_type_to_val_rel_ho`
+- Complexity: Function type well-foundedness
+
+### Commits
+
+1. `2b3ae4e` — [TRACK_A] PROOF: Eliminate 2 axioms via proven lemmas with lookup premise
+2. `bfc5552` — [TRACK_A] PROOF: Eliminate logical_relation_handle axiom via inline proof
+
+**All Coq proofs compile successfully** (make clean && make)
+
+---
+
 ## 2026-01-16 (Session 9): COMPREHENSIVE CODEBASE ASSESSMENT & ATTACK PLAN (📊 BASELINE)
 
 **Goal:** Conduct ULTRA KIASU assessment of RIINA codebase, identify all gaps, create detailed attack plan
