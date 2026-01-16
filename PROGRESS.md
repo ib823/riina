@@ -27,7 +27,7 @@
 **ZERO-TRUST TRACKS (R, S, T, U):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
-**BLOCKERS:** Coq not installed ❌, 31 axioms 🟡, Zero unit tests ❌, AES broken ❌
+**BLOCKERS:** Coq not installed ❌, 29 axioms 🟡 (reduced from 31), Zero unit tests ❌, AES broken ❌
 
 ---
 
