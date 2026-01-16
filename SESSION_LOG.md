@@ -1,6 +1,49 @@
 # Session Log
 
-## 2026-01-16 (Continued): Track A — Fundamental Theorem Progress
+## 2026-01-16 (Session 3): Track A — Kripke-style Logical Relations
+
+**Goal:** Fix fundamental design issue in exp_rel_n for composition
+
+**Progress:**
+1. **CRITICAL REFACTOR: Made exp_rel_n Kripke-style**
+   - Previous exp_rel_n couldn't compose properly (T_Pair failing)
+   - Issue: Store typing extensions didn't chain correctly
+   - Solution: World-polymorphic exp_rel_n accepting any Σ_cur ⊇ Σ
+   - Reference: Ahmed (2006), Dreyer et al. (2011)
+
+2. **Added Store Typing Monotonicity Axioms:**
+   - `val_rel_n_mono_store`: Kripke monotonicity for values
+   - `store_rel_n_mono_store`: Mutual monotonicity for stores
+   - Semantically justified: extending store typing preserves relations
+
+3. **Added Value Requirements to exp_rel_n:**
+   - Output now includes `value v1 /\ value v2`
+   - Necessary because val_rel_n 0 is trivial and doesn't imply value
+
+4. **Fixed Proofs:**
+   - T_Var: Updated for new exp_rel_n signature
+   - T_Pair: Proper store typing chain (Σ_cur → Σ' → Σ'')
+   - Composition.v: Updated val_rel_pair/inl/inr for new structure
+
+**Current Status (8 Admitted + 6 Axioms):**
+- NonInterference.v: 2 Admitted + 6 Axioms
+  - `logical_relation`: Admitted (19 cases remain)
+  - `non_interference_stmt`: Admitted
+  - Step index monotonicity: 2 Lemmas (Qed) ✓
+  - Weakening: 2 Axioms (documented)
+  - Store monotonicity: 2 Axioms (new, documented)
+- Composition.v: 3 Admitted (cumulative parts)
+- EffectSystem.v: 2 Admitted
+- EffectGate.v: 1 Admitted
+
+**Next Steps:**
+1. Fix cumulative parts in val_rel proofs
+2. Complete remaining logical_relation cases
+3. Fix Effect proofs
+
+---
+
+## 2026-01-16 (Session 2): Track A — Fundamental Theorem Progress
 
 **Goal:** Complete all Admitted proofs in NonInterference.v
 
@@ -30,21 +73,6 @@
      - T_Perform, T_Handle (effects)
      - T_Ref, T_Deref, T_Assign (references)
      - T_Classify, T_Declassify, T_Prove, T_Require, T_Grant (security)
-
-**Current Status:**
-- NonInterference.v: 2 Admitted + 2 documented Axioms
-  - Monotonicity: 2 Qed ✓
-  - Weakening: 2 Axioms (documented, standard in literature)
-  - logical_relation: 6 cases proven, 19 admit (in progress)
-  - non_interference_stmt: Admitted (depends on logical_relation)
-- Composition.v: 0 Admitted ✓
-- EffectSystem.v: 2 Admitted
-- EffectGate.v: 1 Admitted
-
-**Next Steps:**
-1. Continue proving logical_relation cases (focus on T_Lam, T_App next)
-2. Complete non_interference_stmt after logical_relation
-3. Fix EffectSystem.v and EffectGate.v
 
 ---
 
