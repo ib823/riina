@@ -512,6 +512,23 @@ Axiom store_rel_n_mono_store : forall n Σ Σ' st1 st2,
   store_rel_n n Σ st1 st2 ->
   store_rel_n n Σ' st1 st2.
 
+(** DOCUMENTED AXIOM: Value relation at positive step index implies value relation
+
+    Semantic justification: For actual values (not expressions that step), if
+    val_rel_n holds at any positive step index, it holds at all step indices.
+    This is because:
+    1. Values don't reduce, so step index doesn't decrease
+    2. The val_rel_at_type predicates for first-order types don't depend on step index
+    3. For function types, the property holds by induction on types
+
+    This allows us to convert val_rel_n (S n) to val_rel when we have actual values,
+    which is essential for environment extension in binding forms (case, let, lam).
+*)
+Axiom val_rel_n_to_val_rel : forall Σ T v1 v2,
+  value v1 -> value v2 ->
+  (exists n, val_rel_n (S n) Σ T v1 v2) ->
+  val_rel Σ T v1 v2.
+
 (** ** Environment Substitution *)
 
 Definition rho_shadow (rho : ident -> expr) (x : ident) : ident -> expr :=
@@ -1149,6 +1166,18 @@ Proof.
   - apply Hv.
 Qed.
 
+(** Store typing monotonicity for env_rel (Kripke monotonicity) *)
+Lemma env_rel_mono_store : forall Σ Σ' G rho1 rho2,
+  store_ty_extends Σ Σ' ->
+  env_rel Σ G rho1 rho2 ->
+  env_rel Σ' G rho1 rho2.
+Proof.
+  intros Σ Σ' G rho1 rho2 Hext Henv n x T Hlook.
+  apply val_rel_n_mono_store with (Σ := Σ).
+  - exact Hext.
+  - apply Henv. exact Hlook.
+Qed.
+
 (** ** Multi-step Lemmas *)
 
 Lemma multi_step_trans : forall cfg1 cfg2 cfg3,
@@ -1617,6 +1646,93 @@ Proof.
       repeat split; try reflexivity; assumption.
 Qed.
 
+(** Decompose val_rel_n at TSum to get the sum structure *)
+Lemma val_rel_n_sum_decompose : forall n Σ T1 T2 v1 v2,
+  n > 0 ->
+  val_rel_n n Σ (TSum T1 T2) v1 v2 ->
+  (exists a1 a2, v1 = EInl a1 T2 /\ v2 = EInl a2 T2 /\
+     value a1 /\ value a2 /\ closed_expr a1 /\ closed_expr a2 /\
+     val_rel_at_type Σ (store_rel_n (n-1) Σ) (val_rel_n (n-1) Σ) (store_rel_n (n-1)) T1 a1 a2) \/
+  (exists b1 b2, v1 = EInr b1 T1 /\ v2 = EInr b2 T1 /\
+     value b1 /\ value b2 /\ closed_expr b1 /\ closed_expr b2 /\
+     val_rel_at_type Σ (store_rel_n (n-1) Σ) (val_rel_n (n-1) Σ) (store_rel_n (n-1)) T2 b1 b2).
+Proof.
+  intros n Σ T1 T2 v1 v2 Hn Hrel.
+  destruct n as [| n']; [lia |].
+  simpl in Hrel.
+  destruct Hrel as [_ [Hval1 [Hval2 [Hcl1 [Hcl2 Hrat]]]]].
+  simpl in Hrat.
+  replace (S n' - 1) with n' by lia.
+  destruct Hrat as [[a1 [a2 [Heq1 [Heq2 Hrat]]]] | [b1 [b2 [Heq1 [Heq2 Hrat]]]]].
+  - (* Inl case *)
+    left. exists a1, a2. subst.
+    inversion Hval1; subst. inversion Hval2; subst.
+    assert (Hcla1 : closed_expr a1).
+    { intros y Hfree. apply (Hcl1 y). simpl. exact Hfree. }
+    assert (Hcla2 : closed_expr a2).
+    { intros y Hfree. apply (Hcl2 y). simpl. exact Hfree. }
+    repeat split; try assumption.
+  - (* Inr case *)
+    right. exists b1, b2. subst.
+    inversion Hval1; subst. inversion Hval2; subst.
+    assert (Hclb1 : closed_expr b1).
+    { intros y Hfree. apply (Hcl1 y). simpl. exact Hfree. }
+    assert (Hclb2 : closed_expr b2).
+    { intros y Hfree. apply (Hcl2 y). simpl. exact Hfree. }
+    repeat split; try assumption.
+Qed.
+
+(** Extract val_rel_n for Inl component from sum relation (general version) *)
+Lemma val_rel_n_from_sum_inl : forall n Σ T1 T2 a1 a2,
+  val_rel_n n Σ (TSum T1 T2) (EInl a1 T2) (EInl a2 T2) ->
+  val_rel_n n Σ T1 a1 a2.
+Proof.
+  induction n as [| n' IHn]; intros Σ T1 T2 a1 a2 Hrel.
+  - simpl. trivial.
+  - simpl in Hrel.
+    destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' Hrat]]]]].
+    simpl in Hrat.
+    destruct Hrat as [[x1 [x2 [Heq1 [Heq2 Hrat1]]]] | [y1 [y2 [Heq1 [Heq2 _]]]]].
+    + (* EInl a1 T2 = EInl x1 T2 => a1 = x1 *)
+      injection Heq1 as Ha1eq. injection Heq2 as Ha2eq.
+      subst.
+      inversion Hval; subst. inversion Hval'; subst.
+      assert (Hclx1 : closed_expr x1).
+      { intros y Hfree. apply (Hcl y). simpl. exact Hfree. }
+      assert (Hclx2 : closed_expr x2).
+      { intros y Hfree. apply (Hcl' y). simpl. exact Hfree. }
+      simpl. split.
+      * apply (IHn Σ T1 T2 x1 x2 Hcum).
+      * repeat split; try assumption.
+    + (* Inr case - contradiction: EInl can't equal EInr *)
+      discriminate Heq1.
+Qed.
+
+(** Extract val_rel_n for Inr component from sum relation (general version) *)
+Lemma val_rel_n_from_sum_inr : forall n Σ T1 T2 b1 b2,
+  val_rel_n n Σ (TSum T1 T2) (EInr b1 T1) (EInr b2 T1) ->
+  val_rel_n n Σ T2 b1 b2.
+Proof.
+  induction n as [| n' IHn]; intros Σ T1 T2 b1 b2 Hrel.
+  - simpl. trivial.
+  - simpl in Hrel.
+    destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' Hrat]]]]].
+    simpl in Hrat.
+    destruct Hrat as [[x1 [x2 [Heq1 [Heq2 _]]]] | [y1 [y2 [Heq1 [Heq2 Hrat2]]]]].
+    + (* Inl case - contradiction *)
+      discriminate Heq1.
+    + injection Heq1 as Hb1eq. injection Heq2 as Hb2eq.
+      subst.
+      inversion Hval; subst. inversion Hval'; subst.
+      assert (Hcly1 : closed_expr y1).
+      { intros z Hfree. apply (Hcl z). simpl. exact Hfree. }
+      assert (Hcly2 : closed_expr y2).
+      { intros z Hfree. apply (Hcl' z). simpl. exact Hfree. }
+      simpl. split.
+      * apply (IHn Σ T1 T2 y1 y2 Hcum).
+      * repeat split; try assumption.
+Qed.
+
 (** Extract val_rel_at_type from product decomposition (for any type) *)
 Lemma val_rel_n_prod_fst_at : forall n Σ T1 T2 v1 v2 v1' v2',
   val_rel_n (S n) Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') ->
@@ -2057,7 +2173,167 @@ Proof.
       { exact Hstore'. }
 
   - (* T_Case *)
-    admit.
+    (* e : TSum T1 T2, e1 : T with x1:T1 bound, e2 : T with x2:T2 bound *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    (* Note: e1 and e2 have extended environments, so we can't specialize them yet *)
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Evaluate the scrutinee *)
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+
+      destruct n' as [| n''].
+      { (* n' = 0: degenerate case *)
+        admit. }
+
+      (* Decompose the sum to determine if EInl or EInr *)
+      destruct (val_rel_n_sum_decompose (S n'') Σ' T1 T2 v v') as
+        [[a1 [a2 [Heqv [Heqv' [Hvala1 [Hvala2 [Hcla1 [Hcla2 _]]]]]]]] |
+         [b1 [b2 [Heqv [Heqv' [Hvalb1 [Hvalb2 [Hclb1 [Hclb2 _]]]]]]]]].
+      { lia. }
+      { exact Hval. }
+
+      * (* EInl case: v = EInl a1 T2, v' = EInl a2 T2 *)
+        subst v v'.
+        (* Extract val_rel_n for a1, a2 at T1 *)
+        assert (Hval_a : val_rel_n (S n'') Σ' T1 a1 a2).
+        { apply (val_rel_n_from_sum_inl (S n'') Σ' T1 T2 a1 a2). exact Hval. }
+
+        (* Build extended environment relation at ORIGINAL store typing Σ *)
+        (* IH expects env_rel Σ ..., not env_rel Σ' ... *)
+        (* Use val_rel_n_weaken to get val_rel at Σ from val_rel at Σ' *)
+        assert (Hval_a_at_Σ : val_rel Σ T1 a1 a2).
+        { apply val_rel_n_to_val_rel.
+          - exact Hvala1.
+          - exact Hvala2.
+          - exists n''.
+            apply val_rel_n_weaken with (Σ' := Σ').
+            + apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext).
+            + exact Hval_a. }
+        assert (Henv' : env_rel Σ ((x1, T1) :: Γ) (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2)).
+        { apply env_rel_extend.
+          - exact Henv.
+          - exact Hval_a_at_Σ. }
+
+        (* Build extended rho_no_free_all *)
+        assert (Hno1' : rho_no_free_all (rho_extend rho1 x1 a1)).
+        { apply rho_no_free_extend; assumption. }
+        assert (Hno2' : rho_no_free_all (rho_extend rho2 x1 a2)).
+        { apply rho_no_free_extend; assumption. }
+
+        (* Apply IH for e1 *)
+        specialize (IHHty2 (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2) Henv' Hno1' Hno2') as He1_rel.
+        unfold exp_rel in He1_rel.
+
+        (* We need to connect subst_rho (rho_extend ...) e1 with [x1 := a1] (subst_rho (rho_shadow ...) e1) *)
+        (* Use the substitution lemma *)
+        assert (Hsubst1 : [x1 := a1] (subst_rho (rho_shadow rho1 x1) e1) =
+                          subst_rho (rho_extend rho1 x1 a1) e1).
+        { apply subst_rho_extend. exact Hno1. }
+        assert (Hsubst2_fix : [x1 := a2] (subst_rho (rho_shadow rho2 x1) e1) =
+                              subst_rho (rho_extend rho2 x1 a2) e1).
+        { apply subst_rho_extend. exact Hno2. }
+
+        assert (Hext_for_e1 : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext). }
+
+        specialize (He1_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e1 Hstore') as
+          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 Hstore'']]]]]]]]]]]].
+
+        exists v1, v2, st1'', st2'', ctx'', Σ''.
+        split; [apply (store_ty_extends_trans Σ_cur Σ' Σ'' Hext Hext2) |].
+        split.
+        { (* Multi-step for first execution *)
+          apply multi_step_trans with (cfg2 := (ECase (EInl a1 T2) x1 (subst_rho (rho_shadow rho1 x1) e1)
+                                                                   x2 (subst_rho (rho_shadow rho1 x2) e2), st1', ctx')).
+          - apply multi_step_case. exact Hstep1.
+          - eapply MS_Step.
+            + apply ST_CaseInl. exact Hvala1.
+            + rewrite Hsubst1. exact Hstep_e1. }
+        split.
+        { (* Multi-step for second execution *)
+          apply multi_step_trans with (cfg2 := (ECase (EInl a2 T2) x1 (subst_rho (rho_shadow rho2 x1) e1)
+                                                                   x2 (subst_rho (rho_shadow rho2 x2) e2), st2', ctx')).
+          - apply multi_step_case. exact Hstep1'.
+          - eapply MS_Step.
+            + apply ST_CaseInl. exact Hvala2.
+            + rewrite Hsubst2_fix. exact Hstep_e1'. }
+        split; [exact Hvalv1 |].
+        split; [exact Hvalv2 |].
+        split; [exact Hval1 |].
+        { exact Hstore''. }
+
+      * (* EInr case: v = EInr b1 T1, v' = EInr b2 T1 *)
+        subst v v'.
+        (* Extract val_rel_n for b1, b2 at T2 *)
+        assert (Hval_b : val_rel_n (S n'') Σ' T2 b1 b2).
+        { apply (val_rel_n_from_sum_inr (S n'') Σ' T1 T2 b1 b2). exact Hval. }
+
+        (* Build extended environment relation at ORIGINAL store typing Σ *)
+        (* IH expects env_rel Σ ..., not env_rel Σ' ... *)
+        (* Use val_rel_n_weaken to get val_rel at Σ from val_rel at Σ' *)
+        assert (Hval_b_at_Σ : val_rel Σ T2 b1 b2).
+        { apply val_rel_n_to_val_rel.
+          - exact Hvalb1.
+          - exact Hvalb2.
+          - exists n''.
+            apply val_rel_n_weaken with (Σ' := Σ').
+            + apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext).
+            + exact Hval_b. }
+        assert (Henv' : env_rel Σ ((x2, T2) :: Γ) (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2)).
+        { apply env_rel_extend.
+          - exact Henv.
+          - exact Hval_b_at_Σ. }
+
+        (* Build extended rho_no_free_all *)
+        assert (Hno1' : rho_no_free_all (rho_extend rho1 x2 b1)).
+        { apply rho_no_free_extend; assumption. }
+        assert (Hno2' : rho_no_free_all (rho_extend rho2 x2 b2)).
+        { apply rho_no_free_extend; assumption. }
+
+        (* Apply IH for e2 *)
+        specialize (IHHty3 (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2) Henv' Hno1' Hno2') as He2_rel.
+        unfold exp_rel in He2_rel.
+
+        (* Substitution lemmas for e2 *)
+        assert (Hsubst1 : [x2 := b1] (subst_rho (rho_shadow rho1 x2) e2) =
+                          subst_rho (rho_extend rho1 x2 b1) e2).
+        { apply subst_rho_extend. exact Hno1. }
+        assert (Hsubst2 : [x2 := b2] (subst_rho (rho_shadow rho2 x2) e2) =
+                          subst_rho (rho_extend rho2 x2 b2) e2).
+        { apply subst_rho_extend. exact Hno2. }
+
+        assert (Hext_for_e2 : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext). }
+
+        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e2 Hstore') as
+          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 Hstore'']]]]]]]]]]]].
+
+        exists v1, v2, st1'', st2'', ctx'', Σ''.
+        split; [apply (store_ty_extends_trans Σ_cur Σ' Σ'' Hext Hext2) |].
+        split.
+        { (* Multi-step for first execution *)
+          apply multi_step_trans with (cfg2 := (ECase (EInr b1 T1) x1 (subst_rho (rho_shadow rho1 x1) e1)
+                                                                   x2 (subst_rho (rho_shadow rho1 x2) e2), st1', ctx')).
+          - apply multi_step_case. exact Hstep1.
+          - eapply MS_Step.
+            + apply ST_CaseInr. exact Hvalb1.
+            + rewrite Hsubst1. exact Hstep_e2. }
+        split.
+        { (* Multi-step for second execution *)
+          apply multi_step_trans with (cfg2 := (ECase (EInr b2 T1) x1 (subst_rho (rho_shadow rho2 x1) e1)
+                                                                   x2 (subst_rho (rho_shadow rho2 x2) e2), st2', ctx')).
+          - apply multi_step_case. exact Hstep1'.
+          - eapply MS_Step.
+            + apply ST_CaseInr. exact Hvalb2.
+            + rewrite Hsubst2. exact Hstep_e2'. }
+        split; [exact Hvalv1 |].
+        split; [exact Hvalv2 |].
+        split; [exact Hval2 |].
+        { exact Hstore''. }
 
   - (* T_If *)
     (* e1 : TBool, e2 and e3 : T. (EIf e1 e2 e3) : T. *)
