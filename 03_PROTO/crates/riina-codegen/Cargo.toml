@@ -4,7 +4,51 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "RIINA code generator"
+repository.workspace = true
+description = """
+RIINA Code Generator
+====================
+Translates typed RIINA AST to executable representation.
+Maintains formal correspondence with Coq specification.
+
+RIINA = Rigorous Immutable Integrity No-attack Assured
+Named for: Reena + Isaac + Imaan
+
+Architecture: Custom IR → Reference Interpreter / C Emission
+Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
+"""
 
 [dependencies]
-riina-lexer.workspace = true
+# Internal dependencies - AST definitions
+riina-types.workspace = true
+
+# No external dependencies (Law 8: Zero third-party deps)
+# All code generation is hand-written for maximum auditability
+
+[dev-dependencies]
+# Testing dependencies (internal only)
+
+[features]
+# Feature flags for backend selection
+default = ["interp"]
+interp = []      # Reference interpreter (default, for verification)
+c-emit = []      # C code emission backend
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"
+# Pedantic rules - allow some common patterns
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+module_name_repetitions = "allow"
+too_many_lines = "allow"
+cast_possible_truncation = "allow"
+doc_markdown = "allow"
+uninlined_format_args = "allow"
+use_self = "allow"
+missing_const_for_fn = "allow"
+redundant_else = "allow"
+implicit_hasher = "allow"

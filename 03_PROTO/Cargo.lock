@@ -10,7 +10,7 @@ version = "0.1.0"
 name = "riina-codegen"
 version = "0.1.0"
 dependencies = [
- "riina-lexer",
+ "riina-types",
 ]
 
 [[package]]
