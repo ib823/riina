@@ -93,15 +93,127 @@ Qed.
 
 (** ** Core Effect Soundness *)
 
-(* TODO: Fix this proof after performs_within definition change for ELam.
-   The issue is that T_App involves effect joins and the IH types don't align.
-   Not on critical path for NonInterference. *)
+(** Helper lemmas for effect ordering in complex cases *)
+
+Lemma effect_leq_join_ub_l_trans : forall e1 e2 e3,
+  effect_leq e1 (effect_join e2 (effect_join e1 e3)).
+Proof.
+  intros e1 e2 e3.
+  eapply effect_leq_trans.
+  - apply effect_join_ub_l.
+  - apply effect_join_ub_r.
+Qed.
+
+Lemma effect_leq_join_ub_r_trans : forall e1 e2 e3,
+  effect_leq e3 (effect_join e2 (effect_join e1 e3)).
+Proof.
+  intros e1 e2 e3.
+  eapply effect_leq_trans.
+  - apply effect_join_ub_r.
+  - apply effect_join_ub_r.
+Qed.
+
 Lemma core_effects_within : forall G S D e T eff,
   has_type G S D e T eff ->
   performs_within e eff.
 Proof.
-  (* Temporarily admitted - proof needs refactoring after ELam change *)
-Admitted.
+  intros G S D e T eff Hty.
+  induction Hty; simpl.
+
+  (* T_Unit *) - trivial.
+  (* T_Bool *) - trivial.
+  (* T_Int *) - trivial.
+  (* T_String *) - trivial.
+  (* T_Loc *) - trivial.
+  (* T_Var *) - trivial.
+  (* T_Lam *) - trivial.
+
+  (* T_App: e = EApp e1 e2, eff = effect_join ε (effect_join ε1 ε2) *)
+  - split.
+    + apply (performs_within_mono e1 ε1); [| exact IHHty1].
+      eapply effect_leq_trans; [apply effect_join_ub_l | apply effect_join_ub_r].
+    + apply (performs_within_mono e2 ε2); [| exact IHHty2].
+      eapply effect_leq_trans; [apply effect_join_ub_r | apply effect_join_ub_r].
+
+  (* T_Pair: e = EPair e1 e2, eff = effect_join ε1 ε2 *)
+  - split.
+    + apply (performs_within_mono e1 ε1); [apply effect_join_ub_l | exact IHHty1].
+    + apply (performs_within_mono e2 ε2); [apply effect_join_ub_r | exact IHHty2].
+
+  (* T_Fst: eff = ε *)
+  - exact IHHty.
+
+  (* T_Snd: eff = ε *)
+  - exact IHHty.
+
+  (* T_Inl: eff = ε *)
+  - exact IHHty.
+
+  (* T_Inr: eff = ε *)
+  - exact IHHty.
+
+  (* T_Case: eff = effect_join ε (effect_join ε1 ε2) *)
+  - split.
+    + apply (performs_within_mono e ε); [apply effect_join_ub_l | exact IHHty1].
+    + split.
+      * apply (performs_within_mono e1 ε1); [| exact IHHty2].
+        eapply effect_leq_trans; [apply effect_join_ub_l | apply effect_join_ub_r].
+      * apply (performs_within_mono e2 ε2); [| exact IHHty3].
+        eapply effect_leq_trans; [apply effect_join_ub_r | apply effect_join_ub_r].
+
+  (* T_If: eff = effect_join ε1 (effect_join ε2 ε3) *)
+  - split.
+    + apply (performs_within_mono e1 ε1); [apply effect_join_ub_l | exact IHHty1].
+    + split.
+      * apply (performs_within_mono e2 ε2); [| exact IHHty2].
+        eapply effect_leq_trans; [apply effect_join_ub_l | apply effect_join_ub_r].
+      * apply (performs_within_mono e3 ε3); [| exact IHHty3].
+        eapply effect_leq_trans; [apply effect_join_ub_r | apply effect_join_ub_r].
+
+  (* T_Let: eff = effect_join ε1 ε2 *)
+  - split.
+    + apply (performs_within_mono e1 ε1); [apply effect_join_ub_l | exact IHHty1].
+    + apply (performs_within_mono e2 ε2); [apply effect_join_ub_r | exact IHHty2].
+
+  (* T_Perform: eff = effect_join ε eff0 *)
+  - split.
+    + apply effect_join_ub_r.
+    + apply (performs_within_mono e ε); [apply effect_join_ub_l | exact IHHty].
+
+  (* T_Handle: eff = effect_join ε1 ε2 *)
+  - split.
+    + apply (performs_within_mono e ε1); [apply effect_join_ub_l | exact IHHty1].
+    + apply (performs_within_mono h ε2); [apply effect_join_ub_r | exact IHHty2].
+
+  (* T_Ref: eff = effect_join ε EffectWrite *)
+  - apply (performs_within_mono e ε); [apply effect_join_ub_l | exact IHHty].
+
+  (* T_Deref: eff = effect_join ε EffectRead *)
+  - apply (performs_within_mono e ε); [apply effect_join_ub_l | exact IHHty].
+
+  (* T_Assign: eff = effect_join ε1 (effect_join ε2 EffectWrite) *)
+  - split.
+    + apply (performs_within_mono e1 ε1); [apply effect_join_ub_l | exact IHHty1].
+    + apply (performs_within_mono e2 ε2); [| exact IHHty2].
+      eapply effect_leq_trans; [apply effect_join_ub_l | apply effect_join_ub_r].
+
+  (* T_Classify: eff = ε *)
+  - exact IHHty.
+
+  (* T_Declassify: eff = effect_join ε1 ε2 *)
+  - split.
+    + apply (performs_within_mono e1 ε1); [apply effect_join_ub_l | exact IHHty1].
+    + apply (performs_within_mono e2 ε2); [apply effect_join_ub_r | exact IHHty2].
+
+  (* T_Prove: eff = ε *)
+  - exact IHHty.
+
+  (* T_Require: eff = effect_join ε eff0 *)
+  - apply (performs_within_mono e ε); [apply effect_join_ub_l | exact IHHty].
+
+  (* T_Grant: eff = ε *)
+  - exact IHHty.
+Qed.
 (** ** Effect Typing Rules *)
 
 Inductive has_type_full : type_env -> store_ty -> security_level ->
@@ -150,17 +262,60 @@ Inductive has_type_full : type_env -> store_ty -> security_level ->
       has_type_full G S D e T eff ->
       has_type_full G S D (EProve e) (TProof T) eff.
 
-(** ** Effect Safety (Stub)
+(** ** Effect Safety
 
     Theorem: If has_type_full G S D e T eff, then executing e
     only produces effects in eff.
 *)
-(* TODO: Fix after core_effects_within is proven *)
 Theorem effect_safety : forall G S D e T eff,
   has_type_full G S D e T eff ->
   performs_within e eff.
 Proof.
-  (* Depends on core_effects_within which is temporarily admitted *)
-Admitted.
+  intros G S D e T eff Hty.
+  induction Hty; simpl.
+
+  (* T_Core: use core_effects_within *)
+  - apply core_effects_within with (G := G) (S := S) (D := D) (T := T).
+    exact H.
+
+  (* T_Perform: e = EPerform eff' e1, eff = effect_join ε eff' *)
+  - split.
+    + apply effect_join_ub_r.
+    + apply (performs_within_mono e ε).
+      * apply effect_join_ub_l.
+      * exact IHHty.
+
+  (* T_Handle: e = EHandle e1 y h, eff = effect_join ε1 ε2 *)
+  - split.
+    + apply (performs_within_mono e ε1).
+      * apply effect_join_ub_l.
+      * exact IHHty1.
+    + apply (performs_within_mono h ε2).
+      * apply effect_join_ub_r.
+      * exact IHHty2.
+
+  (* T_Require: e = ERequire eff' e1, eff = effect_join eff' eff_e *)
+  - apply (performs_within_mono e eff_e).
+    + apply effect_join_ub_r.
+    + exact IHHty.
+
+  (* T_Grant *)
+  - exact IHHty.
+
+  (* T_Classify *)
+  - exact IHHty.
+
+  (* T_Declassify: e = EDeclassify e1 e2, eff = effect_join eff1 eff2 *)
+  - split.
+    + apply (performs_within_mono e1 eff1).
+      * apply effect_join_ub_l.
+      * exact IHHty1.
+    + apply (performs_within_mono e2 eff2).
+      * apply effect_join_ub_r.
+      * exact IHHty2.
+
+  (* T_Prove *)
+  - exact IHHty.
+Qed.
 
 (** End of EffectSystem.v *)

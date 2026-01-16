@@ -34,13 +34,20 @@ Definition is_gate (eff : effect) (e_gate : expr) : Prop :=
     it cannot reduce to an 'EPerform eff' step at the top level.
 *)
 
-(* TODO: Fix after effect_safety is proven *)
 Theorem gate_enforcement : forall G S D e T eff_allowed eff_used,
   has_type_full G S D e T eff_used ->
   effect_level eff_used <= effect_level eff_allowed ->
   performs_within e eff_allowed.
 Proof.
-  (* Depends on effect_safety which is temporarily admitted *)
-Admitted.
+  intros G S D e T eff_allowed eff_used Hty Hle.
+  (* First, use effect_safety to get performs_within e eff_used *)
+  assert (Hpw : performs_within e eff_used).
+  { apply effect_safety with (G := G) (S := S) (D := D) (T := T). exact Hty. }
+  (* Then weaken to eff_allowed using performs_within_mono *)
+  apply (performs_within_mono e eff_used eff_allowed).
+  - (* effect_leq eff_used eff_allowed *)
+    unfold effect_leq. exact Hle.
+  - exact Hpw.
+Qed.
 
 (** End of EffectGate.v *)
