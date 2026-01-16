@@ -1224,6 +1224,12 @@ Definition subst_rel (Σ : store_ty) (G : type_env) (s1 s2 : list (ident * expr)
 (** Helper: extract product component relation from val_rel_n.
     These extract the first/second component relation from a product relation,
     preserving the step index (key benefit of the new structure). *)
+Lemma value_pair_inv : forall x y,
+  value (EPair x y) -> value x /\ value y.
+Proof.
+  intros x y Hval. inversion Hval; subst. split; assumption.
+Qed.
+
 Lemma val_rel_n_prod_fst : forall n Σ T1 T2 v1 v2,
   n > 0 ->
   val_rel_n n Σ (TProd T1 T2) v1 v2 ->
@@ -1231,8 +1237,32 @@ Lemma val_rel_n_prod_fst : forall n Σ T1 T2 v1 v2,
     v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
     val_rel_n n Σ T1 a1 a2.
 Proof.
-  (* Technical lemma - proof involves careful reasoning about value/closed *)
-Admitted.
+  intros n Σ T1 T2 v1 v2 Hn Hrel.
+  destruct n as [| n']; [lia |].
+  simpl in Hrel.
+  destruct Hrel as [Hval1 [Hval2 [Hclosed1 [Hclosed2 Hrat]]]].
+  simpl in Hrat.
+  destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+  exists x1, y1, x2, y2.
+  split; [exact Heq1 |].
+  split; [exact Heq2 |].
+  (* Need to show val_rel_n (S n') Σ T1 x1 x2 *)
+  simpl.
+  (* Components of values are values *)
+  subst v1 v2.
+  apply value_pair_inv in Hval1. destruct Hval1 as [Ha1 Hb1].
+  apply value_pair_inv in Hval2. destruct Hval2 as [Ha2 Hb2].
+  (* Components of closed are closed *)
+  assert (Hcx1 : closed_expr x1).
+  { intros y Hfree. apply (Hclosed1 y). simpl. left. exact Hfree. }
+  assert (Hcy1 : closed_expr y1).
+  { intros y Hfree. apply (Hclosed1 y). simpl. right. exact Hfree. }
+  assert (Hcx2 : closed_expr x2).
+  { intros y Hfree. apply (Hclosed2 y). simpl. left. exact Hfree. }
+  assert (Hcy2 : closed_expr y2).
+  { intros y Hfree. apply (Hclosed2 y). simpl. right. exact Hfree. }
+  repeat split; try assumption.
+Qed.
 
 Lemma val_rel_n_prod_snd : forall n Σ T1 T2 v1 v2,
   n > 0 ->
@@ -1241,8 +1271,32 @@ Lemma val_rel_n_prod_snd : forall n Σ T1 T2 v1 v2,
     v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
     val_rel_n n Σ T2 b1 b2.
 Proof.
-  (* Technical lemma - proof involves careful reasoning about value/closed *)
-Admitted.
+  intros n Σ T1 T2 v1 v2 Hn Hrel.
+  destruct n as [| n']; [lia |].
+  simpl in Hrel.
+  destruct Hrel as [Hval1 [Hval2 [Hclosed1 [Hclosed2 Hrat]]]].
+  simpl in Hrat.
+  destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+  exists x1, y1, x2, y2.
+  split; [exact Heq1 |].
+  split; [exact Heq2 |].
+  (* Need to show val_rel_n (S n') Σ T2 y1 y2 *)
+  simpl.
+  (* Components of values are values *)
+  subst v1 v2.
+  apply value_pair_inv in Hval1. destruct Hval1 as [Ha1 Hb1].
+  apply value_pair_inv in Hval2. destruct Hval2 as [Ha2 Hb2].
+  (* Components of closed are closed *)
+  assert (Hcx1 : closed_expr x1).
+  { intros y Hfree. apply (Hclosed1 y). simpl. left. exact Hfree. }
+  assert (Hcy1 : closed_expr y1).
+  { intros y Hfree. apply (Hclosed1 y). simpl. right. exact Hfree. }
+  assert (Hcx2 : closed_expr x2).
+  { intros y Hfree. apply (Hclosed2 y). simpl. left. exact Hfree. }
+  assert (Hcy2 : closed_expr y2).
+  { intros y Hfree. apply (Hclosed2 y). simpl. right. exact Hfree. }
+  repeat split; try assumption.
+Qed.
 
 (* The fundamental theorem - proof by induction on typing derivation *)
 Theorem logical_relation : forall G Σ e T eps rho1 rho2,
