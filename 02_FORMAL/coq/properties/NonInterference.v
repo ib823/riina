@@ -1370,6 +1370,19 @@ Proof.
     + apply (IHmulti_step e_mid e1' st_mid st' ctx_mid ctx'); reflexivity.
 Qed.
 
+Lemma multi_step_classify : forall e e' st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (EClassify e, st, ctx) -->* (EClassify e', st', ctx').
+Proof.
+  intros e e' st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_ClassifyStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx'); reflexivity.
+Qed.
+
 Lemma exp_rel_of_val_rel : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   exp_rel Σ T v1 v2.
@@ -2824,7 +2837,56 @@ Proof.
     admit.
 
   - (* T_Classify *)
-    admit.
+    (* e : T, classify e : TSecret T.
+       val_rel_at_type (TSecret T) is True, so any two values are related. *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v1 [v2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv2 [Hvrel Hstore1]]]]]]]]]]]].
+      (* Result is EClassify v1, EClassify v2 *)
+      exists (EClassify v1), (EClassify v2), st1', st2', ctx', Σ'.
+      split.
+      { exact Hext1. }
+      split.
+      { (* (EClassify (subst_rho rho1 e), st1, ctx) -->* (EClassify v1, st1', ctx') *)
+        apply multi_step_classify. exact Hstep1. }
+      split.
+      { apply multi_step_classify. exact Hstep1'. }
+      split.
+      { (* value (EClassify v1) *)
+        constructor. exact Hvalv1. }
+      split.
+      { constructor. exact Hvalv2. }
+      split.
+      { (* val_rel_n n' Σ' (TSecret T) (EClassify v1) (EClassify v2) *)
+        (* val_rel_at_type (TSecret T) is True, so this is easy *)
+        destruct n' as [| n''].
+        - simpl. trivial.
+        - simpl. split.
+          + (* cumulative - admit for now, structurally similar to other cases *)
+            admit.
+          + split; [constructor; assumption |].
+            split; [constructor; assumption |].
+            split.
+            * (* closed_expr (EClassify v1) *)
+              intros y Hfree. simpl in Hfree.
+              assert (Hcl1 : closed_expr v1).
+              { (* Hvrel is at val_rel_n (S n'') after destruct n' = S n'' *)
+                apply (val_rel_closed_left_n (S n'') Σ' T v1 v2); [lia |].
+                exact Hvrel. }
+              unfold closed_expr in Hcl1. apply (Hcl1 y). exact Hfree.
+            * split.
+              { intros y Hfree. simpl in Hfree.
+                assert (Hcl2 : closed_expr v2).
+                { apply (val_rel_closed_right_n (S n'') Σ' T v1 v2); [lia |].
+                  exact Hvrel. }
+                unfold closed_expr in Hcl2. apply (Hcl2 y). exact Hfree. }
+              { (* val_rel_at_type (TSecret T) = True *) simpl. trivial. } }
+      { exact Hstore1. }
 
   - (* T_Declassify *)
     admit.
