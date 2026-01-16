@@ -2161,10 +2161,117 @@ Proof.
         exact Hstore'. }
 
   - (* T_App - function application *)
-    (* Complex step-index mismatch between function and argument relations.
-       Need to properly handle the β-reduction step consuming one index.
-       Admitted pending careful step-index accounting. *)
-    admit.
+    (* IHHty1 is for e1 : TFn T1 T2 ε, IHHty2 is for e2 : T1.
+       We evaluate both, get related values, then apply function relation. *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.
+    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as He2_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Evaluate e1 (the function) to get f1, f2 *)
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalf1 [Hvalf2 [Hfrel Hstore1]]]]]]]]]]]].
+
+      (* Step 2: Evaluate e2 (the argument) with extended store typing *)
+      assert (Hext2_input : store_ty_extends Σ Σ').
+      { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext1). }
+      specialize (He2_rel (S n') Σ' st1' st2' ctx' Hext2_input Hstore1) as
+        [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep2 [Hstep2' [Hvala1 [Hvala2 [Harel Hstore2]]]]]]]]]]]].
+
+      (* Both Hfrel and Harel are at val_rel_n n' with their respective Σ.
+         We need them both at Σ' (the function's store typing).
+         Hfrel : val_rel_n n' Σ' (TFn T1 T2 ε) f1 f2  -- already at Σ'
+         Harel : val_rel_n n' Σ'' T1 a1 a2            -- need to weaken to Σ' *)
+
+      (* Weaken argument relation from Σ'' to Σ' (since Σ' ⊆ Σ'') *)
+      assert (Harel_Σ' : val_rel_n n' Σ' T1 a1 a2).
+      { apply (val_rel_n_weaken n' Σ' Σ'' T1 a1 a2 Hext2 Harel). }
+
+      (* Weaken store relation from Σ'' to Σ' *)
+      assert (Hstore2_Σ' : store_rel_n n' Σ' st1'' st2'').
+      { apply (store_rel_n_weaken n' Σ' Σ'' st1'' st2'' Hext2 Hstore2). }
+
+      (* Now destruct n' to extract val_rel_at_type *)
+      destruct n' as [| n''].
+      { (* n' = 0: Need to provide existential witnesses but relation is trivial.
+           This requires showing evaluation terminates, which is complex. *)
+        admit. }
+
+      (* n' = S n'': Extract val_rel_at_type for function *)
+      simpl in Hfrel.
+      destruct Hfrel as [Hfrel_cum [_ [_ [_ [_ Hfn_rel]]]]].
+      (* Hfn_rel : val_rel_at_type (TFn T1 T2 ε) at n'' with Σ' *)
+      simpl in Hfn_rel.
+
+      (* Extract val_rel_at_type for argument *)
+      simpl in Harel_Σ'.
+      destruct Harel_Σ' as [Harel_cum [_ [_ [_ [_ Harat]]]]].
+      (* Harat : val_rel_at_type T1 at n'' with Σ' *)
+
+      (* Extract store relation for application (cumulative part) *)
+      simpl in Hstore2_Σ'.
+      destruct Hstore2_Σ' as [Hstore2_cum _].
+      (* Hstore2_cum : store_rel_n n'' Σ' st1'' st2'' *)
+
+      (* Apply the function relation Hfn_rel with argument Harat and store Hstore2_cum *)
+      specialize (Hfn_rel a1 a2 Harat st1'' st2'' ctx'' Hstore2_cum) as
+        [v1 [v2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep3 [Hstep3' [Hval_out Hstore3]]]]]]]]]].
+
+      (* Build final result *)
+      exists v1, v2, st1''', st2''', ctx''', Σ'''.
+      split.
+      { (* store_ty_extends Σ_cur Σ''' : chain Σ_cur → Σ' → Σ''' *)
+        (* Note: Σ'' is parallel extension, not in the main chain.
+           The function relation produces Σ''' extending Σ' directly. *)
+        apply (store_ty_extends_trans Σ_cur Σ' Σ''' Hext1 Hext3). }
+      split.
+      { (* (EApp (subst_rho rho1 e1) (subst_rho rho1 e2), st1, ctx) -->* (v1, st1''', ctx''') *)
+        apply multi_step_trans with (cfg2 := (EApp f1 (subst_rho rho1 e2), st1', ctx')).
+        - apply multi_step_app1. exact Hstep1.
+        - apply multi_step_trans with (cfg2 := (EApp f1 a1, st1'', ctx'')).
+          + apply multi_step_app2. exact Hvalf1. exact Hstep2.
+          + exact Hstep3. }
+      split.
+      { (* Similar for second expression *)
+        apply multi_step_trans with (cfg2 := (EApp f2 (subst_rho rho2 e2), st2', ctx')).
+        - apply multi_step_app1. exact Hstep1'.
+        - apply multi_step_trans with (cfg2 := (EApp f2 a2, st2'', ctx'')).
+          + apply multi_step_app2. exact Hvalf2. exact Hstep2'.
+          + exact Hstep3'. }
+      (* For value extraction and val_rel_n at correct index, destruct n'' *)
+      destruct n'' as [| n'''].
+      { (* n'' = 0: val_rel_n 0 gives no info, edge case *)
+        admit. }
+
+      (* n'' = S n''': extract value from val_rel_n (S n''') *)
+      split.
+      { (* value v1 *)
+        apply (val_rel_value_left_n (S n''') Σ' T2 v1 v2).
+        - lia.
+        - exact Hval_out. }
+      split.
+      { (* value v2 *)
+        apply (val_rel_value_right_n (S n''') Σ' T2 v1 v2).
+        - lia.
+        - exact Hval_out. }
+      split.
+      { (* val_rel_n (S (S n''')) Σ''' T2 v1 v2 *)
+        (* We have Hval_out : val_rel_n (S n''') Σ' T2 v1 v2
+           We need val_rel_n (S (S n''')) Σ''' T2 v1 v2
+           Issue 1: Index is S n''' vs S (S n''') - gap of 1
+           Issue 2: Store typing is Σ' vs Σ''' - need monotonicity *)
+        (* This gap represents the step consumed by β-reduction.
+           The standard approach is to use the cumulative structure.
+           Since val_rel_n (S n''') contains cumulative part for all n < S n''',
+           we can extract val_rel_n n''' from it.
+           But we need S (S n'''), not n'''. This is the fundamental step-index issue.
+           For now, admit this. *)
+        admit. }
+      { (* store_rel_n (S (S n''')) Σ''' st1''' st2''' *)
+        (* Similar step-index issue *)
+        admit. }
 
   - (* T_Pair *)
     (* With Kripke-style exp_rel_n, the proof is cleaner.
