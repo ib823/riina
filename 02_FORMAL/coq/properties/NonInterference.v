@@ -1383,6 +1383,45 @@ Proof.
     + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx'); reflexivity.
 Qed.
 
+Lemma multi_step_prove : forall e e' st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (EProve e, st, ctx) -->* (EProve e', st', ctx').
+Proof.
+  intros e e' st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_ProveStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx'); reflexivity.
+Qed.
+
+Lemma multi_step_require : forall eff e e' st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (ERequire eff e, st, ctx) -->* (ERequire eff e', st', ctx').
+Proof.
+  intros eff e e' st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_RequireStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx' eq_refl eq_refl).
+Qed.
+
+Lemma multi_step_grant : forall eff e e' st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (EGrant eff e, st, ctx) -->* (EGrant eff e', st', ctx').
+Proof.
+  intros eff e e' st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_GrantStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx' eq_refl eq_refl).
+Qed.
+
 Lemma exp_rel_of_val_rel : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   exp_rel Σ T v1 v2.
@@ -2892,13 +2931,100 @@ Proof.
     admit.
 
   - (* T_Prove *)
-    admit.
+    (* Similar to T_Classify: e : T → EProve e : TProof T, val_rel_at_type (TProof T) = True *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v1 [v2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv2 [Hvrel Hstore1]]]]]]]]]]]].
+      exists (EProve v1), (EProve v2), st1', st2', ctx', Σ'.
+      split. { exact Hext1. }
+      split. { apply multi_step_prove. exact Hstep1. }
+      split. { apply multi_step_prove. exact Hstep1'. }
+      split. { constructor. exact Hvalv1. }
+      split. { constructor. exact Hvalv2. }
+      split.
+      { destruct n' as [| n''].
+        - simpl. trivial.
+        - simpl. split.
+          + (* cumulative - admit *) admit.
+          + split; [constructor; assumption |].
+            split; [constructor; assumption |].
+            split.
+            * intros y Hfree. simpl in Hfree.
+              assert (Hcl1 : closed_expr v1).
+              { apply (val_rel_closed_left_n (S n'') Σ' T v1 v2); [lia | exact Hvrel]. }
+              unfold closed_expr in Hcl1. apply (Hcl1 y). exact Hfree.
+            * split.
+              { intros y Hfree. simpl in Hfree.
+                assert (Hcl2 : closed_expr v2).
+                { apply (val_rel_closed_right_n (S n'') Σ' T v1 v2); [lia | exact Hvrel]. }
+                unfold closed_expr in Hcl2. apply (Hcl2 y). exact Hfree. }
+              { simpl. trivial. } }
+      { exact Hstore1. }
 
   - (* T_Require *)
-    admit.
+    (* e : T → ERequire eff e : T. Evaluation: ERequire eff v → v *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v1 [v2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv2 [Hvrel Hstore1]]]]]]]]]]]].
+      (* Result is v1, v2 (unwrapped) *)
+      exists v1, v2, st1', st2', ctx', Σ'.
+      split. { exact Hext1. }
+      split.
+      { (* (ERequire eff (subst_rho rho1 e), st1, ctx) -->* (v1, st1', ctx') *)
+        apply multi_step_trans with (cfg2 := (ERequire eff v1, st1', ctx')).
+        - apply multi_step_require. exact Hstep1.
+        - eapply MS_Step.
+          + apply ST_RequireValue. exact Hvalv1.
+          + apply MS_Refl. }
+      split.
+      { apply multi_step_trans with (cfg2 := (ERequire eff v2, st2', ctx')).
+        - apply multi_step_require. exact Hstep1'.
+        - eapply MS_Step.
+          + apply ST_RequireValue. exact Hvalv2.
+          + apply MS_Refl. }
+      split. { exact Hvalv1. }
+      split. { exact Hvalv2. }
+      split. { exact Hvrel. }
+      { exact Hstore1. }
 
   - (* T_Grant *)
-    admit.
+    (* Similar to T_Require: e : T → EGrant eff e : T. Evaluation: EGrant eff v → v *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v1 [v2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv2 [Hvrel Hstore1]]]]]]]]]]]].
+      exists v1, v2, st1', st2', ctx', Σ'.
+      split. { exact Hext1. }
+      split.
+      { apply multi_step_trans with (cfg2 := (EGrant eff v1, st1', ctx')).
+        - apply multi_step_grant. exact Hstep1.
+        - eapply MS_Step.
+          + apply ST_GrantValue. exact Hvalv1.
+          + apply MS_Refl. }
+      split.
+      { apply multi_step_trans with (cfg2 := (EGrant eff v2, st2', ctx')).
+        - apply multi_step_grant. exact Hstep1'.
+        - eapply MS_Step.
+          + apply ST_GrantValue. exact Hvalv2.
+          + apply MS_Refl. }
+      split. { exact Hvalv1. }
+      split. { exact Hvalv2. }
+      split. { exact Hvrel. }
+      { exact Hstore1. }
 
 Admitted.
 
