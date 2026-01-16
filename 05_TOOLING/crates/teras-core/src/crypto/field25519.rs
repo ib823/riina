@@ -30,7 +30,6 @@
 //! - Adam Langley's curve25519-donna
 
 use core::ops::{Add, Sub, Mul};
-use crate::zeroize::Zeroize;
 
 /// A field element in GF(2^255-19), represented in radix 2^51.
 ///
@@ -46,6 +45,13 @@ use crate::zeroize::Zeroize;
 /// - After reduction: each limb < 2^51
 /// - After weak reduction: each limb < 2^52 (allows some overflow for performance)
 /// - Full reduction ensures canonical representation
+///
+/// # Security Note
+///
+/// FieldElement is Copy for performance. Zeroization is handled at the
+/// higher-level types (X25519KeyPair, Ed25519SigningKey) that contain
+/// secret field elements. Intermediate field elements in computations
+/// are not considered sensitive enough to warrant individual zeroization.
 #[derive(Clone, Copy, Debug)]
 pub struct FieldElement {
     /// 5 limbs, each storing up to 51 bits (after reduction)
@@ -322,6 +328,120 @@ impl FieldElement {
     pub fn is_zero(&self) -> bool {
         self.ct_eq(&Self::ZERO) == 1
     }
+
+    /// Create a FieldElement from a small i64 value.
+    ///
+    /// # Arguments
+    /// * `value` - A small integer value (should fit in a single limb)
+    ///
+    /// # Returns
+    /// The field element representing this value
+    #[must_use]
+    pub fn from_i64(value: i64) -> Self {
+        Self {
+            limbs: [value, 0, 0, 0, 0],
+        }
+        .reduce()
+    }
+
+    /// Square this field element: a^2 (mod p).
+    ///
+    /// This is slightly more efficient than general multiplication
+    /// since we can use squaring-specific optimizations.
+    ///
+    /// # Returns
+    /// self * self (mod p)
+    #[inline]
+    #[must_use]
+    pub fn square(self) -> Self {
+        // For now, just use multiplication
+        // TODO: Implement dedicated squaring for ~20% speedup
+        self * self
+    }
+
+    /// Compute the multiplicative inverse: a^(-1) (mod p).
+    ///
+    /// This uses Fermat's Little Theorem: a^(p-1) = 1 (mod p)
+    /// Therefore: a^(-1) = a^(p-2) (mod p)
+    ///
+    /// For p = 2^255 - 19, we have p-2 = 2^255 - 21.
+    ///
+    /// We use addition chain exponentiation for efficiency.
+    ///
+    /// # Returns
+    /// The multiplicative inverse of self
+    ///
+    /// # Panics
+    /// Panics if self is zero (zero has no inverse)
+    #[must_use]
+    pub fn invert(self) -> Self {
+        // Verify not zero (in debug mode)
+        debug_assert!(!self.is_zero(), "Cannot invert zero");
+
+        // Compute a^(p-2) using addition chain
+        // p - 2 = 2^255 - 21
+        //       = 2^255 - 16 - 4 - 1
+        //       = 2^255 - 2^4 - 2^2 - 2^0
+
+        // Use the well-known addition chain for (p-2):
+        // 1, 2, 3, 4, 5, 10, 20, 40, 50, 100, 200, 250, 255
+
+        let z2 = self.square();           // 2^1
+        let z9 = z2.square().square() * self; // 2^3 * 2^0 = 2^4 - 2^3 + 2^0 = 9
+        let z11 = z9 * z2;                // 11
+        let z2_5_0 = z11.square().square() * z9; // 2^2 * 11 * 9 = 2^5 - 2^0
+
+        let mut t = z2_5_0;
+        for _ in 0..5 {
+            t = t.square();
+        }
+        let z2_10_0 = t * z2_5_0;        // 2^10 - 2^0
+
+        t = z2_10_0;
+        for _ in 0..10 {
+            t = t.square();
+        }
+        let z2_20_0 = t * z2_10_0;       // 2^20 - 2^0
+
+        t = z2_20_0;
+        for _ in 0..20 {
+            t = t.square();
+        }
+        let z2_40_0 = t * z2_20_0;       // 2^40 - 2^0
+
+        t = z2_40_0;
+        for _ in 0..10 {
+            t = t.square();
+        }
+        let z2_50_0 = t * z2_10_0;       // 2^50 - 2^0
+
+        t = z2_50_0;
+        for _ in 0..50 {
+            t = t.square();
+        }
+        let z2_100_0 = t * z2_50_0;      // 2^100 - 2^0
+
+        t = z2_100_0;
+        for _ in 0..100 {
+            t = t.square();
+        }
+        let z2_200_0 = t * z2_100_0;     // 2^200 - 2^0
+
+        t = z2_200_0;
+        for _ in 0..50 {
+            t = t.square();
+        }
+        let z2_250_0 = t * z2_50_0;      // 2^250 - 2^0
+
+        // Final 5 bits: 2^255 - 21 = 2^255 - 2^4 - 2^2 - 2^0
+        t = z2_250_0;
+        for _ in 0..5 {
+            t = t.square();
+        }
+        t = t * z11;                     // 2^255 - 2^5 + 11 = 2^255 - 21
+
+        t
+    }
 }
 
 /// Addition: (a + b) mod p
@@ -401,17 +521,17 @@ impl Mul for FieldElement {
     }
 }
 
-impl Zeroize for FieldElement {
-    fn zeroize(&mut self) {
-        self.limbs.zeroize();
+/// Equality comparison (compares reduced forms)
+///
+/// Note: This compares the canonical reduced representations,
+/// so unreduced equal values will still compare as equal.
+impl PartialEq for FieldElement {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other) == 1
     }
 }
 
-impl Drop for FieldElement {
-    fn drop(&mut self) {
-        self.zeroize();
-    }
-}
+impl Eq for FieldElement {}
 
 #[cfg(test)]
 mod tests {
