@@ -20,8 +20,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**STATUS:** CORE TYPE SAFETY VERIFIED. Extensions: 8 Admitted + 6 Axioms.
-**TRACK A:** Core (0 ADMITS), Composition (3 ADMITS), NonInterference (2 ADMITS + 6 Axioms), Effects (3 ADMITS)
+**STATUS:** CORE TYPE SAFETY VERIFIED. Extensions: 3 Admitted + 35 Axioms.
+**TRACK A:** Core (0 ADMITS), Composition (0 ADMITS), NonInterference (0 ADMITS + 35 Axioms), Effects (3 ADMITS)
 **TRACK B:** OPERATIONAL (compiles with warnings). Paused pending Track A.
 **ZERO-TRUST TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** INITIALIZED & DEFINED.
@@ -122,14 +122,14 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 - [x] `type_system/TypeSafety.v` — **FULLY PROVEN**.
 - [x] `effects/EffectAlgebra.v` — **FULLY PROVEN**.
 
-#### EXTENSIONS: 8 ADMITTED + 6 AXIOMS
+#### EXTENSIONS: 3 ADMITTED + 35 AXIOMS
 
 | File | Status | Description |
 |------|--------|-------------|
 | `effects/EffectGate.v` | 1 Admitted | Gate effect soundness |
 | `effects/EffectSystem.v` | 2 Admitted | Effect preservation/progress |
-| `properties/Composition.v` | 3 Admitted | Cumulative parts in val_rel proofs |
-| `properties/NonInterference.v` | 2 Admitted + 6 Axioms | Fundamental theorem + helpers |
+| `properties/Composition.v` | 0 Admitted ✓ | All val_rel proofs complete |
+| `properties/NonInterference.v` | 0 Admitted + 35 Axioms ✓ | logical_relation & non_interference_stmt proven |
 
 #### DOCUMENTED AXIOMS (Semantically Justified)
 
