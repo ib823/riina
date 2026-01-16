@@ -6,9 +6,12 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/riina-arena",
     "crates/riina-codegen",
     "crates/riina-lexer",
     "crates/riina-parser",
+    "crates/riina-span",
+    "crates/riina-symbols",
     "crates/riina-typechecker",
     "crates/riina-types",
     "crates/riinac",
@@ -22,7 +25,12 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/ib823/proof"
 
 [workspace.dependencies]
-# Internal dependencies
+# Internal dependencies - Foundation crates (P0)
+riina-arena = { path = "crates/riina-arena" }
+riina-span = { path = "crates/riina-span" }
+riina-symbols = { path = "crates/riina-symbols" }
+
+# Internal dependencies - Compiler crates
 riina-lexer = { path = "crates/riina-lexer" }
 riina-parser = { path = "crates/riina-parser" }
 riina-types = { path = "crates/riina-types" }
