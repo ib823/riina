@@ -1487,6 +1487,138 @@ Proof.
   intros sp vl sl. eapply val_rel_at_type_first_order; [exact Hfo | exact Hrat2].
 Qed.
 
+(** Construct val_rel_n for products from components *)
+Lemma val_rel_n_prod_compose : forall n Σ T1 T2 v1 v1' v2 v2',
+  val_rel_n n Σ T1 v1 v1' ->
+  val_rel_n n Σ T2 v2 v2' ->
+  val_rel_n n Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2').
+Proof.
+  (* Use induction on n to handle the cumulative structure *)
+  intro n. induction n as [| n' IHn]; intros Σ T1 T2 v1 v1' v2 v2' Hrel1 Hrel2.
+  - simpl. trivial.
+  - simpl. simpl in Hrel1, Hrel2.
+    destruct Hrel1 as [Hrel1_cum [Hvalv1 [Hvalv1' [Hcl1 [Hcl1' Hrat1]]]]].
+    destruct Hrel2 as [Hrel2_cum [Hvalv2 [Hvalv2' [Hcl2 [Hcl2' Hrat2]]]]].
+    split.
+    { (* Cumulative: use IH *)
+      apply IHn; assumption. }
+    split.
+    { (* value (EPair v1 v2) *) constructor; assumption. }
+    split.
+    { (* value (EPair v1' v2') *) constructor; assumption. }
+    split.
+    { (* closed_expr (EPair v1 v2) *)
+      intros y Hfree. simpl in Hfree.
+      destruct Hfree as [Hfree | Hfree].
+      - apply (Hcl1 y). exact Hfree.
+      - apply (Hcl2 y). exact Hfree. }
+    split.
+    { (* closed_expr (EPair v1' v2') *)
+      intros y Hfree. simpl in Hfree.
+      destruct Hfree as [Hfree | Hfree].
+      - apply (Hcl1' y). exact Hfree.
+      - apply (Hcl2' y). exact Hfree. }
+    (* val_rel_at_type for TProd *)
+    simpl. exists v1, v2, v1', v2'.
+    repeat split; try reflexivity; assumption.
+Qed.
+
+(** Extract val_rel_n for first projection from product (general version).
+    This works for any type because val_rel_at_type for products
+    recursively contains val_rel_at_type for components at the same level. *)
+Lemma val_rel_n_from_prod_fst : forall n Σ T1 T2 a1 b1 a2 b2,
+  val_rel_n n Σ (TProd T1 T2) (EPair a1 b1) (EPair a2 b2) ->
+  val_rel_n n Σ T1 a1 a2.
+Proof.
+  induction n as [| n' IHn]; intros Σ T1 T2 a1 b1 a2 b2 Hrel.
+  - simpl. trivial.
+  - simpl in Hrel.
+    destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' Hrat]]]]].
+    simpl in Hrat.
+    destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
+    injection Heq1 as Ha1eq Hb1eq. subst.
+    injection Heq2 as Ha2eq Hb2eq. subst.
+    (* Get value/closed from pair inversion *)
+    apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
+    apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
+    assert (Hcl1 : closed_expr x1).
+    { intros y Hfree. apply (Hcl y). simpl. left. exact Hfree. }
+    assert (Hcl1' : closed_expr x2).
+    { intros y Hfree. apply (Hcl' y). simpl. left. exact Hfree. }
+    (* Build val_rel_n (S n') T1 *)
+    simpl. split.
+    + (* Cumulative: use IH on the cumulative part of the product *)
+      apply (IHn Σ T1 T2 x1 y1 x2 y2 Hcum).
+    + repeat split; try assumption.
+Qed.
+
+(** Extract val_rel_n for second projection from product (general version). *)
+Lemma val_rel_n_from_prod_snd : forall n Σ T1 T2 a1 b1 a2 b2,
+  val_rel_n n Σ (TProd T1 T2) (EPair a1 b1) (EPair a2 b2) ->
+  val_rel_n n Σ T2 b1 b2.
+Proof.
+  induction n as [| n' IHn]; intros Σ T1 T2 a1 b1 a2 b2 Hrel.
+  - simpl. trivial.
+  - simpl in Hrel.
+    destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' Hrat]]]]].
+    simpl in Hrat.
+    destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
+    injection Heq1 as Ha1eq Hb1eq. subst.
+    injection Heq2 as Ha2eq Hb2eq. subst.
+    apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
+    apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
+    assert (Hcl2 : closed_expr y1).
+    { intros y Hfree. apply (Hcl y). simpl. right. exact Hfree. }
+    assert (Hcl2' : closed_expr y2).
+    { intros y Hfree. apply (Hcl' y). simpl. right. exact Hfree. }
+    simpl. split.
+    + apply (IHn Σ T1 T2 x1 y1 x2 y2 Hcum).
+    + repeat split; try assumption.
+Qed.
+
+(** Extract val_rel_at_type from product decomposition (for any type) *)
+Lemma val_rel_n_prod_fst_at : forall n Σ T1 T2 v1 v2 v1' v2',
+  val_rel_n (S n) Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') ->
+  value v1 /\ value v1' /\ closed_expr v1 /\ closed_expr v1' /\
+  val_rel_at_type Σ (store_rel_n n Σ) (val_rel_n n Σ) (store_rel_n n) T1 v1 v1'.
+Proof.
+  intros n Σ T1 T2 v1 v2 v1' v2' Hrel.
+  simpl in Hrel.
+  destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' Hrat]]]]].
+  apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
+  apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
+  assert (Hcl1 : closed_expr v1).
+  { intros y Hfree. apply (Hcl y). simpl. left. exact Hfree. }
+  assert (Hcl1' : closed_expr v1').
+  { intros y Hfree. apply (Hcl' y). simpl. left. exact Hfree. }
+  simpl in Hrat.
+  destruct Hrat as [w1 [w2 [w1' [w2' [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+  injection Heq1 as Hv1eq Hv2eq. subst.
+  injection Heq2 as Hv1'eq Hv2'eq. subst.
+  repeat split; assumption.
+Qed.
+
+Lemma val_rel_n_prod_snd_at : forall n Σ T1 T2 v1 v2 v1' v2',
+  val_rel_n (S n) Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') ->
+  value v2 /\ value v2' /\ closed_expr v2 /\ closed_expr v2' /\
+  val_rel_at_type Σ (store_rel_n n Σ) (val_rel_n n Σ) (store_rel_n n) T2 v2 v2'.
+Proof.
+  intros n Σ T1 T2 v1 v2 v1' v2' Hrel.
+  simpl in Hrel.
+  destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' Hrat]]]]].
+  apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
+  apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
+  assert (Hcl2 : closed_expr v2).
+  { intros y Hfree. apply (Hcl y). simpl. right. exact Hfree. }
+  assert (Hcl2' : closed_expr v2').
+  { intros y Hfree. apply (Hcl' y). simpl. right. exact Hfree. }
+  simpl in Hrat.
+  destruct Hrat as [w1 [w2 [w1' [w2' [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+  injection Heq1 as Hv1eq Hv2eq. subst.
+  injection Heq2 as Hv1'eq Hv2'eq. subst.
+  repeat split; assumption.
+Qed.
+
 (** Helper: closed_expr for closed value constructors *)
 Lemma closed_expr_unit : closed_expr EUnit.
 Proof. intros y Hfree. simpl in Hfree. contradiction. Qed.
@@ -1714,50 +1846,114 @@ Proof.
              By store monotonicity (Σ' ⊆ Σ''):
              - val_rel_n n' Σ'' T1 v1 v1'
 
-             Then construct the product at Σ''. *)
-          assert (Hval1_Σ'' : val_rel_n n' Σ'' T1 v1 v1').
-          { apply (val_rel_n_mono_store n' Σ' Σ'' T1 v1 v1' Hext2 Hval1). }
-          destruct n' as [| n''].
-          - simpl. trivial.
-          - simpl. split.
-            + (* Cumulative part - use val_rel_n_mono *)
-              apply (val_rel_n_mono (S n'') n'' Σ'' (TProd T1 T2) (EPair v1 v2) (EPair v1' v2')).
-              * lia.
-              * simpl. split.
-                { (* Cumulative at n'' - recursive - admit for now *)
-                  admit. }
-                { repeat split; try (constructor; assumption).
-                  - intros y Hfree. simpl in Hfree.
-                    destruct Hfree as [Hfree | Hfree].
-                    + admit. (* closedness from val_rel *)
-                    + admit.
-                  - intros y Hfree. simpl in Hfree.
-                    destruct Hfree as [Hfree | Hfree].
-                    + admit.
-                    + admit.
-                  - simpl. exists v1, v2, v1', v2'.
-                    admit. }
-            + (* Main step at S n'' *)
-              repeat split; try (constructor; assumption).
-              * intros y Hfree. simpl in Hfree.
-                destruct Hfree as [Hfree | Hfree].
-                { admit. }
-                { admit. }
-              * intros y Hfree. simpl in Hfree.
-                destruct Hfree as [Hfree | Hfree].
-                { admit. }
-                { admit. }
-              * simpl. exists v1, v2, v1', v2'.
-                repeat split; try reflexivity.
-                { admit. }
-                { admit. } }
+             Then use val_rel_n_prod_compose. *)
+          apply val_rel_n_prod_compose.
+          - apply (val_rel_n_mono_store n' Σ' Σ'' T1 v1 v1' Hext2 Hval1).
+          - exact Hval2. }
         { exact Hstore2. }
 
   - (* T_Fst *)
-    admit.
+    (* e : TProd T1 T2 by typing. EFst e : T1. *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Run the product expression using IH *)
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* v and v' are related products at type TProd T1 T2 *)
+
+      (* Step 2: Extract the product structure.
+         We need to show v = EPair a1 b1 and v' = EPair a2 b2.
+         Use val_rel_n_prod_decompose.
+         Note: For n' = 0, val_rel_n is trivial. We need n' > 0 to decompose.
+         But exp_rel gives us the value info, and by IH at level S n',
+         we should have enough structure. Let's require n' > 0 in decompose
+         and handle n' = 0 specially. *)
+      destruct n' as [| n''].
+      { (* n' = 0: At level 1, we evaluate but val_rel at level 0 is trivial.
+           The result type relation is also at level 0, which is True.
+           We need value witnesses. Use typing canonicity: well-typed
+           product values are pairs. For now, admit this degenerate case. *)
+        admit. }
+      (* n' = S n'': use the structure *)
+      (* From Hval : val_rel_n (S n'') Σ' (TProd T1 T2) v v', extract pair structure *)
+      destruct (val_rel_n_prod_decompose (S n'') Σ' T1 T2 v v')
+        as [a1 [b1 [a2 [b2 [Heqv [Heqv' [Hva1 [Hvb1 [Hva2 [Hvb2
+            [Hcla1 [Hclb1 [Hcla2 [Hclb2 [Hrat1 Hrat2]]]]]]]]]]]]]]].
+      { lia. }
+      { exact Hval. }
+      subst v v'.
+      (* Now: v = EPair a1 b1, v' = EPair a2 b2 *)
+
+      (* Step 3: EFst (EPair a1 b1) --> a1 *)
+      exists a1, a2, st1', st2', ctx', Σ'.
+      split; [exact Hext |].
+      split.
+      { (* EFst (subst_rho rho1 e) -->* a1 *)
+        apply multi_step_trans with (cfg2 := (EFst (EPair a1 b1), st1', ctx')).
+        - apply multi_step_fst. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_Fst; assumption.
+          + apply MS_Refl. }
+      split.
+      { (* EFst (subst_rho rho2 e) -->* a2 *)
+        apply multi_step_trans with (cfg2 := (EFst (EPair a2 b2), st2', ctx')).
+        - apply multi_step_fst. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_Fst; assumption.
+          + apply MS_Refl. }
+      split; [exact Hva1 |].
+      split; [exact Hva2 |].
+      split.
+      { (* val_rel_n (S n'') Σ' T1 a1 a2 *)
+        apply (val_rel_n_from_prod_fst (S n'') Σ' T1 T2 a1 b1 a2 b2 Hval). }
+      { exact Hstore'. }
 
   - (* T_Snd *)
-    admit.
+    (* e : TProd T1 T2 by typing. ESnd e : T2. *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      destruct n' as [| n''].
+      { (* n' = 0: degenerate case - admit for now *)
+        admit. }
+      (* n' = S n'': use the structure *)
+      destruct (val_rel_n_prod_decompose (S n'') Σ' T1 T2 v v')
+        as [a1 [b1 [a2 [b2 [Heqv [Heqv' [Hva1 [Hvb1 [Hva2 [Hvb2
+            [Hcla1 [Hclb1 [Hcla2 [Hclb2 [Hrat1 Hrat2]]]]]]]]]]]]]]].
+      { lia. }
+      { exact Hval. }
+      subst v v'.
+      (* Now: v = EPair a1 b1, v' = EPair a2 b2 *)
+
+      (* ESnd (EPair a1 b1) --> b1 *)
+      exists b1, b2, st1', st2', ctx', Σ'.
+      split; [exact Hext |].
+      split.
+      { apply multi_step_trans with (cfg2 := (ESnd (EPair a1 b1), st1', ctx')).
+        - apply multi_step_snd. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_Snd; assumption.
+          + apply MS_Refl. }
+      split.
+      { apply multi_step_trans with (cfg2 := (ESnd (EPair a2 b2), st2', ctx')).
+        - apply multi_step_snd. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_Snd; assumption.
+          + apply MS_Refl. }
+      split; [exact Hvb1 |].
+      split; [exact Hvb2 |].
+      split.
+      { apply (val_rel_n_from_prod_snd (S n'') Σ' T1 T2 a1 b1 a2 b2 Hval). }
+      { exact Hstore'. }
 
   - (* T_Inl *)
     admit.
