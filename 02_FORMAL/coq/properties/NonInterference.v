@@ -1576,6 +1576,47 @@ Proof.
     + repeat split; try assumption.
 Qed.
 
+(** Construct val_rel_n for sum types from components *)
+Lemma val_rel_n_sum_inl : forall n Σ T1 T2 v1 v2,
+  val_rel_n n Σ T1 v1 v2 ->
+  val_rel_n n Σ (TSum T1 T2) (EInl v1 T2) (EInl v2 T2).
+Proof.
+  induction n as [| n' IHn]; intros Σ T1 T2 v1 v2 Hrel.
+  - simpl. trivial.
+  - simpl in Hrel.
+    destruct Hrel as [Hcum [Hvalv1 [Hvalv2 [Hclv1 [Hclv2 Hrat]]]]].
+    simpl. split.
+    + apply IHn. exact Hcum.
+    + split; [constructor; assumption |].
+      split; [constructor; assumption |].
+      split.
+      { intros y Hfree. simpl in Hfree. apply (Hclv1 y). exact Hfree. }
+      split.
+      { intros y Hfree. simpl in Hfree. apply (Hclv2 y). exact Hfree. }
+      simpl. left. exists v1, v2.
+      repeat split; try reflexivity; assumption.
+Qed.
+
+Lemma val_rel_n_sum_inr : forall n Σ T1 T2 v1 v2,
+  val_rel_n n Σ T2 v1 v2 ->
+  val_rel_n n Σ (TSum T1 T2) (EInr v1 T1) (EInr v2 T1).
+Proof.
+  induction n as [| n' IHn]; intros Σ T1 T2 v1 v2 Hrel.
+  - simpl. trivial.
+  - simpl in Hrel.
+    destruct Hrel as [Hcum [Hvalv1 [Hvalv2 [Hclv1 [Hclv2 Hrat]]]]].
+    simpl. split.
+    + apply IHn. exact Hcum.
+    + split; [constructor; assumption |].
+      split; [constructor; assumption |].
+      split.
+      { intros y Hfree. simpl in Hfree. apply (Hclv1 y). exact Hfree. }
+      split.
+      { intros y Hfree. simpl in Hfree. apply (Hclv2 y). exact Hfree. }
+      simpl. right. exists v1, v2.
+      repeat split; try reflexivity; assumption.
+Qed.
+
 (** Extract val_rel_at_type from product decomposition (for any type) *)
 Lemma val_rel_n_prod_fst_at : forall n Σ T1 T2 v1 v2 v1' v2',
   val_rel_n (S n) Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') ->
@@ -1956,10 +1997,50 @@ Proof.
       { exact Hstore'. }
 
   - (* T_Inl *)
-    admit.
+    (* e : T1 by typing. EInl e T2 : TSum T1 T2. *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* Construct EInl v T2 *)
+      exists (EInl v T2), (EInl v' T2), st1', st2', ctx', Σ'.
+      split; [exact Hext |].
+      split.
+      { (* EInl (subst_rho rho1 e) T2 -->* EInl v T2 *)
+        apply multi_step_inl. exact Hstep. }
+      split.
+      { apply multi_step_inl. exact Hstep'. }
+      split; [constructor; assumption |].
+      split; [constructor; assumption |].
+      split.
+      { apply val_rel_n_sum_inl. exact Hval. }
+      { exact Hstore'. }
 
   - (* T_Inr *)
-    admit.
+    (* e : T2 by typing. EInr e T1 : TSum T1 T2. *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      exists (EInr v T1), (EInr v' T1), st1', st2', ctx', Σ'.
+      split; [exact Hext |].
+      split.
+      { apply multi_step_inr. exact Hstep. }
+      split.
+      { apply multi_step_inr. exact Hstep'. }
+      split; [constructor; assumption |].
+      split; [constructor; assumption |].
+      split.
+      { apply val_rel_n_sum_inr. exact Hval. }
+      { exact Hstore'. }
 
   - (* T_Case *)
     admit.
