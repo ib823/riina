@@ -1506,6 +1506,32 @@ Proof.
       apply Hrat.
 Qed.
 
+(** For first-order types, convert val_rel_at_type to val_rel.
+    This combines the axioms for extracting value/closed with
+    val_rel_n_of_first_order and val_rel_n_to_val_rel. *)
+Lemma val_rel_at_type_to_val_rel_fo : forall Σ sp vl sl T v1 v2,
+  first_order_type T = true ->
+  val_rel_at_type Σ sp vl sl T v1 v2 ->
+  val_rel Σ T v1 v2.
+Proof.
+  intros Σ sp vl sl T v1 v2 Hfo Hrat.
+  (* Extract value and closed from val_rel_at_type *)
+  assert (Hval1 : value v1).
+  { apply (val_rel_at_type_value_left T Σ sp vl sl v1 v2 Hfo Hrat). }
+  assert (Hval2 : value v2).
+  { apply (val_rel_at_type_value_right T Σ sp vl sl v1 v2 Hfo Hrat). }
+  assert (Hcl1 : closed_expr v1).
+  { apply (val_rel_at_type_closed_left T Σ sp vl sl v1 v2 Hfo Hrat). }
+  assert (Hcl2 : closed_expr v2).
+  { apply (val_rel_at_type_closed_right T Σ sp vl sl v1 v2 Hfo Hrat). }
+  (* Use val_rel_n_to_val_rel *)
+  apply val_rel_n_to_val_rel; try assumption.
+  exists 0.
+  apply val_rel_n_of_first_order; try assumption.
+  intros sp' vl' sl'.
+  apply (val_rel_at_type_first_order T Σ v1 v2 sp sp' vl vl' sl sl' Hfo Hrat).
+Qed.
+
 Lemma val_rel_n_prod_fst : forall n Σ T1 T2 v1 v2,
   first_order_type T1 = true ->
   n > 0 ->
@@ -2054,14 +2080,85 @@ Proof.
       simpl.
       (* Need to show: for all related args, applying lambdas produces related results *)
       intros arg1 arg2 Hargs st1 st2 ctx Hstore_rel.
-      (* To use IHHty, we need env_rel for extended context and then specialize *)
-      (* This is complex because val_rel_at_type is at step n', not n *)
-      (* The IH gives us exp_rel which works at all step indices *)
-      (* We need to build env_rel at extended context using the argument relation *)
-      (* But Hargs is val_rel_at_type, not val_rel_n - need to convert *)
-      (* This is where the step-indexed structure gets complex *)
-      (* For now, admit this *)
-      admit.
+
+      (* For first-order T1, we can convert val_rel_at_type to val_rel.
+         For higher-order T1, this is more complex - we admit that case. *)
+      destruct (first_order_type T1) eqn:HfoT1.
+      2: { (* Higher-order T1 - complex, admit for now *)
+           admit. }
+
+      (* T1 is first-order, use val_rel_at_type_to_val_rel_fo *)
+      assert (Harg_rel : val_rel Σ T1 arg1 arg2).
+      { apply (val_rel_at_type_to_val_rel_fo Σ (store_rel_n n' Σ) (val_rel_n n' Σ)
+                (store_rel_n n') T1 arg1 arg2 HfoT1 Hargs). }
+
+      (* Get value and closed for args *)
+      assert (Hval_arg1 : value arg1).
+      { apply (val_rel_at_type_value_left T1 Σ _ _ _ arg1 arg2 HfoT1 Hargs). }
+      assert (Hval_arg2 : value arg2).
+      { apply (val_rel_at_type_value_right T1 Σ _ _ _ arg1 arg2 HfoT1 Hargs). }
+      assert (Hcl_arg1 : closed_expr arg1).
+      { apply (val_rel_at_type_closed_left T1 Σ _ _ _ arg1 arg2 HfoT1 Hargs). }
+      assert (Hcl_arg2 : closed_expr arg2).
+      { apply (val_rel_at_type_closed_right T1 Σ _ _ _ arg1 arg2 HfoT1 Hargs). }
+
+      (* Build extended environment relation *)
+      assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x arg1) (rho_extend rho2 x arg2)).
+      { apply env_rel_extend. exact Henv. exact Harg_rel. }
+
+      (* Build extended rho_no_free_all *)
+      assert (Hno1' : rho_no_free_all (rho_extend rho1 x arg1)).
+      { apply rho_no_free_extend; assumption. }
+      assert (Hno2' : rho_no_free_all (rho_extend rho2 x arg2)).
+      { apply rho_no_free_extend; assumption. }
+
+      (* Apply IHHty for the body with extended environment *)
+      specialize (IHHty (rho_extend rho1 x arg1) (rho_extend rho2 x arg2) Henv' Hno1' Hno2') as Hbody_rel.
+
+      (* Hbody_rel : exp_rel Σ T2 (subst_rho (rho_extend rho1 x arg1) e)
+                                  (subst_rho (rho_extend rho2 x arg2) e) *)
+      unfold exp_rel in Hbody_rel.
+
+      (* Use subst_rho_extend to connect the substitutions *)
+      assert (Hsubst1 : [x := arg1] (subst_rho (rho_shadow rho1 x) e) =
+                        subst_rho (rho_extend rho1 x arg1) e).
+      { apply subst_rho_extend. exact Hno1. }
+      assert (Hsubst2 : [x := arg2] (subst_rho (rho_shadow rho2 x) e) =
+                        subst_rho (rho_extend rho2 x arg2) e).
+      { apply subst_rho_extend. exact Hno2. }
+
+      (* Now use exp_rel at step n'+1 with stores st1, st2 *)
+      assert (Hext_refl : store_ty_extends Σ Σ).
+      { unfold store_ty_extends. intros. exact H. }
+
+      specialize (Hbody_rel (S n') Σ st1 st2 ctx Hext_refl Hstore_rel) as
+        [v1 [v2 [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval Hstore']]]]]]]]]]]].
+
+      (* Now construct the result *)
+      exists v1, v2, st1', st2', ctx', Σ'.
+      split.
+      { (* store_ty_extends Σ Σ' *) exact Hext. }
+      split.
+      { (* (EApp lam1 arg1, st1, ctx) -->* (v1, st1', ctx') *)
+        (* Beta reduction: EApp (ELam x T1 body) arg --> [x := arg] body *)
+        apply multi_step_trans with (cfg2 := ([x := arg1] (subst_rho (rho_shadow rho1 x) e), st1, ctx)).
+        - apply MS_Step with (cfg2 := ([x := arg1] (subst_rho (rho_shadow rho1 x) e), st1, ctx)).
+          + apply ST_AppAbs. exact Hval_arg1.
+          + apply MS_Refl.
+        - rewrite Hsubst1. exact Hstep1. }
+      split.
+      { (* Similar for second lambda *)
+        apply multi_step_trans with (cfg2 := ([x := arg2] (subst_rho (rho_shadow rho2 x) e), st2, ctx)).
+        - apply MS_Step with (cfg2 := ([x := arg2] (subst_rho (rho_shadow rho2 x) e), st2, ctx)).
+          + apply ST_AppAbs. exact Hval_arg2.
+          + apply MS_Refl.
+        - rewrite Hsubst2. exact Hstep2. }
+      split.
+      { (* val_rel_n n' Σ T2 v1 v2 - use weaken from Σ' to Σ *)
+        (* val_rel_lower T2 = val_rel_n n' Σ (at original Σ, not Σ') *)
+        apply (val_rel_n_weaken n' Σ Σ' T2 v1 v2 Hext Hval). }
+      { (* store_rel_n n' Σ' st1' st2' - this is store_rel_lower Σ' *)
+        exact Hstore'. }
 
   - (* T_App - function application *)
     (* Requires IH on function and argument, then composition *)
