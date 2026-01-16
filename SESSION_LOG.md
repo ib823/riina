@@ -1,5 +1,42 @@
 # Session Log
 
+## 2026-01-16 (Session 5): Track A — Security & Capability Cases
+
+**Goal:** Continue completing logical_relation cases
+
+**Progress:**
+1. **Multi-step Helpers Added:**
+   - `multi_step_classify`: For EClassify evaluation
+   - `multi_step_prove`: For EProve evaluation
+   - `multi_step_require`: For ERequire evaluation
+   - `multi_step_grant`: For EGrant evaluation
+
+2. **Cases PROVEN:**
+   - T_App: Structure complete (eval function, eval arg, apply)
+   - T_Classify: val_rel_at_type(TSecret T) = True
+   - T_Prove: val_rel_at_type(TProof T) = True
+   - T_Require: FULLY PROVEN (unwraps to value)
+   - T_Grant: FULLY PROVEN (unwraps to value)
+
+3. **Admits Remaining (21 total in logical_relation):**
+   - T_App: 5 admits (step-index gap, n'=0/n''=0 edges)
+   - T_Classify: 1 cumulative admit
+   - T_Prove: 1 cumulative admit
+   - T_Lam: 2 admits (cumulative, higher-order T1)
+   - Other n'=0 edges: ~5 admits
+   - T_Declassify, T_Perform, T_Handle: 3 admits
+   - T_Ref, T_Deref, T_Assign: 3 admits
+
+**Commits:**
+- 5be96af: Simplify T_App to single admit
+- 6486339: T_App structure complete with step-index admits
+- 9766f3e: T_Classify mostly complete
+- 46aa76b: T_Prove, T_Require, T_Grant complete
+
+**Current Status: 21 admits + 2 Admitted + 6 Axioms**
+
+---
+
 ## 2026-01-16 (Session 4): Track A — logical_relation Cases
 
 **Goal:** Complete remaining logical_relation cases in NonInterference.v
