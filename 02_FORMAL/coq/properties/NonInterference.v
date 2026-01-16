@@ -996,24 +996,48 @@ Proof.
   exact (conj Hc1 Hc2).
 Qed.
 
-(** Direct closedness axiom for lambda case:
-    When z is free in the lambda body e, and we're proving closed_expr for the
-    substituted lambda, the case z = y (where y is the allegedly free variable
-    in rho z) leads to False because env_rel ensures rho y is closed.
-    This axiom directly captures: if y is free in rho1 y, that's a contradiction
-    when rho1 comes from a valid env_rel context.
-*)
-Axiom lam_closedness_contradiction : forall Σ Γ rho1 rho2 y,
-  env_rel Σ Γ rho1 rho2 ->
-  rho_no_free_all rho1 ->
-  rho_no_free_all rho2 ->
-  free_in y (rho1 y) -> False.
+(** Closedness lemma for lambda case — PROVEN (was axiom)
 
-Axiom lam_closedness_contradiction2 : forall Σ Γ rho1 rho2 y,
+    MATHEMATICAL JUSTIFICATION:
+    When y is in the type environment Γ, env_rel guarantees that
+    rho1 y and rho2 y are values related by val_rel. At step index > 0,
+    val_rel includes the requirement that both values are closed expressions.
+    Therefore, free_in y (rho1 y) leads to contradiction with closed_expr.
+
+    PROOF STRATEGY:
+    1. lookup y Γ = Some T  (premise: y is in context)
+    2. env_rel → val_rel_n 1 → closed_expr (by env_rel_rho_closed)
+    3. closed_expr (rho1 y) means forall z, ~ free_in z (rho1 y)
+    4. In particular, ~ free_in y (rho1 y)
+    5. Contradiction with free_in y (rho1 y)
+
+    NOTE: This lemma requires the lookup premise because env_rel only
+    constrains variables IN the context. For y ∉ Γ, rho1 y could be anything.
+*)
+Lemma lam_closedness_contradiction : forall Σ Γ rho1 rho2 y T,
+  lookup y Γ = Some T ->
   env_rel Σ Γ rho1 rho2 ->
-  rho_no_free_all rho1 ->
-  rho_no_free_all rho2 ->
+  free_in y (rho1 y) -> False.
+Proof.
+  intros Σ Γ rho1 rho2 y T Hlook Henv Hfree.
+  (* By env_rel_rho_closed, if y ∈ Γ, then rho1 y is closed *)
+  destruct (env_rel_rho_closed Σ Γ rho1 rho2 y T Henv Hlook) as [Hclosed _].
+  (* closed_expr (rho1 y) means forall z, ~ free_in z (rho1 y) *)
+  (* Apply with z := y to get ~ free_in y (rho1 y) *)
+  apply (Hclosed y Hfree).
+Qed.
+
+Lemma lam_closedness_contradiction2 : forall Σ Γ rho1 rho2 y T,
+  lookup y Γ = Some T ->
+  env_rel Σ Γ rho1 rho2 ->
   free_in y (rho2 y) -> False.
+Proof.
+  intros Σ Γ rho1 rho2 y T Hlook Henv Hfree.
+  (* By env_rel_rho_closed, if y ∈ Γ, then rho2 y is closed *)
+  destruct (env_rel_rho_closed Σ Γ rho1 rho2 y T Henv Hlook) as [_ Hclosed].
+  (* closed_expr (rho2 y) means forall z, ~ free_in z (rho2 y) *)
+  apply (Hclosed y Hfree).
+Qed.
 
 Definition rho_single (x : ident) (v : expr) : ident -> expr :=
   fun y => if String.eqb y x then v else EVar y.
@@ -2451,9 +2475,18 @@ Proof.
           apply String.eqb_neq in Heqzx.
           (* Use classical decidability: either z = y or z <> y *)
           destruct (String.eqb z y) eqn:Heqzy.
-          + (* z = y: y is free in rho1 y - use lam_closedness_contradiction *)
+          + (* z = y: y is free in rho1 y - derive lookup and use proven lemma *)
             apply String.eqb_eq in Heqzy. subst z.
-            exfalso. apply (lam_closedness_contradiction Σ Γ rho1 rho2 y Henv Hno1 Hno2 Hfree_y_rhoz).
+            (* Hfree_z : free_in y e where e is typed under ((x, T1) :: Γ)
+               Since y ≠ x (Heqzx), by free_in_context: lookup y Γ = Some Ty *)
+            assert (HlookG : exists Ty, lookup y Γ = Some Ty).
+            { destruct (free_in_context y e ((x, T1) :: Γ) Σ Δ T2 ε Hfree_z Hty) as [Ty Hlook'].
+              simpl in Hlook'.
+              (* Convert y <> x back to String.eqb y x = false for rewriting *)
+              assert (Heqyx_bool : String.eqb y x = false) by (apply String.eqb_neq; exact Heqzx).
+              rewrite Heqyx_bool in Hlook'. exists Ty. exact Hlook'. }
+            destruct HlookG as [Ty HlookG].
+            exfalso. apply (lam_closedness_contradiction Σ Γ rho1 rho2 y Ty HlookG Henv Hfree_y_rhoz).
           + (* z <> y: apply Hno1 *)
             apply String.eqb_neq in Heqzy.
             apply (Hno1 y z Heqzy Hfree_y_rhoz). }
@@ -2469,9 +2502,18 @@ Proof.
           exfalso. apply Hneq. reflexivity.
         - apply String.eqb_neq in Heqzx.
           destruct (String.eqb z y) eqn:Heqzy.
-          + (* z = y: y is free in rho2 y - use lam_closedness_contradiction2 *)
+          + (* z = y: y is free in rho2 y - derive lookup and use proven lemma *)
             apply String.eqb_eq in Heqzy. subst z.
-            exfalso. apply (lam_closedness_contradiction2 Σ Γ rho1 rho2 y Henv Hno1 Hno2 Hfree_y_rhoz).
+            (* Hfree_z : free_in y e where e is typed under ((x, T1) :: Γ)
+               Since y ≠ x (Heqzx), by free_in_context: lookup y Γ = Some Ty *)
+            assert (HlookG : exists Ty, lookup y Γ = Some Ty).
+            { destruct (free_in_context y e ((x, T1) :: Γ) Σ Δ T2 ε Hfree_z Hty) as [Ty Hlook'].
+              simpl in Hlook'.
+              (* Convert y <> x back to String.eqb y x = false for rewriting *)
+              assert (Heqyx_bool : String.eqb y x = false) by (apply String.eqb_neq; exact Heqzx).
+              rewrite Heqyx_bool in Hlook'. exists Ty. exact Hlook'. }
+            destruct HlookG as [Ty HlookG].
+            exfalso. apply (lam_closedness_contradiction2 Σ Γ rho1 rho2 y Ty HlookG Henv Hfree_y_rhoz).
           + apply String.eqb_neq in Heqzy.
             apply (Hno2 y z Heqzy Hfree_y_rhoz). }
       (* val_rel_at_type (TFn T1 T2 ε) for the two lambdas *)
