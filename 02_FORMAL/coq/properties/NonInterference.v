@@ -982,15 +982,26 @@ Axiom logical_relation_declassify : forall Γ Σ Δ e T ε p rho1 rho2 n,
   rho_no_free_all rho2 ->
   exp_rel_n n Σ T (subst_rho rho1 (EDeclassify e p)) (subst_rho rho2 (EDeclassify e p)).
 
-(** Environment closedness axiom:
+(** Lemma: env_rel implies closed expressions for mapped variables.
     Environment substitutions map free variables to closed values.
     This follows from env_rel requiring val_rel for each mapping,
     and val_rel at step > 0 implying closed_expr.
 *)
-Axiom env_rel_rho_closed : forall Σ Γ rho1 rho2 x T,
+Lemma env_rel_rho_closed : forall Σ Γ rho1 rho2 x T,
   env_rel Σ Γ rho1 rho2 ->
   lookup x Γ = Some T ->
   closed_expr (rho1 x) /\ closed_expr (rho2 x).
+Proof.
+  intros Σ Γ rho1 rho2 x T Henv Hlookup.
+  (* env_rel means forall n, env_rel_n n Σ Γ rho1 rho2 *)
+  (* env_rel_n n means forall x T, lookup x Γ = Some T -> val_rel_n n Σ T (rho1 x) (rho2 x) *)
+  specialize (Henv 1). unfold env_rel_n in Henv.
+  specialize (Henv x T Hlookup).
+  (* Now have: val_rel_n 1 Σ T (rho1 x) (rho2 x) *)
+  simpl in Henv.
+  destruct Henv as [_ [_ [_ [Hc1 [Hc2 _]]]]].
+  exact (conj Hc1 Hc2).
+Qed.
 
 (** Direct closedness axiom for lambda case:
     When z is free in the lambda body e, and we're proving closed_expr for the
@@ -3451,15 +3462,42 @@ Qed.
 
 (** non_interference_stmt follows from logical_relation *)
 
-(** Axiom: env_rel for single binding *)
-Axiom env_rel_single : forall Σ x T v1 v2,
+(** Lemma: env_rel for single binding *)
+Lemma env_rel_single : forall Σ x T v1 v2,
   val_rel Σ T v1 v2 ->
   env_rel Σ ((x, T) :: nil) (rho_single x v1) (rho_single x v2).
+Proof.
+  intros Σ x T v1 v2 Hval.
+  unfold env_rel. intros n.
+  unfold env_rel_n. intros y T' Hlookup.
+  (* Analyze lookup in singleton environment *)
+  simpl in Hlookup.
+  destruct (String.eqb y x) eqn:Heq.
+  - (* y = x, so T' = T *)
+    injection Hlookup as HT. subst T'.
+    (* Need val_rel_n n Σ T (rho_single x v1 y) (rho_single x v2 y) *)
+    unfold rho_single.
+    rewrite Heq. (* String.eqb y x = true, so rho_single x vi y = vi *)
+    (* Goal: val_rel_n n Σ T v1 v2 — follows from Hval *)
+    apply Hval.
+  - (* y <> x, lookup fails — contradiction *)
+    discriminate Hlookup.
+Qed.
 
-(** Axiom: val_rel implies closed expressions *)
-Axiom val_rel_closed : forall Σ T v1 v2,
+(** Lemma: val_rel implies closed expressions *)
+Lemma val_rel_closed : forall Σ T v1 v2,
   val_rel Σ T v1 v2 ->
   closed_expr v1 /\ closed_expr v2.
+Proof.
+  intros Σ T v1 v2 Hval.
+  (* val_rel means forall n, val_rel_n n Σ T v1 v2 *)
+  (* Instantiate with n = 1 to get the closed_expr requirements *)
+  specialize (Hval 1).
+  simpl in Hval.
+  (* At S 0: val_rel_n 0 /\ value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\ ... *)
+  destruct Hval as [_ [_ [_ [Hc1 [Hc2 _]]]]].
+  exact (conj Hc1 Hc2).
+Qed.
 
 Theorem non_interference_stmt : forall x T_in T_out v1 v2 e,
   val_rel nil T_in v1 v2 ->
