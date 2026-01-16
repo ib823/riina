@@ -202,9 +202,9 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
             // In a real system, 'eff' would have a signature.
             Ok((te, eff_e.join(*eff))) 
         },
-        Expr::Handle(e, x, h) => {
-             let (t_e, eff_e) = type_check(ctx, e)?;
-             // Handle conceptually catches effects. 
+        Expr::Handle(e, _x, h) => {
+             let (_t_e, _eff_e) = type_check(ctx, e)?;
+             // Handle conceptually catches effects.
              // In full calculus, we need effect signatures.
              // Here we approximate: handler 'h' handles 'e'.
              // 'h' typically takes the effect payload or resumption.
@@ -263,7 +263,7 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
              let (t, e_eff) = type_check(ctx, e)?;
              Ok((t, e_eff.join(*eff)))
         },
-        Expr::Grant(eff, e) => {
+        Expr::Grant(_eff, e) => {
              // Grant satisfies a requirement?
              let (t, e_eff) = type_check(ctx, e)?;
              Ok((t, e_eff)) // Does it remove the effect from the context?
