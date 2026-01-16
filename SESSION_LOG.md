@@ -1,5 +1,54 @@
 # Session Log
 
+## 2026-01-16 (Session 4): Track A — logical_relation Cases
+
+**Goal:** Complete remaining logical_relation cases in NonInterference.v
+
+**Progress:**
+1. **Helper Lemmas Added:**
+   - `val_rel_n_from_prod_fst/snd`: Extract component relations from products (any type)
+   - `val_rel_n_sum_inl/inr`: Construct sum relations from components
+   - `val_rel_n_bool_eq`: Extract equal booleans from TBool relations
+
+2. **Cases PROVEN:**
+   - T_Fst: Product projection (uses val_rel_n_from_prod_fst)
+   - T_Snd: Product projection (uses val_rel_n_from_prod_snd)
+   - T_Inl: Sum injection left (uses val_rel_n_sum_inl)
+   - T_Inr: Sum injection right (uses val_rel_n_sum_inr)
+   - T_If: Conditional (extracts equal booleans, branches accordingly)
+
+3. **Edge Cases:**
+   - n'=0 cases in T_Fst/T_Snd/T_If admitted (need canonical forms)
+
+**Current Status (19 Admits + 6 Axioms):**
+- NonInterference.v:
+  - `logical_relation`: 17 case admits remaining
+    - T_Lam, T_App (function cases - complex)
+    - T_Case (pattern match - needs sum decomposition)
+    - T_Let (needs substitution lemmas)
+    - T_Perform, T_Handle (effects)
+    - T_Ref, T_Deref, T_Assign (references)
+    - T_Classify, T_Declassify, T_Prove, T_Require, T_Grant (security)
+  - `non_interference_stmt`: Admitted (depends on logical_relation)
+  - Step index monotonicity: Proven ✓
+  - 6 Axioms (documented, semantically justified)
+- Composition.v: 0 Admitted ✓
+- EffectSystem.v: 2 Admitted
+- EffectGate.v: 1 Admitted
+
+**Commits:**
+- eac6d76: T_Fst/T_Snd + extraction lemmas
+- 116ff85: T_Inl/T_Inr + sum construction lemmas
+- 58f0f4b: T_If + bool equality lemma
+
+**Next Steps:**
+1. T_Case (needs sum decomposition lemmas)
+2. T_Let (needs substitution composition lemma)
+3. T_Lam/T_App (fundamental theorem core)
+4. Effect/Reference cases
+
+---
+
 ## 2026-01-16 (Session 3): Track A — Kripke-style Logical Relations
 
 **Goal:** Fix fundamental design issue in exp_rel_n for composition
