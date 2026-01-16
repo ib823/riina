@@ -909,16 +909,9 @@ Definition rho_no_free_all (rho : ident -> expr) : Prop :=
     3. Store typing extensions are preserved through effect handling
 *)
 
-(** T_Perform: Performing an effect preserves relatedness.
-    Semantically: effect operations don't leak secret information
-    because the effect handlers process related inputs identically.
+(** T_Perform: PROVEN INLINE in logical_relation theorem.
+    Proof uses multi_step_perform + ST_PerformValue.
 *)
-Axiom logical_relation_perform : forall Γ Σ Δ e l T ε rho1 rho2 n,
-  has_type Γ Σ Δ e T ε ->
-  env_rel Σ Γ rho1 rho2 ->
-  rho_no_free_all rho1 ->
-  rho_no_free_all rho2 ->
-  exp_rel_n n Σ T (subst_rho rho1 (EPerform l e)) (subst_rho rho2 (EPerform l e)).
 
 (** T_Handle: Effect handlers preserve relatedness.
     Semantically: handlers process related effects identically.
@@ -1710,6 +1703,32 @@ Proof.
   - destruct cfg2 as [[e_mid st_mid] ctx_mid].
     eapply MS_Step.
     + apply ST_GrantStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx' eq_refl eq_refl).
+Qed.
+
+Lemma multi_step_perform : forall eff e e' st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (EPerform eff e, st, ctx) -->* (EPerform eff e', st', ctx').
+Proof.
+  intros eff e e' st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_PerformStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx' eq_refl eq_refl).
+Qed.
+
+Lemma multi_step_handle : forall e e' x h st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (EHandle e x h, st, ctx) -->* (EHandle e' x h, st', ctx').
+Proof.
+  intros e e' x h st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_HandleStep. exact H.
     + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx' eq_refl eq_refl).
 Qed.
 
@@ -3309,8 +3328,35 @@ Proof.
       { exact Hstore''. }
 
   - (* T_Perform *)
-    unfold exp_rel. intro n.
-    eapply logical_relation_perform; eassumption.
+    (* EPerform eff e : T when e : T.
+       After evaluation, EPerform eff v --> v, so result is the same value. *)
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v1 [v2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv2 [Hvrel Hstore1]]]]]]]]]]]].
+      (* Result is v1, v2 (not EPerform eff v, just v) *)
+      exists v1, v2, st1', st2', ctx', Σ'.
+      split. { exact Hext1. }
+      split.
+      { (* EPerform eff (subst_rho rho1 e) -->* v1 *)
+        eapply multi_step_trans.
+        - apply multi_step_perform. exact Hstep1.
+        - eapply MS_Step.
+          + apply ST_PerformValue. exact Hvalv1.
+          + apply MS_Refl. }
+      split.
+      { eapply multi_step_trans.
+        - apply multi_step_perform. exact Hstep1'.
+        - eapply MS_Step.
+          + apply ST_PerformValue. exact Hvalv2.
+          + apply MS_Refl. }
+      split. { exact Hvalv1. }
+      split. { exact Hvalv2. }
+      split. { exact Hvrel. }
+      { exact Hstore1. }
 
   - (* T_Handle *)
     unfold exp_rel. intro n.
