@@ -386,10 +386,10 @@ impl FieldElement {
         // Use the well-known addition chain for (p-2):
         // 1, 2, 3, 4, 5, 10, 20, 40, 50, 100, 200, 250, 255
 
-        let z2 = self.square();           // 2^1
-        let z9 = z2.square().square() * self; // 2^3 * 2^0 = 2^4 - 2^3 + 2^0 = 9
-        let z11 = z9 * z2;                // 11
-        let z2_5_0 = z11.square().square() * z9; // 2^2 * 11 * 9 = 2^5 - 2^0
+        let z2 = self.square();              // x^2
+        let z9 = z2.square().square() * self; // x^8 * x = x^9
+        let z11 = z9 * z2;                   // x^9 * x^2 = x^11
+        let z2_5_0 = z11.square() * z9;      // x^22 * x^9 = x^31 = x^(2^5-1)
 
         let mut t = z2_5_0;
         for _ in 0..5 {
