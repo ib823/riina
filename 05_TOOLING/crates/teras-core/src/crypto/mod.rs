@@ -28,6 +28,9 @@ pub mod hkdf;
 pub mod ghash;
 pub mod gcm;
 
+// Field arithmetic (foundation for elliptic curve cryptography)
+pub mod field25519;
+
 // Post-quantum and classical asymmetric primitives
 pub mod x25519;
 pub mod ed25519;
@@ -35,7 +38,8 @@ pub mod ml_kem;
 pub mod ml_dsa;
 
 // Hybrid schemes (Law 2: ML-KEM-768 + X25519, ML-DSA-65 + Ed25519)
-pub mod hybrid;
+// TODO: Re-enable once ML-KEM and ML-DSA are fully implemented
+// pub mod hybrid;
 
 /// Error type for cryptographic operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
