@@ -22,6 +22,13 @@
 //! - Point encoding/decoding
 //! - Scalar multiplication
 //! - Verification against RFC 8032 test vectors
+//!
+//! # Safety Note
+//!
+//! This module uses `unsafe` for pointer casts in the key pair structure.
+//! All unsafe usage is carefully audited and documented.
+
+#![allow(unsafe_code)] // Required for pointer casts in key structure
 
 use crate::crypto::{CryptoError, CryptoResult, Signature};
 use crate::zeroize::Zeroize;
