@@ -1703,6 +1703,20 @@ Proof.
   - intros sp vl sl. simpl. exists b. split; reflexivity.
 Qed.
 
+(** Extract equal booleans from val_rel_n at TBool *)
+Lemma val_rel_n_bool_eq : forall n Σ v1 v2,
+  n > 0 ->
+  val_rel_n n Σ TBool v1 v2 ->
+  exists b, v1 = EBool b /\ v2 = EBool b.
+Proof.
+  intros n Σ v1 v2 Hn Hrel.
+  destruct n as [| n']; [lia |].
+  simpl in Hrel.
+  destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]].
+  simpl in Hrat.
+  exact Hrat.
+Qed.
+
 Lemma val_rel_int : forall Σ i,
   val_rel Σ TInt (EInt i) (EInt i).
 Proof.
@@ -2046,7 +2060,76 @@ Proof.
     admit.
 
   - (* T_If *)
-    admit.
+    (* e1 : TBool, e2 and e3 : T. (EIf e1 e2 e3) : T. *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.
+    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as He2_rel.
+    specialize (IHHty3 rho1 rho2 Henv Hno1 Hno2) as He3_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Run the condition *)
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* Extract that the booleans are equal *)
+      destruct n' as [| n''].
+      { (* n' = 0: degenerate case *)
+        admit. }
+      destruct (val_rel_n_bool_eq (S n'') Σ' v v') as [b [Heqv Heqv']].
+      { lia. }
+      { exact Hval. }
+      subst v v'.
+      (* Now v = EBool b and v' = EBool b *)
+
+      (* Step 2: Run appropriate branch based on b *)
+      destruct b.
+      * (* b = true: run e2 *)
+        assert (Hext_for_e2 : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext). }
+        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e2 Hstore') as
+          [v2 [v2' [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep2 [Hstep2' [Hvalv2 [Hvalv2' [Hval2 Hstore'']]]]]]]]]]]].
+        exists v2, v2', st1'', st2'', ctx'', Σ''.
+        split; [apply (store_ty_extends_trans Σ_cur Σ' Σ'' Hext Hext2) |].
+        split.
+        { apply multi_step_trans with (cfg2 := (EIf (EBool true) (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
+          - apply multi_step_if. exact Hstep1.
+          - eapply MS_Step.
+            + apply ST_IfTrue.
+            + exact Hstep2. }
+        split.
+        { apply multi_step_trans with (cfg2 := (EIf (EBool true) (subst_rho rho2 e2) (subst_rho rho2 e3), st2', ctx')).
+          - apply multi_step_if. exact Hstep1'.
+          - eapply MS_Step.
+            + apply ST_IfTrue.
+            + exact Hstep2'. }
+        split; [exact Hvalv2 |].
+        split; [exact Hvalv2' |].
+        split; [exact Hval2 |].
+        { exact Hstore''. }
+      * (* b = false: run e3 *)
+        assert (Hext_for_e3 : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext). }
+        specialize (He3_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e3 Hstore') as
+          [v3 [v3' [st1'' [st2'' [ctx'' [Σ'' [Hext3 [Hstep3 [Hstep3' [Hvalv3 [Hvalv3' [Hval3 Hstore'']]]]]]]]]]]].
+        exists v3, v3', st1'', st2'', ctx'', Σ''.
+        split; [apply (store_ty_extends_trans Σ_cur Σ' Σ'' Hext Hext3) |].
+        split.
+        { apply multi_step_trans with (cfg2 := (EIf (EBool false) (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
+          - apply multi_step_if. exact Hstep1.
+          - eapply MS_Step.
+            + apply ST_IfFalse.
+            + exact Hstep3. }
+        split.
+        { apply multi_step_trans with (cfg2 := (EIf (EBool false) (subst_rho rho2 e2) (subst_rho rho2 e3), st2', ctx')).
+          - apply multi_step_if. exact Hstep1'.
+          - eapply MS_Step.
+            + apply ST_IfFalse.
+            + exact Hstep3'. }
+        split; [exact Hvalv3 |].
+        split; [exact Hvalv3' |].
+        split; [exact Hval3 |].
+        { exact Hstore''. }
 
   - (* T_Let *)
     admit.
