@@ -1,8 +1,8 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-15 (RIINA Branding + Bahasa Melayu Syntax)
+## Last Updated: 2026-01-16 (Accurate Admitted count)
 
-## Current Focus: TRACK A EXTENSIONS + TRACK B MAINTENANCE
+## Current Focus: TRACK A — Complete NonInterference.v monotonicity proofs
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -20,9 +20,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**STATUS:** CORE SOUNDNESS & SECURITY PROPERTIES VERIFIED.
-**TRACK A:** CORE COMPLETE (0 ADMITS). Extensions in progress.
-**TRACK B:** OPERATIONAL. Paused pending Track A catch-up.
+**STATUS:** CORE TYPE SAFETY VERIFIED. Extensions have 15 Admitted proofs.
+**TRACK A:** Core (0 ADMITS), Extensions (15 ADMITS). Monotonicity proofs are critical blocker.
+**TRACK B:** OPERATIONAL (compiles with warnings). Paused pending Track A.
 **ZERO-TRUST TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** INITIALIZED & DEFINED.
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
@@ -112,23 +112,33 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 
 ### Track A: Formal Proofs (02_FORMAL/coq/)
 
-#### COMPLETED & VERIFIED (0 ADMITS)
+#### CORE TYPE SAFETY (0 ADMITS)
 
 - [x] `foundations/Syntax.v` — Core syntax with linear effect lattice.
 - [x] `foundations/Semantics.v` — **FULLY PROVEN**. `step_deterministic` proved.
-- [x] `foundations/Typing.v` — **CORE PROVEN**. Extended rules in progress.
+- [x] `foundations/Typing.v` — **FULLY PROVEN**. Core typing rules.
 - [x] `type_system/Progress.v` — **FULLY PROVEN**.
 - [x] `type_system/Preservation.v` — **FULLY PROVEN**.
 - [x] `type_system/TypeSafety.v` — **FULLY PROVEN**.
 - [x] `effects/EffectAlgebra.v` — **FULLY PROVEN**.
-- [x] `properties/NonInterference.v` — **FULLY PROVEN** for pure subset.
 
-#### IN PROGRESS / GAP
+#### EXTENSIONS IN PROGRESS (15 ADMITS)
+
+| File | Admitted | Description |
+|------|----------|-------------|
+| `effects/EffectGate.v` | 1 | Gate effect soundness |
+| `effects/EffectSystem.v` | 2 | Effect preservation/progress |
+| `properties/Composition.v` | 6 | Property composition lemmas (stubs) |
+| `properties/NonInterference.v` | 6 | Step-indexed relation monotonicity, NI for full language |
+
+#### BLOCKERS
 
 | File | Issue | Status |
 |------|-------|--------|
-| `Typing.v` | Extended rules (Ref, Effects, Security) | Proof broken at `T_App` |
-| `NonInterference.v` | Extend to stateful programs | Pending |
+| `NonInterference.v` | `val_rel_n_mono` — step-indexed monotonicity | CRITICAL BLOCKER |
+| `NonInterference.v` | `store_rel_n_mono` — store relation monotonicity | CRITICAL BLOCKER |
+| `NonInterference.v` | `ni_expr_*` lemmas | Blocked by monotonicity |
+| `Composition.v` | All lemmas are stubs | Blocked by NonInterference |
 
 ### Track B: Prototype (03_PROTO/)
 
