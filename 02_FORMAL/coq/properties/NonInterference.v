@@ -657,6 +657,18 @@ Axiom exp_rel_step1_let : forall Σ T v v' x e2 e2' st1 st2 ctx Σ',
     val_rel_n 0 Σ'' T r1 r2 /\
     store_rel_n 0 Σ'' st1' st2'.
 
+Axiom exp_rel_step1_handle : forall Σ T v v' x h h' st1 st2 ctx Σ',
+  value v -> value v' ->
+  store_rel_n 0 Σ' st1 st2 ->
+  store_ty_extends Σ Σ' ->
+  exists r1 r2 st1' st2' ctx' Σ'',
+    store_ty_extends Σ' Σ'' /\
+    (EHandle v x h, st1, ctx) -->* (r1, st1', ctx') /\
+    (EHandle v' x h', st2, ctx) -->* (r2, st2', ctx') /\
+    value r1 /\ value r2 /\
+    val_rel_n 0 Σ'' T r1 r2 /\
+    store_rel_n 0 Σ'' st1' st2'.
+
 Axiom exp_rel_step1_app : forall Σ T2 f f' a a' st1 st2 ctx Σ',
   value f -> value f' -> value a -> value a' ->
   store_rel_n 0 Σ' st1 st2 ->
@@ -913,15 +925,14 @@ Definition rho_no_free_all (rho : ident -> expr) : Prop :=
     Proof uses multi_step_perform + ST_PerformValue.
 *)
 
-(** T_Handle: Effect handlers preserve relatedness.
-    Semantically: handlers process related effects identically.
+(** T_Handle: ELIMINATED — Proof inlined in logical_relation theorem.
+    The proof follows the same pattern as T_Let:
+    1. Evaluate e using IH to get related values v, v'
+    2. Build extended environment for handler h
+    3. Apply substitution lemma (subst_rho_extend) to connect
+       [x := v] (subst_rho (rho_shadow ...) h) with subst_rho (rho_extend ...) h
+    4. Apply IH on h with extended environment
 *)
-Axiom logical_relation_handle : forall Γ Σ e x h T2 rho1 rho2 n,
-  env_rel Σ Γ rho1 rho2 ->
-  rho_no_free_all rho1 ->
-  rho_no_free_all rho2 ->
-  exp_rel_n n Σ T2 (subst_rho rho1 (EHandle e x h))
-                   (subst_rho rho2 (EHandle e x h)).
 
 (** ** Reference Operation Axioms
 
@@ -3401,8 +3412,107 @@ Proof.
       { exact Hstore1. }
 
   - (* T_Handle *)
-    unfold exp_rel. intro n.
-    eapply logical_relation_handle; eassumption.
+    (* e : T1, h : T2 with x:T1 bound — follows T_Let pattern *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    (* h has extended environment, so we can't specialize IHHty2 yet *)
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Evaluate e (the guarded computation) *)
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+
+      destruct n' as [| n''].
+      { (* n' = 0: Use axiom for degenerate step-1 case *)
+        assert (HextΣ : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext). }
+        destruct (exp_rel_step1_handle Σ T2 v v' x
+                   (subst_rho (rho_shadow rho1 x) h)
+                   (subst_rho (rho_shadow rho2 x) h)
+                   st1' st2' ctx' Σ'
+                   Hvalv Hvalv' Hstore' HextΣ)
+          as [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepH1 [HstepH2 [Hvr1 [Hvr2 [Hvrel'' Hstore'']]]]]]]]]]]].
+        exists r1, r2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans Σ_cur Σ' Σ'' Hext Hext''). }
+        split. { apply multi_step_trans with (cfg2 := (EHandle v x (subst_rho (rho_shadow rho1 x) h), st1', ctx')).
+                 - apply multi_step_handle. exact Hstep1.
+                 - exact HstepH1. }
+        split. { apply multi_step_trans with (cfg2 := (EHandle v' x (subst_rho (rho_shadow rho2 x) h), st2', ctx')).
+                 - apply multi_step_handle. exact Hstep1'.
+                 - exact HstepH2. }
+        split; [exact Hvr1 |].
+        split; [exact Hvr2 |].
+        split; [exact Hvrel'' |].
+        exact Hstore''. }
+
+      (* Build extended environment relation at ORIGINAL store typing Σ *)
+      (* Use val_rel_n_to_val_rel and val_rel_n_weaken *)
+      assert (Hval_at_Σ : val_rel Σ T1 v v').
+      { apply val_rel_n_to_val_rel.
+        - exact Hvalv.
+        - exact Hvalv'.
+        - exists n''.
+          apply val_rel_n_weaken with (Σ' := Σ').
+          + apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext).
+          + exact Hval. }
+
+      (* Get closedness from val_rel *)
+      assert (Hclv : closed_expr v).
+      { apply (val_rel_closed_left_n (S n'') Σ' T1 v v'). lia. exact Hval. }
+      assert (Hclv' : closed_expr v').
+      { apply (val_rel_closed_right_n (S n'') Σ' T1 v v'). lia. exact Hval. }
+
+      assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+      { apply env_rel_extend.
+        - exact Henv.
+        - exact Hval_at_Σ. }
+
+      (* Build extended rho_no_free_all *)
+      assert (Hno1' : rho_no_free_all (rho_extend rho1 x v)).
+      { apply rho_no_free_extend; assumption. }
+      assert (Hno2' : rho_no_free_all (rho_extend rho2 x v')).
+      { apply rho_no_free_extend; assumption. }
+
+      (* Apply IH for h *)
+      specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as Hh_rel.
+      unfold exp_rel in Hh_rel.
+
+      (* Substitution lemmas *)
+      assert (Hsubst1 : [x := v] (subst_rho (rho_shadow rho1 x) h) =
+                        subst_rho (rho_extend rho1 x v) h).
+      { apply subst_rho_extend. exact Hno1. }
+      assert (Hsubst2 : [x := v'] (subst_rho (rho_shadow rho2 x) h) =
+                        subst_rho (rho_extend rho2 x v') h).
+      { apply subst_rho_extend. exact Hno2. }
+
+      assert (Hext_for_h : store_ty_extends Σ Σ').
+      { apply (store_ty_extends_trans Σ Σ_cur Σ' Hext_cur Hext). }
+
+      specialize (Hh_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_h Hstore') as
+        [v2 [v2' [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalv2 [Hvalv2' [Hval2 Hstore'']]]]]]]]]]]].
+
+      exists v2, v2', st1'', st2'', ctx'', Σ''.
+      split; [apply (store_ty_extends_trans Σ_cur Σ' Σ'' Hext Hext2) |].
+      split.
+      { (* Multi-step for first execution *)
+        apply multi_step_trans with (cfg2 := (EHandle v x (subst_rho (rho_shadow rho1 x) h), st1', ctx')).
+        - apply multi_step_handle. exact Hstep1.
+        - eapply MS_Step.
+          + apply ST_HandleValue. exact Hvalv.
+          + rewrite Hsubst1. exact Hstep_h. }
+      split.
+      { (* Multi-step for second execution *)
+        apply multi_step_trans with (cfg2 := (EHandle v' x (subst_rho (rho_shadow rho2 x) h), st2', ctx')).
+        - apply multi_step_handle. exact Hstep1'.
+        - eapply MS_Step.
+          + apply ST_HandleValue. exact Hvalv'.
+          + rewrite Hsubst2. exact Hstep_h'. }
+      split; [exact Hvalv2 |].
+      split; [exact Hvalv2' |].
+      split; [exact Hval2 |].
+      exact Hstore''.
 
   - (* T_Ref *)
     unfold exp_rel. intro n.
