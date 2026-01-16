@@ -1,8 +1,8 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-16 (Revolutionary Improvement Roadmap + Phase 0 Crates)
+## Last Updated: 2026-01-16 (P0 Immediate Actions + Bahasa Melayu Lexer)
 
-## Current Focus: TRACK A — Logical relation proofs
+## Current Focus: TRACK A — Axiom elimination | TRACK B — Quality improvements
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -22,7 +22,7 @@
 
 **STATUS:** CORE TYPE SAFETY VERIFIED. Extensions: 0 Admitted + 31 Axioms.
 **TRACK A:** Core (0 ADMITS), Composition (0 ADMITS), NonInterference (0 ADMITS + 31 Axioms), Effects (0 ADMITS) ✓
-**TRACK B:** OPERATIONAL (compiles with warnings). Paused pending Track A.
+**TRACK B:** OPERATIONAL (0 warnings, 53 tests passing). Bahasa Melayu lexer complete.
 **ZERO-TRUST TRACKS (R, S, T, U):** INITIALIZED & DEFINED.
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** INITIALIZED & DEFINED.
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
@@ -66,9 +66,9 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 | Track | Name | Status | Description |
 |-------|------|--------|-------------|
 | A | Formal Proofs | 🟡 CORE DONE | Type safety, non-interference proven for core subset |
-| B | Prototype | ✅ OPERATIONAL | Lexer, Parser, Typechecker, riinac driver working |
+| B | Prototype | ✅ OPERATIONAL | 0 warnings, 53 tests, Bahasa Melayu lexer complete |
 | C | Specifications | ◯ NOT STARTED | Language and API specifications |
-| D | Testing | ◯ NOT STARTED | Test suite and coverage |
+| D | Testing | 🟢 STARTED | 53 tests passing (lexer, parser, typechecker) |
 | E | Hardware | ◯ BLOCKED | Hardware integration (blocked on Track S) |
 | F | Tooling | 🟡 PARTIAL | Symmetric crypto done, asymmetric pending |
 
@@ -163,12 +163,14 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 ### Track B: Prototype (03_PROTO/)
 
 - [x] Workspace structure
-- [x] Lexer implementation (Completed)
+- [x] Lexer implementation (Completed with Bahasa Melayu keywords)
 - [x] Parser (Completed)
 - [x] Typechecker (Completed, unverified rules marked)
 - [x] Integration (riinac) (Completed)
+- [x] **Bahasa Melayu keyword support (COMPLETED 2026-01-16)**
+- [x] **Smoke tests added (53 tests total, 12 in lexer)**
+- [x] **Zero warnings build (all 6 warnings fixed)**
 - [ ] Codegen (Paused pending Track A)
-- [ ] Bahasa Melayu keyword support (Pending)
 
 ### Track F: Tooling (05_TOOLING/)
 
@@ -345,6 +347,33 @@ When all tracks are complete, the following threats become OBSOLETE:
   - Full specification created
 - Updated all references from `terasc` to `riinac`
 - Added language identity section
+
+### 2026-01-16 (P0 Immediate Actions)
+
+- **CRITICAL**: Completed P0 immediate actions from comprehensive codebase assessment
+  - ✅ **Bahasa Melayu lexer implementation**: Added comprehensive keyword support
+    - `fungsi`, `biar`, `kalau`, `pulang`, `rahsia`, `dedah`, `kesan`, `laku`, etc.
+    - Dual-language support: Both English and Bahasa Melayu keywords work
+    - All 40+ Bahasa Melayu keywords from specification implemented
+  - ✅ **Fixed all Rust warnings**: 6 warnings → 0 warnings
+    - Fixed unused variables in typechecker with `_` prefix
+    - Added `#[allow(dead_code)]` annotations with justifications
+    - Clean compilation across all crates
+  - ✅ **Added comprehensive smoke tests**: 0 tests → 53 tests
+    - 12 lexer tests (including 8 new Bahasa Melayu keyword tests)
+    - 12 parser tests (pre-existing)
+    - 6 arena tests, 9 span tests, 6 symbol tests
+    - 5 typechecker tests, 3 doc tests
+    - All tests passing
+  - ⚠️ **Coq installation blocked**: Network DNS issues prevent installation
+    - Unable to verify 7,032 lines of Coq proofs
+    - Installation script ready at `00_SETUP/scripts/install_coq.sh`
+    - Critical blocker for proof verification
+- **Documentation**: Created comprehensive codebase assessment (900+ lines)
+  - Overall grade: B (73%)
+  - Identified 31 axioms in non-interference proof
+  - Documented critical blockers and improvement roadmap
+  - Assessment saved as `CODEBASE_ASSESSMENT_2026-01-16.md`
 
 ### 2026-01-15 (Completeness Tracks)
 
