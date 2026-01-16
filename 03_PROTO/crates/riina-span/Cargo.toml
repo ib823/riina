@@ -1,0 +1,10 @@
+[package]
+name = "riina-span"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA source location tracking with 8-byte packed spans"
+
+# Zero external dependencies (Law 8: No Dependencies)
+[dependencies]

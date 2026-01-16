@@ -1,0 +1,10 @@
+[package]
+name = "riina-arena"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA arena allocator for cache-friendly AST allocation"
+
+# Zero external dependencies (Law 8: No Dependencies)
+[dependencies]
