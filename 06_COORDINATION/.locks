@@ -1,0 +1,14 @@
+# RIINA Improvement Lock File
+# Format: FILE_PATH|WORKER_ID|TIMESTAMP|IMPROVEMENT_ID
+#
+# Rules:
+# - Check this file BEFORE modifying any existing source file
+# - Add your lock entry BEFORE starting work
+# - Remove your entry WHEN work is complete
+# - Locks expire after 4 hours of inactivity
+#
+# Example:
+# 02_FORMAL/coq/properties/NonInterference.v|claude-abc|2026-01-16T10:00:00Z|P1-001
+#
+# Current Locks:
+# (none)
