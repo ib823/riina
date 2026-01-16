@@ -1,6 +1,6 @@
 # Session Log
 
-## 2026-01-16 (Continued): Track A — Monotonicity Proofs Complete
+## 2026-01-16 (Continued): Track A — Fundamental Theorem Progress
 
 **Goal:** Complete all Admitted proofs in NonInterference.v
 
@@ -15,21 +15,35 @@
    - `store_rel_n_weaken`: Documented Axiom (mutual with val_rel_n_weaken)
    - Added `store_ty_extends_trans` helper lemma (proven)
 
-3. **Technical Analysis:**
-   - TFn weakening requires BOTH weakening (result) AND strengthening (argument)
-   - Syntactic proof blocked by contravariance in function argument types
-   - Would require Kripke-style definitions (rejected by Coq termination checker)
-   - Documented as standard axioms per step-indexed LR literature
+3. **Fundamental Theorem Progress:**
+   - Added helper lemmas: `closed_expr_unit/bool/int/string/loc`
+   - Added value relation helpers: `val_rel_unit/bool/int/string/loc`
+   - **logical_relation cases PROVEN:**
+     - T_Unit, T_Bool, T_Int, T_String: Via val_rel helpers
+     - T_Loc: Direct proof with induction
+     - T_Var: Via env_rel and monotonicity
+   - **logical_relation cases ADMITTED (19 remaining):**
+     - T_Lam, T_App (functions)
+     - T_Pair, T_Fst, T_Snd (products)
+     - T_Inl, T_Inr, T_Case (sums)
+     - T_If, T_Let (control)
+     - T_Perform, T_Handle (effects)
+     - T_Ref, T_Deref, T_Assign (references)
+     - T_Classify, T_Declassify, T_Prove, T_Require, T_Grant (security)
 
 **Current Status:**
-- NonInterference.v: 2 Admitted + 4 Axioms (2 monotonicity → Qed, 2 weakening → Axiom)
+- NonInterference.v: 2 Admitted + 2 documented Axioms
+  - Monotonicity: 2 Qed ✓
+  - Weakening: 2 Axioms (documented, standard in literature)
+  - logical_relation: 6 cases proven, 19 admit (in progress)
+  - non_interference_stmt: Admitted (depends on logical_relation)
 - Composition.v: 0 Admitted ✓
 - EffectSystem.v: 2 Admitted
 - EffectGate.v: 1 Admitted
 
 **Next Steps:**
-1. Attempt logical_relation fundamental theorem
-2. Attempt non_interference_stmt
+1. Continue proving logical_relation cases (focus on T_Lam, T_App next)
+2. Complete non_interference_stmt after logical_relation
 3. Fix EffectSystem.v and EffectGate.v
 
 ---

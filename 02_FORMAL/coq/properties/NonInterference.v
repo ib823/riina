@@ -1424,6 +1424,88 @@ Proof.
   intros sp vl sl. eapply val_rel_at_type_first_order; [exact Hfo | exact Hrat2].
 Qed.
 
+(** Helper: closed_expr for closed value constructors *)
+Lemma closed_expr_unit : closed_expr EUnit.
+Proof. intros y Hfree. simpl in Hfree. contradiction. Qed.
+
+Lemma closed_expr_bool : forall b, closed_expr (EBool b).
+Proof. intros b y Hfree. simpl in Hfree. contradiction. Qed.
+
+Lemma closed_expr_int : forall i, closed_expr (EInt i).
+Proof. intros i y Hfree. simpl in Hfree. contradiction. Qed.
+
+Lemma closed_expr_string : forall s, closed_expr (EString s).
+Proof. intros s y Hfree. simpl in Hfree. contradiction. Qed.
+
+Lemma closed_expr_loc : forall l, closed_expr (ELoc l).
+Proof. intros l y Hfree. simpl in Hfree. contradiction. Qed.
+
+(** Helper: val_rel for first-order value types using val_rel_n_of_first_order *)
+Lemma val_rel_unit : forall Σ,
+  val_rel Σ TUnit EUnit EUnit.
+Proof.
+  intros Σ n.
+  apply val_rel_n_of_first_order.
+  - reflexivity.
+  - constructor.
+  - constructor.
+  - apply closed_expr_unit.
+  - apply closed_expr_unit.
+  - intros sp vl sl. simpl. split; reflexivity.
+Qed.
+
+Lemma val_rel_bool : forall Σ b,
+  val_rel Σ TBool (EBool b) (EBool b).
+Proof.
+  intros Σ b n.
+  apply val_rel_n_of_first_order.
+  - reflexivity.
+  - constructor.
+  - constructor.
+  - apply closed_expr_bool.
+  - apply closed_expr_bool.
+  - intros sp vl sl. simpl. exists b. split; reflexivity.
+Qed.
+
+Lemma val_rel_int : forall Σ i,
+  val_rel Σ TInt (EInt i) (EInt i).
+Proof.
+  intros Σ i n.
+  apply val_rel_n_of_first_order.
+  - reflexivity.
+  - constructor.
+  - constructor.
+  - apply closed_expr_int.
+  - apply closed_expr_int.
+  - intros sp vl sl. simpl. exists i. split; reflexivity.
+Qed.
+
+Lemma val_rel_string : forall Σ s,
+  val_rel Σ TString (EString s) (EString s).
+Proof.
+  intros Σ s n.
+  apply val_rel_n_of_first_order.
+  - reflexivity.
+  - constructor.
+  - constructor.
+  - apply closed_expr_string.
+  - apply closed_expr_string.
+  - intros sp vl sl. simpl. exists s. split; reflexivity.
+Qed.
+
+Lemma val_rel_loc : forall Σ l,
+  val_rel Σ (TRef TUnit Public) (ELoc l) (ELoc l).
+Proof.
+  intros Σ l n.
+  apply val_rel_n_of_first_order.
+  - reflexivity.
+  - constructor.
+  - constructor.
+  - apply closed_expr_loc.
+  - apply closed_expr_loc.
+  - intros sp vl sl. simpl. exists l. split; reflexivity.
+Qed.
+
 (* The fundamental theorem - proof by induction on typing derivation *)
 Theorem logical_relation : forall G Σ e T eps rho1 rho2,
   has_type G Σ Public e T eps ->
@@ -1435,7 +1517,121 @@ Proof.
   intros G Σ e T eps rho1 rho2 Hty.
   generalize dependent rho2. generalize dependent rho1.
   induction Hty; intros rho1 rho2 Henv Hno1 Hno2.
-  (* Most cases require careful handling - admit for now while we verify structure *)
+
+  - (* T_Unit *)
+    simpl. apply exp_rel_of_val_rel. apply val_rel_unit.
+
+  - (* T_Bool *)
+    simpl. apply exp_rel_of_val_rel. apply val_rel_bool.
+
+  - (* T_Int *)
+    simpl. apply exp_rel_of_val_rel. apply val_rel_int.
+
+  - (* T_String *)
+    simpl. apply exp_rel_of_val_rel. apply val_rel_string.
+
+  - (* T_Loc - locations are related to themselves *)
+    simpl. apply exp_rel_of_val_rel.
+    intros n. destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. split.
+      * (* Cumulative - prove for n' by induction *)
+        clear H. induction n' as [| n'' IHn].
+        { simpl. trivial. }
+        { simpl. split; [exact IHn |].
+          repeat split; try constructor.
+          - apply closed_expr_loc.
+          - apply closed_expr_loc.
+          - exists l. split; reflexivity. }
+      * repeat split; try constructor.
+        { apply closed_expr_loc. }
+        { apply closed_expr_loc. }
+        { exists l. split; reflexivity. }
+
+  - (* T_Var *)
+    simpl. unfold exp_rel. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros st1 st2 ctx Hstore.
+      (* Lookup x in the environment relation *)
+      specialize (Henv (S n') x T H) as Hval.
+      exists (rho1 x), (rho2 x), st1, st2, ctx, Σ.
+      split.
+      * (* store_ty_extends reflexive *)
+        unfold store_ty_extends. intros l' T' slo Hlook. exact Hlook.
+      * split.
+        { apply MS_Refl. }
+        split.
+        { apply MS_Refl. }
+        split.
+        { (* Need val_rel_n n' from val_rel_n (S n') using monotonicity *)
+          apply (val_rel_n_mono (S n') n' Σ T (rho1 x) (rho2 x)).
+          - lia.
+          - exact Hval. }
+        { exact Hstore. }
+
+  - (* T_Lam - lambda abstraction *)
+    (* This case is complex - need to show related lambda values *)
+    admit.
+
+  - (* T_App - function application *)
+    (* Requires IH on function and argument, then composition *)
+    admit.
+
+  - (* T_Pair *)
+    admit.
+
+  - (* T_Fst *)
+    admit.
+
+  - (* T_Snd *)
+    admit.
+
+  - (* T_Inl *)
+    admit.
+
+  - (* T_Inr *)
+    admit.
+
+  - (* T_Case *)
+    admit.
+
+  - (* T_If *)
+    admit.
+
+  - (* T_Let *)
+    admit.
+
+  - (* T_Perform *)
+    admit.
+
+  - (* T_Handle *)
+    admit.
+
+  - (* T_Ref *)
+    admit.
+
+  - (* T_Deref *)
+    admit.
+
+  - (* T_Assign *)
+    admit.
+
+  - (* T_Classify *)
+    admit.
+
+  - (* T_Declassify *)
+    admit.
+
+  - (* T_Prove *)
+    admit.
+
+  - (* T_Require *)
+    admit.
+
+  - (* T_Grant *)
+    admit.
+
 Admitted.
 
 
