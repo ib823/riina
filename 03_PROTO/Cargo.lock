@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "riina-arena"
+version = "0.1.0"
+
+[[package]]
 name = "riina-codegen"
 version = "0.1.0"
 dependencies = [
@@ -20,6 +24,14 @@ dependencies = [
  "riina-lexer",
  "riina-types",
 ]
+
+[[package]]
+name = "riina-span"
+version = "0.1.0"
+
+[[package]]
+name = "riina-symbols"
+version = "0.1.0"
 
 [[package]]
 name = "riina-typechecker"
