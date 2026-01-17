@@ -23,10 +23,8 @@
 
 pub mod aes;
 pub mod sha2;
-// Temporarily disabled due to pre-existing compilation errors
-// TODO: Fix Sha256 Drop/finalize issue in hmac.rs
-// pub mod hmac;
-// pub mod hkdf;
+pub mod hmac;
+pub mod hkdf;
 pub mod ghash;
 pub mod gcm;
 

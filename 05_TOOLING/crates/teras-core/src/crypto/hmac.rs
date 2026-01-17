@@ -8,7 +8,16 @@
 //! - Keys are zeroized after use (Law 4)
 //! - Verification uses constant-time comparison (Law 3)
 //! - No memory allocation during MAC computation
+//!
+//! # Safety
+//!
+//! This module uses `unsafe` for `ManuallyDrop::take` in the finalize method.
+//! This is necessary because the struct implements Drop for key zeroization,
+//! but we need to move the inner hash state out during finalization.
 
+#![allow(unsafe_code)]
+
+use core::mem::ManuallyDrop;
 use crate::crypto::sha2::{Sha256, BLOCK_SIZE, OUTPUT_SIZE};
 use crate::constant_time::ConstantTimeEq;
 use crate::zeroize::Zeroize;
@@ -22,8 +31,8 @@ pub struct HmacSha256 {
     inner_key: [u8; BLOCK_SIZE],
     /// Outer key (key XOR opad)
     outer_key: [u8; BLOCK_SIZE],
-    /// Inner hash state
-    inner_hash: Sha256,
+    /// Inner hash state (wrapped in ManuallyDrop to allow moving out in finalize)
+    inner_hash: ManuallyDrop<Sha256>,
 }
 
 impl HmacSha256 {
@@ -64,7 +73,7 @@ impl HmacSha256 {
         Self {
             inner_key,
             outer_key,
-            inner_hash,
+            inner_hash: ManuallyDrop::new(inner_hash),
         }
     }
 
@@ -75,15 +84,18 @@ impl HmacSha256 {
 
     /// Finalize and return the MAC
     #[must_use]
-    pub fn finalize(self) -> [u8; HMAC_SHA256_OUTPUT_SIZE] {
+    pub fn finalize(mut self) -> [u8; HMAC_SHA256_OUTPUT_SIZE] {
         // Complete inner hash
-        let inner_result = self.inner_hash.finalize();
+        // SAFETY: We take ownership of inner_hash here. The Drop impl will only
+        // zeroize the keys, not the inner_hash (since it's ManuallyDrop).
+        let inner_hash = unsafe { ManuallyDrop::take(&mut self.inner_hash) };
+        let inner_result = inner_hash.finalize();
 
         // Compute outer hash: H(outer_key || inner_result)
         let mut outer_hash = Sha256::new();
         outer_hash.update(&self.outer_key);
         outer_hash.update(&inner_result);
-        
+
         outer_hash.finalize()
     }
 
@@ -103,9 +115,11 @@ impl HmacSha256 {
         if expected_mac.len() != HMAC_SHA256_OUTPUT_SIZE {
             return false;
         }
-        
+
         let computed_mac = Self::mac(key, data);
-        computed_mac.ct_eq(expected_mac)
+        // Convert slice to array reference (length already verified)
+        let expected: &[u8; 32] = expected_mac.try_into().unwrap();
+        computed_mac.ct_eq(expected)
     }
 }
 
