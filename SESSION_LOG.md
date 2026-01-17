@@ -1,5 +1,62 @@
 # Session Log
 
+## 2026-01-17 (Session 11): PHASE 1 AXIOM ELIMINATION CONTINUED (Track A)
+
+**Goal:** Deep analysis of Category 2-3 axioms (Kripke monotonicity, step index)
+
+**Branch:** `main`
+
+### Achievements
+
+1. **`store_rel_n_mono_store` — ELIMINATED (UNUSED)**
+   - Analysis: grep search revealed axiom was declared but NEVER USED in any proof
+   - Preemptively added for symmetry with val_rel_n_mono_store
+   - Actual proofs use store_ty_extends directly or val_rel_n_mono_store
+   - Status: REMOVED ✅ (24 axioms now)
+
+### Deep Analysis Results
+
+**Category 2: Kripke Monotonicity (3 remaining axioms)**
+| Axiom | Provability | Strategy |
+|-------|-------------|----------|
+| `val_rel_n_weaken` | Complex | Type induction, contravariance in TFn |
+| `store_rel_n_weaken` | Complex | Mutual with val_rel_n_weaken |
+| `val_rel_n_mono_store` | Complex | Kripke quantification needed |
+
+**Key Insight (Weaken):**
+- For first-order types: Provable via `val_rel_at_type_first_order`
+- For function types: Universal quantification creates contravariance
+  - At Σ': forall Σ'-related args/stores → outputs
+  - At Σ: forall Σ-related args/stores → outputs
+  - Σ-related is WEAKER (superset), so need to prove for MORE inputs
+  - Requires careful type-structural induction
+
+**Category 3: Step Index (5 remaining axioms)**
+| Axiom | Provability | Strategy |
+|-------|-------------|----------|
+| `val_rel_n_step_up` | Complex | Requires value/closed, type induction |
+| `store_rel_n_step_up` | Complex | Needs val_rel_n_step_up for store values |
+| `val_rel_n_lam_cumulative` | Provable | Special case of step_up for lambdas |
+| `val_rel_n_to_val_rel` | Provable | Uses step_up inductively |
+| `val_rel_at_type_to_val_rel_ho` | Provable | Type induction with step_up |
+
+**Key Insight (Step-up):**
+- The n=0 base case is problematic: val_rel_n 0 = True gives no structure
+- For n>0: store_rel_n has store_max equality and val_rel_n (n-1) values
+- Step-up requires value/closed_expr as preconditions
+- Mutual dependency: store_rel_n_step_up needs val_rel_n_step_up
+
+**Remaining Axiom Categories:**
+- Category 1 (first-order value/closed): 4 axioms - edge cases TBytes/TSecret
+- Category 2 (Kripke): 3 axioms - complex but potentially provable
+- Category 3 (step index): 5 axioms - mutual induction needed
+- Category 4 (degenerate step-1): 8 axioms - termination-dependent
+- Other: 4 axioms - TApp completion, etc.
+
+### Axiom Count: 31 → 24 (-7 total eliminated)
+
+---
+
 ## 2026-01-16 (Session 10): PHASE 1 AXIOM ELIMINATION (Track A)
 
 **Goal:** Eliminate axioms in NonInterference.v with extreme rigour, revolutionary approach
