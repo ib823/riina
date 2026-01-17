@@ -596,6 +596,11 @@ impl std::fmt::Display for Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use riina_types::{Expr, Effect};
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VALUE CONSTRUCTOR TESTS
+    // ═══════════════════════════════════════════════════════════════════
 
     #[test]
     fn test_value_constructors() {
@@ -606,11 +611,83 @@ mod tests {
     }
 
     #[test]
+    fn test_value_bool_variants() {
+        assert!(Value::bool(true).is_bool());
+        assert!(Value::bool(false).is_bool());
+        assert_eq!(Value::bool(true).as_bool(), Some(true));
+        assert_eq!(Value::bool(false).as_bool(), Some(false));
+    }
+
+    #[test]
+    fn test_value_int_edge_cases() {
+        // Test boundary values
+        assert_eq!(Value::int(0).as_int(), Some(0));
+        assert_eq!(Value::int(-1).as_int(), Some(-1));
+        assert_eq!(Value::int(i64::MAX).as_int(), Some(i64::MAX));
+        assert_eq!(Value::int(i64::MIN).as_int(), Some(i64::MIN));
+    }
+
+    #[test]
+    fn test_value_string_edge_cases() {
+        assert_eq!(Value::string("").as_string(), Some(""));
+        assert_eq!(Value::string("hello world").as_string(), Some("hello world"));
+        // Unicode
+        assert_eq!(Value::string("こんにちは").as_string(), Some("こんにちは"));
+        // Bahasa Melayu
+        assert_eq!(Value::string("Selamat pagi").as_string(), Some("Selamat pagi"));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // VALUE EXTRACTOR TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
     fn test_value_extractors() {
         assert_eq!(Value::bool(true).as_bool(), Some(true));
         assert_eq!(Value::int(42).as_int(), Some(42));
         assert_eq!(Value::string("hello").as_string(), Some("hello"));
     }
+
+    #[test]
+    fn test_value_extractor_wrong_type() {
+        // Extracting wrong type returns None
+        assert_eq!(Value::int(42).as_bool(), None);
+        assert_eq!(Value::bool(true).as_int(), None);
+        assert_eq!(Value::unit().as_string(), None);
+        assert_eq!(Value::string("x").as_int(), None);
+    }
+
+    #[test]
+    fn test_value_is_predicates() {
+        let unit = Value::unit();
+        let boolean = Value::bool(true);
+        let integer = Value::int(42);
+        let string = Value::string("test");
+
+        assert!(unit.is_unit());
+        assert!(!unit.is_bool());
+        assert!(!unit.is_int());
+        assert!(!unit.is_string());
+
+        assert!(!boolean.is_unit());
+        assert!(boolean.is_bool());
+        assert!(!boolean.is_int());
+        assert!(!boolean.is_string());
+
+        assert!(!integer.is_unit());
+        assert!(!integer.is_bool());
+        assert!(integer.is_int());
+        assert!(!integer.is_string());
+
+        assert!(!string.is_unit());
+        assert!(!string.is_bool());
+        assert!(!string.is_int());
+        assert!(string.is_string());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PAIR TESTS
+    // ═══════════════════════════════════════════════════════════════════
 
     #[test]
     fn test_pair_operations() {
@@ -619,6 +696,27 @@ mod tests {
         assert_eq!(pair.fst(), Some(&Value::Int(1)));
         assert_eq!(pair.snd(), Some(&Value::Int(2)));
     }
+
+    #[test]
+    fn test_pair_nested() {
+        let inner = Value::pair(Value::int(1), Value::int(2));
+        let outer = Value::pair(inner.clone(), Value::int(3));
+
+        assert!(outer.is_pair());
+        assert_eq!(outer.fst(), Some(&inner));
+        assert_eq!(outer.snd(), Some(&Value::Int(3)));
+    }
+
+    #[test]
+    fn test_pair_extractor_wrong_type() {
+        let not_pair = Value::int(42);
+        assert_eq!(not_pair.fst(), None);
+        assert_eq!(not_pair.snd(), None);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // SUM TYPE TESTS
+    // ═══════════════════════════════════════════════════════════════════
 
     #[test]
     fn test_sum_operations() {
@@ -635,6 +733,28 @@ mod tests {
     }
 
     #[test]
+    fn test_sum_extractor_wrong_variant() {
+        let left = Value::inl(Value::int(1));
+        let right = Value::inr(Value::int(2));
+
+        assert_eq!(left.as_right(), None);
+        assert_eq!(right.as_left(), None);
+    }
+
+    #[test]
+    fn test_sum_nested() {
+        let inner = Value::inl(Value::int(42));
+        let outer = Value::inr(inner.clone());
+
+        assert!(outer.is_right());
+        assert_eq!(outer.as_right(), Some(&inner));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // SECURITY LEVEL TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
     fn test_security_levels() {
         let public = Value::int(42);
         let secret = Value::secret(Value::int(42));
@@ -649,6 +769,21 @@ mod tests {
     }
 
     #[test]
+    fn test_security_flow_rules() {
+        let public = Value::int(1);
+        let secret = Value::secret(Value::int(2));
+
+        // Public -> Public: OK
+        assert!(public.can_flow_to(SecurityLevel::Public));
+        // Public -> Secret: OK (upgrading)
+        assert!(public.can_flow_to(SecurityLevel::Secret));
+        // Secret -> Secret: OK
+        assert!(secret.can_flow_to(SecurityLevel::Secret));
+        // Secret -> Public: FORBIDDEN (downgrading)
+        assert!(!secret.can_flow_to(SecurityLevel::Public));
+    }
+
+    #[test]
     fn test_pair_security_propagation() {
         let both_public = Value::pair(Value::int(1), Value::int(2));
         let has_secret = Value::pair(Value::int(1), Value::secret(Value::int(2)));
@@ -656,6 +791,87 @@ mod tests {
         assert_eq!(both_public.security_level(), SecurityLevel::Public);
         assert_eq!(has_secret.security_level(), SecurityLevel::Secret);
     }
+
+    #[test]
+    fn test_sum_security_propagation() {
+        let public_left = Value::inl(Value::int(1));
+        let secret_left = Value::inl(Value::secret(Value::int(1)));
+        let secret_right = Value::inr(Value::secret(Value::int(2)));
+
+        assert_eq!(public_left.security_level(), SecurityLevel::Public);
+        assert_eq!(secret_left.security_level(), SecurityLevel::Secret);
+        assert_eq!(secret_right.security_level(), SecurityLevel::Secret);
+    }
+
+    #[test]
+    fn test_nested_secret_propagation() {
+        // Secret inside a pair inside a pair
+        let deep_secret = Value::pair(
+            Value::int(1),
+            Value::pair(
+                Value::int(2),
+                Value::secret(Value::int(3))
+            )
+        );
+        assert_eq!(deep_secret.security_level(), SecurityLevel::Secret);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // SECRET/PROOF/CAPABILITY TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_secret_operations() {
+        let secret = Value::secret(Value::int(42));
+        assert!(secret.is_secret());
+        assert_eq!(secret.as_secret(), Some(&Value::Int(42)));
+    }
+
+    #[test]
+    fn test_proof_operations() {
+        let proof = Value::proof(Value::bool(true));
+        assert!(proof.is_proof());
+        assert_eq!(proof.as_proof(), Some(&Value::Bool(true)));
+    }
+
+    #[test]
+    fn test_capability_operations() {
+        let cap = Value::capability(Effect::Read);
+        assert!(cap.is_capability());
+        assert_eq!(cap.as_capability(), Some(Effect::Read));
+
+        let cap_write = Value::capability(Effect::Write);
+        assert_eq!(cap_write.as_capability(), Some(Effect::Write));
+
+        let cap_crypto = Value::capability(Effect::Crypto);
+        assert_eq!(cap_crypto.as_capability(), Some(Effect::Crypto));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CLOSURE TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_closure_creation() {
+        let env = Env::new().extend("x".to_string(), Value::int(10));
+        let body = Expr::Var("x".to_string());
+        let closure = Value::closure("y".to_string(), body.clone(), env.clone());
+
+        assert!(closure.is_closure());
+        let c = closure.as_closure().unwrap();
+        assert_eq!(c.param, "y");
+        assert_eq!(c.env.lookup("x"), Some(&Value::Int(10)));
+    }
+
+    #[test]
+    fn test_closure_extractor_wrong_type() {
+        let not_closure = Value::int(42);
+        assert_eq!(not_closure.as_closure(), None);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ENVIRONMENT TESTS
+    // ═══════════════════════════════════════════════════════════════════
 
     #[test]
     fn test_env_operations() {
@@ -671,14 +887,61 @@ mod tests {
     }
 
     #[test]
+    fn test_env_multiple_bindings() {
+        let env = Env::new()
+            .extend("x".to_string(), Value::int(1))
+            .extend("y".to_string(), Value::int(2))
+            .extend("z".to_string(), Value::int(3));
+
+        assert_eq!(env.len(), 3);
+        assert_eq!(env.lookup("x"), Some(&Value::Int(1)));
+        assert_eq!(env.lookup("y"), Some(&Value::Int(2)));
+        assert_eq!(env.lookup("z"), Some(&Value::Int(3)));
+    }
+
+    #[test]
+    fn test_env_shadowing() {
+        let env = Env::new()
+            .extend("x".to_string(), Value::int(1))
+            .extend("x".to_string(), Value::int(2));
+
+        // Most recent binding should be found
+        assert_eq!(env.lookup("x"), Some(&Value::Int(2)));
+    }
+
+    #[test]
+    fn test_env_clone() {
+        let env1 = Env::new().extend("x".to_string(), Value::int(42));
+        let env2 = env1.clone();
+
+        assert_eq!(env1.lookup("x"), env2.lookup("x"));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // DISPLAY TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
     fn test_value_display() {
         assert_eq!(Value::unit().to_string(), "()");
         assert_eq!(Value::bool(true).to_string(), "true");
+        assert_eq!(Value::bool(false).to_string(), "false");
         assert_eq!(Value::int(42).to_string(), "42");
+        assert_eq!(Value::int(-100).to_string(), "-100");
         assert_eq!(Value::string("hello").to_string(), "\"hello\"");
         assert_eq!(Value::pair(Value::int(1), Value::int(2)).to_string(), "(1, 2)");
         assert_eq!(Value::inl(Value::int(1)).to_string(), "inl 1");
         assert_eq!(Value::inr(Value::int(2)).to_string(), "inr 2");
         assert_eq!(Value::secret(Value::int(42)).to_string(), "secret(42)");
+        assert_eq!(Value::proof(Value::bool(true)).to_string(), "proof(true)");
+    }
+
+    #[test]
+    fn test_value_display_nested() {
+        let nested_pair = Value::pair(
+            Value::pair(Value::int(1), Value::int(2)),
+            Value::int(3)
+        );
+        assert_eq!(nested_pair.to_string(), "((1, 2), 3)");
     }
 }

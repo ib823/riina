@@ -242,6 +242,91 @@ Proof.
       apply IHT2 with sp1 vl1 sl1; assumption.
 Qed.
 
+(** REVOLUTIONARY LEMMA: Store typing independence for first-order types.
+
+    KEY INSIGHT: For first-order types, Σ does NOT appear in val_rel_at_type.
+    Looking at each case:
+    - TUnit, TBool, TInt, TString, TBytes: purely syntactic equality, no Σ
+    - TSecret, TCapability, TProof: just True, no Σ
+    - TRef: exists l, v1 = ELoc l /\ v2 = ELoc l - no Σ lookup
+    - TProd, TSum: structural recursion, Σ only passed through
+    - TFn: Uses Σ in store_ty_extends, but TFn is NOT first-order
+
+    This lemma is CRITICAL for proving val_rel_n_weaken. Combined with
+    val_rel_at_type_first_order (predicate independence), it gives complete
+    independence of val_rel_at_type for first-order types.
+
+    PROOF: By induction on type structure. For each first-order type case,
+    the definition of val_rel_at_type at that type does not mention Σ.
+*)
+Lemma val_rel_at_type_store_ty_indep : forall T Σ Σ' sp vl sl v1 v2,
+  first_order_type T = true ->
+  val_rel_at_type Σ sp vl sl T v1 v2 ->
+  val_rel_at_type Σ' sp vl sl T v1 v2.
+Proof.
+  (* Type constructor order: TUnit, TBool, TInt, TString, TBytes, TFn, TProd, TSum, TRef, TSecret, TProof, TCapability *)
+  induction T; intros Σ Σ' sp vl sl v1 v2 Hfo Hrel; simpl in *.
+  - (* TUnit: v1 = EUnit /\ v2 = EUnit - Σ-independent *)
+    exact Hrel.
+  - (* TBool: exists b, v1 = EBool b /\ v2 = EBool b - Σ-independent *)
+    exact Hrel.
+  - (* TInt: exists i, v1 = EInt i /\ v2 = EInt i - Σ-independent *)
+    exact Hrel.
+  - (* TString: exists s, v1 = EString s /\ v2 = EString s - Σ-independent *)
+    exact Hrel.
+  - (* TBytes: v1 = v2 - Σ-independent *)
+    exact Hrel.
+  - (* TFn: IMPOSSIBLE - first_order_type TFn = false *)
+    discriminate Hfo.
+  - (* TProd T1 T2: structural recursion - REQUIRES IH *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    destruct Hrel as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+    exists x1, y1, x2, y2. repeat split; try assumption.
+    + apply (IHT1 Σ Σ' sp vl sl x1 x2 Hfo1 Hrel1).
+    + apply (IHT2 Σ Σ' sp vl sl y1 y2 Hfo2 Hrel2).
+  - (* TSum T1 T2: structural recursion - REQUIRES IH *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    destruct Hrel as [[x1 [x2 [Heq1 [Heq2 Hrel1]]]] | [y1 [y2 [Heq1 [Heq2 Hrel2]]]]].
+    + left. exists x1, x2. repeat split; try assumption.
+      apply (IHT1 Σ Σ' sp vl sl x1 x2 Hfo1 Hrel1).
+    + right. exists y1, y2. repeat split; try assumption.
+      apply (IHT2 Σ Σ' sp vl sl y1 y2 Hfo2 Hrel2).
+  - (* TRef T' sl': exists l, v1 = ELoc l /\ v2 = ELoc l - Σ-independent *)
+    exact Hrel.
+  - (* TSecret T': True - Σ-independent *)
+    exact Hrel.
+  - (* TProof: True - Σ-independent *)
+    exact Hrel.
+  - (* TCapability: True - Σ-independent *)
+    exact Hrel.
+Qed.
+
+(** Combined independence: For first-order types, val_rel_at_type is
+    completely independent of store typing Σ AND predicates (sp, vl, sl).
+
+    This is the key lemma for proving val_rel_n_weaken for first-order types.
+*)
+Lemma val_rel_at_type_fo_full_indep : forall T Σ Σ'
+  (sp1 sp2 : store -> store -> Prop)
+  (vl1 vl2 : ty -> expr -> expr -> Prop)
+  (sl1 sl2 : store_ty -> store -> store -> Prop) v1 v2,
+  first_order_type T = true ->
+  val_rel_at_type Σ sp1 vl1 sl1 T v1 v2 ->
+  val_rel_at_type Σ' sp2 vl2 sl2 T v1 v2.
+Proof.
+  intros T Σ Σ' sp1 sp2 vl1 vl2 sl1 sl2 v1 v2 Hfo Hrel.
+  (* Goal: val_rel_at_type Σ' sp2 vl2 sl2 T v1 v2 *)
+  (* Hrel: val_rel_at_type Σ sp1 vl1 sl1 T v1 v2 *)
+  (* Step 1: Use store_ty_indep to change Σ to Σ' (keeping predicates) *)
+  apply val_rel_at_type_store_ty_indep with (Σ := Σ).
+  - (* first_order_type T = true *) exact Hfo.
+  - (* val_rel_at_type Σ sp2 vl2 sl2 T v1 v2 *)
+    (* Step 2: Use first_order to change predicates from sp1,vl1,sl1 to sp2,vl2,sl2 *)
+    apply val_rel_at_type_first_order with (sp1 := sp1) (vl1 := vl1) (sl1 := sl1).
+    + exact Hfo.
+    + exact Hrel.
+Qed.
+
 (** For first-order types, val_rel_at_type implies values are syntactically valid.
     These lemmas extract value/closed properties from val_rel_at_type.
     The proofs follow by type induction but we state them as axioms to avoid
@@ -504,13 +589,58 @@ Proof.
   apply H23. apply H12. exact Hlook.
 Qed.
 
-(** DOCUMENTED AXIOM: Value relation weakening
+(** PROVEN LEMMA: Value relation weakening for FIRST-ORDER types
+
+    KEY INSIGHT: For first-order types, val_rel_at_type is completely
+    independent of both store typing Σ AND the predicates (proven in
+    val_rel_at_type_fo_full_indep). Therefore, changing Σ has no effect.
+
+    PROOF: By induction on step index n.
+    - n = 0: Both sides are True.
+    - n = S n': Use val_rel_at_type_fo_full_indep to convert
+      val_rel_at_type at Σ' to val_rel_at_type at Σ.
+
+    This lemma PROVES the first-order restriction of val_rel_n_weaken,
+    reducing the remaining axiom to only higher-order (function) types.
+*)
+Lemma val_rel_n_weaken_fo : forall n Σ Σ' T v1 v2,
+  first_order_type T = true ->
+  store_ty_extends Σ Σ' ->
+  val_rel_n n Σ' T v1 v2 ->
+  val_rel_n n Σ T v1 v2.
+Proof.
+  induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hfo Hext Hrel.
+  - (* n = 0: both sides are True *)
+    simpl. exact I.
+  - (* n = S n' *)
+    simpl in *. destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+    repeat split.
+    + (* Cumulative part: val_rel_n n' Σ T v1 v2 - by IH *)
+      apply (IHn Σ Σ' T v1 v2 Hfo Hext Hrec).
+    + (* value v1 *) exact Hv1.
+    + (* value v2 *) exact Hv2.
+    + (* closed_expr v1 *) exact Hc1.
+    + (* closed_expr v2 *) exact Hc2.
+    + (* val_rel_at_type Σ ... T v1 v2 from val_rel_at_type Σ' ... T v1 v2 *)
+      (* Hrat : val_rel_at_type Σ' (store_rel_n n' Σ') (val_rel_n n' Σ') (store_rel_n n') T v1 v2 *)
+      (* Goal : val_rel_at_type Σ (store_rel_n n' Σ) (val_rel_n n' Σ) (store_rel_n n') T v1 v2 *)
+      apply val_rel_at_type_fo_full_indep with
+        (Σ := Σ') (sp1 := store_rel_n n' Σ') (vl1 := val_rel_n n' Σ') (sl1 := store_rel_n n').
+      * exact Hfo.
+      * exact Hrat.
+Qed.
+
+(** DOCUMENTED AXIOM: Value relation weakening (GENERAL CASE)
 
     Semantic justification: If two values are observationally equivalent
     when tracked with a larger store typing Σ', they remain equivalent
     when tracked with a smaller store typing Σ ⊆ Σ'. The smaller typing
     simply tracks fewer locations, which cannot introduce new distinctions
     between the values.
+
+    NOTE: For first-order types, this is PROVEN in val_rel_n_weaken_fo above.
+    The remaining axiom is only needed for higher-order (function) types,
+    which involve contravariance in the TFn case.
 
     Reference: Standard in step-indexed logical relations. See:
     - Appel & McAllester (2001) "An indexed model of recursive types"
@@ -521,27 +651,99 @@ Axiom val_rel_n_weaken : forall n Σ Σ' T v1 v2,
   val_rel_n n Σ' T v1 v2 ->
   val_rel_n n Σ T v1 v2.
 
-(** DOCUMENTED AXIOM: Store relation weakening
+(** PROVEN LEMMA: Store relation weakening
 
-    Semantic justification: Mutual with val_rel_n_weaken. If two stores
-    are related under a larger store typing Σ', they remain related under
-    a smaller store typing Σ ⊆ Σ'. The smaller typing requires fewer
-    locations to be checked for relatedness.
+    PREVIOUSLY: This was an axiom "mutually justified" with val_rel_n_weaken.
+
+    REVOLUTIONARY INSIGHT: store_rel_n_weaken is NOT an independent axiom!
+    It is a COROLLARY of val_rel_n_weaken. The proof uses val_rel_n_weaken
+    at each location to convert the stored value relations.
+
+    PROOF: By induction on n.
+    - n = 0: Trivial (both True).
+    - n = S n':
+      * Cumulative part: by IH.
+      * store_max: unchanged.
+      * For each l in Σ: Since Σ ⊆ Σ', l is also in Σ'. The values at l
+        are related by val_rel_n n' Σ' T. Apply val_rel_n_weaken to get
+        val_rel_n n' Σ T.
+
+    Axiom count: 24 → 23 (-1 axiom eliminated)
 *)
-Axiom store_rel_n_weaken : forall n Σ Σ' st1 st2,
+Lemma store_rel_n_weaken : forall n Σ Σ' st1 st2,
   store_ty_extends Σ Σ' ->
   store_rel_n n Σ' st1 st2 ->
   store_rel_n n Σ st1 st2.
+Proof.
+  induction n as [| n' IHn]; intros Σ Σ' st1 st2 Hext Hrel.
+  - (* n = 0: trivial *)
+    simpl. exact I.
+  - (* n = S n' *)
+    simpl in *. destruct Hrel as [Hrec [Hmax Hlocs]].
+    repeat split.
+    + (* Cumulative: store_rel_n n' Σ st1 st2 - by IH *)
+      apply (IHn Σ Σ' st1 st2 Hext Hrec).
+    + (* store_max st1 = store_max st2 *)
+      exact Hmax.
+    + (* forall l T sl in Σ, exists v1 v2 with val_rel_n n' Σ T v1 v2 *)
+      intros l T sl Hlook_Σ.
+      (* Since Σ ⊆ Σ', l is also in Σ' *)
+      assert (Hlook_Σ' : store_ty_lookup l Σ' = Some (T, sl)).
+      { apply Hext. exact Hlook_Σ. }
+      (* From Hlocs at Σ', get values at l *)
+      specialize (Hlocs l T sl Hlook_Σ') as [v1 [v2 [Hs1 [Hs2 Hvrel]]]].
+      (* Hvrel : val_rel_n n' Σ' T v1 v2 *)
+      (* Goal : val_rel_n n' Σ T v1 v2 *)
+      exists v1, v2. repeat split; try assumption.
+      (* Use val_rel_n_weaken *)
+      apply (val_rel_n_weaken n' Σ Σ' T v1 v2 Hext Hvrel).
+Qed.
 
-(** DOCUMENTED AXIOM: Value relation monotonicity in store typing
+(** PROVEN LEMMA: Value relation monotonicity for FIRST-ORDER types
+
+    KEY INSIGHT: For first-order types, val_rel_at_type is completely
+    independent of store typing Σ (proven in val_rel_at_type_fo_full_indep).
+    Therefore, extending Σ to Σ' has no effect on the relation.
+
+    This is the "Kripke strengthening" direction: Σ ⊆ Σ' implies
+    val_rel_n n Σ T v1 v2 → val_rel_n n Σ' T v1 v2.
+
+    PROOF: Same structure as val_rel_n_weaken_fo, using val_rel_at_type_fo_full_indep.
+*)
+Lemma val_rel_n_mono_store_fo : forall n Σ Σ' T v1 v2,
+  first_order_type T = true ->
+  store_ty_extends Σ Σ' ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n n Σ' T v1 v2.
+Proof.
+  induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hfo Hext Hrel.
+  - (* n = 0: trivial *)
+    simpl. exact I.
+  - (* n = S n' *)
+    simpl in *. destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+    repeat split.
+    + (* Cumulative: val_rel_n n' Σ' T v1 v2 - by IH *)
+      apply (IHn Σ Σ' T v1 v2 Hfo Hext Hrec).
+    + exact Hv1.
+    + exact Hv2.
+    + exact Hc1.
+    + exact Hc2.
+    + (* val_rel_at_type Σ' ... T v1 v2 from val_rel_at_type Σ ... T v1 v2 *)
+      apply val_rel_at_type_fo_full_indep with
+        (Σ := Σ) (sp1 := store_rel_n n' Σ) (vl1 := val_rel_n n' Σ) (sl1 := store_rel_n n').
+      * exact Hfo.
+      * exact Hrat.
+Qed.
+
+(** DOCUMENTED AXIOM: Value relation monotonicity in store typing (GENERAL CASE)
 
     Semantic justification: If two values are related under store typing Σ,
     they remain related under any extension Σ' ⊇ Σ. This is the Kripke
     monotonicity property: extending the "world" (store typing) preserves
     established relations.
 
-    For first-order types (without TFn): The store typing doesn't affect
-    the value relation, so monotonicity is trivial.
+    NOTE: For first-order types, this is PROVEN in val_rel_n_mono_store_fo above.
+    The remaining axiom is only needed for higher-order (function) types.
 
     For function types (TFn): The function's specification (store_ty_extends Σ Σ'')
     becomes easier to satisfy with a larger starting Σ' because Σ' ⊆ Σ''
@@ -720,12 +922,68 @@ Axiom tapp_step0_complete : forall Σ' Σ''' T2
   val_rel_n 1 Σ''' T2 v1 v2 /\
   store_rel_n 1 Σ''' st1''' st2'''.
 
-(** Step-index gap axioms for function application:
+(** PROVEN LEMMA: Step-index step-up for FIRST-ORDER types (n > 0)
+
+    KEY INSIGHT: For first-order types, val_rel_at_type is predicate-independent.
+    When stepping up from n to S n, the only difference is the predicates change
+    from (store_rel_n (n-1), val_rel_n (n-1)) to (store_rel_n n, val_rel_n n).
+    Since val_rel_at_type doesn't depend on these for first-order types, step-up is trivial.
+
+    CRITICAL NOTE: This lemma requires n > 0. The n=0 case is fundamentally
+    unprovable because val_rel_n 0 = True gives no structural information about
+    the values. The axiom val_rel_n_step_up covers the n=0 case semantically.
+
+    PROOF: By case analysis on n.
+    - n = 0: EXCLUDED by precondition.
+    - n = S n': Extract val_rel_at_type from val_rel_n (S n'), then use
+      val_rel_at_type_fo_full_indep to convert predicates.
+*)
+Lemma val_rel_n_step_up_fo : forall n Σ T v1 v2,
+  n > 0 ->
+  first_order_type T = true ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n (S n) Σ T v1 v2.
+Proof.
+  intros n Σ T v1 v2 Hn Hfo Hval1 Hval2 Hcl1 Hcl2 Hrel.
+  destruct n as [| n'].
+  - (* n = 0: contradiction with Hn *)
+    lia.
+  - (* n = S n' > 0 *)
+    (* Goal: val_rel_n (S (S n')) Σ T v1 v2 *)
+    (* Hrel: val_rel_n (S n') Σ T v1 v2 *)
+    simpl. split.
+    + (* Cumulative part: val_rel_n (S n') Σ T v1 v2 *)
+      exact Hrel.
+    + (* Rest of the structure *)
+      split. { exact Hval1. }
+      split. { exact Hval2. }
+      split. { exact Hcl1. }
+      split. { exact Hcl2. }
+      (* val_rel_at_type Σ (store_rel_n (S n') Σ) (val_rel_n (S n') Σ) (store_rel_n (S n')) T v1 v2 *)
+      (* From Hrel at S n', we get val_rel_at_type with predicates at n' *)
+      simpl in Hrel. destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]].
+      (* Hrat : val_rel_at_type Σ (store_rel_n n' Σ) (val_rel_n n' Σ) (store_rel_n n') T v1 v2 *)
+      (* Use predicate independence for first-order types *)
+      apply val_rel_at_type_fo_full_indep with
+        (Σ := Σ) (sp1 := store_rel_n n' Σ) (vl1 := val_rel_n n' Σ) (sl1 := store_rel_n n').
+      * exact Hfo.
+      * exact Hrat.
+Qed.
+
+(** DOCUMENTED AXIOM: Step-index step-up (GENERAL CASE)
+
     The function relation at step n outputs at step n, but we need step S n for exp_rel_n.
     This 1-step gap represents the β-reduction step itself.
+
+    NOTE: For first-order types with n > 0, this is PROVEN in val_rel_n_step_up_fo.
+    The axiom is needed for:
+    1. The n=0 case (val_rel_n 0 = True gives no structural info)
+    2. Higher-order (function) types
+
     Semantically justified: values of the same type related at step n are also related
     at step S n because the additional recursive depth adds no new constraints.
-    (The recursive constraints only apply to function/product/sum deconstruction.)
 *)
 Axiom val_rel_n_step_up : forall n Σ T v1 v2,
   value v1 -> value v2 ->
