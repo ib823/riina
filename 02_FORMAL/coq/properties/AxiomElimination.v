@@ -370,68 +370,145 @@ Qed.
     These axioms relate to Kripke monotonicity for step-indexed relations.
     The key insight is that store extension is a preorder, and
     the relations are monotone with respect to this preorder.
+
+    PHASE 7 BRIDGE STRATEGY:
+    ========================
+    For FIRST-ORDER types, val_rel_at_type is INDEPENDENT of Σ.
+    This means Axioms 1-2 are trivially true for first-order types.
+    For TFn types, the proofs require the Kripke infrastructure.
+
+    We prove the first-order cases completely, leaving only TFn admitted.
 *)
+
+(** Helper: val_rel_at_type for first-order types is store-independent *)
+Lemma val_rel_at_type_fo_store_independent : forall T,
+  first_order_type T = true ->
+  forall v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2,
+  val_rel_at_type Σ1 sr1 vr1 srl1 T v1 v2 <->
+  val_rel_at_type Σ2 sr2 vr2 srl2 T v1 v2.
+Proof.
+  intros T.
+  (* First-order types: no TFn, and TProd/TSum components are also first-order *)
+  induction T; intro Hfo; simpl in *; try (intros; reflexivity).
+  - (* TFn *) discriminate.
+  - (* TProd *)
+    destruct (first_order_type T1) eqn:H1; [|discriminate].
+    destruct (first_order_type T2) eqn:H2; [|discriminate].
+    assert (IH1 : forall v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2,
+              val_rel_at_type Σ1 sr1 vr1 srl1 T1 v1 v2 <->
+              val_rel_at_type Σ2 sr2 vr2 srl2 T1 v1 v2) by (apply IHT1; auto).
+    assert (IH2 : forall v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2,
+              val_rel_at_type Σ1 sr1 vr1 srl1 T2 v1 v2 <->
+              val_rel_at_type Σ2 sr2 vr2 srl2 T2 v1 v2) by (apply IHT2; auto).
+    clear IHT1 IHT2.
+    intros v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2.
+    split; intros (a1 & b1 & a2 & b2 & Heq1 & Heq2 & Ha & Hb).
+    + exists a1, b1, a2, b2. repeat split; auto.
+      * apply (IH1 a1 a2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+      * apply (IH2 b1 b2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+    + exists a1, b1, a2, b2. repeat split; auto.
+      * apply (IH1 a1 a2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+      * apply (IH2 b1 b2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+  - (* TSum *)
+    destruct (first_order_type T1) eqn:H1; [|discriminate].
+    destruct (first_order_type T2) eqn:H2; [|discriminate].
+    assert (IH1 : forall v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2,
+              val_rel_at_type Σ1 sr1 vr1 srl1 T1 v1 v2 <->
+              val_rel_at_type Σ2 sr2 vr2 srl2 T1 v1 v2) by (apply IHT1; auto).
+    assert (IH2 : forall v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2,
+              val_rel_at_type Σ1 sr1 vr1 srl1 T2 v1 v2 <->
+              val_rel_at_type Σ2 sr2 vr2 srl2 T2 v1 v2) by (apply IHT2; auto).
+    clear IHT1 IHT2.
+    intros v1 v2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2.
+    split; intros [HInl | HInr].
+    + left. destruct HInl as (a1 & a2 & Heq1 & Heq2 & Ha).
+      exists a1, a2. repeat split; auto.
+      apply (IH1 a1 a2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+    + right. destruct HInr as (b1 & b2 & Heq1 & Heq2 & Hb).
+      exists b1, b2. repeat split; auto.
+      apply (IH2 b1 b2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+    + left. destruct HInl as (a1 & a2 & Heq1 & Heq2 & Ha).
+      exists a1, a2. repeat split; auto.
+      apply (IH1 a1 a2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+    + right. destruct HInr as (b1 & b2 & Heq1 & Heq2 & Hb).
+      exists b1, b2. repeat split; auto.
+      apply (IH2 b1 b2 Σ1 Σ2 sr1 sr2 vr1 vr2 srl1 srl2); auto.
+Qed.
+
+(** First-order val_rel_n is store-independent at structural level *)
+Lemma val_rel_n_fo_store_independent : forall n T v1 v2 Σ1 Σ2,
+  first_order_type T = true ->
+  val_rel_n n Σ1 T v1 v2 <-> val_rel_n n Σ2 T v1 v2.
+Proof.
+  intros n T v1 v2 Σ1 Σ2 Hfo.
+  revert Σ1 Σ2.
+  induction n as [|n' IH]; intros Σ1 Σ2.
+  - simpl. reflexivity.
+  - simpl. split; intros (Hprev & Hv1 & Hv2 & Hc1 & Hc2 & Hat).
+    + repeat split; auto.
+      * apply (IH Σ1 Σ2). exact Hprev.
+      * apply (val_rel_at_type_fo_store_independent T Hfo v1 v2
+          Σ1 Σ2 (store_rel_n n' Σ1) (store_rel_n n' Σ2)
+          (val_rel_n n' Σ1) (val_rel_n n' Σ2)
+          (store_rel_n n') (store_rel_n n')); auto.
+    + repeat split; auto.
+      * apply (IH Σ2 Σ1). exact Hprev.
+      * apply (val_rel_at_type_fo_store_independent T Hfo v1 v2
+          Σ2 Σ1 (store_rel_n n' Σ2) (store_rel_n n' Σ1)
+          (val_rel_n n' Σ2) (val_rel_n n' Σ1)
+          (store_rel_n n') (store_rel_n n')); auto.
+Qed.
 
 (** Axiom 1: val_rel_n_weaken - Value relation weakens with store extension
 
-    SEMANTIC JUSTIFICATION:
-    Store extension means adding new locations. Values related in a
-    larger store remain related in a smaller one because:
-    - Base type relations don't depend on store
-    - Reference relations only care about locations in the store
-    - Function relations inherit from their bodies
-
-    Infrastructure: Phase 2 KripkeProperties.v
+    FIRST-ORDER: PROVEN (store-independent)
+    HIGHER-ORDER (TFn): Requires full Kripke infrastructure
 *)
+Theorem axiom_1_first_order : forall n Σ Σ' T v1 v2,
+  first_order_type T = true ->
+  store_ty_extends Σ Σ' ->
+  val_rel_n n Σ' T v1 v2 ->
+  val_rel_n n Σ T v1 v2.
+Proof.
+  intros n Σ Σ' T v1 v2 Hfo Hext Hrel.
+  apply (val_rel_n_fo_store_independent n T v1 v2 Σ' Σ Hfo). exact Hrel.
+Qed.
+
+(** Axiom 1 full (higher-order case admitted) *)
 Theorem axiom_1_infrastructure : forall n Σ Σ' T v1 v2,
   store_ty_extends Σ Σ' ->
   val_rel_n n Σ' T v1 v2 ->
-  (* With Kripke monotonicity infrastructure, this follows *)
   val_rel_n n Σ T v1 v2.
 Proof.
-  (* This requires the full Kripke monotonicity infrastructure.
-     For first-order types, it's straightforward because the
-     relation doesn't depend on the store typing.
-     For higher-order types, we need induction on the type structure. *)
   intros n Σ Σ' T v1 v2 Hext Hrel.
-  (* Infrastructure uses store_ty_extends_weakening from Phase 2 *)
-  admit.
+  destruct (first_order_decidable T) as [Hfo | Hho];
+    [apply axiom_1_first_order with Σ'; auto | admit].
 Admitted.
 
 (** Axiom 2: val_rel_n_mono_store - Value relation monotone with store extension
 
-    SEMANTIC JUSTIFICATION:
-    This is the dual direction: if values are related in a smaller
-    store, they remain related in an extended store. This follows
-    because extension only adds locations, not removes them.
-
-    Infrastructure: Phase 2 CumulativeMonotone.v
-
-    PROOF STATUS:
-    This requires mutual induction on (n, T) with:
-    - val_rel_n monotonicity under store extension
-    - val_rel_at_type monotonicity under store extension
-    The key insight is that for first-order types, val_rel_at_type
-    doesn't depend on Σ. For TFn, we need to show that extensions
-    of Σ' (the larger store) are a subset of extensions of Σ.
-
-    For the TFn case:
-    - We have HT that works for any extension of Σ
-    - We need to show it works for any extension of Σ'
-    - Since Σ' extends Σ, any extension of Σ' is also an extension of Σ
-    - So we can use HT directly... BUT we also need the argument
-      relation at Σ (not Σ'), requiring axiom 1 (weaken direction).
+    FIRST-ORDER: PROVEN (store-independent)
+    HIGHER-ORDER (TFn): Requires Kripke transitivity
 *)
+Theorem axiom_2_first_order : forall n Σ Σ' T v1 v2,
+  first_order_type T = true ->
+  store_ty_extends Σ Σ' ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n n Σ' T v1 v2.
+Proof.
+  intros n Σ Σ' T v1 v2 Hfo Hext Hrel.
+  apply (val_rel_n_fo_store_independent n T v1 v2 Σ Σ' Hfo). exact Hrel.
+Qed.
+
+(** Axiom 2 full (higher-order case admitted) *)
 Theorem axiom_2_infrastructure : forall n Σ Σ' T v1 v2,
   store_ty_extends Σ Σ' ->
   val_rel_n n Σ T v1 v2 ->
   val_rel_n n Σ' T v1 v2.
 Proof.
-  (* Requires val_rel_at_type_mono lemma and mutual induction.
-     Key insight: val_rel_at_type for first-order types doesn't use Σ.
-     For TFn: need weaken direction (axiom 1) for argument conversion. *)
   intros n Σ Σ' T v1 v2 Hext Hrel.
-  admit.
+  destruct (first_order_decidable T) as [Hfo | Hho];
+    [apply axiom_2_first_order with Σ; auto | admit].
 Admitted.
 
 (** * Section 4: Step-Up Axioms (12-15)
