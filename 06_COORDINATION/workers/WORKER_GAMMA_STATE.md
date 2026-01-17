@@ -71,6 +71,49 @@
 | 2026-01-17T07:30:00Z | MONITORING | Recreated coordination directories after git pull |
 | 2026-01-17T07:35:00Z | MONITORING | PHASE_1_COMPLETE.signal found! Waiting for Phase 2 and 3... |
 | 2026-01-17T09:00:00Z | MONITORING | Session restart. Build verified: 15 files compile, 19 axioms remain. |
+| 2026-01-17T09:15:00Z | STUDYING | Analyzed Axiom 3 and 11 proof strategies. Waiting for Phase 2 & 3. |
+
+## Prepared Proof Strategies
+
+### Axiom 3: `val_rel_n_to_val_rel`
+**Statement:**
+```coq
+forall Σ T v1 v2,
+  value v1 -> value v2 ->
+  (exists n, val_rel_n (S n) Σ T v1 v2) ->
+  val_rel Σ T v1 v2.
+```
+
+**Proof Approach:**
+1. Given: `val_rel_n (S m) Σ T v1 v2` for some `m`
+2. Goal: `forall n, val_rel_n n Σ T v1 v2`
+3. Case n = 0: Trivial (val_rel_n 0 = True)
+4. Case n > 0:
+   - If n ≤ S m: Use cumulative downward closure (from Phase 2)
+   - If n > S m: Use step-up lemmas for values (from Phase 2)
+
+**Requires:** CumulativeRelation.v, CumulativeMonotone.v from Worker α
+
+### Axiom 11: `tapp_step0_complete`
+**Statement:**
+```coq
+forall f1 f2 a1 a2 v1 v2 ...,
+  value f1 -> value f2 -> value a1 -> value a2 ->
+  (EApp f1 a1, st1, ctx) -->* (v1, st1', ctx') ->
+  (EApp f2 a2, st2, ctx) -->* (v2, st2', ctx') ->
+  ...
+  val_rel_n 0 Σ T2 v1 v2 ->
+  ...
+  val_rel_n 1 Σ T2 v1 v2 /\ store_rel_n 1 Σ st1' st2'.
+```
+
+**Proof Approach:**
+1. f1, f2 are values of function type → decompose as lambdas (value_fn_decompose)
+2. a1, a2 are values → substitution terminates (strong normalization)
+3. Application steps: EApp (λx.body) v → [x:=v] body
+4. Result is value → apply step-up from 0 to 1
+
+**Requires:** StrongNorm.v from Worker β, value decomposition from SizedTypes.v
 
 ---
 
