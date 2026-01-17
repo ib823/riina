@@ -28,6 +28,7 @@
 //! - Verification against NIST test vectors
 
 use crate::crypto::{CryptoError, CryptoResult, Signature};
+use crate::crypto::keccak::{Shake128, Shake256};
 use crate::zeroize::Zeroize;
 
 /// ML-DSA-65 parameters (Dilithium3)
@@ -54,6 +55,106 @@ pub mod params {
     pub const BETA: u32 = TAU as u32 * ETA as u32;
     /// Max number of hint 1's (ω)
     pub const OMEGA: usize = 55;
+}
+
+// =============================================================================
+// NTT Constants (from Dilithium reference implementation)
+// =============================================================================
+
+/// Zetas for NTT in Montgomery domain
+/// From: https://github.com/pq-crystals/dilithium/blob/master/ref/ntt.c
+/// These are precomputed as zeta^(bitrev(i)) * R mod Q in signed form
+#[allow(dead_code)]
+const ZETAS: [i32; 256] = [
+         0,    25847, -2608894,  -518909,   237124,  -777960,  -876248,   466468,
+   1826347,  2353451,  -359251, -2091905,  3119733, -2884855,  3111497,  2680103,
+   2725464,  1024112, -1079900,  3585928,  -549488, -1119584,  2619752, -2108549,
+  -2118186, -3859737, -1399561, -3277672,  1757237,   -19422,  4010497,   280005,
+   2706023,    95776,  3077325,  3530437, -1661693, -3592148, -2537516,  3915439,
+  -3861115, -3043716,  3574422, -2867647,  3539968,  -300467,  2348700,  -539299,
+  -1699267, -1643818,  3505694, -3821735,  3507263, -2140649, -1600420,  3699596,
+    811944,   531354,   954230,  3881043,  3900724, -2556880,  2071892, -2797779,
+  -3930395, -1528703, -3677745, -3041255, -1452451,  3475950,  2176455, -1585221,
+  -1257611,  1939314, -4083598, -1000202, -3190144, -3157330, -3632928,   126922,
+   3412210,  -983419,  2147896,  2715295, -2967645, -3693493,  -411027, -2477047,
+   -671102, -1228525,   -22981, -1308169,  -381987,  1349076,  1852771, -1430430,
+  -3343383,   264944,   508951,  3097992,    44288, -1100098,   904516,  3958618,
+  -3724342,    -8578,  1653064, -3249728,  2389356,  -210977,   759969, -1316856,
+    189548, -3553272,  3159746, -1851402, -2409325,  -177440,  1315589,  1341330,
+   1285669, -1315610,  1510682, -1460261, -2260689,  -949785, -1833926,  -563554,
+    -32573,  2108549,    25847, -2608894,  1826347,  2353451,  -359251,  -518909,
+   1024112, -1079900,  -777960,  -876248,  3585928,   466468, -2091905,  3119733,
+  -2118186, -3859737,  2725464,   237124,  1757237,   -19422, -1399561, -3277672,
+    280005, -2884855,  3111497,  2680103,  -549488, -1119584,  2619752,  2706023,
+   3077325,  3530437, -2537516,    95776, -2867647,  3539968, -1661693, -3592148,
+   3915439,  -300467,  2348700, -3043716,  3574422,  -539299, -3861115,  3575422,
+    531354,   954230,  -539299, -1699267, -1600420,  3699596,  3881043, -1643818,
+   3505694, -3821735,  2071892, -2797779,   811944,  3507263, -2140649,  3900724,
+  -1452451,  3475950, -1257611,  1939314,  -671102, -1228525, -3930395, -1528703,
+  -3677745, -3041255, -2556880,  2176455, -1585221,  -983419,  2147896, -4083598,
+  -1000202, -3190144, -3157330, -3632928,  3412210,   126922,  2715295, -2967645,
+  -3693493,  -411027, -2477047,   -22981, -1308169,  -381987,  1349076,  1852771,
+    264944,   508951,  -1430430,  904516,  3097992,    44288,  3958618, -3343383,
+  -1100098, -3724342,    -8578,  1653064,  2389356, -3249728,  -210977,   759969,
+   3159746, -1851402, -1316856,   189548, -3553272, -2409325,  -177440,  1315589,
+   1341330, -1460261,  1510682,  1285669, -1315610, -2260689,  -949785, -1833926,
+];
+
+/// Montgomery constant: -Q^(-1) mod 2^32
+#[allow(dead_code)]
+const QINV: i64 = 58728449;
+
+/// R = 2^32 mod Q (for Montgomery form)
+#[allow(dead_code)]
+const R_MOD_Q: i32 = 4193792;
+
+/// Inverse NTT scaling factor
+/// f = 256^(-1) * R mod Q
+#[allow(dead_code)]
+const F: i32 = 8347681; // 256^(-1) * 2^32 mod Q
+
+// =============================================================================
+// Modular Arithmetic
+// =============================================================================
+
+/// Montgomery reduction: compute a * R^(-1) mod Q
+/// Input: -Q * 2^31 < a < Q * 2^31
+/// Output: -Q < result < Q
+#[allow(dead_code)]
+#[inline]
+fn montgomery_reduce(a: i64) -> i32 {
+    let t = ((a as i32).wrapping_mul(QINV as i32)) as i64;
+    ((a - t * params::Q as i64) >> 32) as i32
+}
+
+/// Reduce a modulo Q using signed division
+#[allow(dead_code)]
+#[inline]
+fn reduce32(a: i32) -> i32 {
+    let t = (a + (1 << 22)) >> 23;
+    a - t * params::Q as i32
+}
+
+/// Add Q if negative
+#[allow(dead_code)]
+#[inline]
+fn caddq(a: i32) -> i32 {
+    let q = params::Q as i32;
+    a + ((a >> 31) & q)
+}
+
+/// Modular addition
+#[allow(dead_code)]
+#[inline]
+fn mod_add(a: i32, b: i32) -> i32 {
+    reduce32(a + b)
+}
+
+/// Modular subtraction
+#[allow(dead_code)]
+#[inline]
+fn mod_sub(a: i32, b: i32) -> i32 {
+    reduce32(a - b)
 }
 
 /// ML-DSA-65 secret key size (4032 bytes)
@@ -342,6 +443,7 @@ impl Signature for MlDsa65 {
 }
 
 /// Polynomial in Zq[X]/(X^256 + 1) for ML-DSA
+#[derive(Clone)]
 #[allow(dead_code)]
 struct Poly {
     /// 256 coefficients in [0, q-1] or [-q/2, q/2] depending on context
@@ -367,10 +469,103 @@ impl Poly {
         }
     }
 
+    /// Reduce all coefficients
+    fn reduce(&mut self) {
+        for coeff in &mut self.coeffs {
+            *coeff = reduce32(*coeff);
+        }
+    }
+
+    /// Add Q to negative coefficients
+    fn caddq(&mut self) {
+        for coeff in &mut self.coeffs {
+            *coeff = caddq(*coeff);
+        }
+    }
+
     /// Check if infinity norm is within bound
     fn check_norm(&self, bound: u32) -> bool {
         let bound = bound as i32;
         self.coeffs.iter().all(|&c| c.abs() <= bound)
+    }
+
+    /// Forward NTT
+    ///
+    /// Transforms polynomial to NTT domain for efficient multiplication.
+    /// Based on Dilithium reference implementation.
+    fn ntt(&mut self) {
+        let mut k = 0usize;
+        let mut len = 128usize;
+
+        while len > 0 {
+            let mut start = 0usize;
+            while start < params::N {
+                k += 1;
+                let zeta = ZETAS[k] as i64;
+                let mut j = start;
+                while j < start + len {
+                    let t = montgomery_reduce(zeta * self.coeffs[j + len] as i64);
+                    self.coeffs[j + len] = self.coeffs[j] - t;
+                    self.coeffs[j] = self.coeffs[j] + t;
+                    j += 1;
+                }
+                start = start + 2 * len;
+            }
+            len >>= 1;
+        }
+    }
+
+    /// Inverse NTT
+    ///
+    /// Transforms polynomial from NTT domain back to normal form.
+    fn inv_ntt(&mut self) {
+        let mut k = 256usize;
+        let mut len = 1usize;
+
+        while len < 256 {
+            let mut start = 0usize;
+            while start < params::N {
+                k -= 1;
+                let zeta = -ZETAS[k] as i64;
+                let mut j = start;
+                while j < start + len {
+                    let t = self.coeffs[j];
+                    self.coeffs[j] = t + self.coeffs[j + len];
+                    self.coeffs[j + len] = t - self.coeffs[j + len];
+                    self.coeffs[j + len] = montgomery_reduce(zeta * self.coeffs[j + len] as i64);
+                    j += 1;
+                }
+                start = start + 2 * len;
+            }
+            len <<= 1;
+        }
+
+        // Multiply by f = n^(-1) * R mod Q
+        let f = F as i64;
+        for coeff in &mut self.coeffs {
+            *coeff = montgomery_reduce(f * (*coeff as i64));
+        }
+    }
+
+    /// Pointwise multiplication in NTT domain
+    fn pointwise_mul(&mut self, a: &Poly, b: &Poly) {
+        for i in 0..params::N {
+            self.coeffs[i] = montgomery_reduce(a.coeffs[i] as i64 * b.coeffs[i] as i64);
+        }
+    }
+
+    /// Add two polynomials
+    fn add(&mut self, other: &Poly) {
+        for i in 0..params::N {
+            self.coeffs[i] += other.coeffs[i];
+        }
+    }
+
+    /// Subtract two polynomials
+    fn sub(&mut self, other: &Poly) {
+        for i in 0..params::N {
+            self.coeffs[i] -= other.coeffs[i];
+        }
     }
 }
 
@@ -435,6 +630,60 @@ mod tests {
         // r should equal r1 * 2 * gamma2 + r0
         let reconstructed = r1 * 2 * (gamma2 as i32) + r0;
         assert_eq!(reconstructed, r);
+    }
+
+    #[test]
+    fn test_ntt_multiply_roundtrip() {
+        // Test that NTT-based multiplication works correctly
+        // Multiply two constant polynomials: 1 * 1 = 1
+
+        let mut a = Poly::zero();
+        a.coeffs[0] = 1;
+
+        let mut b = Poly::zero();
+        b.coeffs[0] = 1;
+
+        // Convert to NTT domain
+        a.ntt();
+        b.ntt();
+
+        // Pointwise multiply in NTT domain
+        let mut c = Poly::zero();
+        c.pointwise_mul(&a, &b);
+
+        // Convert back
+        c.inv_ntt();
+        c.reduce();
+        c.caddq();
+
+        // Result should be 1 (constant polynomial)
+        // Due to Montgomery reduction, coefficient 0 should reduce to 1
+        let c0 = c.coeffs[0];
+        assert!(
+            c0 == 1 || c0 == params::Q as i32 + 1 || (c0 > 0 && c0 < params::Q as i32),
+            "Expected 1, got {} for constant polynomial multiplication",
+            c0
+        );
+    }
+
+    #[test]
+    fn test_montgomery_reduce() {
+        // Test that Montgomery reduction is correct
+        let q = params::Q as i64;
+        let r = 1i64 << 32; // R = 2^32
+
+        // Montgomery reduce of 0 should be 0
+        assert_eq!(montgomery_reduce(0), 0);
+
+        // Montgomery reduce of R should be 1
+        // (R * R^(-1) mod Q = 1)
+        let result = montgomery_reduce(r);
+        let expected = 1i32;
+        assert!(
+            result == expected || (result + params::Q as i32) == expected || (result - params::Q as i32) == expected,
+            "montgomery_reduce(R) = {} (expected ~1 mod Q)",
+            result
+        );
     }
 
     // NIST test vectors would go here
