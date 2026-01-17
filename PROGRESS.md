@@ -171,6 +171,37 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 - `01_RESEARCH/33_DOMAIN_ETA_TRAFFIC_RESISTANCE/RESEARCH_ETA01_FOUNDATION.md`
 - `01_RESEARCH/34_DOMAIN_IOTA_ANONYMOUS_COMM/RESEARCH_IOTA01_FOUNDATION.md`
 
+### Full-Stack & Enterprise Tracks (κ, λ, μ) — NEW (2026-01-17)
+
+**REVOLUTIONARY:** These tracks enable RIINA to obsolete ALL existing frameworks and ERP systems.
+
+| Track | Name | Extends | Status | Description |
+|-------|------|---------|--------|-------------|
+| κ (Kappa) | Full-Stack Development | A, Σ | ⚪ DEFINED | One language everywhere, type-safe E2E, Steve Jobs UX |
+| λ (lambda) | Mobile Platform | κ | ⚪ DEFINED | iOS/Android native, App Store compliant, OWASP MASVS |
+| μ (Mu) | Enterprise ERP | κ, Σ | ⚪ DEFINED | Verified ERP, proven transactions, SOX/GDPR compliant |
+
+**Full-Stack Objective:** Replace React/Next.js/TypeScript/Node.js/PostgreSQL with ONE verified language.
+
+**Enterprise Objective:** Replace SAP/Oracle/Microsoft Dynamics with formally verified ERP where EVERY penny is mathematically proven correct.
+
+**Research foundations:**
+- `01_RESEARCH/35_DOMAIN_KAPPA_FULLSTACK/RESEARCH_KAPPA01_FOUNDATION.md`
+- `01_RESEARCH/36_DOMAIN_LAMBDA_MOBILE_PLATFORM/RESEARCH_LAMBDA01_FOUNDATION.md`
+- `01_RESEARCH/37_DOMAIN_MU_ENTERPRISE_ERP/RESEARCH_MU01_FOUNDATION.md`
+
+**Key Capabilities:**
+
+| Capability | Track | SAP/Oracle/MS | RIINA |
+|------------|-------|---------------|-------|
+| Implementation Time | μ | 12-36 months | Days-Weeks |
+| Mobile Cross-Platform | λ | Separate codebases | Single codebase |
+| Type Safety | κ | Runtime only | Compile-time proven |
+| SQL Injection | κ, μ | Possible | IMPOSSIBLE |
+| Financial Proofs | μ | None | Coq-verified balance |
+| App Store Compliance | λ | Manual | Auto-generated |
+| OWASP MASVS | λ | Partial | Full compliance |
+
 ---
 
 ## DETAILED STATUS
@@ -365,6 +396,14 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 |----------|----------|
 | **MILITARY_HARDENING_ROADMAP.md** | `01_RESEARCH/MILITARY_HARDENING_ROADMAP.md` |
 
+### Full-Stack & Enterprise Tracks (NEW)
+
+| Track | Document | Location |
+|-------|----------|----------|
+| κ | RESEARCH_KAPPA01_FOUNDATION.md | `01_RESEARCH/35_DOMAIN_KAPPA_FULLSTACK/` |
+| λ | RESEARCH_LAMBDA01_FOUNDATION.md | `01_RESEARCH/36_DOMAIN_LAMBDA_MOBILE_PLATFORM/` |
+| μ | RESEARCH_MU01_FOUNDATION.md | `01_RESEARCH/37_DOMAIN_MU_ENTERPRISE_ERP/` |
+
 ### Language Specification
 
 | Document | Location |
@@ -418,6 +457,16 @@ When all tracks are complete, the following threats become OBSOLETE:
 | **Message unlinkability attacks** | Track ι | ⚪ DEFINED |
 | **Timing correlation attacks** | Track η + ι | ⚪ DEFINED |
 | **Network sniffing (content)** | Track Ω + F | ⚪ DEFINED |
+| **Framework fragmentation** | Track κ | ⚪ DEFINED |
+| **Type safety at boundaries** | Track κ | ⚪ DEFINED |
+| **Cross-platform inconsistency** | Track λ | ⚪ DEFINED |
+| **App Store rejection** | Track λ | ⚪ DEFINED |
+| **Mobile security vulnerabilities** | Track λ | ⚪ DEFINED |
+| **ERP implementation delays** | Track μ | ⚪ DEFINED |
+| **ERP customization breaks upgrades** | Track μ | ⚪ DEFINED |
+| **Financial misstatements** | Track μ | ⚪ DEFINED |
+| **Compliance violations (SOX/GDPR)** | Track μ | ⚪ DEFINED |
+| **Multi-tenant data leakage** | Track μ | ⚪ DEFINED |
 
 ---
 
@@ -460,6 +509,31 @@ When all tracks are complete, the following threats become OBSOLETE:
 ---
 
 ## CHANGE LOG
+
+### 2026-01-17 (FULL-STACK & ENTERPRISE TRACKS)
+
+- **MAJOR**: Created Full-Stack & Enterprise Tracks (κ, λ, μ)
+  - Track κ (Kappa): Verified Full-Stack Development
+    - One language for frontend, backend, database, mobile
+    - Type-safe queries in Bahasa Melayu
+    - Steve Jobs principle: radical simplicity
+  - Track λ (lambda): Verified Mobile Platform
+    - iOS/Android native compilation from single codebase
+    - Full OWASP MASVS compliance
+    - Auto-generated App Store/Play Store compliance
+    - Complete UI component library
+    - Offline-first with verified sync
+  - Track μ (Mu): Verified Enterprise ERP
+    - All SAP/Oracle/Microsoft modules covered
+    - Financial transactions mathematically proven
+    - SOX/GDPR/LHDN compliance built-in
+    - Cryptographic audit trail
+    - Type-level multi-tenancy isolation
+- **Research documents created:**
+  - `01_RESEARCH/35_DOMAIN_KAPPA_FULLSTACK/RESEARCH_KAPPA01_FOUNDATION.md`
+  - `01_RESEARCH/36_DOMAIN_LAMBDA_MOBILE_PLATFORM/RESEARCH_LAMBDA01_FOUNDATION.md`
+  - `01_RESEARCH/37_DOMAIN_MU_ENTERPRISE_ERP/RESEARCH_MU01_FOUNDATION.md`
+- **Threat matrix extended** with 11 new obsoleted threats
 
 ### 2026-01-17 (WORKER_ζ SESSION — PARALLEL PROTOCOL ACTIVE)
 
