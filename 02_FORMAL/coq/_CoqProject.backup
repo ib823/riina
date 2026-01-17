@@ -27,11 +27,11 @@ properties/CumulativeRelation.v
 properties/CumulativeMonotone.v
 properties/KripkeProperties.v
 
-# Termination - Phase 3 (WORKER_β) - TEMPORARILY SKIPPED FOR GAMMA BUILD TEST
+# Termination - Phase 3 (WORKER_β)
 termination/SizedTypes.v
-# termination/Reducibility.v   # Has incomplete proof - awaiting Worker β fix
-# termination/StrongNorm.v
-# termination/TerminationLemmas.v
+termination/Reducibility.v
+termination/StrongNorm.v
+termination/TerminationLemmas.v
 
 # Properties - Phase 5 Store Semantics (WORKER_ζ)
 properties/StoreRelation.v
