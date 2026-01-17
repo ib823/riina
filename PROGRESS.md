@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-17 (CODEGEN COMPLETE)
+## Last Updated: 2026-01-17 (ML-KEM COMPLETE, ML-DSA IN PROGRESS)
 
 ## Current Focus: AXIOM ELIMINATION & TEST INFRASTRUCTURE | 📊 **BASELINE ESTABLISHED**
 
@@ -23,7 +23,7 @@
 **STATUS:** AXIOM ELIMINATION IN PROGRESS. Overall Grade: B+ (78%)
 **TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 24 Axioms 🟡), Effects (0 ADMITS) ✓
 **TRACK B:** ✅ CODEGEN COMPLETE (0 warnings, 123 tests passing). riina-codegen: IR, Interpreter, C Emission
-**TRACK F:** X25519 WORKING ✅ (90%, DH verified), AES BROKEN ❌ (3 failing tests), PQ STUB ❌
+**TRACK F:** X25519 ✅, Ed25519 ✅, Keccak/SHAKE ✅, ML-KEM-768 ✅ (9 tests), ML-DSA-65 🟡 (NTT working)
 **ZERO-TRUST TRACKS (R, S, T, U):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
@@ -83,7 +83,7 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 | C | Specifications | ◯ NOT STARTED | Language and API specifications |
 | D | Testing | ✅ **123 TESTS** | Full coverage: lexer, parser, typechecker, codegen |
 | E | Hardware | ◯ BLOCKED | Hardware integration (blocked on Track S) |
-| F | Tooling | ✅ **MAJOR PROGRESS** | X25519 90% complete, inversion fixed, DH verified |
+| F | Tooling | ✅ **PQ CRYPTO** | ML-KEM-768 ✅, ML-DSA-65 🟡, Ed25519 ✅, Keccak/SHAKE ✅ |
 
 ### Zero-Trust Tracks (R-U) — REVOLUTIONARY
 
