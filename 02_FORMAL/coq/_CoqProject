@@ -22,6 +22,9 @@ properties/TypeMeasure.v
 properties/LexOrder.v
 properties/FirstOrderComplete.v
 
+# Properties - Phase 2 Cumulative Relation (WORKER_α)
+properties/CumulativeRelation.v
+
 # Termination - Phase 3 (WORKER_β)
 termination/SizedTypes.v
 
