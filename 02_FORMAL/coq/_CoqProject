@@ -17,14 +17,14 @@ effects/EffectAlgebra.v
 effects/EffectSystem.v
 effects/EffectGate.v
 
-# Properties - Core (STABLE)
+# Properties - Phase 1 Foundation (WORKER_α) - VERIFIED COMPILING
+properties/TypeMeasure.v
+properties/LexOrder.v
+properties/FirstOrderComplete.v
+
+# Properties - Core
 properties/NonInterference.v
+properties/NonInterferenceKripke.v
+properties/NonInterferenceZero.v
 properties/SecurityProperties.v
 properties/Composition.v
-
-# Properties - Experimental (WORKER_α in progress - temporarily excluded)
-# properties/TypeMeasure.v
-# properties/LexOrder.v
-# properties/FirstOrderComplete.v
-# properties/NonInterferenceKripke.v
-# properties/NonInterferenceZero.v
