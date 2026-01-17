@@ -152,6 +152,25 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 
 **Military Objective:** Make RIINA the world's most secure defense software platform.
 
+### Privacy Extension Tracks (χ, η, ι) — NEW (2026-01-17)
+
+**CRITICAL:** These tracks address gaps in network/metadata privacy identified in forensic assessment.
+
+| Track | Name | Extends | Status | Description |
+|-------|------|---------|--------|-------------|
+| χ (Chi) | Metadata Privacy | A, Z | ⚪ DEFINED | Sender/timing/size unlinkability, metadata types |
+| η (Eta) | Traffic Resistance | Ω | ⚪ DEFINED | Traffic shaping, packet indistinguishability |
+| ι (Iota) | Anonymous Comm | χ, η | ⚪ DEFINED | Verified mixnet, onion routing, anonymity proofs |
+
+**Privacy Objective:** Make ALL metadata leakage OBSOLETE through formal verification.
+
+**Full specifications:** `06_COORDINATION/PRIVACY_GAPS_ATTACK_PLAN.md`
+
+**Research foundations:**
+- `01_RESEARCH/32_DOMAIN_CHI_METADATA_PRIVACY/RESEARCH_CHI01_FOUNDATION.md`
+- `01_RESEARCH/33_DOMAIN_ETA_TRAFFIC_RESISTANCE/RESEARCH_ETA01_FOUNDATION.md`
+- `01_RESEARCH/34_DOMAIN_IOTA_ANONYMOUS_COMM/RESEARCH_IOTA01_FOUNDATION.md`
+
 ---
 
 ## DETAILED STATUS
@@ -393,6 +412,12 @@ When all tracks are complete, the following threats become OBSOLETE:
 | **Mesh network attacks** | Track Τ | ⚪ DEFINED |
 | **Hardware damage** | Track Υ | ⚪ DEFINED |
 | **Hardware trojans** | Track Φ | ⚪ DEFINED |
+| **Metadata leakage (who/when/size)** | Track χ | ⚪ DEFINED |
+| **Traffic analysis / fingerprinting** | Track η | ⚪ DEFINED |
+| **Sender/receiver identification** | Track ι | ⚪ DEFINED |
+| **Message unlinkability attacks** | Track ι | ⚪ DEFINED |
+| **Timing correlation attacks** | Track η + ι | ⚪ DEFINED |
+| **Network sniffing (content)** | Track Ω + F | ⚪ DEFINED |
 
 ---
 
