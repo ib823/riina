@@ -11,8 +11,8 @@
 
 | Field | Value |
 |-------|-------|
-| Timestamp | 2026-01-17T08:45:00Z |
-| Commit Hash | 84775f3 |
+| Timestamp | 2026-01-17T09:00:00Z |
+| Commit Hash | 96f3731 |
 | Status | WAITING_FOR_PHASE_2 |
 
 ---
@@ -78,6 +78,9 @@
 | 08:40 | ACTIVE | Fix deployed | Excluded experimental files |
 | 08:42 | ACTIVE | Commit pushed | 84775f3 |
 | 08:45 | WAITING | Phase 2 signal check | Not present |
+| 08:55 | ACTIVE | Re-verification | Phase 1 files now compile ✅ |
+| 08:58 | ACTIVE | Updated _CoqProject | Included Phase 1 files |
+| 09:00 | WAITING | PHASE_1_COMPLETE verified | PHASE_2_COMPLETE not present |
 
 ---
 
@@ -104,9 +107,11 @@ fi
 
 | Dependency | Status | Notes |
 |------------|--------|-------|
-| Phase 1 Complete | ⬜ UNKNOWN | Worker α |
+| Phase 1 Complete | ✅ VERIFIED | PHASE_1_COMPLETE.signal exists, files compile |
 | Phase 2 Complete | ⬜ NOT SIGNALED | Blocks Phase 5 |
-| CumulativeRelation.v | ⬜ NOT CREATED | Will import when available |
+| CumulativeRelation.v | ⬜ NOT CREATED | Worker α Phase 2 file |
+| CumulativeMonotone.v | ⬜ NOT CREATED | Worker α Phase 2 file |
+| KripkeProperties.v | ⬜ NOT CREATED | Worker α Phase 2 file |
 
 ---
 
