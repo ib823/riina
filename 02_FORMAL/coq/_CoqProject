@@ -20,5 +20,6 @@ effects/EffectGate.v
 # Properties
 properties/NonInterference.v
 properties/NonInterferenceKripke.v
+properties/NonInterferenceZero.v
 properties/SecurityProperties.v
 properties/Composition.v
