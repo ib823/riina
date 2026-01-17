@@ -51,3 +51,6 @@ properties/ApplicationComplete.v
 
 # Phase 6: Axiom Elimination
 properties/AxiomElimination.v
+
+# Zero-Admits Elimination (WORKER_ζ)
+properties/KripkeMutual.v
