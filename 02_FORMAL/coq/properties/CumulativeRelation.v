@@ -1,0 +1,361 @@
+(** * CumulativeRelation.v
+
+    RIINA Cumulative Step-Indexed Logical Relation
+
+    This file defines the CUMULATIVE value relation where:
+    - val_rel_le n Σ T v1 v2 means "related at ALL steps k ≤ n"
+    - This makes monotonicity DEFINITIONAL rather than axiomatic
+
+    The cumulative structure is critical for handling TFn contravariance.
+    In standard step-indexed models, proving monotonicity for function types
+    requires axioms because of the contravariant argument position.
+    With the cumulative definition, monotonicity follows directly.
+
+    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+
+    Worker: WORKER_α (Alpha)
+    Phase: 2 (Cumulative Relation)
+
+    References:
+    - Ahmed (2006) "Step-Indexed Syntactic Logical Relations"
+    - Dreyer et al. (2011) "Logical Step-Indexed Logical Relations"
+    - Appel & McAllester (2001) "An indexed model of recursive types"
+*)
+
+Require Import String.
+Require Import List.
+Require Import Nat.
+Require Import Bool.
+Require Import Lia.
+
+Require Import RIINA.foundations.Syntax.
+Require Import RIINA.foundations.Typing.
+Require Import RIINA.foundations.Semantics.
+Require Import RIINA.properties.TypeMeasure.
+Require Import RIINA.properties.LexOrder.
+Require Import RIINA.properties.FirstOrderComplete.
+
+Import ListNotations.
+
+(** ** Closed Expression Predicate *)
+
+Definition closed_expr (e : expr) : Prop :=
+  forall x, ~ free_in x e.
+
+(** ** Store Relation (Simplified)
+
+    For the cumulative relation, we use a simplified store relation
+    that requires stores to have the same domain.
+*)
+
+Definition store_rel_simple (Σ : store_ty) (st1 st2 : store) : Prop :=
+  store_max st1 = store_max st2.
+
+(** ** Cumulative Value Relation
+
+    val_rel_le n Σ T v1 v2 means:
+    "v1 and v2 are related at type T for ALL steps up to and including n"
+
+    This is defined by recursion on n, with type-specific structure.
+*)
+
+(** Base structural predicate at a specific type (for positive steps) *)
+Definition val_rel_struct (val_rel_prev : ty -> expr -> expr -> Prop)
+                          (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
+  value v1 /\ value v2 /\
+  closed_expr v1 /\ closed_expr v2 /\
+  match T with
+  | TUnit => v1 = EUnit /\ v2 = EUnit
+  | TBool => exists b, v1 = EBool b /\ v2 = EBool b
+  | TInt => exists i, v1 = EInt i /\ v2 = EInt i
+  | TString => exists s, v1 = EString s /\ v2 = EString s
+  | TBytes => v1 = v2
+  | TSecret _ => True  (* Secrets are always indistinguishable *)
+  | TCapability _ => True
+  | TProof _ => True
+  | TRef T' _ => exists l, v1 = ELoc l /\ v2 = ELoc l
+  | TProd T1 T2 =>
+      exists x1 y1 x2 y2,
+        v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
+        val_rel_prev T1 x1 x2 /\
+        val_rel_prev T2 y1 y2
+  | TSum T1 T2 =>
+      (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\
+                     val_rel_prev T1 x1 x2) \/
+      (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\
+                     val_rel_prev T2 y1 y2)
+  | TFn T1 T2 eff =>
+      (* Kripke quantification: for all extended stores and related arguments *)
+      forall Σ', store_ty_extends Σ Σ' ->
+        forall x y,
+          value x -> value y -> closed_expr x -> closed_expr y ->
+          val_rel_prev T1 x y ->
+            forall st1 st2 ctx,
+              store_rel_simple Σ' st1 st2 ->
+              (* Application produces related results *)
+              exists v1' v2' st1' st2' ctx' Σ'',
+                store_ty_extends Σ' Σ'' /\
+                (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
+                (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
+                value v1' /\ value v2' /\
+                val_rel_prev T2 v1' v2' /\
+                store_rel_simple Σ'' st1' st2'
+  end.
+
+(** The cumulative value relation *)
+Fixpoint val_rel_le (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
+  match n with
+  | 0 => True  (* At step 0, everything is trivially related *)
+  | S n' =>
+      (* CUMULATIVE: Include all previous steps *)
+      val_rel_le n' Σ T v1 v2 /\
+      (* Plus structural requirements at step n' *)
+      val_rel_struct (val_rel_le n' Σ) Σ T v1 v2
+  end.
+
+(** ** Cumulative Store Relation *)
+
+Definition store_rel_le (n : nat) (Σ : store_ty) (st1 st2 : store) : Prop :=
+  store_max st1 = store_max st2 /\
+  forall l T sl,
+    store_lookup_ty l Σ = Some (T, sl) ->
+    match store_lookup l st1, store_lookup l st2 with
+    | Some v1, Some v2 => val_rel_le n Σ T v1 v2
+    | _, _ => False
+    end.
+
+(** ** Basic Properties of Cumulative Relation *)
+
+(** At step 0, everything is related *)
+Lemma val_rel_le_at_zero : forall Σ T v1 v2,
+  val_rel_le 0 Σ T v1 v2.
+Proof.
+  intros. simpl. exact I.
+Qed.
+
+(** Cumulative structure gives us the "previous step" directly *)
+Lemma val_rel_le_cumulative : forall n Σ T v1 v2,
+  val_rel_le (S n) Σ T v1 v2 ->
+  val_rel_le n Σ T v1 v2.
+Proof.
+  intros n Σ T v1 v2 H.
+  simpl in H. destruct H as [Hprev _]. exact Hprev.
+Qed.
+
+(** Values are values *)
+Lemma val_rel_le_value_left : forall n Σ T v1 v2,
+  n > 0 ->
+  val_rel_le n Σ T v1 v2 ->
+  value v1.
+Proof.
+  intros n Σ T v1 v2 Hn Hrel.
+  destruct n as [|n']; [lia|].
+  simpl in Hrel. destruct Hrel as [_ Hstruct].
+  unfold val_rel_struct in Hstruct.
+  destruct Hstruct as [Hv1 _]. exact Hv1.
+Qed.
+
+Lemma val_rel_le_value_right : forall n Σ T v1 v2,
+  n > 0 ->
+  val_rel_le n Σ T v1 v2 ->
+  value v2.
+Proof.
+  intros n Σ T v1 v2 Hn Hrel.
+  destruct n as [|n']; [lia|].
+  simpl in Hrel. destruct Hrel as [_ Hstruct].
+  unfold val_rel_struct in Hstruct.
+  destruct Hstruct as [_ [Hv2 _]]. exact Hv2.
+Qed.
+
+(** Related values are closed *)
+Lemma val_rel_le_closed_left : forall n Σ T v1 v2,
+  n > 0 ->
+  val_rel_le n Σ T v1 v2 ->
+  closed_expr v1.
+Proof.
+  intros n Σ T v1 v2 Hn Hrel.
+  destruct n as [|n']; [lia|].
+  simpl in Hrel. destruct Hrel as [_ Hstruct].
+  unfold val_rel_struct in Hstruct.
+  destruct Hstruct as [_ [_ [Hc1 _]]]. exact Hc1.
+Qed.
+
+Lemma val_rel_le_closed_right : forall n Σ T v1 v2,
+  n > 0 ->
+  val_rel_le n Σ T v1 v2 ->
+  closed_expr v2.
+Proof.
+  intros n Σ T v1 v2 Hn Hrel.
+  destruct n as [|n']; [lia|].
+  simpl in Hrel. destruct Hrel as [_ Hstruct].
+  unfold val_rel_struct in Hstruct.
+  destruct Hstruct as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
+Qed.
+
+(** ** First-Order Type Properties
+
+    For first-order types (no TFn), the relation is simpler.
+*)
+
+(** First-order relation doesn't depend on n (for n > 0) *)
+Lemma val_rel_le_first_order_step_indep : forall n m Σ T v1 v2,
+  first_order_type T = true ->
+  n > 0 -> m > 0 ->
+  val_rel_le n Σ T v1 v2 ->
+  val_rel_le m Σ T v1 v2.
+Proof.
+  intros n m Σ T v1 v2 Hfo Hn Hm Hrel.
+  (* For first-order types, the structural part doesn't depend on step *)
+  (* This requires induction on type structure *)
+  destruct n as [|n']; [lia|].
+  destruct m as [|m']; [lia|].
+  simpl in Hrel. simpl.
+  destruct Hrel as [_ Hstruct].
+  split.
+  - (* Cumulative part at m' - need to show val_rel_le m' *)
+    (* By induction on m' *)
+    clear Hm.
+    induction m' as [|m'' IH].
+    + simpl. exact I.
+    + simpl. split.
+      * apply IH. lia.
+      * (* Structural part at m'' is same as at n' for first-order *)
+        unfold val_rel_struct in *.
+        destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+        split; [exact Hv1|].
+        split; [exact Hv2|].
+        split; [exact Hc1|].
+        split; [exact Hc2|].
+        destruct T; simpl in Hfo; try discriminate; auto.
+        -- (* TProd *)
+           apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+           destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+           exists x1, y1, x2, y2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           (* Need to show val_rel_le m'' for subtypes *)
+           (* This needs the IH applied to subtypes *)
+           admit.  (* Requires mutual induction *)
+        -- (* TSum *)
+           apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+           destruct HT as [HInl | HInr].
+           ++ destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+              left. exists x1, x2.
+              split; [exact Heq1|].
+              split; [exact Heq2|].
+              admit.  (* Requires mutual induction *)
+           ++ destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+              right. exists y1, y2.
+              split; [exact Heq1|].
+              split; [exact Heq2|].
+              admit.  (* Requires mutual induction *)
+  - (* Structural part at m' *)
+    unfold val_rel_struct in *.
+    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+    split; [exact Hv1|].
+    split; [exact Hv2|].
+    split; [exact Hc1|].
+    split; [exact Hc2|].
+    destruct T; simpl in Hfo; try discriminate; auto.
+    + (* TProd *)
+      apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+      destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+      exists x1, y1, x2, y2.
+      split; [exact Heq1|].
+      split; [exact Heq2|].
+      admit.  (* Requires mutual induction *)
+    + (* TSum *)
+      apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+      destruct HT as [HInl | HInr].
+      * destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+        left. exists x1, x2.
+        split; [exact Heq1|].
+        split; [exact Heq2|].
+        admit.  (* Requires mutual induction *)
+      * destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+        right. exists y1, y2.
+        split; [exact Heq1|].
+        split; [exact Heq2|].
+        admit.  (* Requires mutual induction *)
+Admitted.
+
+(** First-order relation doesn't depend on Σ *)
+Lemma val_rel_le_first_order_store_indep : forall n Σ Σ' T v1 v2,
+  first_order_type T = true ->
+  val_rel_le n Σ T v1 v2 ->
+  val_rel_le n Σ' T v1 v2.
+Proof.
+  intros n Σ Σ' T v1 v2 Hfo Hrel.
+  (* For first-order types, Σ doesn't appear in the relation *)
+  induction n as [|n' IH].
+  - simpl. exact I.
+  - simpl in Hrel. simpl.
+    destruct Hrel as [Hprev Hstruct].
+    split.
+    + apply IH. exact Hprev.
+    + unfold val_rel_struct in *.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      destruct T; simpl in Hfo; try discriminate; auto.
+      * (* TProd *)
+        apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+        destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+        exists x1, y1, x2, y2.
+        split; [exact Heq1|].
+        split; [exact Heq2|].
+        split.
+        -- apply (IH Σ). exact Hr1.
+        -- apply (IH Σ). exact Hr2.
+      * (* TSum *)
+        apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+        destruct HT as [HInl | HInr].
+        -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+           left. exists x1, x2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           apply (IH Σ). exact Hr.
+        -- destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+           right. exists y1, y2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           apply (IH Σ). exact Hr.
+Qed.
+
+(** ** Expression Relation *)
+
+Definition exp_rel_le (n : nat) (Σ : store_ty) (T : ty)
+                       (e1 e2 : expr) (st1 st2 : store) (ctx : effect_ctx) : Prop :=
+  forall k v1 v2 st1' st2' ctx',
+    k <= n ->
+    (e1, st1, ctx) -->* (v1, st1', ctx') ->
+    (e2, st2, ctx) -->* (v2, st2', ctx') ->
+    value v1 -> value v2 ->
+    exists Σ',
+      store_ty_extends Σ Σ' /\
+      val_rel_le k Σ' T v1 v2 /\
+      store_rel_simple Σ' st1' st2'.
+
+(** ** Transitivity of Store Extension *)
+
+Lemma store_ty_extends_trans : forall Σ1 Σ2 Σ3,
+  store_ty_extends Σ1 Σ2 ->
+  store_ty_extends Σ2 Σ3 ->
+  store_ty_extends Σ1 Σ3.
+Proof.
+  intros Σ1 Σ2 Σ3 H12 H23.
+  unfold store_ty_extends in *.
+  intros l T sl Hlook.
+  apply H23. apply H12. exact Hlook.
+Qed.
+
+(** Reflexivity of store extension *)
+Lemma store_ty_extends_refl : forall Σ,
+  store_ty_extends Σ Σ.
+Proof.
+  intros Σ. unfold store_ty_extends. intros. exact H.
+Qed.
+
+(** End of CumulativeRelation.v *)

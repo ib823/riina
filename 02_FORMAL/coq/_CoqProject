@@ -22,6 +22,9 @@ properties/TypeMeasure.v
 properties/LexOrder.v
 properties/FirstOrderComplete.v
 
+# Termination - Phase 3 (WORKER_β)
+termination/SizedTypes.v
+
 # Properties - Core
 properties/NonInterference.v
 properties/NonInterferenceKripke.v
