@@ -148,11 +148,66 @@ Proof.
       destruct Hrel as [Hprev Hcurr].
       assert (m' <= n') as Hle' by lia.
       split.
-      * apply (IHn m' Σ T v1 v2 Hle' Hprev).
-      * (* Second part requires case analysis on T *)
-        (* For TFn, we hit the contravariance issue *)
-        (* Admit for now - this is semantically sound *)
-        admit.
+      * (* First conjunct: cumulative part *)
+        apply (IHn m' Σ T v1 v2 Hle' Hprev).
+      * (* Second conjunct: structural requirements *)
+        destruct Hcurr as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+        split; [exact Hv1|].
+        split; [exact Hv2|].
+        split; [exact Hc1|].
+        split; [exact Hc2|].
+        (* Type-specific case analysis - order matches ty definition *)
+        destruct T.
+        -- (* TUnit: v1 = EUnit ∧ v2 = EUnit - same at any step *)
+           exact HT.
+        -- (* TBool: exists b, ... - same at any step *)
+           exact HT.
+        -- (* TInt: exists i, ... - same at any step *)
+           exact HT.
+        -- (* TString: exists s, ... - same at any step *)
+           exact HT.
+        -- (* TBytes: v1 = v2 - same at any step *)
+           exact HT.
+        -- (* TFn T1 T2 eff: CONTRAVARIANCE ISSUE
+              HT says: forall args at n', results at n'
+              Goal: forall args at m', results at m'
+              Given args at m', we can't call HT (needs args at n')
+              This is the fundamental higher-order limitation *)
+           intros Σ' Hext x y Hvx Hvy Hcx Hcy Hrxy st1 st2 ctx Hst.
+           (* Hrxy: val_rel_le m' Σ' T1 x y (args related at m')
+              HT needs: val_rel_le n' Σ' T1 x y (args related at n')
+              Since m' <= n', we have m' ⊆ n' in terms of steps
+              But val_rel_le m' does NOT imply val_rel_le n' (opposite direction!)
+              We cannot complete this case without additional axioms. *)
+           admit.
+        -- (* TProd T1 T2: need to weaken subterms *)
+           destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+           exists x1, y1, x2, y2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           split.
+           ++ apply (IHn m' Σ T1 x1 x2 Hle' Hr1).
+           ++ apply (IHn m' Σ T2 y1 y2 Hle' Hr2).
+        -- (* TSum T1 T2: need to weaken subterms *)
+           destruct HT as [HInl | HInr].
+           ++ destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+              left. exists x1, x2.
+              split; [exact Heq1|].
+              split; [exact Heq2|].
+              apply (IHn m' Σ T1 x1 x2 Hle' Hr).
+           ++ destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+              right. exists y1, y2.
+              split; [exact Heq1|].
+              split; [exact Heq2|].
+              apply (IHn m' Σ T2 y1 y2 Hle' Hr).
+        -- (* TRef T sl: exists l, ... - same at any step *)
+           exact HT.
+        -- (* TSecret T: True - trivial *)
+           exact I.
+        -- (* TProof T: True *)
+           exact I.
+        -- (* TCapability eff: True *)
+           exact I.
 Admitted.
 
 (** LEMMA 2: Step-0 is trivial *)
@@ -189,35 +244,160 @@ Proof.
     admit.
 Admitted.
 
+(** HELPER: Transitivity of store typing extension *)
+Lemma store_ty_extends_trans : forall Σ1 Σ2 Σ3,
+  store_ty_extends Σ1 Σ2 ->
+  store_ty_extends Σ2 Σ3 ->
+  store_ty_extends Σ1 Σ3.
+Proof.
+  intros Σ1 Σ2 Σ3 H12 H23.
+  unfold store_ty_extends in *.
+  intros l T sl Hlook.
+  apply H23. apply H12. exact Hlook.
+Qed.
+
 (** LEMMA 4: Store extension - relates values across store extensions
 
     For base types, this is trivial since they don't mention Σ.
     For TFn, the Kripke quantification over Σ' ⊇ Σ means that
     store extension should preserve the relation.
+
+    PROVABLE: By induction on n, with TFn using transitivity of store_ty_extends.
 *)
 Lemma val_rel_le_mono_store : forall n Σ Σ' T v1 v2,
   store_ty_extends Σ Σ' ->
   val_rel_le n Σ T v1 v2 ->
   val_rel_le n Σ' T v1 v2.
 Proof.
-  intros n Σ Σ' T v1 v2 Hext Hrel.
-  (* Requires transitivity of store_ty_extends and careful reasoning *)
-  admit.
-Admitted.
+  induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hext Hrel.
+  - (* n = 0 *)
+    simpl. exact I.
+  - (* n = S n' *)
+    simpl in Hrel. simpl.
+    destruct Hrel as [Hprev Hcurr].
+    split.
+    + (* Cumulative part - use IH *)
+      apply (IHn Σ Σ' T v1 v2 Hext Hprev).
+    + (* Structural part *)
+      destruct Hcurr as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      destruct T.
+      * (* TUnit *) exact HT.
+      * (* TBool *) exact HT.
+      * (* TInt *) exact HT.
+      * (* TString *) exact HT.
+      * (* TBytes *) exact HT.
+      * (* TFn T1 T2 eff *)
+        intros Σ'' Hext' x y Hvx Hvy Hcx Hcy Hrxy st1 st2 ctx Hst.
+        (* HT: forall Σ'', store_ty_extends Σ Σ'' -> ... *)
+        (* Goal needs: store_ty_extends Σ' Σ'' -> ... *)
+        (* We have Hext: store_ty_extends Σ Σ' and Hext': store_ty_extends Σ' Σ'' *)
+        (* By transitivity: store_ty_extends Σ Σ'' *)
+        assert (store_ty_extends Σ Σ'') as Hext_trans.
+        { apply (store_ty_extends_trans Σ Σ' Σ'' Hext Hext'). }
+        (* Now we can apply HT *)
+        apply (HT Σ'' Hext_trans x y Hvx Hvy Hcx Hcy).
+        -- (* Arguments: val_rel_le n' Σ'' T1 x y - we have it directly *)
+           exact Hrxy.
+        -- exact Hst.
+      * (* TProd T1 T2 *)
+        destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+        exists x1, y1, x2, y2.
+        split; [exact Heq1|].
+        split; [exact Heq2|].
+        split.
+        -- apply (IHn Σ Σ' T1 x1 x2 Hext Hr1).
+        -- apply (IHn Σ Σ' T2 y1 y2 Hext Hr2).
+      * (* TSum T1 T2 *)
+        destruct HT as [HInl | HInr].
+        -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+           left. exists x1, x2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           apply (IHn Σ Σ' T1 x1 x2 Hext Hr).
+        -- destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+           right. exists y1, y2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           apply (IHn Σ Σ' T2 y1 y2 Hext Hr).
+      * (* TRef T sl *) exact HT.
+      * (* TSecret T *) exact I.
+      * (* TProof T *) exact I.
+      * (* TCapability eff *) exact I.
+Qed.
 
 (** LEMMA 5: Store weakening (other direction)
 
-    For TFn, the Kripke quantification over Σ'' ⊇ Σ' implies
-    quantification over Σ'' ⊇ Σ (since Σ' ⊇ Σ).
+    For first-order types, Σ doesn't appear in the relation so this is trivial.
+
+    For TFn, this is NOT provable in the general case:
+    - HT says: forall Σ'', store_ty_extends Σ' Σ'' -> ...
+    - Goal says: forall Σ'', store_ty_extends Σ Σ'' -> ...
+    - Given store_ty_extends Σ Σ'', we need store_ty_extends Σ' Σ'' to use HT
+    - But Σ'' extending Σ does NOT imply Σ'' extends Σ' (Σ' may have more!)
+
+    This is a fundamental limitation: Kripke semantics with monotonic worlds
+    doesn't support weakening from larger to smaller worlds for function types.
 *)
 Lemma val_rel_le_weaken : forall n Σ Σ' T v1 v2,
   store_ty_extends Σ Σ' ->
   val_rel_le n Σ' T v1 v2 ->
   val_rel_le n Σ T v1 v2.
 Proof.
-  intros n Σ Σ' T v1 v2 Hext Hrel.
-  (* For TFn, needs Σ'' ⊇ Σ' to apply HT, but we only have Σ'' ⊇ Σ *)
-  admit.
+  induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hext Hrel.
+  - (* n = 0 *)
+    simpl. exact I.
+  - (* n = S n' *)
+    simpl in Hrel. simpl.
+    destruct Hrel as [Hprev Hcurr].
+    split.
+    + (* Cumulative part - use IH *)
+      apply (IHn Σ Σ' T v1 v2 Hext Hprev).
+    + (* Structural part *)
+      destruct Hcurr as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      destruct T.
+      * (* TUnit *) exact HT.
+      * (* TBool *) exact HT.
+      * (* TInt *) exact HT.
+      * (* TString *) exact HT.
+      * (* TBytes *) exact HT.
+      * (* TFn T1 T2 eff - NOT PROVABLE *)
+        (* HT: forall Σ'', store_ty_extends Σ' Σ'' -> ... *)
+        (* Goal: forall Σ'', store_ty_extends Σ Σ'' -> ... *)
+        (* We have store_ty_extends Σ Σ'' but need store_ty_extends Σ' Σ'' *)
+        (* Since Σ ⊆ Σ' and Σ ⊆ Σ'', we do NOT have Σ' ⊆ Σ'' in general *)
+        admit.
+      * (* TProd T1 T2 *)
+        destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+        exists x1, y1, x2, y2.
+        split; [exact Heq1|].
+        split; [exact Heq2|].
+        split.
+        -- apply (IHn Σ Σ' T1 x1 x2 Hext Hr1).
+        -- apply (IHn Σ Σ' T2 y1 y2 Hext Hr2).
+      * (* TSum T1 T2 *)
+        destruct HT as [HInl | HInr].
+        -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+           left. exists x1, x2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           apply (IHn Σ Σ' T1 x1 x2 Hext Hr).
+        -- destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+           right. exists y1, y2.
+           split; [exact Heq1|].
+           split; [exact Heq2|].
+           apply (IHn Σ Σ' T2 y1 y2 Hext Hr).
+      * (* TRef T sl *) exact HT.
+      * (* TSecret T *) exact I.
+      * (* TProof T *) exact I.
+      * (* TCapability eff *) exact I.
 Admitted.
 
 (** LEMMA 6: Finite to infinite
