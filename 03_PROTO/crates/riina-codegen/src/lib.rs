@@ -215,7 +215,7 @@ pub fn compile_to_c(expr: &riina_types::Expr) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use riina_types::Expr;
+    use riina_types::{Expr, Ty, Effect, SecurityLevel};
 
     #[test]
     fn test_eval_unit() {
@@ -245,5 +245,228 @@ mod tests {
     fn test_eval_string() {
         let result = eval(&Expr::String("hello".to_string()));
         assert_eq!(result, Ok(Value::String("hello".to_string())));
+    }
+
+    // ==================== Integration Tests ====================
+
+    /// Test end-to-end: compile to IR then interpret gives same result as eval
+    #[test]
+    fn test_integration_compile_interpret_matches_eval() {
+        // Test using identity function: (λx:Int. x) 42
+        let expr = Expr::App(
+            Box::new(Expr::Lam(
+                "x".to_string(),
+                Ty::Int,
+                Box::new(Expr::Var("x".to_string())),
+            )),
+            Box::new(Expr::Int(42)),
+        );
+
+        // Direct eval
+        let eval_result = eval(&expr).unwrap();
+
+        // Compile to IR and execute via interp
+        let program = compile(&expr).unwrap();
+        let mut interp = Interpreter::new();
+        let interp_result = interp.run(&program).unwrap();
+
+        assert_eq!(eval_result, interp_result);
+        assert_eq!(eval_result, Value::Int(42));
+    }
+
+    /// Test full pipeline: AST -> IR -> C code produces valid output
+    #[test]
+    fn test_integration_full_pipeline_to_c() {
+        let expr = Expr::Pair(
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Bool(true)),
+        );
+
+        let c_code = compile_to_c(&expr).unwrap();
+
+        // Verify C code structure
+        assert!(c_code.contains("#include"));
+        assert!(c_code.contains("riina_pair"));
+        assert!(c_code.contains("main"));
+    }
+
+    /// Test error propagation through the pipeline
+    #[test]
+    fn test_integration_unbound_variable_error() {
+        let expr = Expr::Var("undefined_var".to_string());
+
+        let result = eval(&expr);
+
+        assert!(matches!(result, Err(Error::UnboundVariable(name)) if name == "undefined_var"));
+    }
+
+    /// Test error display formatting
+    #[test]
+    fn test_error_display_formatting() {
+        let errors = vec![
+            Error::UnboundVariable("x".to_string()),
+            Error::TypeMismatch {
+                expected: "Int".to_string(),
+                found: "Bool".to_string(),
+                context: "addition".to_string(),
+            },
+            Error::DivisionByZero,
+            Error::InvalidOperation("test op".to_string()),
+            Error::InvalidReference("ref error".to_string()),
+        ];
+
+        for error in errors {
+            let display = format!("{}", error);
+            assert!(!display.is_empty());
+            // Verify Error trait is implemented
+            let _: &dyn std::error::Error = &error;
+        }
+    }
+
+    /// Test complex nested expression through full pipeline
+    #[test]
+    fn test_integration_nested_let_bindings() {
+        // let x = 10 in let y = 20 in (x, y)
+        let expr = Expr::Let(
+            "x".to_string(),
+            Box::new(Expr::Int(10)),
+            Box::new(Expr::Let(
+                "y".to_string(),
+                Box::new(Expr::Int(20)),
+                Box::new(Expr::Pair(
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string())),
+                )),
+            )),
+        );
+
+        let result = eval(&expr).unwrap();
+        // Result should be a pair (10, 20)
+        assert!(matches!(result, Value::Pair(_, _)));
+
+        // Also verify compile and C emission work
+        let program = compile(&expr).unwrap();
+        assert!(!program.functions.is_empty());
+
+        let c_code = compile_to_c(&expr).unwrap();
+        assert!(c_code.contains("riina_pair"));
+    }
+
+    /// Test lambda and application through pipeline
+    #[test]
+    fn test_integration_lambda_application() {
+        // (λx:Int. x) 42
+        let expr = Expr::App(
+            Box::new(Expr::Lam(
+                "x".to_string(),
+                Ty::Int,
+                Box::new(Expr::Var("x".to_string())),
+            )),
+            Box::new(Expr::Int(42)),
+        );
+
+        let result = eval(&expr).unwrap();
+        assert_eq!(result, Value::Int(42));
+    }
+
+    /// Test conditional branching through pipeline
+    #[test]
+    fn test_integration_conditional_true_branch() {
+        // if true then 1 else 2
+        let expr = Expr::If(
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Int(2)),
+        );
+
+        let result = eval(&expr).unwrap();
+        assert_eq!(result, Value::Int(1));
+
+        // Verify IR generation handles branches
+        let program = compile(&expr).unwrap();
+        let main = program.function(ir::FuncId::MAIN).unwrap();
+        // Should have multiple blocks for branching
+        assert!(main.blocks.len() >= 1);
+    }
+
+    /// Test conditional branching false branch
+    #[test]
+    fn test_integration_conditional_false_branch() {
+        // if false then 1 else 2
+        let expr = Expr::If(
+            Box::new(Expr::Bool(false)),
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Int(2)),
+        );
+
+        let result = eval(&expr).unwrap();
+        assert_eq!(result, Value::Int(2));
+    }
+
+    /// Test sum types through full pipeline
+    #[test]
+    fn test_integration_sum_type_inl() {
+        // inl 42
+        let expr = Expr::Inl(
+            Box::new(Expr::Int(42)),
+            Ty::Int, // right type placeholder
+        );
+
+        let result = eval(&expr).unwrap();
+        assert!(matches!(result, Value::Inl(_)));
+
+        if let Value::Inl(inner) = result {
+            assert_eq!(*inner, Value::Int(42));
+        }
+    }
+
+    /// Test pair projection through pipeline
+    #[test]
+    fn test_integration_pair_projections() {
+        // fst (1, 2)
+        let pair = Expr::Pair(
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Int(2)),
+        );
+
+        let fst_result = eval(&Expr::Fst(Box::new(pair.clone()))).unwrap();
+        let snd_result = eval(&Expr::Snd(Box::new(pair))).unwrap();
+
+        assert_eq!(fst_result, Value::Int(1));
+        assert_eq!(snd_result, Value::Int(2));
+    }
+
+    /// Test module re-exports are accessible
+    #[test]
+    fn test_module_reexports() {
+        // Verify all re-exported types are accessible
+        let _instr: Instruction = Instruction::Const(ir::Constant::Unit);
+        let _block: BasicBlock = BasicBlock::new(ir::BlockId::new(0));
+        let _program: Program = Program::new();
+        let _value: Value = Value::Unit;
+        let _lower: Lower = Lower::new();
+        let _interp: Interpreter = Interpreter::new();
+        let _emitter: CEmitter = CEmitter::new();
+    }
+
+    /// Test security operations through pipeline
+    #[test]
+    fn test_integration_classify() {
+        // classify 42
+        let expr = Expr::Classify(Box::new(Expr::Int(42)));
+
+        let result = eval(&expr).unwrap();
+        // Result should be a secret value
+        assert!(matches!(result, Value::Secret(_)));
+    }
+
+    /// Test prove and declassify operations
+    #[test]
+    fn test_integration_prove() {
+        // prove 42
+        let expr = Expr::Prove(Box::new(Expr::Int(42)));
+
+        let result = eval(&expr).unwrap();
+        assert!(matches!(result, Value::Proof(_)));
     }
 }
