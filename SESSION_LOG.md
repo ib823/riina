@@ -1,12 +1,91 @@
 # Session Log
 
-## 2026-01-17 (Session 11): PHASE 1 AXIOM ELIMINATION CONTINUED (Track A)
+## 2026-01-17 (Session 11 Continued): AXIOM ELIMINATION SUCCESS (Track A)
+
+**Goal:** Eliminate axioms toward 0, prove first-order lemmas
+
+**Branch:** `main`
+
+### Session Results: 24 → 19 axioms (-5 eliminated, -12 total from 31)
+
+### Axioms Eliminated This Session
+
+1. **`store_rel_n_weaken` — PROVEN AS COROLLARY**
+   - Was: `Axiom store_rel_n_weaken`
+   - Now: `Lemma store_rel_n_weaken` proven from val_rel_n_weaken
+   - Insight: Store relation follows value relation since stores contain values
+
+2. **`val_rel_at_type_value_left` — ELIMINATED (UNSOUND)**
+3. **`val_rel_at_type_value_right` — ELIMINATED (UNSOUND)**
+4. **`val_rel_at_type_closed_left` — ELIMINATED (UNSOUND)**
+5. **`val_rel_at_type_closed_right` — ELIMINATED (UNSOUND)**
+   - These axioms claimed val_rel_at_type implies value/closed for first-order types
+   - PROBLEM: NOT TRUE for TBytes (v1 = v2) and TSecret (True) - no structural info!
+   - SOLUTION: Modified val_rel_at_type_to_val_rel_fo to take value/closed as PREMISES
+   - At the only call site (T_Lam), these are already available from TFn definition
+
+### New Proven Lemmas
+
+```coq
+(* Σ-independence for first-order types *)
+Lemma val_rel_at_type_store_ty_indep : forall T Σ Σ' sp vl sl v1 v2,
+  first_order_type T = true -> val_rel_at_type Σ sp vl sl T v1 v2 ->
+  val_rel_at_type Σ' sp vl sl T v1 v2.
+
+(* Full predicate independence for first-order types *)
+Lemma val_rel_at_type_fo_full_indep : forall T Σ Σ' sp1 sp2 vl1 vl2 sl1 sl2 v1 v2,
+  first_order_type T = true -> val_rel_at_type Σ sp1 vl1 sl1 T v1 v2 ->
+  val_rel_at_type Σ' sp2 vl2 sl2 T v1 v2.
+
+(* First-order versions of general axioms (PROVEN) *)
+Lemma val_rel_n_weaken_fo : forall n Σ Σ' T v1 v2, ...
+Lemma val_rel_n_mono_store_fo : forall n Σ Σ' T v1 v2, ...
+Lemma val_rel_n_step_up_fo : forall n Σ T v1 v2, n > 0 -> ...
+Lemma val_rel_n_step_up_any_fo : forall n m Σ T v1 v2, n > 0 -> n <= m -> ...
+Lemma val_rel_n_to_val_rel_fo : forall Σ T v1 v2, first_order_type T = true -> ...
+```
+
+### Key Insights
+
+1. **First-order types are Σ-independent**: For types without TFn, val_rel_at_type
+   does NOT use the store typing Σ. This enables simple case analysis proofs.
+
+2. **Predicate independence**: For first-order types, val_rel_at_type doesn't
+   depend on the predicates (sp, vl, sl), enabling free conversion between levels.
+
+3. **n=0 case is fundamentally unprovable**: val_rel_n 0 = True gives no structural
+   info. Need n > 0 for meaningful step-up proofs.
+
+4. **Unsound axioms discovered and eliminated**: The value/closed axioms for
+   first-order types were WRONG for TBytes/TSecret. Better to require as premises.
+
+### Remaining 19 Axioms (Categorized)
+
+| Category | Count | Axioms |
+|----------|-------|--------|
+| Higher-order Kripke | 3 | val_rel_n_weaken, val_rel_n_mono_store, val_rel_n_to_val_rel |
+| Step-1 termination | 7 | exp_rel_step1_{fst,snd,case,if,let,handle,app} |
+| Application | 1 | tapp_step0_complete |
+| Step-up | 3 | val_rel_n_step_up, store_rel_n_step_up, val_rel_n_lam_cumulative |
+| Higher-order conv | 1 | val_rel_at_type_to_val_rel_ho |
+| Semantic typing | 4 | logical_relation_{ref,deref,assign,declassify} |
+
+### Why Remaining Axioms Are Hard
+
+- **Higher-order Kripke**: TFn has contravariant T1, requires careful type induction
+- **Step-1 termination**: Need progress/termination proofs (full semantics)
+- **Step-up**: Interconnected - store_rel needs val_rel for stored values
+- **Semantic typing**: Need full logical relation proofs for ref/deref/assign
+
+---
+
+## 2026-01-17 (Session 11 Start): PHASE 1 AXIOM ELIMINATION CONTINUED (Track A)
 
 **Goal:** Deep analysis of Category 2-3 axioms (Kripke monotonicity, step index)
 
 **Branch:** `main`
 
-### Achievements
+### Earlier Achievements
 
 1. **`store_rel_n_mono_store` — ELIMINATED (UNUSED)**
    - Analysis: grep search revealed axiom was declared but NEVER USED in any proof
