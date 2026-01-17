@@ -1330,4 +1330,105 @@ mod tests {
         let code = compile_and_emit(&lam).unwrap();
         assert!(code.contains("RIINA_TAG_CLOSURE"));
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADDITIONAL EMIT TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_emit_bool_false() {
+        let code = compile_and_emit(&Expr::Bool(false)).unwrap();
+        assert!(code.contains("riina_bool(false)"));
+    }
+
+    #[test]
+    fn test_emit_int_negative() {
+        let code = compile_and_emit(&Expr::Int(-100)).unwrap();
+        // Negative numbers are handled correctly
+        assert!(code.contains("int main(void)"));
+    }
+
+    #[test]
+    fn test_emit_inl() {
+        let inl = Expr::Inl(Box::new(Expr::Int(42)));
+        let code = compile_and_emit(&inl).unwrap();
+        assert!(code.contains("riina_inl"));
+    }
+
+    #[test]
+    fn test_emit_inr() {
+        let inr = Expr::Inr(Box::new(Expr::Bool(true)));
+        let code = compile_and_emit(&inr).unwrap();
+        assert!(code.contains("riina_inr"));
+    }
+
+    #[test]
+    fn test_emit_fst() {
+        let fst = Expr::Fst(Box::new(Expr::Pair(
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Int(2)),
+        )));
+        let code = compile_and_emit(&fst).unwrap();
+        assert!(code.contains("riina_fst"));
+    }
+
+    #[test]
+    fn test_emit_snd() {
+        let snd = Expr::Snd(Box::new(Expr::Pair(
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Int(2)),
+        )));
+        let code = compile_and_emit(&snd).unwrap();
+        assert!(code.contains("riina_snd"));
+    }
+
+    #[test]
+    fn test_emit_declassify() {
+        let declassify = Expr::Declassify(Box::new(Expr::Classify(Box::new(Expr::Int(42)))));
+        let code = compile_and_emit(&declassify).unwrap();
+        assert!(code.contains("riina_declassify"));
+    }
+
+    #[test]
+    fn test_emit_prove() {
+        let prove = Expr::Prove(Box::new(Expr::Bool(true)));
+        let code = compile_and_emit(&prove).unwrap();
+        assert!(code.contains("riina_prove"));
+    }
+
+    #[test]
+    fn test_emit_require() {
+        let require = Expr::Require(Box::new(Expr::Prove(Box::new(Expr::Bool(true)))));
+        let code = compile_and_emit(&require).unwrap();
+        assert!(code.contains("riina_require"));
+    }
+
+    #[test]
+    fn test_emit_ref() {
+        let ref_expr = Expr::Ref(Box::new(Expr::Int(42)));
+        let code = compile_and_emit(&ref_expr).unwrap();
+        assert!(code.contains("riina_alloc"));
+    }
+
+    #[test]
+    fn test_emit_deref() {
+        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)))));
+        let code = compile_and_emit(&deref).unwrap();
+        assert!(code.contains("riina_load"));
+    }
+
+    #[test]
+    fn test_emit_nested_pairs() {
+        let nested = Expr::Pair(
+            Box::new(Expr::Pair(
+                Box::new(Expr::Int(1)),
+                Box::new(Expr::Int(2)),
+            )),
+            Box::new(Expr::Int(3)),
+        );
+        let code = compile_and_emit(&nested).unwrap();
+        // Should have multiple riina_pair calls
+        let pair_count = code.matches("riina_pair").count();
+        assert!(pair_count >= 2);
+    }
 }

@@ -1048,4 +1048,216 @@ mod tests {
         });
         assert!(has_classify);
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADDITIONAL LITERAL TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_lower_bool_false() {
+        let mut lower = Lower::new();
+        let prog = lower.compile(&Expr::Bool(false)).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_false = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Const(Constant::Bool(false)))
+        });
+        assert!(has_false);
+    }
+
+    #[test]
+    fn test_lower_string() {
+        let mut lower = Lower::new();
+        let prog = lower.compile(&Expr::String("hello".to_string())).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_string = main.blocks[0].instrs.iter().any(|i| {
+            matches!(&i.instr, Instruction::Const(Constant::String(s)) if s == "hello")
+        });
+        assert!(has_string);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADDITIONAL PAIR/SUM TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_lower_snd() {
+        let mut lower = Lower::new();
+        let pair = Expr::Pair(
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Int(2)),
+        );
+        let snd = Expr::Snd(Box::new(pair));
+        let prog = lower.compile(&snd).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_snd = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Snd(_))
+        });
+        assert!(has_snd);
+    }
+
+    #[test]
+    fn test_lower_inl() {
+        let mut lower = Lower::new();
+        let inl = Expr::Inl(Box::new(Expr::Int(42)));
+        let prog = lower.compile(&inl).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_inl = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Inl(_))
+        });
+        assert!(has_inl);
+    }
+
+    #[test]
+    fn test_lower_inr() {
+        let mut lower = Lower::new();
+        let inr = Expr::Inr(Box::new(Expr::Bool(true)));
+        let prog = lower.compile(&inr).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_inr = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Inr(_))
+        });
+        assert!(has_inr);
+    }
+
+    #[test]
+    fn test_lower_case() {
+        let mut lower = Lower::new();
+        let case = Expr::Case(
+            Box::new(Expr::Inl(Box::new(Expr::Int(1)))),
+            "x".to_string(),
+            Box::new(Expr::Var("x".to_string())),
+            "y".to_string(),
+            Box::new(Expr::Int(0)),
+        );
+        let prog = lower.compile(&case).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        // Case creates multiple blocks
+        assert!(main.blocks.len() >= 3);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ADDITIONAL SECURITY TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_lower_declassify() {
+        let mut lower = Lower::new();
+        let declassify = Expr::Declassify(Box::new(Expr::Classify(Box::new(Expr::Int(42)))));
+        let prog = lower.compile(&declassify).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_declassify = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Declassify(_))
+        });
+        assert!(has_declassify);
+    }
+
+    #[test]
+    fn test_lower_prove() {
+        let mut lower = Lower::new();
+        let prove = Expr::Prove(Box::new(Expr::Bool(true)));
+        let prog = lower.compile(&prove).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_prove = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Prove(_))
+        });
+        assert!(has_prove);
+    }
+
+    #[test]
+    fn test_lower_require() {
+        let mut lower = Lower::new();
+        let require = Expr::Require(Box::new(Expr::Prove(Box::new(Expr::Bool(true)))));
+        let prog = lower.compile(&require).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_require = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Require(_))
+        });
+        assert!(has_require);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // EFFECT TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_lower_grant() {
+        let mut lower = Lower::new();
+        let grant = Expr::Grant(
+            Effect::Read,
+            Box::new(Expr::Unit),
+        );
+        let prog = lower.compile(&grant).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_grant = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Grant(Effect::Read))
+        });
+        assert!(has_grant);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // REFERENCE TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_lower_ref() {
+        let mut lower = Lower::new();
+        let ref_expr = Expr::Ref(Box::new(Expr::Int(42)));
+        let prog = lower.compile(&ref_expr).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_alloc = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Alloc(_))
+        });
+        assert!(has_alloc);
+    }
+
+    #[test]
+    fn test_lower_deref() {
+        let mut lower = Lower::new();
+        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)))));
+        let prog = lower.compile(&deref).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        let has_load = main.blocks[0].instrs.iter().any(|i| {
+            matches!(i.instr, Instruction::Load(_))
+        });
+        assert!(has_load);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // NESTED STRUCTURE TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_lower_nested_let() {
+        let mut lower = Lower::new();
+        let nested = Expr::Let(
+            "x".to_string(),
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Let(
+                "y".to_string(),
+                Box::new(Expr::Int(2)),
+                Box::new(Expr::Var("x".to_string())),
+            )),
+        );
+        let prog = lower.compile(&nested).unwrap();
+        assert!(prog.function(FuncId::MAIN).is_some());
+    }
+
+    #[test]
+    fn test_lower_nested_pair() {
+        let mut lower = Lower::new();
+        let nested = Expr::Pair(
+            Box::new(Expr::Pair(
+                Box::new(Expr::Int(1)),
+                Box::new(Expr::Int(2)),
+            )),
+            Box::new(Expr::Int(3)),
+        );
+        let prog = lower.compile(&nested).unwrap();
+        let main = prog.function(FuncId::MAIN).unwrap();
+        // Should have multiple pair instructions
+        let pair_count = main.blocks[0].instrs.iter()
+            .filter(|i| matches!(i.instr, Instruction::Pair(_, _)))
+            .count();
+        assert!(pair_count >= 2);
+    }
 }
