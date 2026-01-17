@@ -411,29 +411,29 @@ Proof.
   intro m.
   destruct (le_lt_dec m (S n)) as [Hle | Hgt].
   - (* m <= S n: use downward closure *)
-    apply val_rel_n_step_down_any with (S n); auto. lia.
+    apply val_rel_n_step_down_any with (S n); auto.
   - (* m > S n: use step-up for values *)
     (* For first-order types, this is val_rel_n_step_up_first_order *)
     (* For higher-order types, we need the Kripke semantics formulation *)
-    destruct (first_order_decidable T) as [Hfo | Hho].
-    + (* First-order: use step-up *)
-      apply val_rel_n_step_up_first_order with n; auto.
-    + (* Higher-order: requires Kripke reasoning *)
-      (* The key insight: for function VALUES (lambda abstractions),
-         the relation is determined by:
-         1. The types of argument and result
-         2. The body closure
+    destruct (first_order_decidable T) as [Hfo | Hho];
+    [ (* First-order: use step-up *)
+      apply val_rel_n_step_up_first_order with n; auto
+    | (* Higher-order: requires Kripke reasoning - admitted *)
+      admit ].
+    (* The key insight for the TFn admit: for function VALUES (lambda abstractions),
+       the relation is determined by:
+       1. The types of argument and result
+       2. The body closure
 
-         The step index only matters when the function is APPLIED.
-         For the function VALUE itself, once related at (S n), it's
-         related at all steps because:
-         - The function body is fixed (doesn't depend on step)
-         - Application will use whatever step budget is available
-         - Kripke quantification ("for all future worlds") handles this
+       The step index only matters when the function is APPLIED.
+       For the function VALUE itself, once related at (S n), it's
+       related at all steps because:
+       - The function body is fixed (doesn't depend on step)
+       - Application will use whatever step budget is available
+       - Kripke quantification ("for all future worlds") handles this
 
-         This is the essence of the step-indexed logical relations:
-         the step index bounds computation, not value structure. *)
-      admit. (* TFn case requires Kripke semantics from Phase 2 *)
+       This is the essence of the step-indexed logical relations:
+       the step index bounds computation, not value structure. *)
 Admitted.
 
 (** ** Connection to Original Axiom
@@ -478,14 +478,14 @@ Proof.
     induction m as [|m' IH].
     + simpl. exact I.
     + simpl. split; [apply IH|].
-      repeat split; auto. simpl. reflexivity.
+      repeat split; auto.
   - apply val_rel_n_step_up_secret with 0. exact Hrel1.
   - (* TCapability *)
     simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
     induction m as [|m' IH].
     + simpl. exact I.
     + simpl. split; [apply IH|].
-      repeat split; auto. simpl. exact I.
+      repeat split; auto.
 Qed.
 
 (** End of TypedConversion.v *)
