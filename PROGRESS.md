@@ -119,6 +119,22 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 |-------|------|--------|-------------|
 | Ψ (Psi) | Operational Security | ⚪ DEFINED | Threshold crypto, multi-party auth, duress detection, hardware diversity |
 
+### Military Extension Tracks (Greek Letters) — NEW
+
+**IMPORTANT:** Full specifications in `01_RESEARCH/MILITARY_HARDENING_ROADMAP.md`
+
+| Track | Name | Extends | Status | Description |
+|-------|------|---------|--------|-------------|
+| Φ (Phi) | Verified Hardware | S | ⚪ DEFINED | Custom silicon, radiation hardening |
+| Θ (Theta) | Radiation Hardening | U | ⚪ DEFINED | EMP resistance, cosmic ray tolerance |
+| Λ (Lambda) | Anti-Jamming | F | ⚪ DEFINED | RF security, spread spectrum proofs |
+| Ξ (Xi) | Sensor Fusion | X | ⚪ DEFINED | Multi-sensor redundancy, spoofing detection |
+| Ρ (Rho) | Verified Autonomy | V | ⚪ DEFINED | Autonomous operation under jamming |
+| Τ (Tau) | Mesh Networking | Δ | ⚪ DEFINED | Byzantine-tolerant routing |
+| Υ (Upsilon) | Self-Healing | U | ⚪ DEFINED | Damage recovery, graceful degradation |
+
+**Military Objective:** Make RIINA the world's most secure defense software platform.
+
 ---
 
 ## DETAILED STATUS
@@ -307,6 +323,12 @@ Full specification: `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.
 |-------|----------|----------|
 | Ψ | RESEARCH_PSI01_FOUNDATION.md | `01_RESEARCH/31_DOMAIN_PSI_OPERATIONAL_SECURITY/` |
 
+### Military Hardening (NEW)
+
+| Document | Location |
+|----------|----------|
+| **MILITARY_HARDENING_ROADMAP.md** | `01_RESEARCH/MILITARY_HARDENING_ROADMAP.md` |
+
 ### Language Specification
 
 | Document | Location |
@@ -347,6 +369,13 @@ When all tracks are complete, the following threats become OBSOLETE:
 | Social engineering | Track Ψ | 🟡 MITIGATED |
 | Insider threats | Track Ψ | 🟡 MITIGATED |
 | Hardware zero-days | Track Ψ + S | 🟡 MITIGATED |
+| **EMP attacks** | Track Θ | ⚪ DEFINED |
+| **Radar jamming** | Track Λ | ⚪ DEFINED |
+| **GPS spoofing** | Track Ξ | ⚪ DEFINED |
+| **Communication loss** | Track Ρ | ⚪ DEFINED |
+| **Mesh network attacks** | Track Τ | ⚪ DEFINED |
+| **Hardware damage** | Track Υ | ⚪ DEFINED |
+| **Hardware trojans** | Track Φ | ⚪ DEFINED |
 
 ---
 
@@ -389,6 +418,24 @@ When all tracks are complete, the following threats become OBSOLETE:
 ---
 
 ## CHANGE LOG
+
+### 2026-01-17 (MILITARY HARDENING ROADMAP)
+
+- **MAJOR**: Created Military Hardening Roadmap
+  - New document: `01_RESEARCH/MILITARY_HARDENING_ROADMAP.md`
+  - Defines military-grade requirements for RIINA
+  - Target: World's most secure defense software
+- **MAJOR**: Added Military Extension Tracks (Greek Letters)
+  - Track Φ (Phi): Verified Hardware — custom silicon, radiation hardening
+  - Track Θ (Theta): Radiation Hardening — EMP resistance, cosmic ray tolerance
+  - Track Λ (Lambda): Anti-Jamming Proofs — RF security, spread spectrum
+  - Track Ξ (Xi): Sensor Fusion — multi-sensor redundancy, spoofing detection
+  - Track Ρ (Rho): Verified Autonomy — operation under jamming
+  - Track Τ (Tau): Mesh Networking — Byzantine-tolerant routing
+  - Track Υ (Upsilon): Self-Healing — damage recovery, graceful degradation
+- Extended threat coverage matrix with military threats
+- Updated coordination documents with military objectives
+- All changes backwards-compatible with existing worker assignments
 
 ### 2026-01-17 (CODEGEN COMPLETE)
 
