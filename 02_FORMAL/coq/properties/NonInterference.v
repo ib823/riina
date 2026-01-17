@@ -556,18 +556,28 @@ Axiom val_rel_n_mono_store : forall n Σ Σ' T v1 v2,
   val_rel_n n Σ T v1 v2 ->
   val_rel_n n Σ' T v1 v2.
 
-(** DOCUMENTED AXIOM: Store relation monotonicity in store typing
+(** ELIMINATED: store_rel_n_mono_store
 
-    Semantic justification: Mutual with val_rel_n_mono_store. If two stores
-    are related under store typing Σ, they remain related under any extension
-    Σ' ⊇ Σ. The larger store typing may require checking more locations, but
-    since stores grow monotonically with the store typing, the additional
-    locations will be present and related.
+    ANALYSIS: This axiom was declared but never used anywhere in the proofs.
+    Upon careful analysis during Phase 1 Axiom Elimination (Category 2-3),
+    we found:
+
+    1. grep -r "store_rel_n_mono_store" returned only the axiom declaration
+    2. All proof cases that might need store monotonicity actually use
+       store_ty_extends directly or val_rel_n_mono_store
+    3. The Kripke-style exp_rel_n already handles store extension naturally
+
+    This axiom was preemptively added for symmetry with val_rel_n_mono_store
+    but the actual proof structure never required it.
+
+    Axiom count: 25 → 24 (-1 axiom eliminated)
+
+    Previous declaration was:
+    Axiom store_rel_n_mono_store : forall n Σ Σ' st1 st2,
+      store_ty_extends Σ Σ' ->
+      store_rel_n n Σ st1 st2 ->
+      store_rel_n n Σ' st1 st2.
 *)
-Axiom store_rel_n_mono_store : forall n Σ Σ' st1 st2,
-  store_ty_extends Σ Σ' ->
-  store_rel_n n Σ st1 st2 ->
-  store_rel_n n Σ' st1 st2.
 
 (** DOCUMENTED AXIOM: Value relation at positive step index implies value relation
 
