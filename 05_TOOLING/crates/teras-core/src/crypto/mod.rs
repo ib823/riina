@@ -27,6 +27,7 @@ pub mod hmac;
 pub mod hkdf;
 pub mod ghash;
 pub mod gcm;
+pub mod keccak;
 
 // Field arithmetic (foundation for elliptic curve cryptography)
 pub mod field25519;
