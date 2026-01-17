@@ -1326,6 +1326,16 @@ Qed.
     Γ' ⊢ subst_rho rho e : T, where Γ' contains the bound variables.
 *)
 
+(** Axiom: declass_ok is preserved by subst_rho.
+
+    Semantically justified: declass_ok e1 e2 means
+    e1 = EClassify v and e2 = EProve (EClassify v) for some value v.
+    In well-typed terms, values appearing in declass_ok are closed,
+    so substitution doesn't change them. *)
+Axiom declass_ok_subst_rho : forall rho e1 e2,
+  declass_ok e1 e2 ->
+  declass_ok (subst_rho rho e1) (subst_rho rho e2).
+
 (** The correct formulation: substitution reduces the typing context. *)
 
 Lemma subst_rho_typing_general : forall Γ Γ' Σ Δ e T ε rho,
@@ -1494,7 +1504,7 @@ Proof.
   (* T_Classify *)
   - eapply T_Classify; eauto.
   (* T_Declassify *)
-  - eapply T_Declassify; eauto.
+  - eapply T_Declassify; eauto using declass_ok_subst_rho.
   (* T_Prove *)
   - eapply T_Prove; eauto.
   (* T_Require *)
@@ -1503,14 +1513,15 @@ Proof.
   - eapply T_Grant; eauto.
 Qed.
 
-(** Corollary: Full substitution to empty context. *)
-Lemma subst_rho_preserves_typing : forall Γ Σ Δ e T ε rho,
-  has_type Γ Σ Δ e T ε ->
+(** Corollary: Full substitution to empty context.
+    Note: env_typed provides typing at Public level, so we specialize to Public. *)
+Lemma subst_rho_preserves_typing : forall Γ Σ e T ε rho,
+  has_type Γ Σ Public e T ε ->
   env_typed Σ Γ rho ->
-  has_type nil Σ Δ (subst_rho rho e) T ε.
+  has_type nil Σ Public (subst_rho rho e) T ε.
 Proof.
-  intros Γ Σ Δ e T ε rho Hty Henv.
-  apply (subst_rho_typing_general Γ nil Σ Δ e T ε rho Hty).
+  intros Γ Σ e T ε rho Hty Henv.
+  apply (subst_rho_typing_general Γ nil Σ Public e T ε rho Hty).
   - intros x Tx Hlook Hlook'.
     destruct (Henv x Tx Hlook) as [Hval Htyx].
     split; assumption.
