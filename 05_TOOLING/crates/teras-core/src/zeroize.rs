@@ -125,6 +125,15 @@ impl<const N: usize> Zeroize for [u64; N] {
     }
 }
 
+// Implement Zeroize for fixed-size arrays of i16
+impl<const N: usize> Zeroize for [i16; N] {
+    fn zeroize(&mut self) {
+        for item in self.iter_mut() {
+            item.zeroize();
+        }
+    }
+}
+
 // Implement Zeroize for fixed-size arrays of i32
 impl<const N: usize> Zeroize for [i32; N] {
     fn zeroize(&mut self) {

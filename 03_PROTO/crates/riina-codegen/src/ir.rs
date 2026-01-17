@@ -794,10 +794,23 @@ impl std::fmt::Display for Program {
 mod tests {
     use super::*;
 
+    // ═══════════════════════════════════════════════════════════════════
+    // ID TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
     #[test]
     fn test_var_id_display() {
         assert_eq!(VarId::new(0).to_string(), "v0");
         assert_eq!(VarId::new(42).to_string(), "v42");
+    }
+
+    #[test]
+    fn test_var_id_equality() {
+        let v1 = VarId::new(5);
+        let v2 = VarId::new(5);
+        let v3 = VarId::new(6);
+        assert_eq!(v1, v2);
+        assert_ne!(v1, v3);
     }
 
     #[test]
@@ -807,12 +820,84 @@ mod tests {
     }
 
     #[test]
+    fn test_block_id_entry_constant() {
+        assert_eq!(BlockId::ENTRY, BlockId::new(0));
+    }
+
+    #[test]
+    fn test_func_id_display() {
+        assert_eq!(FuncId::MAIN.to_string(), "f0");
+        assert_eq!(FuncId::new(42).to_string(), "f42");
+    }
+
+    #[test]
+    fn test_func_id_main_constant() {
+        assert_eq!(FuncId::MAIN, FuncId::new(0));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CONSTANT TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
     fn test_constant_display() {
         assert_eq!(Constant::Unit.to_string(), "()");
         assert_eq!(Constant::Bool(true).to_string(), "true");
+        assert_eq!(Constant::Bool(false).to_string(), "false");
         assert_eq!(Constant::Int(42).to_string(), "42");
+        assert_eq!(Constant::Int(-100).to_string(), "-100");
         assert_eq!(Constant::String("hello".to_string()).to_string(), "\"hello\"");
     }
+
+    #[test]
+    fn test_constant_clone() {
+        let c1 = Constant::String("test".to_string());
+        let c2 = c1.clone();
+        assert_eq!(c1.to_string(), c2.to_string());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // BINOP TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_binop_display_arithmetic() {
+        assert_eq!(BinOp::Add.to_string(), "+");
+        assert_eq!(BinOp::Sub.to_string(), "-");
+        assert_eq!(BinOp::Mul.to_string(), "*");
+        assert_eq!(BinOp::Div.to_string(), "/");
+        assert_eq!(BinOp::Mod.to_string(), "%");
+    }
+
+    #[test]
+    fn test_binop_display_comparison() {
+        assert_eq!(BinOp::Eq.to_string(), "==");
+        assert_eq!(BinOp::Ne.to_string(), "!=");
+        assert_eq!(BinOp::Lt.to_string(), "<");
+        assert_eq!(BinOp::Le.to_string(), "<=");
+        assert_eq!(BinOp::Gt.to_string(), ">");
+        assert_eq!(BinOp::Ge.to_string(), ">=");
+    }
+
+    #[test]
+    fn test_binop_display_logical() {
+        assert_eq!(BinOp::And.to_string(), "&&");
+        assert_eq!(BinOp::Or.to_string(), "||");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // UNARYOP TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_unaryop_display() {
+        assert_eq!(UnaryOp::Neg.to_string(), "-");
+        assert_eq!(UnaryOp::Not.to_string(), "!");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // INSTRUCTION TESTS
+    // ═══════════════════════════════════════════════════════════════════
 
     #[test]
     fn test_instruction_display() {
@@ -823,6 +908,219 @@ mod tests {
             "+ v0 v1"
         );
     }
+
+    #[test]
+    fn test_instruction_display_unary() {
+        assert_eq!(
+            Instruction::UnaryOp(UnaryOp::Neg, VarId::new(0)).to_string(),
+            "- v0"
+        );
+        assert_eq!(
+            Instruction::UnaryOp(UnaryOp::Not, VarId::new(1)).to_string(),
+            "! v1"
+        );
+    }
+
+    #[test]
+    fn test_instruction_display_pair_sum() {
+        assert_eq!(
+            Instruction::Pair(VarId::new(0), VarId::new(1)).to_string(),
+            "pair v0 v1"
+        );
+        assert_eq!(
+            Instruction::Fst(VarId::new(0)).to_string(),
+            "fst v0"
+        );
+        assert_eq!(
+            Instruction::Snd(VarId::new(0)).to_string(),
+            "snd v0"
+        );
+        assert_eq!(
+            Instruction::Inl(VarId::new(0)).to_string(),
+            "inl v0"
+        );
+        assert_eq!(
+            Instruction::Inr(VarId::new(0)).to_string(),
+            "inr v0"
+        );
+    }
+
+    #[test]
+    fn test_instruction_display_call() {
+        assert_eq!(
+            Instruction::Call(FuncId::new(1), VarId::new(0)).to_string(),
+            "call f1 v0"
+        );
+    }
+
+    #[test]
+    fn test_instruction_display_security() {
+        assert_eq!(
+            Instruction::Classify(VarId::new(0)).to_string(),
+            "classify v0"
+        );
+        assert_eq!(
+            Instruction::Declassify(VarId::new(0)).to_string(),
+            "declassify v0"
+        );
+        assert_eq!(
+            Instruction::Prove(VarId::new(0)).to_string(),
+            "prove v0"
+        );
+        assert_eq!(
+            Instruction::Require(VarId::new(0)).to_string(),
+            "require v0"
+        );
+    }
+
+    #[test]
+    fn test_instruction_display_effects() {
+        assert_eq!(
+            Instruction::Grant(Effect::Read).to_string(),
+            "grant Read"
+        );
+        assert_eq!(
+            Instruction::Perform(Effect::Write, VarId::new(0)).to_string(),
+            "perform Write v0"
+        );
+    }
+
+    #[test]
+    fn test_instruction_display_memory() {
+        assert_eq!(
+            Instruction::Alloc(VarId::new(0)).to_string(),
+            "alloc v0"
+        );
+        assert_eq!(
+            Instruction::Load(VarId::new(0)).to_string(),
+            "load v0"
+        );
+        assert_eq!(
+            Instruction::Store(VarId::new(0), VarId::new(1)).to_string(),
+            "store v0 v1"
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // LABELED INSTRUCTION TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_labeled_instruction() {
+        let labeled = LabeledInstr {
+            result: VarId::new(5),
+            instr: Instruction::Const(Constant::Int(42)),
+        };
+        assert_eq!(labeled.to_string(), "  v5 = const 42");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // TERMINATOR TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_terminator_display() {
+        assert_eq!(
+            Terminator::Return(VarId::new(0)).to_string(),
+            "  ret v0"
+        );
+        assert_eq!(
+            Terminator::Branch(BlockId::new(1)).to_string(),
+            "  br bb1"
+        );
+    }
+
+    #[test]
+    fn test_terminator_condbranch() {
+        let term = Terminator::CondBranch {
+            cond: VarId::new(0),
+            then_block: BlockId::new(1),
+            else_block: BlockId::new(2),
+        };
+        assert_eq!(term.to_string(), "  br v0 bb1 bb2");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // BASIC BLOCK TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_basic_block_creation() {
+        let block = BasicBlock::new(BlockId::ENTRY);
+        assert_eq!(block.id, BlockId::ENTRY);
+        assert!(block.instrs.is_empty());
+        assert!(matches!(block.terminator, Terminator::Return(_)));
+    }
+
+    #[test]
+    fn test_basic_block_push() {
+        let mut block = BasicBlock::new(BlockId::ENTRY);
+        let v = block.push(Instruction::Const(Constant::Int(42)));
+        assert_eq!(v, VarId::new(0));
+        assert_eq!(block.instrs.len(), 1);
+
+        let v2 = block.push(Instruction::Const(Constant::Bool(true)));
+        assert_eq!(v2, VarId::new(1));
+        assert_eq!(block.instrs.len(), 2);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FUNCTION TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_function_creation() {
+        let func = Function::new(
+            FuncId::MAIN,
+            "main".to_string(),
+            "x".to_string(),
+            Ty::Unit,
+            Ty::Int,
+            Effect::Pure,
+        );
+        assert_eq!(func.id, FuncId::MAIN);
+        assert_eq!(func.name, "main");
+        assert_eq!(func.param, "x");
+        assert_eq!(func.param_ty, Ty::Unit);
+        assert_eq!(func.return_ty, Ty::Int);
+        assert_eq!(func.effect, Effect::Pure);
+        assert!(func.captures.is_empty());
+        assert!(!func.blocks.is_empty()); // Should have entry block
+    }
+
+    #[test]
+    fn test_function_entry_block() {
+        let func = Function::new(
+            FuncId::new(1),
+            "test".to_string(),
+            "y".to_string(),
+            Ty::Int,
+            Ty::Bool,
+            Effect::Read,
+        );
+        assert!(func.entry().is_some());
+        assert_eq!(func.entry().unwrap().id, BlockId::ENTRY);
+    }
+
+    #[test]
+    fn test_function_fresh_block() {
+        let mut func = Function::new(
+            FuncId::MAIN,
+            "main".to_string(),
+            "x".to_string(),
+            Ty::Unit,
+            Ty::Unit,
+            Effect::Pure,
+        );
+        let initial_blocks = func.blocks.len();
+        let new_id = func.fresh_block();
+        assert_eq!(func.blocks.len(), initial_blocks + 1);
+        assert!(func.block(new_id).is_some());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PROGRAM TESTS
+    // ═══════════════════════════════════════════════════════════════════
 
     #[test]
     fn test_program_creation() {
@@ -837,5 +1135,71 @@ mod tests {
         );
         prog.add_function(func);
         assert!(prog.function(FuncId::MAIN).is_some());
+    }
+
+    #[test]
+    fn test_program_default() {
+        let prog = Program::default();
+        assert!(prog.functions.is_empty());
+        assert_eq!(prog.main, FuncId::MAIN);
+    }
+
+    #[test]
+    fn test_program_fresh_func_id() {
+        let mut prog = Program::new();
+        let id1 = prog.fresh_func_id();
+        let id2 = prog.fresh_func_id();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn test_program_multiple_functions() {
+        let mut prog = Program::new();
+
+        let main = Function::new(
+            FuncId::MAIN,
+            "main".to_string(),
+            "_".to_string(),
+            Ty::Unit,
+            Ty::Int,
+            Effect::Pure,
+        );
+        prog.add_function(main);
+
+        let helper_id = prog.fresh_func_id();
+        let helper = Function::new(
+            helper_id,
+            "helper".to_string(),
+            "x".to_string(),
+            Ty::Int,
+            Ty::Int,
+            Effect::Pure,
+        );
+        prog.add_function(helper);
+
+        assert_eq!(prog.functions.len(), 2);
+        assert!(prog.function(FuncId::MAIN).is_some());
+        assert!(prog.function(helper_id).is_some());
+    }
+
+    #[test]
+    fn test_program_function_mut() {
+        let mut prog = Program::new();
+        let func = Function::new(
+            FuncId::MAIN,
+            "main".to_string(),
+            "x".to_string(),
+            Ty::Unit,
+            Ty::Unit,
+            Effect::Pure,
+        );
+        prog.add_function(func);
+
+        // Modify through mutable reference
+        if let Some(f) = prog.function_mut(FuncId::MAIN) {
+            f.name = "modified".to_string();
+        }
+
+        assert_eq!(prog.function(FuncId::MAIN).unwrap().name, "modified");
     }
 }
