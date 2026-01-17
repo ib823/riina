@@ -28,11 +28,8 @@ riina-types.workspace = true
 [dev-dependencies]
 # Testing dependencies (internal only)
 
-[features]
-# Feature flags for backend selection
-default = ["interp"]
-interp = []      # Reference interpreter (default, for verification)
-c-emit = []      # C code emission backend
+# No feature flags - ZERO LAZINESS means we include EVERYTHING
+# All backends (interpreter, C emission) are always available
 
 [lints.rust]
 unsafe_code = "forbid"
