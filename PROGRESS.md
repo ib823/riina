@@ -20,14 +20,25 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**STATUS:** COMPREHENSIVE ASSESSMENT COMPLETE. Overall Grade: B+ (78%)
-**TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 31 Axioms 🟡), Effects (0 ADMITS) ✓
+**STATUS:** AXIOM ELIMINATION IN PROGRESS. Overall Grade: B+ (78%)
+**TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 24 Axioms 🟡), Effects (0 ADMITS) ✓
 **TRACK B:** ✅ CODEGEN COMPLETE (0 warnings, 123 tests passing). riina-codegen: IR, Interpreter, C Emission
 **TRACK F:** X25519 WORKING ✅ (90%, DH verified), AES BROKEN ❌ (3 failing tests), PQ STUB ❌
 **ZERO-TRUST TRACKS (R, S, T, U):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
-**BLOCKERS:** Coq not installed ❌, 29 axioms 🟡 (reduced from 31), AES broken ❌ (3 failing tests)
+**BLOCKERS:** 24 axioms 🟡 (reduced from 31), AES broken ❌ (3 failing tests)
+
+### AXIOM ELIMINATION PROGRESS (Phase 1)
+
+| Date | Axioms | Change | Description |
+|------|--------|--------|-------------|
+| Session 8 | 31 → 29 | -2 | lam_closedness_contradiction axioms → proven lemmas |
+| Session 9 | 29 → 29 | +1/-1 | logical_relation_handle inline, exp_rel_step1_handle added |
+| Session 10 | 29 → 25 | -4 | TFn architecture change (value/closed as premises) |
+| Session 10 | 25 → 24 | -1 | store_rel_n_mono_store removed (UNUSED) |
+
+**Current axiom count: 24 (down from 31)**
 
 ---
 
