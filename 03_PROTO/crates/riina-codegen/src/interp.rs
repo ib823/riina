@@ -956,15 +956,15 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_int_negative() {
+    fn test_eval_int_large() {
         let mut interp = Interpreter::new();
-        assert_eq!(interp.eval(&Expr::Int(-42)), Ok(Value::Int(-42)));
+        assert_eq!(interp.eval(&Expr::Int(1000000)), Ok(Value::Int(1000000)));
     }
 
     #[test]
     fn test_eval_int_max() {
         let mut interp = Interpreter::new();
-        assert_eq!(interp.eval(&Expr::Int(i64::MAX)), Ok(Value::Int(i64::MAX)));
+        assert_eq!(interp.eval(&Expr::Int(u64::MAX)), Ok(Value::Int(u64::MAX)));
     }
 
     #[test]
@@ -1072,7 +1072,7 @@ mod tests {
     fn test_eval_case_nested_inl() {
         let mut interp = Interpreter::new();
         let expr = Expr::Case(
-            Box::new(Expr::Inl(Box::new(Expr::Int(100)))),
+            Box::new(Expr::Inl(Box::new(Expr::Int(100)), Ty::Bool)),
             "x".to_string(),
             Box::new(Expr::Var("x".to_string())),
             "y".to_string(),
@@ -1085,7 +1085,7 @@ mod tests {
     fn test_eval_case_nested_inr() {
         let mut interp = Interpreter::new();
         let expr = Expr::Case(
-            Box::new(Expr::Inr(Box::new(Expr::Int(200)))),
+            Box::new(Expr::Inr(Box::new(Expr::Int(200)), Ty::Bool)),
             "x".to_string(),
             Box::new(Expr::Int(0)),
             "y".to_string(),
