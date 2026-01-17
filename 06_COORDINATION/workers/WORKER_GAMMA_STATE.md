@@ -7,10 +7,16 @@
 - **Axiom Targets:** 3, 11
 
 ## Current Status
-- **Phase:** WAITING
+- **Phase:** WAITING (monitoring)
 - **Status:** Waiting for PHASE_2_COMPLETE.signal AND PHASE_3_COMPLETE.signal
 - **Started:** 2026-01-17T07:15:00Z
-- **Last Update:** 2026-01-17T07:15:00Z
+- **Last Update:** 2026-01-17T07:18:00Z
+
+## Observations (While Waiting)
+- Worker α has created TypeMeasure.v (ty_size, well-founded induction)
+- Worker α has created LexOrder.v (lex_lt, step_ty_lt, well-founded)
+- Phase 1 infrastructure appears to be in progress
+- No signals have been created yet
 
 ## Dependencies
 | Signal | Status | Required By |
@@ -43,6 +49,8 @@
 | Timestamp | Status | Notes |
 |-----------|--------|-------|
 | 2026-01-17T07:15:00Z | INITIALIZED | Worker started, waiting for signals |
+| 2026-01-17T07:18:00Z | MONITORING | Observed Worker α created TypeMeasure.v, LexOrder.v |
+| 2026-01-17T07:20:00Z | MONITORING | Observed FirstOrderComplete.v, NonInterferenceZero.v in progress |
 
 ---
 
