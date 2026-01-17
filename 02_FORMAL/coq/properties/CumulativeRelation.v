@@ -64,8 +64,17 @@ Definition store_rel_simple (Σ : store_ty) (st1 st2 : store) : Prop :=
     - No need for complex induction to prove m <= n => related at m
 *)
 
-(** Base structural predicate at a specific type (for positive steps) *)
-Definition val_rel_struct (val_rel_prev : ty -> expr -> expr -> Prop)
+(** Base structural predicate at a specific type (for positive steps)
+
+    IMPORTANT: val_rel_prev is parameterized by store_ty to support proper
+    Kripke semantics. For TFn, arguments must be related at the EXTENDED
+    store (Σ'), not the base store (Σ). This is essential for proving
+    store extension monotonicity.
+
+    Reference: Ahmed (2006), Dreyer et al. (2011) - standard formulation
+    uses extended world for argument relations in function types.
+*)
+Definition val_rel_struct (val_rel_prev : store_ty -> ty -> expr -> expr -> Prop)
                           (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
   value v1 /\ value v2 /\
   closed_expr v1 /\ closed_expr v2 /\
@@ -82,20 +91,22 @@ Definition val_rel_struct (val_rel_prev : ty -> expr -> expr -> Prop)
   | TProd T1 T2 =>
       exists a1 b1 a2 b2,
         v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
-        val_rel_prev T1 a1 a2 /\
-        val_rel_prev T2 b1 b2
+        val_rel_prev Σ T1 a1 a2 /\
+        val_rel_prev Σ T2 b1 b2
   | TSum T1 T2 =>
       (exists a1 a2, v1 = EInl a1 T2 /\ v2 = EInl a2 T2 /\
-                     val_rel_prev T1 a1 a2) \/
+                     val_rel_prev Σ T1 a1 a2) \/
       (exists b1 b2, v1 = EInr b1 T1 /\ v2 = EInr b2 T1 /\
-                     val_rel_prev T2 b1 b2)
+                     val_rel_prev Σ T2 b1 b2)
   | TFn T1 T2 eff =>
-      (* Kripke quantification: for all extended stores and related arguments *)
+      (* Kripke quantification: for all extended stores and related arguments
+         CRITICAL: Arguments are related at the EXTENDED store Σ', not Σ.
+         This is the standard Kripke semantics formulation. *)
       forall Σ', store_ty_extends Σ Σ' ->
         forall arg1 arg2,
           value arg1 -> value arg2 ->
           closed_expr arg1 -> closed_expr arg2 ->
-          val_rel_prev T1 arg1 arg2 ->
+          val_rel_prev Σ' T1 arg1 arg2 ->  (* Arguments at extended store *)
             forall st1 st2 ctx,
               store_rel_simple Σ' st1 st2 ->
               (* Application produces related results *)
@@ -104,7 +115,7 @@ Definition val_rel_struct (val_rel_prev : ty -> expr -> expr -> Prop)
                 multi_step (EApp v1 arg1, st1, ctx) (res1, st1', ctx') /\
                 multi_step (EApp v2 arg2, st2, ctx) (res2, st2', ctx') /\
                 value res1 /\ value res2 /\
-                val_rel_prev T2 res1 res2 /\
+                val_rel_prev Σ'' T2 res1 res2 /\  (* Results at final store *)
                 store_rel_simple Σ'' st1' st2'
   end.
 
@@ -115,8 +126,10 @@ Fixpoint val_rel_le (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
   | S n' =>
       (* CUMULATIVE: Include all previous steps *)
       val_rel_le n' Σ T v1 v2 /\
-      (* Plus structural requirements using val_rel at n' *)
-      val_rel_struct (val_rel_le n' Σ) Σ T v1 v2
+      (* Plus structural requirements using val_rel at n'
+         NOTE: val_rel_le n' has type (store_ty -> ty -> expr -> expr -> Prop)
+         which is exactly what val_rel_struct expects for Kripke semantics *)
+      val_rel_struct (val_rel_le n') Σ T v1 v2
   end.
 
 (** ** Cumulative Store Relation *)
