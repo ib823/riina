@@ -39,30 +39,33 @@ Worker States: Created
 
 ---
 
-## VERIFICATION BASELINE
+## VERIFICATION BASELINE (UPDATED 2026-01-17)
 
 ### Track A (Formal Proofs)
 | Metric | Value | Status |
 |--------|-------|--------|
 | Coq Build | SUCCESS | ✅ |
-| Axiom Count | 19 | 🟡 |
+| Axiom Count | 20 | 🟡 |
 | Admitted | 0 | ✅ |
-| Lines | ~7,500 | - |
+| Lines | 7,801 | - |
+| Files | 12 | - |
 
 ### Track B (Prototype)
 | Metric | Value | Status |
 |--------|-------|--------|
 | Cargo Test | SUCCESS | ✅ |
-| Tests Passing | 222 | ✅ |
+| Tests Passing | 364 | ✅ |
 | Warnings | 0 | ✅ |
 
-### Track F (Crypto)
+### Track F (Crypto/Tooling)
 | Metric | Value | Status |
 |--------|-------|--------|
 | Cargo Test | SUCCESS | ✅ |
-| Tests Passing | 134 | ✅ |
+| Tests Passing | 139 | ✅ |
 | Tests Failing | 0 | ✅ |
 | Tests Ignored | 3 | - |
+
+### TOTAL: 503 tests passing
 
 ---
 
