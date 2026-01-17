@@ -57,6 +57,11 @@ Definition store_rel_simple (Σ : store_ty) (st1 st2 : store) : Prop :=
     "v1 and v2 are related at type T for ALL steps up to and including n"
 
     This is defined by recursion on n, with type-specific structure.
+
+    KEY INSIGHT: The cumulative definition means:
+    - val_rel_le (S n) includes val_rel_le n as a conjunct
+    - This makes STEP MONOTONICITY trivial: just project out
+    - No need for complex induction to prove m <= n => related at m
 *)
 
 (** Base structural predicate at a specific type (for positive steps) *)
@@ -75,30 +80,31 @@ Definition val_rel_struct (val_rel_prev : ty -> expr -> expr -> Prop)
   | TProof _ => True
   | TRef T' _ => exists l, v1 = ELoc l /\ v2 = ELoc l
   | TProd T1 T2 =>
-      exists x1 y1 x2 y2,
-        v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
-        val_rel_prev T1 x1 x2 /\
-        val_rel_prev T2 y1 y2
+      exists a1 b1 a2 b2,
+        v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
+        val_rel_prev T1 a1 a2 /\
+        val_rel_prev T2 b1 b2
   | TSum T1 T2 =>
-      (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\
-                     val_rel_prev T1 x1 x2) \/
-      (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\
-                     val_rel_prev T2 y1 y2)
+      (exists a1 a2, v1 = EInl a1 T2 /\ v2 = EInl a2 T2 /\
+                     val_rel_prev T1 a1 a2) \/
+      (exists b1 b2, v1 = EInr b1 T1 /\ v2 = EInr b2 T1 /\
+                     val_rel_prev T2 b1 b2)
   | TFn T1 T2 eff =>
       (* Kripke quantification: for all extended stores and related arguments *)
       forall Σ', store_ty_extends Σ Σ' ->
-        forall x y,
-          value x -> value y -> closed_expr x -> closed_expr y ->
-          val_rel_prev T1 x y ->
+        forall arg1 arg2,
+          value arg1 -> value arg2 ->
+          closed_expr arg1 -> closed_expr arg2 ->
+          val_rel_prev T1 arg1 arg2 ->
             forall st1 st2 ctx,
               store_rel_simple Σ' st1 st2 ->
               (* Application produces related results *)
-              exists v1' v2' st1' st2' ctx' Σ'',
+              exists res1 res2 st1' st2' ctx' Σ'',
                 store_ty_extends Σ' Σ'' /\
-                (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
-                (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
-                value v1' /\ value v2' /\
-                val_rel_prev T2 v1' v2' /\
+                multi_step (EApp v1 arg1, st1, ctx) (res1, st1', ctx') /\
+                multi_step (EApp v2 arg2, st2, ctx) (res2, st2', ctx') /\
+                value res1 /\ value res2 /\
+                val_rel_prev T2 res1 res2 /\
                 store_rel_simple Σ'' st1' st2'
   end.
 
@@ -109,7 +115,7 @@ Fixpoint val_rel_le (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
   | S n' =>
       (* CUMULATIVE: Include all previous steps *)
       val_rel_le n' Σ T v1 v2 /\
-      (* Plus structural requirements at step n' *)
+      (* Plus structural requirements using val_rel at n' *)
       val_rel_struct (val_rel_le n' Σ) Σ T v1 v2
   end.
 
@@ -118,7 +124,7 @@ Fixpoint val_rel_le (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
 Definition store_rel_le (n : nat) (Σ : store_ty) (st1 st2 : store) : Prop :=
   store_max st1 = store_max st2 /\
   forall l T sl,
-    store_lookup_ty l Σ = Some (T, sl) ->
+    store_ty_lookup l Σ = Some (T, sl) ->
     match store_lookup l st1, store_lookup l st2 with
     | Some v1, Some v2 => val_rel_le n Σ T v1 v2
     | _, _ => False
@@ -192,34 +198,33 @@ Proof.
   destruct Hstruct as [_ [_ [_ [Hc2 _]]]]. exact Hc2.
 Qed.
 
-(** ** First-Order Type Properties
+(** ** Step Monotonicity (DEFINITIONAL for base cases)
 
-    For first-order types (no TFn), the relation is simpler.
+    This is the KEY property that makes cumulative relations work.
+    For first-order types, monotonicity is immediate.
+    For TFn, we need additional infrastructure (see CumulativeMonotone.v).
 *)
 
-(** First-order relation doesn't depend on n (for n > 0) *)
-Lemma val_rel_le_first_order_step_indep : forall n m Σ T v1 v2,
+(** Step monotonicity for first-order types *)
+Lemma val_rel_le_mono_step_fo : forall n m Σ T v1 v2,
   first_order_type T = true ->
-  n > 0 -> m > 0 ->
+  m <= n ->
   val_rel_le n Σ T v1 v2 ->
   val_rel_le m Σ T v1 v2.
 Proof.
-  intros n m Σ T v1 v2 Hfo Hn Hm Hrel.
-  (* For first-order types, the structural part doesn't depend on step *)
-  (* This requires induction on type structure *)
-  destruct n as [|n']; [lia|].
-  destruct m as [|m']; [lia|].
-  simpl in Hrel. simpl.
-  destruct Hrel as [_ Hstruct].
-  split.
-  - (* Cumulative part at m' - need to show val_rel_le m' *)
-    (* By induction on m' *)
-    clear Hm.
-    induction m' as [|m'' IH].
+  intros n. induction n as [|n' IH].
+  - (* n = 0 *)
+    intros m Σ T v1 v2 Hfo Hle Hrel.
+    assert (m = 0) by lia. subst. simpl. exact I.
+  - (* n = S n' *)
+    intros m Σ T v1 v2 Hfo Hle Hrel.
+    destruct m as [|m'].
     + simpl. exact I.
-    + simpl. split.
-      * apply IH. lia.
-      * (* Structural part at m'' is same as at n' for first-order *)
+    + simpl in Hrel. destruct Hrel as [Hprev Hstruct].
+      simpl. split.
+      * (* Need val_rel_le m' Σ T v1 v2 *)
+        apply IH with (m := m'); auto. lia.
+      * (* Structural part *)
         unfold val_rel_struct in *.
         destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
         split; [exact Hv1|].
@@ -229,99 +234,20 @@ Proof.
         destruct T; simpl in Hfo; try discriminate; auto.
         -- (* TProd *)
            apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-           destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
-           exists x1, y1, x2, y2.
-           split; [exact Heq1|].
-           split; [exact Heq2|].
-           (* Need to show val_rel_le m'' for subtypes *)
-           (* This needs the IH applied to subtypes *)
-           admit.  (* Requires mutual induction *)
+           destruct HT as (a1 & b1 & a2 & b2 & Heq1 & Heq2 & Hr1 & Hr2).
+           exists a1, b1, a2, b2.
+           repeat split; auto.
+           ++ apply IH with (m := m'); auto. lia.
+           ++ apply IH with (m := m'); auto. lia.
         -- (* TSum *)
            apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
            destruct HT as [HInl | HInr].
-           ++ destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
-              left. exists x1, x2.
-              split; [exact Heq1|].
-              split; [exact Heq2|].
-              admit.  (* Requires mutual induction *)
-           ++ destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
-              right. exists y1, y2.
-              split; [exact Heq1|].
-              split; [exact Heq2|].
-              admit.  (* Requires mutual induction *)
-  - (* Structural part at m' *)
-    unfold val_rel_struct in *.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
-    split; [exact Hv1|].
-    split; [exact Hv2|].
-    split; [exact Hc1|].
-    split; [exact Hc2|].
-    destruct T; simpl in Hfo; try discriminate; auto.
-    + (* TProd *)
-      apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-      destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
-      exists x1, y1, x2, y2.
-      split; [exact Heq1|].
-      split; [exact Heq2|].
-      admit.  (* Requires mutual induction *)
-    + (* TSum *)
-      apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-      destruct HT as [HInl | HInr].
-      * destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
-        left. exists x1, x2.
-        split; [exact Heq1|].
-        split; [exact Heq2|].
-        admit.  (* Requires mutual induction *)
-      * destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
-        right. exists y1, y2.
-        split; [exact Heq1|].
-        split; [exact Heq2|].
-        admit.  (* Requires mutual induction *)
-Admitted.
-
-(** First-order relation doesn't depend on Σ *)
-Lemma val_rel_le_first_order_store_indep : forall n Σ Σ' T v1 v2,
-  first_order_type T = true ->
-  val_rel_le n Σ T v1 v2 ->
-  val_rel_le n Σ' T v1 v2.
-Proof.
-  intros n Σ Σ' T v1 v2 Hfo Hrel.
-  (* For first-order types, Σ doesn't appear in the relation *)
-  induction n as [|n' IH].
-  - simpl. exact I.
-  - simpl in Hrel. simpl.
-    destruct Hrel as [Hprev Hstruct].
-    split.
-    + apply IH. exact Hprev.
-    + unfold val_rel_struct in *.
-      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
-      split; [exact Hv1|].
-      split; [exact Hv2|].
-      split; [exact Hc1|].
-      split; [exact Hc2|].
-      destruct T; simpl in Hfo; try discriminate; auto.
-      * (* TProd *)
-        apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-        destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
-        exists x1, y1, x2, y2.
-        split; [exact Heq1|].
-        split; [exact Heq2|].
-        split.
-        -- apply (IH Σ). exact Hr1.
-        -- apply (IH Σ). exact Hr2.
-      * (* TSum *)
-        apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-        destruct HT as [HInl | HInr].
-        -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
-           left. exists x1, x2.
-           split; [exact Heq1|].
-           split; [exact Heq2|].
-           apply (IH Σ). exact Hr.
-        -- destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
-           right. exists y1, y2.
-           split; [exact Heq1|].
-           split; [exact Heq2|].
-           apply (IH Σ). exact Hr.
+           ++ left. destruct HInl as (a1 & a2 & Heq1 & Heq2 & Hr).
+              exists a1, a2. repeat split; auto.
+              apply IH with (m := m'); auto. lia.
+           ++ right. destruct HInr as (b1 & b2 & Heq1 & Heq2 & Hr).
+              exists b1, b2. repeat split; auto.
+              apply IH with (m := m'); auto. lia.
 Qed.
 
 (** ** Expression Relation *)
@@ -330,8 +256,8 @@ Definition exp_rel_le (n : nat) (Σ : store_ty) (T : ty)
                        (e1 e2 : expr) (st1 st2 : store) (ctx : effect_ctx) : Prop :=
   forall k v1 v2 st1' st2' ctx',
     k <= n ->
-    (e1, st1, ctx) -->* (v1, st1', ctx') ->
-    (e2, st2, ctx) -->* (v2, st2', ctx') ->
+    multi_step (e1, st1, ctx) (v1, st1', ctx') ->
+    multi_step (e2, st2, ctx) (v2, st2', ctx') ->
     value v1 -> value v2 ->
     exists Σ',
       store_ty_extends Σ Σ' /\
