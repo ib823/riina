@@ -48,3 +48,6 @@ properties/Composition.v
 # Properties - Phase 4 Higher-Order Conversion (WORKER_γ)
 properties/TypedConversion.v
 properties/ApplicationComplete.v
+
+# Phase 6: Axiom Elimination
+properties/AxiomElimination.v
