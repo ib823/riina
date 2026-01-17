@@ -15,6 +15,8 @@ Require Import Coq.Lists.List.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Program.Equality.
 Require Import Coq.Strings.String.
+Require Import Coq.Arith.PeanoNat.
+Require Import Coq.Arith.Compare_dec.
 Require Import Lia.
 Import ListNotations.
 
@@ -961,6 +963,61 @@ Proof.
         (Σ := Σ) (sp1 := store_rel_n n' Σ) (vl1 := val_rel_n n' Σ) (sl1 := store_rel_n n').
       * exact Hfo.
       * exact Hrat.
+Qed.
+
+(** LEMMA: For first-order types, we can step up to any higher index.
+    This is a generalization of val_rel_n_step_up_fo via induction. *)
+Lemma val_rel_n_step_up_any_fo : forall n m Σ T v1 v2,
+  n > 0 ->
+  n <= m ->
+  first_order_type T = true ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n m Σ T v1 v2.
+Proof.
+  intros n m Σ T v1 v2 Hn Hnm Hfo Hval1 Hval2 Hcl1 Hcl2 Hrel.
+  (* Express m as n + d and induct on d *)
+  assert (exists d, m = n + d) as [d Hd].
+  { exists (m - n). lia. }
+  subst m. clear Hnm.
+  induction d as [| d' IHd].
+  - (* d = 0: m = n + 0 = n *)
+    rewrite Nat.add_0_r. exact Hrel.
+  - (* d = S d': m = n + S d' = S (n + d') *)
+    rewrite Nat.add_succ_r.
+    apply val_rel_n_step_up_fo.
+    + lia.  (* n + d' > 0 *)
+    + exact Hfo.
+    + exact Hval1.
+    + exact Hval2.
+    + exact Hcl1.
+    + exact Hcl2.
+    + exact IHd.
+Qed.
+
+(** LEMMA: For first-order types, convert val_rel_n to val_rel.
+    This eliminates the need for val_rel_n_to_val_rel for first-order types. *)
+Lemma val_rel_n_to_val_rel_fo : forall Σ T v1 v2,
+  first_order_type T = true ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  (exists n, val_rel_n (S n) Σ T v1 v2) ->
+  val_rel Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hfo Hval1 Hval2 Hcl1 Hcl2 [n Hrel].
+  unfold val_rel. intro m.
+  destruct m as [| m'].
+  - (* m = 0: trivially true *)
+    simpl. exact I.
+  - (* m = S m' *)
+    (* We have val_rel_n (S n) and need val_rel_n (S m') *)
+    destruct (le_lt_dec (S m') (S n)) as [Hle | Hgt].
+    + (* S m' <= S n: use monotonicity *)
+      apply (val_rel_n_mono (S n) (S m') Σ T v1 v2 Hle Hrel).
+    + (* S m' > S n: use step-up *)
+      assert (Hnn : S n > 0) by lia.
+      apply (val_rel_n_step_up_any_fo (S n) (S m') Σ T v1 v2 Hnn); try lia; assumption.
 Qed.
 
 (** DOCUMENTED AXIOM: Step-index step-up (GENERAL CASE)

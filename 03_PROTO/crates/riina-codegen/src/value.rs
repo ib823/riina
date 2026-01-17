@@ -620,11 +620,11 @@ mod tests {
 
     #[test]
     fn test_value_int_edge_cases() {
-        // Test boundary values
+        // Test boundary values (Value::int takes u64)
         assert_eq!(Value::int(0).as_int(), Some(0));
-        assert_eq!(Value::int(-1).as_int(), Some(-1));
-        assert_eq!(Value::int(i64::MAX).as_int(), Some(i64::MAX));
-        assert_eq!(Value::int(i64::MIN).as_int(), Some(i64::MIN));
+        assert_eq!(Value::int(1).as_int(), Some(1));
+        assert_eq!(Value::int(u64::MAX).as_int(), Some(u64::MAX));
+        assert_eq!(Value::int(u64::MAX - 1).as_int(), Some(u64::MAX - 1));
     }
 
     #[test]
@@ -855,7 +855,12 @@ mod tests {
     fn test_closure_creation() {
         let env = Env::new().extend("x".to_string(), Value::int(10));
         let body = Expr::Var("x".to_string());
-        let closure = Value::closure("y".to_string(), body.clone(), env.clone());
+        let closure = Value::Closure(Closure {
+            env: env.clone(),
+            param: "y".to_string(),
+            param_ty: Ty::Int,
+            body: std::rc::Rc::new(body),
+        });
 
         assert!(closure.is_closure());
         let c = closure.as_closure().unwrap();
@@ -927,7 +932,7 @@ mod tests {
         assert_eq!(Value::bool(true).to_string(), "true");
         assert_eq!(Value::bool(false).to_string(), "false");
         assert_eq!(Value::int(42).to_string(), "42");
-        assert_eq!(Value::int(-100).to_string(), "-100");
+        assert_eq!(Value::int(100).to_string(), "100");
         assert_eq!(Value::string("hello").to_string(), "\"hello\"");
         assert_eq!(Value::pair(Value::int(1), Value::int(2)).to_string(), "(1, 2)");
         assert_eq!(Value::inl(Value::int(1)).to_string(), "inl 1");

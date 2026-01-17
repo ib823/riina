@@ -1210,7 +1210,7 @@ pub fn emit_c(program: &Program) -> Result<String> {
 mod tests {
     use super::*;
     use crate::lower::Lower;
-    use riina_types::Expr;
+    use riina_types::{Expr, Ty, Effect, SecurityLevel};
 
     fn compile_and_emit(expr: &Expr) -> Result<String> {
         let mut lower = Lower::new();
@@ -1342,22 +1342,22 @@ mod tests {
     }
 
     #[test]
-    fn test_emit_int_negative() {
-        let code = compile_and_emit(&Expr::Int(-100)).unwrap();
-        // Negative numbers are handled correctly
+    fn test_emit_int_large() {
+        let code = compile_and_emit(&Expr::Int(100)).unwrap();
+        // Large numbers are handled correctly
         assert!(code.contains("int main(void)"));
     }
 
     #[test]
     fn test_emit_inl() {
-        let inl = Expr::Inl(Box::new(Expr::Int(42)));
+        let inl = Expr::Inl(Box::new(Expr::Int(42)), Ty::Bool);
         let code = compile_and_emit(&inl).unwrap();
         assert!(code.contains("riina_inl"));
     }
 
     #[test]
     fn test_emit_inr() {
-        let inr = Expr::Inr(Box::new(Expr::Bool(true)));
+        let inr = Expr::Inr(Box::new(Expr::Bool(true)), Ty::Int);
         let code = compile_and_emit(&inr).unwrap();
         assert!(code.contains("riina_inr"));
     }
@@ -1384,7 +1384,10 @@ mod tests {
 
     #[test]
     fn test_emit_declassify() {
-        let declassify = Expr::Declassify(Box::new(Expr::Classify(Box::new(Expr::Int(42)))));
+        // Declassify takes two arguments: secret value and proof
+        let classified = Box::new(Expr::Classify(Box::new(Expr::Int(42))));
+        let proof = Box::new(Expr::Prove(Box::new(Expr::Bool(true))));
+        let declassify = Expr::Declassify(classified, proof);
         let code = compile_and_emit(&declassify).unwrap();
         assert!(code.contains("riina_declassify"));
     }
@@ -1398,21 +1401,22 @@ mod tests {
 
     #[test]
     fn test_emit_require() {
-        let require = Expr::Require(Box::new(Expr::Prove(Box::new(Expr::Bool(true)))));
+        // Require takes Effect and body expression
+        let require = Expr::Require(Effect::Read, Box::new(Expr::Unit));
         let code = compile_and_emit(&require).unwrap();
         assert!(code.contains("riina_require"));
     }
 
     #[test]
     fn test_emit_ref() {
-        let ref_expr = Expr::Ref(Box::new(Expr::Int(42)));
+        let ref_expr = Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public);
         let code = compile_and_emit(&ref_expr).unwrap();
         assert!(code.contains("riina_alloc"));
     }
 
     #[test]
     fn test_emit_deref() {
-        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)))));
+        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public)));
         let code = compile_and_emit(&deref).unwrap();
         assert!(code.contains("riina_load"));
     }

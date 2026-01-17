@@ -1098,7 +1098,7 @@ mod tests {
     #[test]
     fn test_lower_inl() {
         let mut lower = Lower::new();
-        let inl = Expr::Inl(Box::new(Expr::Int(42)));
+        let inl = Expr::Inl(Box::new(Expr::Int(42)), Ty::Bool);
         let prog = lower.compile(&inl).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_inl = main.blocks[0].instrs.iter().any(|i| {
@@ -1110,7 +1110,7 @@ mod tests {
     #[test]
     fn test_lower_inr() {
         let mut lower = Lower::new();
-        let inr = Expr::Inr(Box::new(Expr::Bool(true)));
+        let inr = Expr::Inr(Box::new(Expr::Bool(true)), Ty::Int);
         let prog = lower.compile(&inr).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_inr = main.blocks[0].instrs.iter().any(|i| {
@@ -1123,7 +1123,7 @@ mod tests {
     fn test_lower_case() {
         let mut lower = Lower::new();
         let case = Expr::Case(
-            Box::new(Expr::Inl(Box::new(Expr::Int(1)))),
+            Box::new(Expr::Inl(Box::new(Expr::Int(1)), Ty::Bool)),
             "x".to_string(),
             Box::new(Expr::Var("x".to_string())),
             "y".to_string(),
@@ -1142,11 +1142,14 @@ mod tests {
     #[test]
     fn test_lower_declassify() {
         let mut lower = Lower::new();
-        let declassify = Expr::Declassify(Box::new(Expr::Classify(Box::new(Expr::Int(42)))));
+        // Declassify takes a secret value and a proof
+        let classified = Box::new(Expr::Classify(Box::new(Expr::Int(42))));
+        let proof = Box::new(Expr::Prove(Box::new(Expr::Bool(true))));
+        let declassify = Expr::Declassify(classified, proof);
         let prog = lower.compile(&declassify).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_declassify = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Declassify(_))
+            matches!(i.instr, Instruction::Declassify(_, _))
         });
         assert!(has_declassify);
     }
@@ -1166,11 +1169,12 @@ mod tests {
     #[test]
     fn test_lower_require() {
         let mut lower = Lower::new();
-        let require = Expr::Require(Box::new(Expr::Prove(Box::new(Expr::Bool(true)))));
+        // Require takes an Effect and a body expression
+        let require = Expr::Require(Effect::Read, Box::new(Expr::Unit));
         let prog = lower.compile(&require).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_require = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Require(_))
+            matches!(i.instr, Instruction::RequireCap(_))
         });
         assert!(has_require);
     }
@@ -1189,7 +1193,7 @@ mod tests {
         let prog = lower.compile(&grant).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_grant = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Grant(Effect::Read))
+            matches!(i.instr, Instruction::GrantCap(Effect::Read))
         });
         assert!(has_grant);
     }
@@ -1201,11 +1205,11 @@ mod tests {
     #[test]
     fn test_lower_ref() {
         let mut lower = Lower::new();
-        let ref_expr = Expr::Ref(Box::new(Expr::Int(42)));
+        let ref_expr = Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public);
         let prog = lower.compile(&ref_expr).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_alloc = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Alloc(_))
+            matches!(i.instr, Instruction::Alloc { .. })
         });
         assert!(has_alloc);
     }
@@ -1213,7 +1217,7 @@ mod tests {
     #[test]
     fn test_lower_deref() {
         let mut lower = Lower::new();
-        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)))));
+        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public)));
         let prog = lower.compile(&deref).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         let has_load = main.blocks[0].instrs.iter().any(|i| {
