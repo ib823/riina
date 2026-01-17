@@ -87,12 +87,11 @@ Lemma val_rel_n_1_unit : forall Σ,
   val_rel_n 1 Σ TUnit EUnit EUnit.
 Proof.
   intros Σ. simpl. split; [exact I|].
-  repeat split.
+  repeat split; auto.
   - apply VUnit.
   - apply VUnit.
   - unfold closed_expr. intros x Hfree. inversion Hfree.
   - unfold closed_expr. intros x Hfree. inversion Hfree.
-  - simpl. auto.
 Qed.
 
 (** Build val_rel_n 1 for TBool *)
@@ -100,7 +99,7 @@ Lemma val_rel_n_1_bool : forall Σ b,
   val_rel_n 1 Σ TBool (EBool b) (EBool b).
 Proof.
   intros Σ b. simpl. split; [exact I|].
-  repeat split.
+  repeat split; auto.
   - apply VBool.
   - apply VBool.
   - unfold closed_expr. intros x Hfree. inversion Hfree.
@@ -113,7 +112,7 @@ Lemma val_rel_n_1_int : forall Σ i,
   val_rel_n 1 Σ TInt (EInt i) (EInt i).
 Proof.
   intros Σ i. simpl. split; [exact I|].
-  repeat split.
+  repeat split; auto.
   - apply VInt.
   - apply VInt.
   - unfold closed_expr. intros x Hfree. inversion Hfree.
@@ -126,7 +125,7 @@ Lemma val_rel_n_1_string : forall Σ s,
   val_rel_n 1 Σ TString (EString s) (EString s).
 Proof.
   intros Σ s. simpl. split; [exact I|].
-  repeat split.
+  repeat split; auto.
   - apply VString.
   - apply VString.
   - unfold closed_expr. intros x Hfree. inversion Hfree.
@@ -143,7 +142,6 @@ Proof.
   intros Σ T v1 v2 Hv1 Hv2 Hc1 Hc2.
   simpl. split; [exact I|].
   repeat split; auto.
-  simpl. exact I.
 Qed.
 
 (** ** Store Relation at Step 1
