@@ -21,13 +21,13 @@
 ```
 
 **STATUS:** AXIOM ELIMINATION IN PROGRESS. Overall Grade: B+ (78%)
-**TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 24 Axioms 🟡), Effects (0 ADMITS) ✓
+**TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 19 Axioms 🟡), Effects (0 ADMITS) ✓
 **TRACK B:** ✅ CODEGEN COMPLETE (0 warnings, 123 tests passing). riina-codegen: IR, Interpreter, C Emission
 **TRACK F:** X25519 ✅, Ed25519 ✅, Keccak/SHAKE ✅, ML-KEM-768 ✅ (9 tests), ML-DSA-65 🟡 (NTT working)
 **ZERO-TRUST TRACKS (R, S, T, U):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
-**BLOCKERS:** 24 axioms 🟡 (reduced from 31), AES broken ❌ (3 failing tests)
+**BLOCKERS:** 19 axioms 🟡 (reduced from 31, -12 total), AES broken ❌ (3 failing tests)
 
 ### AXIOM ELIMINATION PROGRESS (Phase 1)
 
@@ -37,8 +37,22 @@
 | Session 9 | 29 → 29 | +1/-1 | logical_relation_handle inline, exp_rel_step1_handle added |
 | Session 10 | 29 → 25 | -4 | TFn architecture change (value/closed as premises) |
 | Session 10 | 25 → 24 | -1 | store_rel_n_mono_store removed (UNUSED) |
+| Session 11 | 24 → 23 | -1 | store_rel_n_weaken proven as corollary |
+| Session 11 | 23 → 19 | -4 | val_rel_at_type_value/closed axioms eliminated (unsound) |
 
-**Current axiom count: 24 (down from 31)**
+**Current axiom count: 19 (down from 31, -12 total)**
+
+#### Remaining 19 Axioms by Category
+
+1. **Higher-order Kripke (3):** val_rel_n_weaken, val_rel_n_mono_store, val_rel_n_to_val_rel
+2. **Step-1 termination (7):** exp_rel_step1_{fst,snd,case,if,let,handle,app}
+3. **Application (1):** tapp_step0_complete
+4. **Step-up (3):** val_rel_n_step_up, store_rel_n_step_up, val_rel_n_lam_cumulative
+5. **Higher-order conversion (1):** val_rel_at_type_to_val_rel_ho
+6. **Semantic typing (4):** logical_relation_{ref,deref,assign,declassify}
+
+**First-order alternatives proven:** val_rel_n_weaken_fo, val_rel_n_mono_store_fo,
+val_rel_n_step_up_fo, val_rel_n_step_up_any_fo, val_rel_n_to_val_rel_fo
 
 ---
 
