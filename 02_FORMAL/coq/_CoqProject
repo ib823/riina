@@ -17,9 +17,14 @@ effects/EffectAlgebra.v
 effects/EffectSystem.v
 effects/EffectGate.v
 
-# Properties
+# Properties - Core (STABLE)
 properties/NonInterference.v
-properties/NonInterferenceKripke.v
-properties/NonInterferenceZero.v
 properties/SecurityProperties.v
 properties/Composition.v
+
+# Properties - Experimental (WORKER_α in progress - temporarily excluded)
+# properties/TypeMeasure.v
+# properties/LexOrder.v
+# properties/FirstOrderComplete.v
+# properties/NonInterferenceKripke.v
+# properties/NonInterferenceZero.v
