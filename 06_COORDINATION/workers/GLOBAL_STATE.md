@@ -1,8 +1,25 @@
 # AXIOM ZERO GLOBAL STATE
 
-**Last Updated:** 2026-01-17T00:00:00Z
+**Last Updated:** 2026-01-17T08:30:00Z
 **Protocol Version:** 1.0.0
 **Mode:** ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
+
+---
+
+## Current Baseline Assessment (Worker Ω)
+
+| Metric | Count | Location |
+|--------|-------|----------|
+| Total Axioms | 19 | properties/NonInterference.v |
+| Total Admits | 8 | NonInterferenceKripke.v (3), NonInterferenceZero.v (5) |
+| Signal Files | 0 | No phase completions yet |
+| Compilation | ❌ FAILING | LexOrder.v, FirstOrderComplete.v have errors |
+
+### Compilation Errors (Worker α Files)
+- `properties/LexOrder.v:241` — `Cannot find any non-recursive equality over a'`
+- `properties/FirstOrderComplete.v:193` — `No such goal. Focus next goal with bullet -`
+
+These files belong to Worker α. Awaiting fixes from that worker.
 
 ---
 
@@ -57,7 +74,7 @@
 | WORKER_β | Beta | ⬜ IDLE | - | Awaiting Phase 1 | 2026-01-17T00:00:00Z |
 | WORKER_γ | Gamma | ⬜ IDLE | - | Awaiting Phase 2,3 | 2026-01-17T00:00:00Z |
 | WORKER_ζ | Zeta | ⬜ IDLE | - | Awaiting Phase 2 | 2026-01-17T00:00:00Z |
-| WORKER_Ω | Omega | 🔵 MONITORING | - | Monitoring | 2026-01-17T00:00:00Z |
+| WORKER_Ω | Omega | 🟢 ACTIVE | - | Baseline assessment complete, monitoring | 2026-01-17T08:30:00Z |
 
 ---
 
@@ -83,6 +100,11 @@
 [2026-01-17T00:00:00Z] GLOBAL_STATE initialized
 [2026-01-17T00:00:00Z] Protocol version 1.0.0
 [2026-01-17T00:00:00Z] Awaiting worker startup
+[2026-01-17T08:30:00Z] WORKER_Ω: Baseline assessment complete
+[2026-01-17T08:30:00Z] WORKER_Ω: 19 axioms in NonInterference.v (unchanged)
+[2026-01-17T08:30:00Z] WORKER_Ω: 8 admits in experimental files
+[2026-01-17T08:30:00Z] WORKER_Ω: Compilation FAILING - errors in Worker α files
+[2026-01-17T08:30:00Z] WORKER_Ω: No signal files detected - Phase 1 not started
 ```
 
 ---
