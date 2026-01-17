@@ -50,12 +50,13 @@ Worker α completed Phase 2 (Cumulative Relation Infrastructure).
 | 13 | `store_rel_n_step_up` | ⬜ PENDING | WORKER_α | - | - |
 | 14 | `val_rel_n_lam_cumulative` | ⬜ PENDING | WORKER_α | - | - |
 | 15 | `val_rel_at_type_to_val_rel_ho` | ⬜ PENDING | WORKER_α | - | - |
-| 16 | `logical_relation_ref` | ⬜ PENDING | WORKER_ζ | - | - |
-| 17 | `logical_relation_deref` | ⬜ PENDING | WORKER_ζ | - | - |
-| 18 | `logical_relation_assign` | ⬜ PENDING | WORKER_ζ | - | - |
-| 19 | `logical_relation_declassify` | ⬜ PENDING | WORKER_ζ | - | - |
+| 16 | `logical_relation_ref` | 🟡 INFRASTRUCTURE | WORKER_ζ | PHASE_5 | 2026-01-17 |
+| 17 | `logical_relation_deref` | 🟡 INFRASTRUCTURE | WORKER_ζ | PHASE_5 | 2026-01-17 |
+| 18 | `logical_relation_assign` | 🟡 INFRASTRUCTURE | WORKER_ζ | PHASE_5 | 2026-01-17 |
+| 19 | `logical_relation_declassify` | 🟡 INFRASTRUCTURE | WORKER_ζ | PHASE_5 | 2026-01-17 |
 
-**Total Pending:** 19
+**Total Pending:** 15
+**Total Infrastructure Ready:** 4 (Axioms 16-19)
 **Total Eliminated:** 0
 
 ---
@@ -68,8 +69,8 @@ Worker α completed Phase 2 (Cumulative Relation Infrastructure).
 | 2 | Cumulative | ✅ COMPLETE | α | Phase 1 ✅ | 2026-01-17 | 2026-01-17 |
 | 3 | Termination | 🟡 IN PROGRESS | β | Phase 1 ✅ | 2026-01-17 | - |
 | 4 | Conversion | 🟡 PARTIAL | γ | Phase 2 ✅, 3 🟡 | - | - |
-| 5 | Semantic | ⬜ **UNBLOCKED** | ζ | Phase 2 ✅ | - | - |
-| 6 | Integration | ⬜ BLOCKED | Ω | Phase 4, 5 | - | - |
+| 5 | Semantic | ✅ COMPLETE | ζ | Phase 2 ✅ | 2026-01-17 | 2026-01-17 |
+| 6 | Integration | ⬜ BLOCKED | Ω | Phase 4, 5 ✅ | - | - |
 | 7 | Cross-Prover | ⬜ BLOCKED | ALL | Phase 6 | - | - |
 
 ---
