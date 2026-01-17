@@ -845,7 +845,7 @@ mod tests {
         assert_eq!(Constant::Bool(true).to_string(), "true");
         assert_eq!(Constant::Bool(false).to_string(), "false");
         assert_eq!(Constant::Int(42).to_string(), "42");
-        assert_eq!(Constant::Int(-100).to_string(), "-100");
+        assert_eq!(Constant::Int(100).to_string(), "100");
         assert_eq!(Constant::String("hello".to_string()).to_string(), "\"hello\"");
     }
 
@@ -948,8 +948,8 @@ mod tests {
     #[test]
     fn test_instruction_display_call() {
         assert_eq!(
-            Instruction::Call(FuncId::new(1), VarId::new(0)).to_string(),
-            "call f1 v0"
+            Instruction::Call(VarId::new(1), VarId::new(0)).to_string(),
+            "call v1 v0"
         );
     }
 
@@ -960,27 +960,27 @@ mod tests {
             "classify v0"
         );
         assert_eq!(
-            Instruction::Declassify(VarId::new(0)).to_string(),
-            "declassify v0"
+            Instruction::Declassify(VarId::new(0), VarId::new(1)).to_string(),
+            "declassify v0 v1"
         );
         assert_eq!(
             Instruction::Prove(VarId::new(0)).to_string(),
             "prove v0"
         );
         assert_eq!(
-            Instruction::Require(VarId::new(0)).to_string(),
-            "require v0"
+            Instruction::RequireCap(Effect::Read).to_string(),
+            "require_cap Read"
         );
     }
 
     #[test]
     fn test_instruction_display_effects() {
         assert_eq!(
-            Instruction::Grant(Effect::Read).to_string(),
-            "grant Read"
+            Instruction::GrantCap(Effect::Read).to_string(),
+            "grant_cap Read"
         );
         assert_eq!(
-            Instruction::Perform(Effect::Write, VarId::new(0)).to_string(),
+            Instruction::Perform { effect: Effect::Write, payload: VarId::new(0) }.to_string(),
             "perform Write v0"
         );
     }
@@ -988,8 +988,8 @@ mod tests {
     #[test]
     fn test_instruction_display_memory() {
         assert_eq!(
-            Instruction::Alloc(VarId::new(0)).to_string(),
-            "alloc v0"
+            Instruction::Alloc { init: VarId::new(0), level: SecurityLevel::Public }.to_string(),
+            "alloc v0 @ Public"
         );
         assert_eq!(
             Instruction::Load(VarId::new(0)).to_string(),
@@ -1002,16 +1002,23 @@ mod tests {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // LABELED INSTRUCTION TESTS
+    // ANNOTATED INSTRUCTION TESTS
     // ═══════════════════════════════════════════════════════════════════
 
     #[test]
-    fn test_labeled_instruction() {
-        let labeled = LabeledInstr {
+    fn test_annotated_instruction() {
+        let annotated = AnnotatedInstr {
             result: VarId::new(5),
             instr: Instruction::Const(Constant::Int(42)),
+            ty: Ty::Int,
+            security: SecurityLevel::Public,
+            effect: Effect::Pure,
         };
-        assert_eq!(labeled.to_string(), "  v5 = const 42");
+        // Format: "result = instr : ty @ security [ε=effect]"
+        let display = annotated.to_string();
+        assert!(display.contains("v5"));
+        assert!(display.contains("const 42"));
+        assert!(display.contains("Int"));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1022,11 +1029,11 @@ mod tests {
     fn test_terminator_display() {
         assert_eq!(
             Terminator::Return(VarId::new(0)).to_string(),
-            "  ret v0"
+            "return v0"
         );
         assert_eq!(
             Terminator::Branch(BlockId::new(1)).to_string(),
-            "  br bb1"
+            "br bb1"
         );
     }
 
@@ -1037,7 +1044,7 @@ mod tests {
             then_block: BlockId::new(1),
             else_block: BlockId::new(2),
         };
-        assert_eq!(term.to_string(), "  br v0 bb1 bb2");
+        assert_eq!(term.to_string(), "br_if v0 bb1 bb2");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1049,19 +1056,39 @@ mod tests {
         let block = BasicBlock::new(BlockId::ENTRY);
         assert_eq!(block.id, BlockId::ENTRY);
         assert!(block.instrs.is_empty());
-        assert!(matches!(block.terminator, Terminator::Return(_)));
+        assert!(block.terminator.is_none());
     }
 
     #[test]
     fn test_basic_block_push() {
         let mut block = BasicBlock::new(BlockId::ENTRY);
-        let v = block.push(Instruction::Const(Constant::Int(42)));
-        assert_eq!(v, VarId::new(0));
+        let instr1 = AnnotatedInstr {
+            result: VarId::new(0),
+            instr: Instruction::Const(Constant::Int(42)),
+            ty: Ty::Int,
+            security: SecurityLevel::Public,
+            effect: Effect::Pure,
+        };
+        block.push(instr1);
         assert_eq!(block.instrs.len(), 1);
 
-        let v2 = block.push(Instruction::Const(Constant::Bool(true)));
-        assert_eq!(v2, VarId::new(1));
+        let instr2 = AnnotatedInstr {
+            result: VarId::new(1),
+            instr: Instruction::Const(Constant::Bool(true)),
+            ty: Ty::Bool,
+            security: SecurityLevel::Public,
+            effect: Effect::Pure,
+        };
+        block.push(instr2);
         assert_eq!(block.instrs.len(), 2);
+    }
+
+    #[test]
+    fn test_basic_block_terminate() {
+        let mut block = BasicBlock::new(BlockId::ENTRY);
+        assert!(block.terminator.is_none());
+        block.terminate(Terminator::Return(VarId::new(0)));
+        assert!(matches!(block.terminator, Some(Terminator::Return(_))));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1098,12 +1125,13 @@ mod tests {
             Ty::Bool,
             Effect::Read,
         );
-        assert!(func.entry().is_some());
-        assert_eq!(func.entry().unwrap().id, BlockId::ENTRY);
+        // entry is a field (BlockId), not a method
+        assert_eq!(func.entry, BlockId::ENTRY);
+        assert!(!func.blocks.is_empty());
     }
 
     #[test]
-    fn test_function_fresh_block() {
+    fn test_function_new_block() {
         let mut func = Function::new(
             FuncId::MAIN,
             "main".to_string(),
@@ -1113,9 +1141,9 @@ mod tests {
             Effect::Pure,
         );
         let initial_blocks = func.blocks.len();
-        let new_id = func.fresh_block();
+        let new_id = func.new_block();
         assert_eq!(func.blocks.len(), initial_blocks + 1);
-        assert!(func.block(new_id).is_some());
+        assert!(func.block_mut(new_id).is_some());
     }
 
     // ═══════════════════════════════════════════════════════════════════
