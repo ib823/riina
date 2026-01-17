@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
-## Version: 1.2.0
-## Last Updated: 2026-01-15
+## Version: 2.0.0
+## Last Updated: 2026-01-17
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -65,6 +65,42 @@
 | Track X (Concurrency Model) | ⚪ DEFINED | 2026-01-15 | - |
 | Track Y (Verified Stdlib) | ⚪ DEFINED | 2026-01-15 | - |
 | Track Z (Declassification Policy) | ⚪ DEFINED | 2026-01-15 | - |
+
+### Military Extension Tracks (Greek Letters) — NEW
+
+**IMPORTANT:** See `01_RESEARCH/MILITARY_HARDENING_ROADMAP.md` for full specifications.
+
+| Track | Status | Extends | Purpose |
+|-------|--------|---------|---------|
+| Track Φ (Phi) | ⚪ DEFINED | Track S | Verified hardware, custom silicon |
+| Track Θ (Theta) | ⚪ DEFINED | Track U | Radiation hardening, EMP resistance |
+| Track Λ (Lambda) | ⚪ DEFINED | Track F | Anti-jamming proofs, RF security |
+| Track Ξ (Xi) | ⚪ DEFINED | Track X | Sensor fusion, spoofing detection |
+| Track Ρ (Rho) | ⚪ DEFINED | Track V | Verified autonomy under jamming |
+| Track Τ (Tau) | ⚪ DEFINED | Track Δ | Byzantine mesh networking |
+| Track Υ (Upsilon) | ⚪ DEFINED | Track U | Self-healing, graceful degradation |
+
+### Application Tracks (Greek Letters)
+
+| Track | Status | Last Update | Owner |
+|-------|--------|-------------|-------|
+| Track Σ (Sigma) | ⚪ DEFINED | 2026-01-15 | - |
+| Track Π (Pi) | ⚪ DEFINED | 2026-01-15 | - |
+| Track Δ (Delta) | ⚪ DEFINED | 2026-01-15 | - |
+| Track Ω (Omega) | ⚪ DEFINED | 2026-01-15 | - |
+| Track Ψ (Psi) | ⚪ DEFINED | 2026-01-15 | - |
+
+---
+
+## AUTHORITATIVE DOCUMENTS
+
+| Document | Location | Purpose |
+|----------|----------|---------|
+| **CLAUDE.md** | `/workspaces/proof/CLAUDE.md` | Master instructions |
+| **PROGRESS.md** | `/workspaces/proof/PROGRESS.md` | Current status |
+| **SESSION_LOG.md** | `/workspaces/proof/SESSION_LOG.md` | Session continuity |
+| **MILITARY_HARDENING_ROADMAP.md** | `/workspaces/proof/01_RESEARCH/` | Military objectives |
+| **This document** | `/workspaces/proof/06_COORDINATION/` | Track coordination |
 
 ---
 
@@ -287,6 +323,23 @@
 ---
 
 ## CHANGE LOG
+
+### 2026-01-17 (MILITARY HARDENING)
+
+- **MAJOR**: Created Military Hardening Roadmap
+  - New document: `01_RESEARCH/MILITARY_HARDENING_ROADMAP.md`
+  - Defines military-grade requirements for RIINA
+  - Target: World's most secure defense software
+- **MAJOR**: Added Military Extension Tracks (Greek Letters)
+  - Track Φ (Phi): Verified Hardware
+  - Track Θ (Theta): Radiation Hardening
+  - Track Λ (Lambda): Anti-Jamming Proofs
+  - Track Ξ (Xi): Sensor Fusion
+  - Track Ρ (Rho): Verified Autonomy
+  - Track Τ (Tau): Mesh Networking
+  - Track Υ (Upsilon): Self-Healing
+- Added authoritative documents section
+- Version bumped to 2.0.0
 
 ### 2026-01-15 (RIINA Branding)
 
