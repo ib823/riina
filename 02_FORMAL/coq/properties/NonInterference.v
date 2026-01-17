@@ -1237,6 +1237,287 @@ Definition rho_closed_on (G : type_env) (rho : ident -> expr) : Prop :=
 Definition rho_no_free_all (rho : ident -> expr) : Prop :=
   forall x y, y <> x -> ~ free_in x (rho y).
 
+(** ** Syntactic Environment Typing
+
+    This relates an environment substitution rho to a typing context Γ.
+    For each variable x : T in Γ, rho(x) must be:
+    1. A value
+    2. Well-typed at type T in the empty context
+
+    This is the SYNTACTIC counterpart to env_rel (which is SEMANTIC).
+*)
+
+Definition env_typed (Σ : store_ty) (Γ : type_env) (rho : ident -> expr) : Prop :=
+  forall x T, lookup x Γ = Some T ->
+    value (rho x) /\ has_type nil Σ Public (rho x) T EffectPure.
+
+Lemma env_typed_lookup : forall Σ Γ rho x T,
+  env_typed Σ Γ rho ->
+  lookup x Γ = Some T ->
+  value (rho x) /\ has_type nil Σ Public (rho x) T EffectPure.
+Proof.
+  intros Σ Γ rho x T Henv Hlook.
+  exact (Henv x T Hlook).
+Qed.
+
+(** Typing in empty context implies closed. *)
+Lemma typing_nil_closed : forall Σ Δ e T ε,
+  has_type nil Σ Δ e T ε ->
+  closed_expr e.
+Proof.
+  intros Σ Δ e T ε Hty x Hfree.
+  destruct (free_in_context x e nil Σ Δ T ε Hfree Hty) as [T' Hlook].
+  simpl in Hlook. discriminate.
+Qed.
+
+Lemma env_typed_closed : forall Σ Γ rho x T,
+  env_typed Σ Γ rho ->
+  lookup x Γ = Some T ->
+  closed_expr (rho x).
+Proof.
+  intros Σ Γ rho x T Henv Hlook.
+  destruct (Henv x T Hlook) as [Hval Hty].
+  apply (typing_nil_closed Σ Public (rho x) T EffectPure Hty).
+Qed.
+
+Lemma env_typed_extend : forall Σ Γ rho x T v,
+  env_typed Σ Γ rho ->
+  value v ->
+  has_type nil Σ Public v T EffectPure ->
+  env_typed Σ ((x, T) :: Γ) (rho_extend rho x v).
+Proof.
+  intros Σ Γ rho x T v Henv Hval Htyv.
+  unfold env_typed. intros y Ty Hlook.
+  simpl in Hlook.
+  unfold rho_extend.
+  destruct (String.eqb y x) eqn:Heq.
+  - apply String.eqb_eq in Heq. subst.
+    inversion Hlook; subst. split; assumption.
+  - apply (Henv y Ty Hlook).
+Qed.
+
+(** NOTE: env_typed_shadow cannot be proven because rho_shadow returns EVar,
+    which is not a value. This is intentional - the substitution typing lemma
+    handles binders differently via the general formulation. *)
+
+(** NOTE: rho_shadow does NOT produce values for shadowed variables.
+    This is because rho_shadow rho x y = EVar y when y = x.
+    EVar is NOT a value, so env_typed cannot hold for rho_shadow directly.
+
+    Instead, we need subst_rho_preserves_typing to handle binders differently:
+    when we go under a binder for variable x, the typing context extends,
+    and the substitution does not touch x (it remains a variable).
+*)
+
+(** ** Substitution Preserves Typing (Full Environment Version)
+
+    This is the key lemma connecting syntactic typing with semantic relations.
+
+    FUNDAMENTAL INSIGHT:
+
+    The issue is that subst_rho with rho_shadow does NOT produce closed terms.
+    When we go under a lambda, rho_shadow rho x returns EVar x for variable x.
+
+    The correct approach is to track typing through an OUTPUT context.
+    Key insight: subst_rho (rho_shadow rho x) body has type T2 in context
+    containing just x : T1, NOT in the empty context.
+
+    We prove: If Γ ⊢ e : T and rho maps Γ\Γ' to closed values, then
+    Γ' ⊢ subst_rho rho e : T, where Γ' contains the bound variables.
+*)
+
+(** The correct formulation: substitution reduces the typing context. *)
+
+Lemma subst_rho_typing_general : forall Γ Γ' Σ Δ e T ε rho,
+  has_type Γ Σ Δ e T ε ->
+  (* For variables in Γ but not Γ', rho provides typed values *)
+  (forall x Tx, lookup x Γ = Some Tx -> lookup x Γ' = None ->
+    value (rho x) /\ has_type nil Σ Δ (rho x) Tx EffectPure) ->
+  (* For variables in both Γ and Γ', rho is identity *)
+  (forall x, lookup x Γ' <> None -> rho x = EVar x) ->
+  (* Γ' is a suffix/subset of Γ with same types *)
+  (forall x Tx, lookup x Γ' = Some Tx -> lookup x Γ = Some Tx) ->
+  has_type Γ' Σ Δ (subst_rho rho e) T ε.
+Proof.
+  intros Γ Γ' Σ Δ e T ε rho Hty.
+  generalize dependent Γ'.
+  generalize dependent rho.
+  induction Hty; intros rho Γ' Hsubst Hid Hsuffix; simpl.
+  (* T_Unit *)
+  - constructor.
+  (* T_Bool *)
+  - constructor.
+  (* T_Int *)
+  - constructor.
+  (* T_String *)
+  - constructor.
+  (* T_Loc *)
+  - constructor. assumption.
+  (* T_Var *)
+  - destruct (lookup x Γ') eqn:Hlook'.
+    + (* x is in Γ': rho x = EVar x, use T_Var *)
+      assert (rho x = EVar x) as Heq.
+      { apply Hid. rewrite Hlook'. discriminate. }
+      rewrite Heq. constructor.
+      (* Need lookup x Γ' = Some T *)
+      assert (lookup x Γ = Some t) as Ht.
+      { apply Hsuffix. exact Hlook'. }
+      rewrite H in Ht. inversion Ht; subst. exact Hlook'.
+    + (* x is not in Γ': rho x is a closed value *)
+      destruct (Hsubst x T H Hlook') as [Hval Htyx].
+      apply closed_typing_weakening. exact Htyx.
+  (* T_Lam *)
+  - constructor.
+    apply (IHHty (rho_shadow rho x) ((x, T1) :: Γ')).
+    + (* Substitution condition *)
+      intros y Ty Hlook Hlook'.
+      simpl in Hlook.
+      unfold rho_shadow.
+      destruct (String.eqb y x) eqn:Heq.
+      * (* y = x: but then lookup y ((x,T1)::Γ') = Some T1 ≠ None, contradiction *)
+        apply String.eqb_eq in Heq. subst.
+        simpl in Hlook'. rewrite String.eqb_refl in Hlook'. discriminate.
+      * (* y ≠ x: use original Hsubst *)
+        apply String.eqb_neq in Heq.
+        simpl in Hlook'. rewrite (proj2 (String.eqb_neq y x) Heq) in Hlook'.
+        apply (Hsubst y Ty Hlook Hlook').
+    + (* Identity condition *)
+      intros y Hlook'.
+      unfold rho_shadow.
+      destruct (String.eqb y x) eqn:Heq.
+      * reflexivity.
+      * apply Hid.
+        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+    + (* Suffix condition *)
+      intros y Ty Hlook'.
+      simpl in Hlook'. simpl.
+      destruct (String.eqb y x) eqn:Heq.
+      * inversion Hlook'; subst. reflexivity.
+      * apply Hsuffix. exact Hlook'.
+  (* T_App *)
+  - eapply T_App; eauto.
+  (* T_Pair *)
+  - eapply T_Pair; eauto.
+  (* T_Fst *)
+  - eapply T_Fst; eauto.
+  (* T_Snd *)
+  - eapply T_Snd; eauto.
+  (* T_Inl *)
+  - eapply T_Inl; eauto.
+  (* T_Inr *)
+  - eapply T_Inr; eauto.
+  (* T_Case *)
+  - eapply T_Case.
+    + eapply IHHty1; eauto.
+    + (* Branch for x1 *)
+      apply (IHHty2 (rho_shadow rho x1) ((x1, T1) :: Γ')).
+      * intros y Ty Hlook Hlook'.
+        simpl in Hlook. unfold rho_shadow.
+        destruct (String.eqb y x1) eqn:Heq.
+        -- apply String.eqb_eq in Heq. subst.
+           simpl in Hlook'. rewrite String.eqb_refl in Hlook'. discriminate.
+        -- apply String.eqb_neq in Heq.
+           simpl in Hlook'. rewrite (proj2 (String.eqb_neq y x1) Heq) in Hlook'.
+           apply (Hsubst y Ty Hlook Hlook').
+      * intros y Hlook'. unfold rho_shadow.
+        destruct (String.eqb y x1) eqn:Heq; [reflexivity | ].
+        apply Hid.
+        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+      * intros y Ty Hlook'. simpl in Hlook'. simpl.
+        destruct (String.eqb y x1) eqn:Heq; [inversion Hlook'; reflexivity | ].
+        apply Hsuffix. exact Hlook'.
+    + (* Branch for x2 *)
+      apply (IHHty3 (rho_shadow rho x2) ((x2, T2) :: Γ')).
+      * intros y Ty Hlook Hlook'.
+        simpl in Hlook. unfold rho_shadow.
+        destruct (String.eqb y x2) eqn:Heq.
+        -- apply String.eqb_eq in Heq. subst.
+           simpl in Hlook'. rewrite String.eqb_refl in Hlook'. discriminate.
+        -- apply String.eqb_neq in Heq.
+           simpl in Hlook'. rewrite (proj2 (String.eqb_neq y x2) Heq) in Hlook'.
+           apply (Hsubst y Ty Hlook Hlook').
+      * intros y Hlook'. unfold rho_shadow.
+        destruct (String.eqb y x2) eqn:Heq; [reflexivity | ].
+        apply Hid.
+        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+      * intros y Ty Hlook'. simpl in Hlook'. simpl.
+        destruct (String.eqb y x2) eqn:Heq; [inversion Hlook'; reflexivity | ].
+        apply Hsuffix. exact Hlook'.
+  (* T_If *)
+  - eapply T_If; eauto.
+  (* T_Let *)
+  - eapply T_Let.
+    + eapply IHHty1; eauto.
+    + apply (IHHty2 (rho_shadow rho x) ((x, T1) :: Γ')).
+      * intros y Ty Hlook Hlook'.
+        simpl in Hlook. unfold rho_shadow.
+        destruct (String.eqb y x) eqn:Heq.
+        -- apply String.eqb_eq in Heq. subst.
+           simpl in Hlook'. rewrite String.eqb_refl in Hlook'. discriminate.
+        -- apply String.eqb_neq in Heq.
+           simpl in Hlook'. rewrite (proj2 (String.eqb_neq y x) Heq) in Hlook'.
+           apply (Hsubst y Ty Hlook Hlook').
+      * intros y Hlook'. unfold rho_shadow.
+        destruct (String.eqb y x) eqn:Heq; [reflexivity | ].
+        apply Hid.
+        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+      * intros y Ty Hlook'. simpl in Hlook'. simpl.
+        destruct (String.eqb y x) eqn:Heq; [inversion Hlook'; reflexivity | ].
+        apply Hsuffix. exact Hlook'.
+  (* T_Perform *)
+  - eapply T_Perform; eauto.
+  (* T_Handle *)
+  - eapply T_Handle.
+    + eapply IHHty1; eauto.
+    + apply (IHHty2 (rho_shadow rho x) ((x, T1) :: Γ')).
+      * intros y Ty Hlook Hlook'.
+        simpl in Hlook. unfold rho_shadow.
+        destruct (String.eqb y x) eqn:Heq.
+        -- apply String.eqb_eq in Heq. subst.
+           simpl in Hlook'. rewrite String.eqb_refl in Hlook'. discriminate.
+        -- apply String.eqb_neq in Heq.
+           simpl in Hlook'. rewrite (proj2 (String.eqb_neq y x) Heq) in Hlook'.
+           apply (Hsubst y Ty Hlook Hlook').
+      * intros y Hlook'. unfold rho_shadow.
+        destruct (String.eqb y x) eqn:Heq; [reflexivity | ].
+        apply Hid.
+        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+      * intros y Ty Hlook'. simpl in Hlook'. simpl.
+        destruct (String.eqb y x) eqn:Heq; [inversion Hlook'; reflexivity | ].
+        apply Hsuffix. exact Hlook'.
+  (* T_Ref *)
+  - eapply T_Ref; eauto.
+  (* T_Deref *)
+  - eapply T_Deref; eauto.
+  (* T_Assign *)
+  - eapply T_Assign; eauto.
+  (* T_Classify *)
+  - eapply T_Classify; eauto.
+  (* T_Declassify *)
+  - eapply T_Declassify; eauto.
+  (* T_Prove *)
+  - eapply T_Prove; eauto.
+  (* T_Require *)
+  - eapply T_Require; eauto.
+  (* T_Grant *)
+  - eapply T_Grant; eauto.
+Qed.
+
+(** Corollary: Full substitution to empty context. *)
+Lemma subst_rho_preserves_typing : forall Γ Σ Δ e T ε rho,
+  has_type Γ Σ Δ e T ε ->
+  env_typed Σ Γ rho ->
+  has_type nil Σ Δ (subst_rho rho e) T ε.
+Proof.
+  intros Γ Σ Δ e T ε rho Hty Henv.
+  apply (subst_rho_typing_general Γ nil Σ Δ e T ε rho Hty).
+  - intros x Tx Hlook Hlook'.
+    destruct (Henv x Tx Hlook) as [Hval Htyx].
+    split; assumption.
+  - intros x Hlook'. simpl in Hlook'. exfalso. apply Hlook'. reflexivity.
+  - intros x Tx Hlook'. simpl in Hlook'. discriminate.
+Qed.
+
 (** ** Effect Operation Axioms
 
     Effects (T_Perform, T_Handle) involve complex effect context manipulation.
