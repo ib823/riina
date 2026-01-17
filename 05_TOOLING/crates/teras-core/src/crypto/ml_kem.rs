@@ -110,28 +110,38 @@ const ZETAS: [i16; 128] = [
      -108,  -308,   996,   991,   958, -1460,  1522,  1628,
 ];
 
-/// n^(-1) mod q in Montgomery form
-/// f = n^(-1) * R mod q = 256^(-1) * 2^16 mod 3329 = 1441
-/// This is used to convert from Montgomery domain after inverse NTT
-const F: i16 = 1441;
+/// NTT scaling factor for inverse NTT
+///
+/// The Kyber/ML-KEM NTT uses 7 layers (len = 128, 64, 32, 16, 8, 4, 2),
+/// which requires dividing by 2^7 = 128 to recover the original polynomial.
+///
+/// For clean NTT roundtrip: fqmul(coeff, F) should give coeff / 128
+/// coeff * F * R^(-1) = coeff / 128
+/// F = R / 128 = 65536 / 128 = 512
+///
+/// Note: Kyber reference uses F=1441 (R^2/128) because their basemul flow
+/// introduces extra Montgomery factors. For our implementation using the
+/// same basemul structure, we need F=512 for correct NTT roundtrip.
+const F: i16 = 512;
 
 // =============================================================================
 // Barrett Reduction Constants
 // =============================================================================
 
-/// Barrett reduction constant: floor(2^24 / q) = floor(16777216 / 3329) = 5039
-const BARRETT_MULT: u32 = 5039;
+/// Barrett reduction constant: ((1<<26) + q/2) / q ≈ 20159
+/// Using Kyber's formula: v = ((1<<26) + Q/2) / Q
+const BARRETT_V: i32 = ((1i32 << 26) + (params::Q as i32) / 2) / (params::Q as i32);
 
 /// Barrett reduction for modular reduction by q
-/// Returns r mod q where r is in [0, 2q) assuming input < 2^16
+///
+/// Reduces a to a value congruent modulo q in range approximately [-q, 2q).
+/// Uses the formula from the Kyber reference implementation.
 #[inline]
 fn barrett_reduce(a: i16) -> i16 {
-    // Compute t = floor((a * 5039) / 2^24) ≈ floor(a / q)
-    let t = ((i32::from(a) * BARRETT_MULT as i32) >> 24) as i16;
-    // r = a - t*q
-    let r = a - t * params::Q as i16;
-    // r is in [0, 2q), may need one more reduction
-    r
+    // t = round(a / q) using Barrett approximation
+    let t = (((BARRETT_V * i32::from(a)) + (1 << 25)) >> 26) as i16;
+    // r = a - t*q (result is in approximately [-q, 2q))
+    a - t * params::Q as i16
 }
 
 /// Conditional subtract: r = a - q if a >= q, else a
@@ -141,6 +151,18 @@ fn cond_sub_q(a: i16) -> i16 {
     // If diff >= 0, use diff; otherwise use a
     let mask = diff >> 15; // -1 if diff < 0, 0 otherwise
     (diff & !mask) | (a & mask)
+}
+
+/// Normalize coefficient to positive representative in [0, q)
+///
+/// This handles negative values from barrett_reduce by adding q if needed.
+#[inline]
+fn to_positive(a: i16) -> u16 {
+    let mut r = a % (params::Q as i16);
+    if r < 0 {
+        r += params::Q as i16;
+    }
+    r as u16
 }
 
 /// Montgomery reduction: given a * R mod q, compute a mod q
@@ -367,8 +389,9 @@ impl Poly {
         debug_assert!(bytes.len() >= 384);
 
         for i in 0..params::N / 2 {
-            let c0 = cond_sub_q(barrett_reduce(self.coeffs[2 * i])) as u16;
-            let c1 = cond_sub_q(barrett_reduce(self.coeffs[2 * i + 1])) as u16;
+            // Normalize to [0, q) range
+            let c0 = to_positive(self.coeffs[2 * i]);
+            let c1 = to_positive(self.coeffs[2 * i + 1]);
 
             // Pack two 12-bit values into 3 bytes
             bytes[3 * i] = c0 as u8;
@@ -404,7 +427,8 @@ impl Poly {
                 for i in 0..params::N / 4 {
                     let mut t = [0u16; 4];
                     for j in 0..4 {
-                        let c = cond_sub_q(barrett_reduce(self.coeffs[4 * i + j])) as u32;
+                        // Normalize to [0, q) range to avoid overflow
+                        let c = to_positive(self.coeffs[4 * i + j]) as u32;
                         // Compress: round((c << 10) / q)
                         t[j] = (((c << 10) + params::Q32 / 2) / params::Q32) as u16 & 0x3FF;
                     }
@@ -421,8 +445,9 @@ impl Poly {
                 debug_assert!(bytes.len() >= 128);
 
                 for i in 0..params::N / 2 {
-                    let c0 = cond_sub_q(barrett_reduce(self.coeffs[2 * i])) as u32;
-                    let c1 = cond_sub_q(barrett_reduce(self.coeffs[2 * i + 1])) as u32;
+                    // Normalize to [0, q) range to avoid overflow
+                    let c0 = to_positive(self.coeffs[2 * i]) as u32;
+                    let c1 = to_positive(self.coeffs[2 * i + 1]) as u32;
 
                     // Compress: round((c << 4) / q)
                     let t0 = (((c0 << 4) + params::Q32 / 2) / params::Q32) as u8 & 0x0F;
@@ -1313,11 +1338,15 @@ mod tests {
 
     #[test]
     fn test_barrett_reduce() {
-        // Test values near boundaries
-        assert_eq!(cond_sub_q(barrett_reduce(0)), 0);
-        assert_eq!(cond_sub_q(barrett_reduce(params::Q as i16 - 1)), params::Q as i16 - 1);
-        assert_eq!(cond_sub_q(barrett_reduce(params::Q as i16)), 0);
-        assert_eq!(cond_sub_q(barrett_reduce(params::Q as i16 + 1)), 1);
+        // Test values near boundaries using to_positive for normalization
+        // (barrett_reduce with Kyber formula can return negative values)
+        assert_eq!(to_positive(barrett_reduce(0)), 0);
+        assert_eq!(to_positive(barrett_reduce(params::Q as i16 - 1)), params::Q as u16 - 1);
+        assert_eq!(to_positive(barrett_reduce(params::Q as i16)), 0);
+        assert_eq!(to_positive(barrett_reduce(params::Q as i16 + 1)), 1);
+        // Test negative values
+        assert_eq!(to_positive(barrett_reduce(-1)), params::Q as u16 - 1);
+        assert_eq!(to_positive(barrett_reduce(-(params::Q as i16))), 0);
     }
 
     #[test]

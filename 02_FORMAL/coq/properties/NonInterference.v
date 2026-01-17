@@ -327,35 +327,26 @@ Proof.
     + exact Hrel.
 Qed.
 
-(** For first-order types, val_rel_at_type implies values are syntactically valid.
-    These lemmas extract value/closed properties from val_rel_at_type.
-    The proofs follow by type induction but we state them as axioms to avoid
-    tedious edge cases (TBytes, TSecret, TCapability, TProof).
+(** ELIMINATED: val_rel_at_type_value_left, val_rel_at_type_value_right,
+    val_rel_at_type_closed_left, val_rel_at_type_closed_right (-4 axioms)
 
-    SEMANTIC JUSTIFICATION: For first-order types, val_rel_at_type equates
-    values syntactically (TUnit: v1=v2=EUnit, TBool: v1=v2=EBool b, etc.)
-    which immediately gives value and closed_expr properties. *)
-Axiom val_rel_at_type_value_left : forall T Σ sp vl sl v1 v2,
-  first_order_type T = true ->
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  value v1.
+    REASON FOR ELIMINATION:
+    These axioms claimed that for first-order types, val_rel_at_type implies
+    value and closed_expr. However, this is NOT true for all first-order types:
+    - TBytes: val_rel_at_type = (v1 = v2), no structural info
+    - TSecret T': val_rel_at_type = True, no info at all
+    - TCapability: val_rel_at_type = True
+    - TProof: val_rel_at_type = True
 
-Axiom val_rel_at_type_value_right : forall T Σ sp vl sl v1 v2,
-  first_order_type T = true ->
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  value v2.
+    SOLUTION:
+    Instead of axiomatizing unsound claims, we modified val_rel_at_type_to_val_rel_fo
+    to take value and closed_expr as EXPLICIT PREMISES. At the only call site
+    (T_Lam case), these properties are ALREADY AVAILABLE as hypotheses from
+    the strengthened TFn definition. This is sound and eliminates 4 axioms.
 
-Axiom val_rel_at_type_closed_left : forall T Σ sp vl sl v1 v2,
-  first_order_type T = true ->
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  closed_expr v1.
+    This follows the principle: "Don't axiomatize what you can design around." *)
 
-Axiom val_rel_at_type_closed_right : forall T Σ sp vl sl v1 v2,
-  first_order_type T = true ->
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  closed_expr v2.
-
-(** ELIMINATED: val_rel_at_type_value_any_* and val_rel_at_type_closed_any_*
+(** ALSO ELIMINATED: val_rel_at_type_value_any_* and val_rel_at_type_closed_any_*
 
     REVOLUTIONARY ARCHITECTURE CHANGE:
     These 4 axioms have been eliminated by strengthening the TFn case in
@@ -2181,24 +2172,27 @@ Proof.
 Qed.
 
 (** For first-order types, convert val_rel_at_type to val_rel.
-    This combines the axioms for extracting value/closed with
-    val_rel_n_of_first_order and val_rel_n_to_val_rel. *)
+
+    REVOLUTIONARY CHANGE: Instead of axiomatizing value/closed extraction
+    from val_rel_at_type (which doesn't hold for TBytes/TSecret), we take
+    value and closed_expr as explicit premises. This allows callers who
+    already have these properties (from the strengthened TFn definition)
+    to use this lemma without needing unsound axioms.
+
+    This ELIMINATES 4 axioms:
+    - val_rel_at_type_value_left
+    - val_rel_at_type_value_right
+    - val_rel_at_type_closed_left
+    - val_rel_at_type_closed_right *)
 Lemma val_rel_at_type_to_val_rel_fo : forall Σ sp vl sl T v1 v2,
   first_order_type T = true ->
   val_rel_at_type Σ sp vl sl T v1 v2 ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
   val_rel Σ T v1 v2.
 Proof.
-  intros Σ sp vl sl T v1 v2 Hfo Hrat.
-  (* Extract value and closed from val_rel_at_type *)
-  assert (Hval1 : value v1).
-  { apply (val_rel_at_type_value_left T Σ sp vl sl v1 v2 Hfo Hrat). }
-  assert (Hval2 : value v2).
-  { apply (val_rel_at_type_value_right T Σ sp vl sl v1 v2 Hfo Hrat). }
-  assert (Hcl1 : closed_expr v1).
-  { apply (val_rel_at_type_closed_left T Σ sp vl sl v1 v2 Hfo Hrat). }
-  assert (Hcl2 : closed_expr v2).
-  { apply (val_rel_at_type_closed_right T Σ sp vl sl v1 v2 Hfo Hrat). }
-  (* Use val_rel_n_to_val_rel *)
+  intros Σ sp vl sl T v1 v2 Hfo Hrat Hval1 Hval2 Hcl1 Hcl2.
+  (* value and closed now come as premises - no axioms needed! *)
   apply val_rel_n_to_val_rel; try assumption.
   exists 0.
   apply val_rel_n_of_first_order; try assumption.
@@ -2818,7 +2812,8 @@ Proof.
       assert (Harg_rel : val_rel Σ T1 arg1 arg2).
       { destruct (first_order_type T1) eqn:HfoT1.
         - apply (val_rel_at_type_to_val_rel_fo Σ (store_rel_n n' Σ) (val_rel_n n' Σ)
-                  (store_rel_n n') T1 arg1 arg2 HfoT1 Hargs).
+                  (store_rel_n n') T1 arg1 arg2 HfoT1 Hargs
+                  Hval_arg1 Hval_arg2 Hcl_arg1 Hcl_arg2).
         - apply (val_rel_at_type_to_val_rel_ho Σ (store_rel_n n' Σ) (val_rel_n n' Σ)
                   (store_rel_n n') T1 arg1 arg2 Hargs Hval_arg1 Hval_arg2). }
 
