@@ -15,6 +15,7 @@
 ## Dependencies
 | Signal | Status | Required By |
 |--------|--------|-------------|
+| PHASE_1_COMPLETE.signal | **RECEIVED** | Phase 2 & 3 start |
 | PHASE_2_COMPLETE.signal | WAITING | Phase 4 start |
 | PHASE_3_COMPLETE.signal | WAITING | Phase 4 start |
 
@@ -54,6 +55,7 @@
 | 2026-01-17T07:23:00Z | MONITORING | Worker Ω assessed: 19 axioms, 8 admits, compilation errors in α files |
 | 2026-01-17T07:27:00Z | MONITORING | Worker ζ fixed build, Coq compiles. Signals dir recreated. Still waiting. |
 | 2026-01-17T07:30:00Z | MONITORING | Recreated coordination directories after git pull |
+| 2026-01-17T07:35:00Z | MONITORING | PHASE_1_COMPLETE.signal found! Waiting for Phase 2 and 3... |
 
 ---
 
