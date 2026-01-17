@@ -1,8 +1,8 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-17 (PARALLEL EXECUTION PLAN CREATED)
+## Last Updated: 2026-01-17 (COORDINATOR SESSION - AES FIXED)
 
-## Current Focus: PARALLEL WORKER DEPLOYMENT | 📊 **BASELINE VERIFIED**
+## Current Focus: PARALLEL WORKER DEPLOYMENT | 📊 **BASELINE VERIFIED** | 🎉 **AES FIXED**
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -27,7 +27,8 @@
 **ZERO-TRUST TRACKS (R, S, T, U):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
-**BLOCKERS:** 19 axioms 🟡 (reduced from 31, -12 total), AES broken ❌ (3 failing tests)
+**BLOCKERS:** 19 axioms 🟡 (reduced from 31, -12 total)
+**RESOLVED:** AES ✅ FIXED (a6135f1) — All 134 crypto tests now passing
 
 ### AXIOM ELIMINATION PROGRESS (Phase 1)
 
@@ -432,6 +433,22 @@ When all tracks are complete, the following threats become OBSOLETE:
 ---
 
 ## CHANGE LOG
+
+### 2026-01-17 (COORDINATOR SESSION — AES FIXED)
+
+- **CRITICAL FIX**: AES constant-time S-box lookup corrected (Worker γ)
+  - Root cause: `ct_eq_byte` function had signed integer overflow for `diff >= 129`
+  - Original used `(diff as i8).wrapping_sub(1) >> 7` — failed for values 129-255
+  - Fix: Use 16-bit arithmetic `(diff as u16).wrapping_sub(1) >> 8`
+  - Commit: a6135f1
+- **Crypto test results**: 134 passed, 0 failed, 3 ignored
+- **Coordination infrastructure created**:
+  - Worker state files: WORKER_STATE_ALPHA.md, WORKER_STATE_BETA.md, WORKER_STATE_GAMMA.md, WORKER_STATE_ZETA.md
+  - All workers now have session recovery capabilities
+- **Verification baseline confirmed**:
+  - Coq: Compiles (0 Admitted, 19 Axioms)
+  - Prototype: 222 tests passing
+  - Crypto: 134 tests passing (AES fixed)
 
 ### 2026-01-17 (MILITARY HARDENING ROADMAP)
 
