@@ -20,15 +20,15 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**STATUS:** AXIOM ELIMINATION IN PROGRESS. Overall Grade: B+ (78%)
-**TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 19 Axioms 🟡), Effects (0 ADMITS) ✓
-**TRACK B:** ✅ CODEGEN COMPLETE (0 warnings, 222 tests passing). riina-codegen: IR, Interpreter, C Emission
-**TRACK F:** X25519 ✅, Ed25519 ✅, Keccak/SHAKE ✅, ML-KEM-768 ✅ (9 tests), ML-DSA-65 🟡 (NTT working)
+**STATUS:** PARALLEL EXECUTION READY. Overall Grade: B+ (80%)
+**TRACK A:** Core (0 ADMITS) ✓, NonInterference (0 ADMITS + 20 Axioms 🟡), Effects (0 ADMITS) ✓
+**TRACK B:** ✅ CODEGEN COMPLETE (0 warnings, 364 tests passing). riina-codegen: IR, Interpreter, C Emission
+**TRACK F:** X25519 ✅, Ed25519 ✅, Keccak/SHAKE ✅, ML-KEM-768 ✅, ML-DSA-65 🟡 (NTT working), 139 tests
 **ZERO-TRUST TRACKS (R, S, T, U):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **COMPLETENESS TRACKS (V, W, X, Y, Z):** RESEARCH COMPLETE ✅, IMPLEMENTATION NOT STARTED ❌
 **SYNTAX:** Bahasa Melayu (Malaysian Malay) — File extension: `.rii`
-**BLOCKERS:** 19 axioms 🟡 (reduced from 31, -12 total)
-**RESOLVED:** AES ✅ FIXED (a6135f1) — All 134 crypto tests now passing
+**BLOCKERS:** 20 axioms 🟡 (19 original + 1 new declass_ok_subst_rho)
+**RESOLVED:** AES ✅, Coq compilation ✅ (c0919ea) — All 503 tests passing
 
 ### AXIOM ELIMINATION PROGRESS (Phase 1)
 
@@ -40,10 +40,11 @@
 | Session 10 | 25 → 24 | -1 | store_rel_n_mono_store removed (UNUSED) |
 | Session 11 | 24 → 23 | -1 | store_rel_n_weaken proven as corollary |
 | Session 11 | 23 → 19 | -4 | val_rel_at_type_value/closed axioms eliminated (unsound) |
+| Session 14 | 19 → 20 | +1 | Added declass_ok_subst_rho (fixes Coq compilation) |
 
-**Current axiom count: 19 (down from 31, -12 total)**
+**Current axiom count: 20**
 
-#### Remaining 19 Axioms by Category
+#### Remaining 20 Axioms by Category
 
 1. **Higher-order Kripke (3):** val_rel_n_weaken, val_rel_n_mono_store, val_rel_n_to_val_rel
 2. **Step-1 termination (7):** exp_rel_step1_{fst,snd,case,if,let,handle,app}
@@ -51,6 +52,7 @@
 4. **Step-up (3):** val_rel_n_step_up, store_rel_n_step_up, val_rel_n_lam_cumulative
 5. **Higher-order conversion (1):** val_rel_at_type_to_val_rel_ho
 6. **Semantic typing (4):** logical_relation_{ref,deref,assign,declassify}
+7. **Substitution (1):** declass_ok_subst_rho (values are closed)
 
 **First-order alternatives proven:** val_rel_n_weaken_fo, val_rel_n_mono_store_fo,
 val_rel_n_step_up_fo, val_rel_n_step_up_any_fo, val_rel_n_to_val_rel_fo
