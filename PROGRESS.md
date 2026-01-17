@@ -41,18 +41,18 @@
 | Session 11 | 24 → 23 | -1 | store_rel_n_weaken proven as corollary |
 | Session 11 | 23 → 19 | -4 | val_rel_at_type_value/closed axioms eliminated (unsound) |
 | Session 14 | 19 → 20 | +1 | Added declass_ok_subst_rho (fixes Coq compilation) |
+| Session 14 | 20 → 19 | -1 | PROVEN declass_ok_subst_rho via value_subst_rho lemma |
 
-**Current axiom count: 20**
+**Current axiom count: 19**
 
-#### Remaining 20 Axioms by Category
+#### Remaining 19 Axioms by Category
 
-1. **Higher-order Kripke (3):** val_rel_n_weaken, val_rel_n_mono_store, val_rel_n_to_val_rel
+1. **Higher-order Kripke (2):** val_rel_n_weaken, val_rel_n_mono_store
 2. **Step-1 termination (7):** exp_rel_step1_{fst,snd,case,if,let,handle,app}
 3. **Application (1):** tapp_step0_complete
 4. **Step-up (3):** val_rel_n_step_up, store_rel_n_step_up, val_rel_n_lam_cumulative
-5. **Higher-order conversion (1):** val_rel_at_type_to_val_rel_ho
+5. **Higher-order conversion (2):** val_rel_at_type_to_val_rel_ho, val_rel_n_to_val_rel
 6. **Semantic typing (4):** logical_relation_{ref,deref,assign,declassify}
-7. **Substitution (1):** declass_ok_subst_rho (values are closed)
 
 **First-order alternatives proven:** val_rel_n_weaken_fo, val_rel_n_mono_store_fo,
 val_rel_n_step_up_fo, val_rel_n_step_up_any_fo, val_rel_n_to_val_rel_fo
