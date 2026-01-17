@@ -436,6 +436,24 @@ When all tracks are complete, the following threats become OBSOLETE:
 
 ## CHANGE LOG
 
+### 2026-01-17 (WORKER_ζ SESSION — PARALLEL PROTOCOL ACTIVE)
+
+- **COORDINATION FIX**: Restored stable Coq build
+  - Worker α experimental files have compilation errors (LexOrder.v, FirstOrderComplete.v)
+  - Excluded experimental files from _CoqProject temporarily
+  - Stable core (12 files) compiles successfully
+  - Commit: 84775f3
+- **AXIOM ZERO PROTOCOL**: Workers initialized, awaiting Phase 2
+  - Worker α: Phase 1/2 (not complete)
+  - Worker β: Waiting for Phase 1
+  - Worker γ: Waiting for Phase 2 and 3
+  - Worker ζ: Waiting for Phase 2 (Phase 5 assignment)
+  - Worker Ω: Monitoring
+- **WORKER_ζ Status**: WAITING_FOR_PHASE_2
+  - Phase 5 targets: Axioms 16, 17, 18, 19 (ref/deref/assign/declassify)
+  - Files to create: StoreRelation.v, ReferenceOps.v, Declassification.v
+  - Commit: 5701998
+
 ### 2026-01-17 (COORDINATOR SESSION — AES FIXED)
 
 - **CRITICAL FIX**: AES constant-time S-box lookup corrected (Worker γ)
