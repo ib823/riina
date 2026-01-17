@@ -70,8 +70,6 @@ pub mod ir;
 pub mod value;
 pub mod lower;
 pub mod interp;
-
-#[cfg(feature = "c-emit")]
 pub mod emit;
 
 // Re-export primary interface
@@ -79,6 +77,7 @@ pub use ir::{Instruction, BasicBlock, Function, Program};
 pub use value::Value;
 pub use lower::Lower;
 pub use interp::Interpreter;
+pub use emit::{CEmitter, emit_c};
 
 /// Result type for code generation operations
 pub type Result<T> = std::result::Result<T, Error>;
@@ -185,6 +184,32 @@ pub fn eval(expr: &riina_types::Expr) -> Result<Value> {
 pub fn compile(expr: &riina_types::Expr) -> Result<Program> {
     let mut lower = Lower::new();
     lower.compile(expr)
+}
+
+/// Compile an expression to C source code
+///
+/// Complete pipeline from AST to portable C99 code.
+/// The generated C code can be compiled with any C99 compiler.
+///
+/// # Arguments
+///
+/// * `expr` - The RIINA expression to compile
+///
+/// # Returns
+///
+/// * `Ok(String)` - The generated C source code
+/// * `Err(Error)` - Compilation error
+///
+/// # Example
+///
+/// ```ignore
+/// let expr = Expr::Int(42);
+/// let c_code = compile_to_c(&expr)?;
+/// // c_code is now a complete C program that evaluates to 42
+/// ```
+pub fn compile_to_c(expr: &riina_types::Expr) -> Result<String> {
+    let program = compile(expr)?;
+    emit_c(&program)
 }
 
 #[cfg(test)]
