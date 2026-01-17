@@ -61,7 +61,8 @@ Proof.
   apply SN_intro.
   intros e' st' ctx' Hstep.
   exfalso.
-  inversion Hstep; subst; inversion Hval.
+  (* Use the existing lemma from Semantics.v *)
+  eapply value_not_step; eauto.
 Qed.
 
 (** SN is closed under single-step reduction *)
