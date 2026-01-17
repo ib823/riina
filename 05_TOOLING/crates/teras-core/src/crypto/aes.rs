@@ -95,13 +95,28 @@ fn ct_lookup(table: &[u8; 256], index: u8) -> u8 {
 
 /// Constant-time byte equality
 /// Returns 0xFF if a == b, 0x00 otherwise
+///
+/// # Security Analysis (FIPS-197 Compliant, Constant-Time)
+///
+/// This implementation uses 16-bit arithmetic to avoid signed integer edge cases:
+/// - diff = 0: (0u16).wrapping_sub(1) = 0xFFFF, >> 8 = 0xFF ✓
+/// - diff = 1: (1u16).wrapping_sub(1) = 0x0000, >> 8 = 0x00 ✓
+/// - diff = 128: (128u16).wrapping_sub(1) = 0x007F, >> 8 = 0x00 ✓
+/// - diff = 255: (255u16).wrapping_sub(1) = 0x00FE, >> 8 = 0x00 ✓
+///
+/// The previous i8-based implementation was INCORRECT:
+/// - For diff >= 129: (diff as i8) is negative, wrapping_sub(1) stays negative,
+///   arithmetic right shift >> 7 produces -1 (0xFF), causing false matches.
 #[inline]
 fn ct_eq_byte(a: u8, b: u8) -> u8 {
     let diff = a ^ b;
     // If diff is 0, we want 0xFF; otherwise 0x00
-    // Use arithmetic to avoid branches
-    let is_zero = (diff as i8).wrapping_sub(1) >> 7;
-    is_zero as u8
+    // Zero-extend to 16 bits and check for underflow when subtracting 1
+    // This avoids all signed integer edge cases
+    let wide = diff as u16;
+    // diff=0: (0x0000 - 1) = 0xFFFF, >> 8 = 0xFF (match)
+    // diff>0: (diff - 1) fits in low byte, >> 8 = 0x00 (no match)
+    (wide.wrapping_sub(1) >> 8) as u8
 }
 
 /// AES-256 cipher instance
