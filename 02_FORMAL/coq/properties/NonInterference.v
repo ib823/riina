@@ -1326,15 +1326,42 @@ Qed.
     Γ' ⊢ subst_rho rho e : T, where Γ' contains the bound variables.
 *)
 
-(** Axiom: declass_ok is preserved by subst_rho.
+(** Lemma: substitution preserves values.
+    Values remain values after substitution because the value constructors
+    only care about syntactic structure, not about free variables. *)
+Lemma value_subst_rho : forall rho v,
+  value v ->
+  value (subst_rho rho v).
+Proof.
+  intros rho v Hv.
+  induction Hv; simpl.
+  - constructor.  (* VUnit *)
+  - constructor.  (* VBool *)
+  - constructor.  (* VInt *)
+  - constructor.  (* VString *)
+  - constructor.  (* VLoc *)
+  - constructor.  (* VLam - body doesn't need to be value *)
+  - constructor; assumption.  (* VPair *)
+  - constructor; assumption.  (* VInl *)
+  - constructor; assumption.  (* VInr *)
+  - constructor; assumption.  (* VClassify *)
+  - constructor; assumption.  (* VProve *)
+Qed.
 
-    Semantically justified: declass_ok e1 e2 means
-    e1 = EClassify v and e2 = EProve (EClassify v) for some value v.
-    In well-typed terms, values appearing in declass_ok are closed,
-    so substitution doesn't change them. *)
-Axiom declass_ok_subst_rho : forall rho e1 e2,
+(** Lemma: declass_ok is preserved by subst_rho.
+    PROVEN (was Axiom). Uses value_subst_rho. *)
+Lemma declass_ok_subst_rho : forall rho e1 e2,
   declass_ok e1 e2 ->
   declass_ok (subst_rho rho e1) (subst_rho rho e2).
+Proof.
+  intros rho e1 e2 Hok.
+  destruct Hok as [v [Hv [He1 He2]]]; subst.
+  simpl.
+  exists (subst_rho rho v).
+  split.
+  - apply value_subst_rho; assumption.
+  - split; reflexivity.
+Qed.
 
 (** The correct formulation: substitution reduces the typing context. *)
 
