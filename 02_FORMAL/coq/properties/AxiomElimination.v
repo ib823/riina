@@ -406,14 +406,31 @@ Admitted.
     because extension only adds locations, not removes them.
 
     Infrastructure: Phase 2 CumulativeMonotone.v
+
+    PROOF STATUS:
+    This requires mutual induction on (n, T) with:
+    - val_rel_n monotonicity under store extension
+    - val_rel_at_type monotonicity under store extension
+    The key insight is that for first-order types, val_rel_at_type
+    doesn't depend on Σ. For TFn, we need to show that extensions
+    of Σ' (the larger store) are a subset of extensions of Σ.
+
+    For the TFn case:
+    - We have HT that works for any extension of Σ
+    - We need to show it works for any extension of Σ'
+    - Since Σ' extends Σ, any extension of Σ' is also an extension of Σ
+    - So we can use HT directly... BUT we also need the argument
+      relation at Σ (not Σ'), requiring axiom 1 (weaken direction).
 *)
 Theorem axiom_2_infrastructure : forall n Σ Σ' T v1 v2,
   store_ty_extends Σ Σ' ->
   val_rel_n n Σ T v1 v2 ->
   val_rel_n n Σ' T v1 v2.
 Proof.
+  (* Requires val_rel_at_type_mono lemma and mutual induction.
+     Key insight: val_rel_at_type for first-order types doesn't use Σ.
+     For TFn: need weaken direction (axiom 1) for argument conversion. *)
   intros n Σ Σ' T v1 v2 Hext Hrel.
-  (* Uses val_rel_le_mono_store from Phase 2 *)
   admit.
 Admitted.
 
