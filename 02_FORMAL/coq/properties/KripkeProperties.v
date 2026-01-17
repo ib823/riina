@@ -429,6 +429,37 @@ Qed.
     This lemma helps construct store extensions.
 *)
 
+(** Helper: lookup at l' is unchanged by update at l when l <> l' *)
+Lemma store_ty_lookup_update_neq : forall l l' T sl Σ,
+  l <> l' ->
+  store_ty_lookup l' (store_ty_update l T sl Σ) = store_ty_lookup l' Σ.
+Proof.
+  intros l l' T sl Σ Hneq.
+  induction Σ as [| entry Σ' IH].
+  - (* Σ = nil: update creates singleton, lookup at l' <> l returns None *)
+    simpl.
+    assert (Hneqb: Nat.eqb l' l = false).
+    { apply Nat.eqb_neq. auto. }
+    rewrite Hneqb. reflexivity.
+  - (* Σ = entry :: Σ' *)
+    destruct entry as [[l'' T''] sl''].
+    simpl.
+    destruct (Nat.eqb l l'') eqn:El.
+    + (* l = l'': update replaces this entry *)
+      apply Nat.eqb_eq in El. subst l''.
+      simpl.
+      assert (Hneqb: Nat.eqb l' l = false).
+      { apply Nat.eqb_neq. auto. }
+      rewrite Hneqb. reflexivity.
+    + (* l <> l'': update recurses *)
+      simpl.
+      destruct (Nat.eqb l' l'') eqn:El''.
+      * (* l' = l'': found in both *)
+        reflexivity.
+      * (* l' <> l'': recurse *)
+        apply IH.
+Qed.
+
 Lemma store_ty_extends_add : forall Σ l T sl,
   store_ty_lookup l Σ = None ->
   store_ty_extends Σ (store_ty_update l T sl Σ).
@@ -436,13 +467,10 @@ Proof.
   intros Σ l T sl Hnone.
   unfold store_ty_extends.
   intros l' T' sl' Hlook.
-  unfold store_ty_update.
   destruct (Nat.eq_dec l l') as [Heq | Hneq].
   - subst. rewrite Hnone in Hlook. discriminate.
   - (* l <> l', so lookup is unchanged *)
-    (* This depends on the actual implementation of store_ty_update *)
-    (* We need to know that update at l doesn't affect lookup at l' *)
-    admit.
-Admitted.
+    rewrite store_ty_lookup_update_neq; auto.
+Qed.
 
 (** End of KripkeProperties.v *)
