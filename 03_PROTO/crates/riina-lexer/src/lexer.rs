@@ -120,13 +120,21 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Returns the next token from the input.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`LexError`] if:
+    /// - An unexpected character is encountered
+    /// - A string literal is not properly terminated
+    /// - A character literal is not properly terminated
+    /// - An invalid escape sequence is encountered
     pub fn next_token(&mut self) -> Result<Token, LexError> {
         self.skip_whitespace();
 
         let start = self.pos;
-        let c = match self.advance() {
-            Some(c) => c,
-            None => return Ok(Token::new(TokenKind::Eof, Span::new(start, start))),
+        let Some(c) = self.advance() else {
+            return Ok(Token::new(TokenKind::Eof, Span::new(start, start)));
         };
 
         let kind = match c {
@@ -206,7 +214,7 @@ impl<'a> Lexer<'a> {
             '"' => self.read_string(start)?,
             '\'' => self.read_char_or_lifetime(start)?,
             
-            _ if c.is_ascii_digit() => self.read_number(c, start)?,
+            _ if c.is_ascii_digit() => self.read_number(c),
             _ if is_ident_start(c) => self.read_identifier(c, start),
             
             _ => return Err(LexError::UnexpectedChar(c, start)),
@@ -294,25 +302,25 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn read_number(&mut self, first: char, _start: usize) -> Result<TokenKind, LexError> {
+    fn read_number(&mut self, first: char) -> TokenKind {
         let mut s = String::new();
         s.push(first);
-        
+
         // Hex/Oct/Bin
         if first == '0' {
             if let Some(c) = self.peek() {
                 if c == 'x' || c == 'o' || c == 'b' {
                     self.advance();
                     s.push(c);
-                    s.push_str(&self.consume_while(|c| c.is_ascii_hexdigit() || c == '_'));
+                    s.push_str(&self.consume_while(|ch| ch.is_ascii_hexdigit() || ch == '_'));
                     // Check suffix
                     // ...
-                    return Ok(TokenKind::LiteralInt(s, None)); // TODO: Suffix
+                    return TokenKind::LiteralInt(s, None); // TODO: Suffix
                 }
             }
         }
 
-        s.push_str(&self.consume_while(|c| c.is_ascii_digit() || c == '_'));
+        s.push_str(&self.consume_while(|ch| ch.is_ascii_digit() || ch == '_'));
 
         // Float?
         if let Some('.') = self.peek() {
@@ -324,15 +332,15 @@ impl<'a> Lexer<'a> {
                 if c != '.' && !is_ident_start(c) { // 1.e5, 1.2
                     self.advance();
                     s.push('.');
-                    s.push_str(&self.consume_while(|c| c.is_ascii_digit() || c == '_'));
+                    s.push_str(&self.consume_while(|ch| ch.is_ascii_digit() || ch == '_'));
                     // Exponent
                     // ...
-                    return Ok(TokenKind::LiteralFloat(s, None));
+                    return TokenKind::LiteralFloat(s, None);
                 }
             }
         }
-        
-        Ok(TokenKind::LiteralInt(s, None)) // Default
+
+        TokenKind::LiteralInt(s, None) // Default
     }
 
     fn read_identifier(&mut self, first: char, _start: usize) -> TokenKind {
