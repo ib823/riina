@@ -116,7 +116,13 @@ Section ValRelAtN.
         (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\ val_rel_at_type T1 x1 x2) \/
         (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\ val_rel_at_type T2 y1 y2)
     | TFn T1 T2 eff =>
-        forall x y, val_rel_at_type T1 x y ->
+        (* REVOLUTIONARY CHANGE: Require value/closed premises explicitly.
+           This eliminates the need for val_rel_at_type_value_any_* axioms.
+           When proving lambda relatedness, we get these as hypotheses.
+           When applying functions, we provide them from val_rel_n. *)
+        forall x y,
+          value x -> value y -> closed_expr x -> closed_expr y ->
+          val_rel_at_type T1 x y ->
           forall st1 st2 ctx,
             store_rel_pred st1 st2 ->
             exists (v1' : expr) (v2' : expr) (st1' : store) (st2' : store)
@@ -264,25 +270,28 @@ Axiom val_rel_at_type_closed_right : forall T Σ sp vl sl v1 v2,
   val_rel_at_type Σ sp vl sl T v1 v2 ->
   closed_expr v2.
 
-(** Higher-order versions of the value/closed extraction axioms.
-    These work for any type, not just first-order types.
-    Semantically justified: val_rel_at_type always requires values.
+(** ELIMINATED: val_rel_at_type_value_any_* and val_rel_at_type_closed_any_*
+
+    REVOLUTIONARY ARCHITECTURE CHANGE:
+    These 4 axioms have been eliminated by strengthening the TFn case in
+    val_rel_at_type to require value/closed_expr as explicit premises:
+
+    OLD:  forall x y, val_rel_at_type T1 x y -> ...
+    NEW:  forall x y, value x -> value y -> closed_expr x -> closed_expr y ->
+                      val_rel_at_type T1 x y -> ...
+
+    IMPACT:
+    - When PROVING lambda relatedness (T_Lam case):
+      value/closed come as hypotheses automatically
+    - When USING function relation (T_App case):
+      value/closed are extracted from val_rel_n before applying function relation
+
+    This architectural change eliminates the need to derive value/closed from
+    val_rel_at_type, which was problematic for types like TSecret where
+    val_rel_at_type is just True.
+
+    Axiom count: 29 → 25 (-4 axioms eliminated)
 *)
-Axiom val_rel_at_type_value_any_left : forall T Σ sp vl sl v1 v2,
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  value v1.
-
-Axiom val_rel_at_type_value_any_right : forall T Σ sp vl sl v1 v2,
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  value v2.
-
-Axiom val_rel_at_type_closed_any_left : forall T Σ sp vl sl v1 v2,
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  closed_expr v1.
-
-Axiom val_rel_at_type_closed_any_right : forall T Σ sp vl sl v1 v2,
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  closed_expr v2.
 
 (** *** Monotonicity Lemmas
 
@@ -2530,17 +2539,10 @@ Proof.
       (* val_rel_at_type (TFn T1 T2 ε) for the two lambdas *)
       simpl.
       (* Need to show: for all related args, applying lambdas produces related results *)
-      intros arg1 arg2 Hargs st1 st2 ctx Hstore_rel.
+      (* REVOLUTIONARY: With strengthened TFn definition, value/closed come as premises! *)
+      intros arg1 arg2 Hval_arg1 Hval_arg2 Hcl_arg1 Hcl_arg2 Hargs st1 st2 ctx Hstore_rel.
 
-      (* Extract value and closed from Hargs using _any_ axioms (works for all types) *)
-      assert (Hval_arg1 : value arg1).
-      { apply (val_rel_at_type_value_any_left T1 Σ _ _ _ arg1 arg2 Hargs). }
-      assert (Hval_arg2 : value arg2).
-      { apply (val_rel_at_type_value_any_right T1 Σ _ _ _ arg1 arg2 Hargs). }
-      assert (Hcl_arg1 : closed_expr arg1).
-      { apply (val_rel_at_type_closed_any_left T1 Σ _ _ _ arg1 arg2 Hargs). }
-      assert (Hcl_arg2 : closed_expr arg2).
-      { apply (val_rel_at_type_closed_any_right T1 Σ _ _ _ arg1 arg2 Hargs). }
+      (* NO AXIOMS NEEDED: Hval_arg1, Hval_arg2, Hcl_arg1, Hcl_arg2 are now hypotheses! *)
 
       (* Convert val_rel_at_type to val_rel.
          For first-order T1, use val_rel_at_type_to_val_rel_fo.
@@ -2675,17 +2677,20 @@ Proof.
       simpl in Hfn_rel.
 
       (* Extract val_rel_at_type for argument *)
+      (* REVOLUTIONARY: Keep value/closed properties for function application! *)
       simpl in Harel_Σ'.
-      destruct Harel_Σ' as [Harel_cum [_ [_ [_ [_ Harat]]]]].
-      (* Harat : val_rel_at_type T1 at n'' with Σ' *)
+      destruct Harel_Σ' as [Harel_cum [Hvala1' [Hvala2' [Hcla1 [Hcla2 Harat]]]]].
+      (* Harat : val_rel_at_type T1 at n'' with Σ'
+         Hcla1 : closed_expr a1, Hcla2 : closed_expr a2 *)
 
       (* Extract store relation for application (cumulative part) *)
       simpl in Hstore2_Σ'.
       destruct Hstore2_Σ' as [Hstore2_cum _].
       (* Hstore2_cum : store_rel_n n'' Σ' st1'' st2'' *)
 
-      (* Apply the function relation Hfn_rel with argument Harat and store Hstore2_cum *)
-      specialize (Hfn_rel a1 a2 Harat st1'' st2'' ctx'' Hstore2_cum) as
+      (* Apply the function relation Hfn_rel with argument properties and store *)
+      (* REVOLUTIONARY: Provide value/closed directly from val_rel_n, no axioms needed! *)
+      specialize (Hfn_rel a1 a2 Hvala1' Hvala2' Hcla1 Hcla2 Harat st1'' st2'' ctx'' Hstore2_cum) as
         [v1 [v2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep3 [Hstep3' [Hval_out Hstore3]]]]]]]]]].
 
       (* Build final result *)
