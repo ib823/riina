@@ -249,29 +249,29 @@ Proof.
       split; [exact Hc2|].
       (* Type-specific at step 1 = same as step 0's requirement for S 0 *)
       destruct T; try exact HT; try exact I.
-      * (* TFn: need forall args at 0, but we have forall args at 0 already *)
-        intros Σ' Hext x y Hvx Hvy Hcx Hcy Hrxy st1 st2 ctx Hst.
-        (* Hrxy: val_rel_le 0 Σ' T1 x y = True *)
-        (* HT needs val_rel_le 0 - which is also True *)
-        apply (HT Σ' Hext x y Hvx Hvy Hcx Hcy).
-        -- simpl. exact I.
-        -- exact Hst.
-      * (* TProd: subterms at step 0 *)
-        destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
-        exists x1, y1, x2, y2.
-        split; [exact Heq1|].
-        split; [exact Heq2|].
-        split; simpl; exact I.
-      * (* TSum: subterms at step 0 *)
-        destruct HT as [HInl | HInr].
-        -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
-           left. exists x1, x2.
-           split; [exact Heq1|].
-           split; [exact Heq2|].
-           simpl. exact I.
-        -- destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
-           right. exists y1, y2.
-           split; [exact Heq1|].
+      ++ (* TFn: need forall args at 0, but we have forall args at 0 already *)
+         intros Σ' Hext x y Hvx Hvy Hcx Hcy Hrxy st1 st2 ctx Hst.
+         (* Hrxy: val_rel_le 0 Σ' T1 x y = True *)
+         (* HT needs val_rel_le 0 - which is also True *)
+         apply (HT Σ' Hext x y Hvx Hvy Hcx Hcy).
+         +++ simpl. exact I.
+         +++ exact Hst.
+      ++ (* TProd: subterms at step 0 *)
+         destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+         exists x1, y1, x2, y2.
+         split; [exact Heq1|].
+         split; [exact Heq2|].
+         split; simpl; exact I.
+      ++ (* TSum: subterms at step 0 *)
+         destruct HT as [HInl | HInr].
+         +++ destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
+             left. exists x1, x2.
+             split; [exact Heq1|].
+             split; [exact Heq2|].
+             simpl. exact I.
+         +++ destruct HInr as (y1 & y2 & Heq1 & Heq2 & Hr).
+             right. exists y1, y2.
+             split; [exact Heq1|].
            split; [exact Heq2|].
            simpl. exact I.
     + (* Structural at step 2 *)
