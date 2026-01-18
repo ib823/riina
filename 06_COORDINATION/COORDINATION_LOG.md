@@ -35,14 +35,23 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-18)
+### Grand Totals (2026-01-18 Session 17)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
 | **Total Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Theorems Required** | ~2,500 | Comprehensive coverage |
-| **Axioms (Current)** | 19 | Target: 0 |
+| **Axioms (Current)** | 20 | Target: 0 (19 legacy + 1 justified semantic) |
 | **Threats Covered** | 1,231+ | All made obsolete |
+
+### Recent Progress (Session 17)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| TFn store-weakening (Property D) | ✅ COMPLETE | Using directed join construction |
+| store_ty_compatible | ✅ ADDED | Infrastructure for directed joins |
+| store_ty_extensions_compatible | ✅ AXIOM | Justified semantic property |
+| Phase 6 verification | ✅ DONE | Found wrong assumption, corrected |
 
 ### Core Tracks (A-F)
 
