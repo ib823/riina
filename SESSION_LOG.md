@@ -29,7 +29,7 @@
 | Category | Count | Location |
 |----------|-------|----------|
 | Axiom declarations | 19 | NonInterference.v |
-| Admitted proofs | 41 (-3 this session) | Various property files |
+| Admitted proofs | 40 (-4 this session) | Various property files |
 | Target | 0 | All eliminated in Phase 1-2 |
 
 Top files with admits:
@@ -56,7 +56,12 @@ Top files with admits:
 - ✅ `store_lookup_update_neq`: Proved (helper)
 - ✅ `store_rel_le_update`: FULLY PROVEN
 
-**Total admits eliminated this session: 3 (44 → 41)**
+**Part 4: Declassification.v**
+- ✅ `declassify_eval`: FULLY PROVEN
+  - Added declass_ok premise for ST_DeclassifyValue
+  - Uses MS_Step + MS_Refl pattern
+
+**Total admits eliminated this session: 4 (44 → 40)**
 
 #### Build Status
 - Coq: ✅ All proofs compile
@@ -75,7 +80,7 @@ Top files with admits:
 3. Complete ReferenceOps.v proofs (requires termination)
 4. Address remaining edge cases
 
-**Status:** ✅ COMPLETE — 3 admits eliminated, 41 remaining
+**Status:** ✅ COMPLETE — 4 admits eliminated, 40 remaining
 
 ---
 
