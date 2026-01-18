@@ -15,3 +15,4 @@
 # General
 .DS_Store
 .gemini/
+.keepalive_timestamp
