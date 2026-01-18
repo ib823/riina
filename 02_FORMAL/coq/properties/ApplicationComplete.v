@@ -244,7 +244,7 @@ Theorem tapp_step0_complete_proven : forall Σ' Σ''' T2
   (* Additional premises (derivable from typing in calling context) *)
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
-  val_rel_at_type Σ''' (fun _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True) T2 v1 v2 ->
+  val_rel_at_type Σ''' (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) T2 v1 v2 ->
   store_max st1''' = store_max st2''' ->
   (* Store lookup correspondence: both stores have values for typed locations *)
   (forall l T sl, store_ty_lookup l Σ''' = Some (T, sl) ->
@@ -381,7 +381,7 @@ Lemma val_rel_n_1_from_canonical : forall Σ T v1 v2,
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
   (* val_rel_at_type structural match using step-0 predicates (trivially True) *)
-  val_rel_at_type Σ (fun _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True) T v1 v2 ->
+  val_rel_at_type Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) T v1 v2 ->
   val_rel_n 1 Σ T v1 v2.
 Proof.
   intros Σ T v1 v2 Hv1 Hv2 Hc1 Hc2 HT.
@@ -413,7 +413,7 @@ Theorem tapp_step0_complete_typed : forall Σ' Σ''' T1 T2 ε ε'
   (* Additional premises (derivable from preservation + progress) *)
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
-  val_rel_at_type Σ''' (fun _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True) T2 v1 v2 ->
+  val_rel_at_type Σ''' (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) T2 v1 v2 ->
   store_max st1''' = store_max st2''' ->
   (forall l T sl, store_ty_lookup l Σ''' = Some (T, sl) ->
     exists v1' v2', store_lookup l st1''' = Some v1' /\ store_lookup l st2''' = Some v2') ->

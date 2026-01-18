@@ -348,7 +348,7 @@ Theorem axiom_11_infrastructure : forall Σ' Σ''' T2
   (* Additional premises from typing context *)
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
-  val_rel_at_type Σ''' (fun _ _ => True) (fun _ _ _ => True) (fun _ _ _ => True) T2 v1 v2 ->
+  val_rel_at_type Σ''' (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) T2 v1 v2 ->
   store_max st1''' = store_max st2''' ->
   (forall l T sl, store_ty_lookup l Σ''' = Some (T, sl) ->
     exists v1' v2', store_lookup l st1''' = Some v1' /\ store_lookup l st2''' = Some v2') ->
@@ -448,14 +448,14 @@ Proof.
     + repeat split; auto.
       * apply (IH Σ1 Σ2). exact Hprev.
       * apply (val_rel_at_type_fo_store_independent T Hfo v1 v2
-          Σ1 Σ2 (store_rel_n n' Σ1) (store_rel_n n' Σ2)
-          (val_rel_n n' Σ1) (val_rel_n n' Σ2)
+          Σ1 Σ2 (store_rel_n n') (store_rel_n n')
+          (val_rel_n n') (val_rel_n n')
           (store_rel_n n') (store_rel_n n')); auto.
     + repeat split; auto.
       * apply (IH Σ2 Σ1). exact Hprev.
       * apply (val_rel_at_type_fo_store_independent T Hfo v1 v2
-          Σ2 Σ1 (store_rel_n n' Σ2) (store_rel_n n' Σ1)
-          (val_rel_n n' Σ2) (val_rel_n n' Σ1)
+          Σ2 Σ1 (store_rel_n n') (store_rel_n n')
+          (val_rel_n n') (val_rel_n n')
           (store_rel_n n') (store_rel_n n')); auto.
 Qed.
 
