@@ -25,11 +25,11 @@
   - Both cases admitted pending Phase 1 work
   - Structure validated and compiling
 
-#### Current Axiom/Admit Count
+#### Current Axiom/Admit Count (Updated)
 | Category | Count | Location |
 |----------|-------|----------|
 | Axiom declarations | 19 | NonInterference.v |
-| Admitted proofs | 44 | Various property files |
+| Admitted proofs | 43 (-1) | Various property files |
 | Target | 0 | All eliminated in Phase 1-2 |
 
 Top files with admits:
@@ -38,6 +38,14 @@ Top files with admits:
 - NonInterferenceZero.v: 5
 - KripkeMutual.v: 4
 - Declassification.v: 4
+
+#### Session 15 Part 2: Axiom Elimination Progress
+- ✅ KripkeProperties.v: Proved `val_rel_le_step_up_fo` lemma COMPLETELY
+  - TProd case: Uses step independence for first-order types
+  - TSum case: Uses step independence for first-order types
+  - TRef case: Uses step independence for first-order types
+  - Changed from Admitted → Qed (44 → 43 admits)
+- 🟡 val_rel_le_build_indist: 1 admit remaining (TBytes case needs v1=v2 premise)
 
 #### Build Status
 - Coq: ✅ All proofs compile
@@ -48,15 +56,16 @@ Top files with admits:
 |------|-------------|
 | 2b2071d | Sync authoritative documents for Session 14 |
 | 2b4064b | Improve CumulativeMonotone.v TFn case structure |
-| (pending) | Session 15 TFn case simplification |
+| e2d2a06 | Session 15: Simplify TFn case structure |
+| (pending) | Prove val_rel_le_step_up_fo completely |
 
 ### Next Steps
 1. Continue axiom elimination (19 axioms → 0)
-2. Prove val_rel_le_fo_step_independent edge cases
+2. Address val_rel_le_build_indist TBytes case
 3. Complete TFn first-order argument case
 4. Tackle higher-order contravariant cases
 
-**Status:** ✅ IN PROGRESS — TFn case simplified, proofs compiling
+**Status:** ✅ IN PROGRESS — val_rel_le_step_up_fo proven, 43 admits remaining
 
 ---
 

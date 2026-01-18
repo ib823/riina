@@ -350,12 +350,12 @@ Proof.
     apply val_rel_le_build_indist; auto.
   - (* 6. TFn - not first-order, contradiction *)
     simpl in Hfo. discriminate.
-  - (* 7. TProd - requires recursion on subcomponents *)
-    simpl in Hfo. apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-    admit.
-  - (* 8. TSum - requires recursion on subcomponents *)
-    simpl in Hfo. apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-    admit.
+  - (* 7. TProd - use step independence for first-order types *)
+    destruct m as [|m']; [simpl; exact I|].
+    apply val_rel_le_fo_step_independent with n; auto; lia.
+  - (* 8. TSum - use step independence for first-order types *)
+    destruct m as [|m']; [simpl; exact I|].
+    apply val_rel_le_fo_step_independent with n; auto; lia.
   - (* 9. TList - requires recursion *)
     destruct n as [|n']; [lia|].
     simpl in Hrel. destruct Hrel as [_ Hstruct].
@@ -368,8 +368,9 @@ Proof.
     unfold val_rel_struct in Hstruct.
     destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
     apply val_rel_le_build_indist; auto.
-  - (* 11. TRef - requires recursion *)
-    simpl in Hfo. admit.
+  - (* 11. TRef - use step independence for first-order types *)
+    destruct m as [|m']; [simpl; exact I|].
+    apply val_rel_le_fo_step_independent with n; auto; lia.
   - (* 12. TSecret - indistinguishable *)
     apply val_rel_le_step_up_secret with n; auto.
   - (* 13. TLabeled - indistinguishable *)
@@ -424,7 +425,7 @@ Proof.
     unfold val_rel_struct in Hstruct.
     destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
     apply val_rel_le_build_indist; auto.
-Admitted.
+Qed.
 
 (** ** Equivalence Lemmas
 
