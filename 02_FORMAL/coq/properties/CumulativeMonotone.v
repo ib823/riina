@@ -36,7 +36,14 @@ Import ListNotations.
     first-order types completely, with TFn admitted.
 *)
 
-(** Full step monotonicity (uses admitted TFn case) *)
+(** Full step monotonicity
+
+    For first-order types, monotonicity follows from the cumulative structure.
+    For TFn, we handle two cases:
+    1. Argument type T1 is first-order: use step-mono on args and results
+    2. Argument type T1 is higher-order: requires additional reasoning about
+       function equivalence (admitted for now, will be proven in Phase 1)
+*)
 Theorem val_rel_le_mono_step : forall n m Σ T v1 v2,
   m <= n ->
   val_rel_le n Σ T v1 v2 ->
@@ -66,8 +73,30 @@ Proof.
            repeat split; auto.
            (* The type T must be TFn since it's not first-order *)
            destruct T; simpl in Hho; try discriminate; auto.
-           (* TFn case - admitted for now *)
-           admit.
+           (* Now we're in the TFn case: TFn T1 T2 e *)
+           (* Case analysis on whether the argument type T1 is first-order *)
+           destruct (first_order_decidable T1) as [HfoT1 | HhoT1].
+           ++ (* Argument type T1 is first-order *)
+              (* This case requires step independence for first-order types.
+                 The proof uses val_rel_le_fo_step_independent to lift args
+                 from level m' to level n', then applies HT, then steps down
+                 the results from n' to m'.
+
+                 Edge cases:
+                 - m' = 0: results at level 0 are trivial
+                 - n' = 0: args at level 0 are trivial
+
+                 The proof is straightforward but involves careful case analysis.
+                 Admitted for now - will be completed in Phase 1. *)
+              admit.
+           ++ (* Argument type T1 is higher-order: complex case *)
+              (* The contravariant position with higher-order arg type
+                 requires proving that functions with same behavior at n'
+                 also have same behavior at m' < n'.
+
+                 This requires function extensionality or similar reasoning.
+                 Admitted for now - will be completed in Phase 1. *)
+              admit.
 Admitted.
 
 (** ** Store Extension Monotonicity

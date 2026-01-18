@@ -281,6 +281,31 @@ Proof.
               apply IH with (m := m'); auto. lia.
 Qed.
 
+(** Step independence for first-order types: related at any m > 0 implies related at any n > 0.
+    This is because first-order types have structural relations independent of step count.
+
+    ADMITTED: This lemma is conceptually sound because for first-order types,
+    the relation is purely structural (equality of values). The structural
+    content is independent of step count. Will be proven in Phase 1. *)
+Lemma val_rel_le_fo_step_independent : forall m n Σ T v1 v2,
+  first_order_type T = true ->
+  m > 0 ->
+  n > 0 ->
+  val_rel_le m Σ T v1 v2 ->
+  val_rel_le n Σ T v1 v2.
+Proof.
+  (* For first-order types, val_rel is structural equality.
+     Structural equality doesn't depend on step count.
+     Full proof requires careful induction on type structure. *)
+  intros m n Σ T v1 v2 Hfo Hm Hn Hrel.
+  destruct m as [|m']; [lia|].
+  destruct n as [|n']; [lia|].
+  simpl in Hrel. destruct Hrel as [_ Hstruct].
+  (* The structural part determines the relation for first-order types *)
+  (* This proof requires nested induction on n' and T *)
+  (* Admitted for now - will be completed in Phase 1 *)
+Admitted.
+
 (** ** Expression Relation *)
 
 Definition exp_rel_le (n : nat) (Σ : store_ty) (T : ty)
