@@ -25,11 +25,11 @@
   - Both cases admitted pending Phase 1 work
   - Structure validated and compiling
 
-#### Current Axiom/Admit Count (Updated)
+#### Current Axiom/Admit Count (Final)
 | Category | Count | Location |
 |----------|-------|----------|
 | Axiom declarations | 19 | NonInterference.v |
-| Admitted proofs | 43 (-1) | Various property files |
+| Admitted proofs | 41 (-3 this session) | Various property files |
 | Target | 0 | All eliminated in Phase 1-2 |
 
 Top files with admits:
@@ -39,13 +39,24 @@ Top files with admits:
 - KripkeMutual.v: 4
 - Declassification.v: 4
 
-#### Session 15 Part 2: Axiom Elimination Progress
-- ✅ KripkeProperties.v: Proved `val_rel_le_step_up_fo` lemma COMPLETELY
-  - TProd case: Uses step independence for first-order types
-  - TSum case: Uses step independence for first-order types
-  - TRef case: Uses step independence for first-order types
-  - Changed from Admitted → Qed (44 → 43 admits)
-- 🟡 val_rel_le_build_indist: 1 admit remaining (TBytes case needs v1=v2 premise)
+#### Session 15 Proof Completions
+
+**Part 2: KripkeProperties.v**
+- ✅ `val_rel_le_step_up_fo`: FULLY PROVEN
+  - TProd, TSum, TRef cases use step independence
+  - Changed from Admitted → Qed
+
+**Part 3: StoreRelation.v**
+- ✅ `store_max_update_bound`: Proved (helper)
+- ✅ `store_max_update_lower`: Proved (helper)
+- ✅ `store_max_update_includes_l`: Proved (helper)
+- ✅ `store_max_update_eq`: Proved (helper)
+- ✅ `store_rel_simple_update`: FULLY PROVEN
+- ✅ `store_lookup_update_eq`: Proved (helper)
+- ✅ `store_lookup_update_neq`: Proved (helper)
+- ✅ `store_rel_le_update`: FULLY PROVEN
+
+**Total admits eliminated this session: 3 (44 → 41)**
 
 #### Build Status
 - Coq: ✅ All proofs compile
@@ -54,18 +65,17 @@ Top files with admits:
 ### Commits This Session
 | Hash | Description |
 |------|-------------|
-| 2b2071d | Sync authoritative documents for Session 14 |
-| 2b4064b | Improve CumulativeMonotone.v TFn case structure |
 | e2d2a06 | Session 15: Simplify TFn case structure |
-| (pending) | Prove val_rel_le_step_up_fo completely |
+| 8738b9d | Prove val_rel_le_step_up_fo completely |
+| c12e035 | Prove store relation update lemmas completely |
 
 ### Next Steps
 1. Continue axiom elimination (19 axioms → 0)
-2. Address val_rel_le_build_indist TBytes case
-3. Complete TFn first-order argument case
-4. Tackle higher-order contravariant cases
+2. Complete KripkeMutual.v proofs (requires mutual induction)
+3. Complete ReferenceOps.v proofs (requires termination)
+4. Address remaining edge cases
 
-**Status:** ✅ IN PROGRESS — val_rel_le_step_up_fo proven, 43 admits remaining
+**Status:** ✅ COMPLETE — 3 admits eliminated, 41 remaining
 
 ---
 
