@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-18 | SESSION 17 | TFn STORE-WEAKENING COMPLETE
+## Last Updated: 2026-01-18 | SESSION 18 | AXIOM ELIMINATION (19→17)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -26,7 +26,7 @@
 |--------|-------|-------|
 | **Overall Grade** | B+ (80%) | Foundations solid, proofs ongoing |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
-| **Axioms (Current)** | 20 | Target: 0 (19 legacy + 1 justified semantic) |
+| **Axioms (Current)** | 18 | Target: 0 (17 in NonInterference + 1 semantic) |
 | **Theorems (Required)** | ~2,500 | Comprehensive coverage |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | make succeeds |
@@ -39,7 +39,7 @@
 | Phase | Description | Status | Progress |
 |-------|-------------|--------|----------|
 | **Phase 0** | Foundation Verification | 🟡 IN PROGRESS | 85% |
-| **Phase 1** | Axiom Elimination (19→0) | ⚪ NOT STARTED | 0% |
+| **Phase 1** | Axiom Elimination (19→0) | 🟡 IN PROGRESS | 10% (2 eliminated) |
 | **Phase 2** | Core Properties (~375) | ⚪ NOT STARTED | 0% |
 | **Phase 3** | Domain Properties (~2,570) | ⚪ NOT STARTED | 0% |
 | **Phase 4** | Implementation Verification | ⚪ NOT STARTED | 0% |
