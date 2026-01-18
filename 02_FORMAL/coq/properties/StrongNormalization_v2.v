@@ -692,6 +692,61 @@ Proof.
   - admit. (* T_Grant *)
 Admitted. (* Fundamental theorem requires ~1000 more lines *)
 
+(** Helper: extend_rho with EVar is identity *)
+Lemma extend_rho_var_id : forall ρ x,
+  (forall y, ρ y = EVar y) ->
+  forall z, extend_rho ρ x (EVar x) z = EVar z.
+Proof.
+  intros ρ x Hid z.
+  unfold extend_rho.
+  destruct (String.eqb_spec z x) as [Heq | Hneq].
+  - subst. reflexivity.
+  - apply Hid.
+Qed.
+
+(** subst_env with empty_rho is identity *)
+Lemma subst_env_empty_rho : forall e,
+  subst_env empty_rho e = e.
+Proof.
+  induction e; simpl; try reflexivity;
+  try (rewrite IHe; reflexivity);
+  try (rewrite IHe1; rewrite IHe2; reflexivity);
+  try (rewrite IHe1; rewrite IHe2; rewrite IHe3; reflexivity).
+  - (* ELam *)
+    f_equal.
+    assert (Hext : forall z, extend_rho empty_rho i (EVar i) z = EVar z).
+    { apply extend_rho_var_id. unfold empty_rho. reflexivity. }
+    clear IHe. generalize dependent e.
+    induction e; intros; simpl; try reflexivity;
+    try (rewrite Hext; reflexivity);
+    try (rewrite IHe; auto; reflexivity);
+    try (rewrite IHe1; auto; rewrite IHe2; auto; reflexivity);
+    try (rewrite IHe1; auto; rewrite IHe2; auto; rewrite IHe3; auto; reflexivity).
+    + f_equal.
+      (* Nested lambda case - needs stronger induction *)
+      admit.
+    + f_equal; auto.
+      (* Case needs stronger induction *)
+      all: admit.
+    + f_equal; auto.
+      admit.
+    + f_equal; auto.
+      admit.
+  - (* ECase *)
+    rewrite IHe1.
+    f_equal.
+    (* Similar nested binding cases *)
+    all: admit.
+  - (* ELet *)
+    rewrite IHe1.
+    f_equal.
+    admit.
+  - (* EHandle *)
+    rewrite IHe1.
+    f_equal.
+    admit.
+Admitted. (* Requires structural induction with nested binders *)
+
 (** COROLLARY: Strong Normalization *)
 Corollary strong_normalization : forall e T Σ ε,
   has_type nil Σ Public e T ε ->
@@ -705,12 +760,10 @@ Proof.
     - unfold sem_env. intros x T' Hlook.
       simpl in Hlook. discriminate.
   }
-  assert (Heq : subst_env empty_rho e = e).
-  { admit. (* subst_env with identity = identity *) }
-  rewrite Heq in Hred.
+  rewrite subst_env_empty_rho in Hred.
   apply Red_CR1 with (Σ := Σ) (T := T).
   exact Hred.
-Admitted.
+Qed.
 
 (** ========================================================================
     SECTION 10: FINAL INTEGRATION
