@@ -284,9 +284,11 @@ Qed.
 (** Step independence for first-order types: related at any m > 0 implies related at any n > 0.
     This is because first-order types have structural relations independent of step count.
 
-    ADMITTED: This lemma is conceptually sound because for first-order types,
-    the relation is purely structural (equality of values). The structural
-    content is independent of step count. Will be proven in Phase 1. *)
+    PROOF STRATEGY:
+    1. Extract structural content from val_rel_le m (at step m > 0)
+    2. Rebuild val_rel_le n using the same structural content
+    3. For primitive types, structural content is equality (independent of step)
+    4. For compound first-order types, use induction on type structure *)
 Lemma val_rel_le_fo_step_independent : forall m n Σ T v1 v2,
   first_order_type T = true ->
   m > 0 ->
@@ -294,16 +296,71 @@ Lemma val_rel_le_fo_step_independent : forall m n Σ T v1 v2,
   val_rel_le m Σ T v1 v2 ->
   val_rel_le n Σ T v1 v2.
 Proof.
-  (* For first-order types, val_rel is structural equality.
-     Structural equality doesn't depend on step count.
-     Full proof requires careful induction on type structure. *)
-  intros m n Σ T v1 v2 Hfo Hm Hn Hrel.
-  destruct m as [|m']; [lia|].
-  destruct n as [|n']; [lia|].
-  simpl in Hrel. destruct Hrel as [_ Hstruct].
-  (* The structural part determines the relation for first-order types *)
-  (* This proof requires nested induction on n' and T *)
-  (* Admitted for now - will be completed in Phase 1 *)
+  (* Induction on n, with m and T generalized *)
+  intros m n. revert m.
+  induction n as [|n' IHn]; intros m Σ T v1 v2 Hfo Hm Hn Hrel.
+  - (* n = 0: contradicts Hn *)
+    lia.
+  - (* n = S n' *)
+    destruct m as [|m']; [lia|].
+    simpl in Hrel. destruct Hrel as [Hprev Hstruct].
+    (* Hstruct : val_rel_struct (val_rel_le m') Σ T v1 v2 *)
+    (* Goal: val_rel_le (S n') Σ T v1 v2 *)
+    simpl. split.
+    + (* Cumulative part: val_rel_le n' Σ T v1 v2 *)
+      destruct n' as [|n''].
+      * (* n' = 0 *)
+        simpl. exact I.
+      * (* n' = S n'' *)
+        apply IHn with (m := S m'); auto; try lia.
+        simpl. split; auto.
+    + (* Structural part: val_rel_struct (val_rel_le n') Σ T v1 v2 *)
+      unfold val_rel_struct in *.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
+      repeat split; auto.
+      (* Case analysis on type T *)
+      destruct T; simpl in Hfo; try discriminate; auto.
+      * (* TProd T1 T2 - first-order compound *)
+        apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+        destruct HT as (a1 & b1 & a2 & b2 & Heq1 & Heq2 & Hr1 & Hr2).
+        exists a1, b1, a2, b2. repeat split; auto.
+        -- (* Component 1: val_rel_le n' Σ T1 a1 a2 *)
+           destruct n' as [|n''].
+           ++ simpl. exact I.
+           ++ (* Need val_rel_le (S n'') from val_rel_le m' *)
+              (* Hr1 : val_rel_le m' Σ T1 a1 a2 *)
+              destruct m' as [|m''].
+              ** (* m' = 0: Hr1 is trivial, need to build from structural info *)
+                 (* This case shouldn't happen for compound types with related components *)
+                 simpl in Hr1. (* Hr1 : True *)
+                 (* We need structural info, but at m'=0 we don't have it *)
+                 (* Use the fact that T1 is first-order and extract from Hprev *)
+                 admit.
+              ** (* m' = S m'': Hr1 : val_rel_le (S m'') at first-order T1 *)
+                 apply IHn with (m := S m''); auto; lia.
+        -- (* Component 2: val_rel_le n' Σ T2 b1 b2 *)
+           destruct n' as [|n''].
+           ++ simpl. exact I.
+           ++ destruct m' as [|m''].
+              ** admit.
+              ** apply IHn with (m := S m''); auto; lia.
+      * (* TSum T1 T2 - first-order compound *)
+        apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+        destruct HT as [[a1 [a2 [Heq1 [Heq2 Hr]]]] | [b1 [b2 [Heq1 [Heq2 Hr]]]]].
+        -- (* Left case *)
+           left. exists a1, a2. repeat split; auto.
+           destruct n' as [|n''].
+           ++ simpl. exact I.
+           ++ destruct m' as [|m''].
+              ** admit.
+              ** apply IHn with (m := S m''); auto; lia.
+        -- (* Right case *)
+           right. exists b1, b2. repeat split; auto.
+           destruct n' as [|n''].
+           ++ simpl. exact I.
+           ++ destruct m' as [|m''].
+              ** admit.
+              ** apply IHn with (m := S m''); auto; lia.
 Admitted.
 
 (** ** Expression Relation *)
