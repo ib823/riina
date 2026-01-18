@@ -1,6 +1,6 @@
 # Session Log
 
-## 2026-01-18 (Session 15): AUTHORITATIVE DOC SYNC & PROOF PROGRESS
+## 2026-01-18 (Session 15): TFn CASE STRUCTURE & PROOF SIMPLIFICATION
 
 **Goal:** Sync authoritative documents, improve Coq proofs, continue autonomous operation
 
@@ -8,7 +8,7 @@
 
 ### Session Results
 
-#### Authoritative Document Updates
+#### Authoritative Document Updates (Part 1)
 - ✅ CLAUDE.md: Added Section 0.5 (Current Status), updated priorities
 - ✅ PROGRESS.md: Comprehensive status with 218 tracks
 - ✅ SESSION_LOG.md: Session 14 complete entry
@@ -19,9 +19,25 @@
 - ✅ CumulativeRelation.v: Added `val_rel_le_fo_step_independent` lemma
   - For first-order types, val_rel is independent of step count
   - Essential for handling contravariant TFn argument positions
-- ✅ CumulativeMonotone.v: Restructured TFn step monotonicity proof
-  - Separate cases for first-order vs higher-order argument types
-  - Documented remaining proof obligations for Phase 1
+- ✅ CumulativeMonotone.v: Simplified TFn step monotonicity proof
+  - Fixed bullet hierarchy issues that prevented compilation
+  - Separated first-order vs higher-order argument type cases
+  - Both cases admitted pending Phase 1 work
+  - Structure validated and compiling
+
+#### Current Axiom/Admit Count
+| Category | Count | Location |
+|----------|-------|----------|
+| Axiom declarations | 19 | NonInterference.v |
+| Admitted proofs | 44 | Various property files |
+| Target | 0 | All eliminated in Phase 1-2 |
+
+Top files with admits:
+- AxiomElimination.v: 11
+- ReferenceOps.v: 6
+- NonInterferenceZero.v: 5
+- KripkeMutual.v: 4
+- Declassification.v: 4
 
 #### Build Status
 - Coq: ✅ All proofs compile
@@ -32,13 +48,15 @@
 |------|-------------|
 | 2b2071d | Sync authoritative documents for Session 14 |
 | 2b4064b | Improve CumulativeMonotone.v TFn case structure |
+| (pending) | Session 15 TFn case simplification |
 
 ### Next Steps
-1. Continue axiom elimination (19 current)
-2. Prove val_rel_le_fo_step_independent fully
-3. Handle TFn contravariant cases
+1. Continue axiom elimination (19 axioms → 0)
+2. Prove val_rel_le_fo_step_independent edge cases
+3. Complete TFn first-order argument case
+4. Tackle higher-order contravariant cases
 
-**Status:** ✅ IN PROGRESS — Documents synced, proofs improved
+**Status:** ✅ IN PROGRESS — TFn case simplified, proofs compiling
 
 ---
 
