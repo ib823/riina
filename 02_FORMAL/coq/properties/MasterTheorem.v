@@ -1024,9 +1024,8 @@ Proof.
     (* If n = 2, done. If n > 2, use step_up from 2 to n *)
     destruct n.
     + (* n = 2 *) exact H2.
-    + (* n >= 3 *)
-      (* This is where we need the master_theorem to be proven first *)
-      (* For now, admit - the structure shows the approach is sound *)
+    + (* n >= 3: requires step_up from master_theorem (defined later) *)
+      (* Proof structure is correct; actual proof needs file reordering *)
       admit.
 Admitted.
 
