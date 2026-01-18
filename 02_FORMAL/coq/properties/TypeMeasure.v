@@ -31,18 +31,36 @@ Require Import RIINA.foundations.Syntax.
 
 Fixpoint ty_size (T : ty) : nat :=
   match T with
+  (* Primitive types *)
   | TUnit => 1
   | TBool => 1
   | TInt => 1
   | TString => 1
   | TBytes => 1
+  (* Function types *)
   | TFn T1 T2 _ => 1 + ty_size T1 + ty_size T2
+  (* Compound types *)
   | TProd T1 T2 => 1 + ty_size T1 + ty_size T2
   | TSum T1 T2 => 1 + ty_size T1 + ty_size T2
+  | TList T' => 1 + ty_size T'
+  | TOption T' => 1 + ty_size T'
+  (* Reference types *)
   | TRef T' _ => 1 + ty_size T'
+  (* Security types *)
   | TSecret T' => 1 + ty_size T'
+  | TLabeled T' _ => 1 + ty_size T'
+  | TTainted T' _ => 1 + ty_size T'
+  | TSanitized T' _ => 1 + ty_size T'
   | TProof T' => 1 + ty_size T'
+  (* Capability types *)
   | TCapability _ => 1
+  | TCapabilityFull _ => 1
+  (* Channel types - session types have size 1 *)
+  | TChan _ => 1
+  | TSecureChan _ _ => 1
+  (* Constant-time and zeroizing types *)
+  | TConstantTime T' => 1 + ty_size T'
+  | TZeroizing T' => 1 + ty_size T'
   end.
 
 (** ** Positivity: All types have positive size *)
@@ -155,18 +173,36 @@ Qed.
 
 Fixpoint first_order_type (T : ty) : bool :=
   match T with
+  (* Primitive types - all first-order *)
   | TUnit => true
   | TBool => true
   | TInt => true
   | TString => true
   | TBytes => true
-  | TFn _ _ _ => false  (* Functions are higher-order *)
+  (* Functions are higher-order *)
+  | TFn _ _ _ => false
+  (* Compound types - first-order if components are *)
   | TProd T1 T2 => first_order_type T1 && first_order_type T2
   | TSum T1 T2 => first_order_type T1 && first_order_type T2
+  | TList T' => first_order_type T'
+  | TOption T' => first_order_type T'
+  (* Reference types *)
   | TRef T' _ => first_order_type T'
+  (* Security types *)
   | TSecret T' => first_order_type T'
+  | TLabeled T' _ => first_order_type T'
+  | TTainted T' _ => first_order_type T'
+  | TSanitized T' _ => first_order_type T'
   | TProof T' => first_order_type T'
+  (* Capability types - first-order *)
   | TCapability _ => true
+  | TCapabilityFull _ => true
+  (* Channel types - depends on session protocol, conservatively higher-order *)
+  | TChan _ => false
+  | TSecureChan _ _ => false
+  (* Constant-time and zeroizing *)
+  | TConstantTime T' => first_order_type T'
+  | TZeroizing T' => first_order_type T'
   end.
 
 (** First-order types contain no TFn *)
@@ -230,18 +266,36 @@ Qed.
 
 Fixpoint ty_depth (T : ty) : nat :=
   match T with
+  (* Primitive types - depth 0 *)
   | TUnit => 0
   | TBool => 0
   | TInt => 0
   | TString => 0
   | TBytes => 0
+  (* Function types *)
   | TFn T1 T2 _ => 1 + Nat.max (ty_depth T1) (ty_depth T2)
+  (* Compound types *)
   | TProd T1 T2 => 1 + Nat.max (ty_depth T1) (ty_depth T2)
   | TSum T1 T2 => 1 + Nat.max (ty_depth T1) (ty_depth T2)
+  | TList T' => 1 + ty_depth T'
+  | TOption T' => 1 + ty_depth T'
+  (* Reference types *)
   | TRef T' _ => 1 + ty_depth T'
+  (* Security types *)
   | TSecret T' => 1 + ty_depth T'
+  | TLabeled T' _ => 1 + ty_depth T'
+  | TTainted T' _ => 1 + ty_depth T'
+  | TSanitized T' _ => 1 + ty_depth T'
   | TProof T' => 1 + ty_depth T'
+  (* Capability types - depth 0 *)
   | TCapability _ => 0
+  | TCapabilityFull _ => 0
+  (* Channel types - depth 0 (session internals not counted) *)
+  | TChan _ => 0
+  | TSecureChan _ _ => 0
+  (* Constant-time and zeroizing *)
+  | TConstantTime T' => 1 + ty_depth T'
+  | TZeroizing T' => 1 + ty_depth T'
   end.
 
 (** Depth subtype lemmas *)
