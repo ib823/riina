@@ -568,15 +568,74 @@ This means v1 and v2 are THE SAME boolean! So when we prove `exp_rel_step1_if`:
 - If both are `EBool true`, both take the THEN branch
 - If both are `EBool false`, both take the ELSE branch
 
-**KEY EXTRACTION LEMMA (PROVEN in NonInterference_v3.v):**
+**KEY EXTRACTION LEMMAS (PROVEN in NonInterference_v3.v):**
 
 ```coq
-Lemma val_rel_n_base_bool : forall Σ v1 v2,
-  val_rel_n_base Σ TBool v1 v2 ->
+(** Extract value from val_rel_n_base *)
+Lemma val_rel_n_base_value : forall Sigma T v1 v2,
+  val_rel_n_base Sigma T v1 v2 ->
+  value v1 /\ value v2.
+Proof.
+  intros. unfold val_rel_n_base in H.
+  destruct H as [Hv1 [Hv2 _]]. auto.
+Qed.
+
+(** Extract closed from val_rel_n_base *)
+Lemma val_rel_n_base_closed : forall Sigma T v1 v2,
+  val_rel_n_base Sigma T v1 v2 ->
+  closed_expr v1 /\ closed_expr v2.
+Proof.
+  intros. unfold val_rel_n_base in H.
+  destruct H as [_ [_ [Hc1 [Hc2 _]]]]. auto.
+Qed.
+
+(** Extract SAME boolean from val_rel_n_base TBool - THE KEY LEMMA *)
+Lemma val_rel_n_base_bool : forall Sigma v1 v2,
+  val_rel_n_base Sigma TBool v1 v2 ->
   exists b, v1 = EBool b /\ v2 = EBool b.
+Proof.
+  intros. unfold val_rel_n_base in H.
+  destruct H as [_ [_ [_ [_ Hfo]]]].
+  simpl in Hfo. exact Hfo.
+Qed.
+
+(** Extract MATCHING constructors from val_rel_n_base TSum *)
+Lemma val_rel_n_base_sum_fo : forall Sigma T1 T2 v1 v2,
+  first_order_type (TSum T1 T2) = true ->
+  val_rel_n_base Sigma (TSum T1 T2) v1 v2 ->
+  (exists a1 a2, v1 = EInl a1 T2 /\ v2 = EInl a2 T2 /\
+                 val_rel_at_type_fo T1 a1 a2) \/
+  (exists b1 b2, v1 = EInr b1 T1 /\ v2 = EInr b2 T1 /\
+                 val_rel_at_type_fo T2 b1 b2).
+Proof.
+  intros. unfold val_rel_n_base in H0.
+  destruct H0 as [_ [_ [_ [_ Hfo]]]].
+  rewrite H in Hfo. simpl in Hfo. exact Hfo.
+Qed.
+
+(** Extract MATCHING structure from val_rel_n_base TProd *)
+Lemma val_rel_n_base_prod_fo : forall Sigma T1 T2 v1 v2,
+  first_order_type (TProd T1 T2) = true ->
+  val_rel_n_base Sigma (TProd T1 T2) v1 v2 ->
+  exists a1 b1 a2 b2,
+    v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
+    val_rel_at_type_fo T1 a1 a2 /\ val_rel_at_type_fo T2 b1 b2.
+Proof.
+  intros. unfold val_rel_n_base in H0.
+  destruct H0 as [_ [_ [_ [_ Hfo]]]].
+  rewrite H in Hfo. simpl in Hfo. exact Hfo.
+Qed.
 ```
 
-This lemma is what makes `exp_rel_step1_if` PROVABLE without axioms!
+**STORE RELATION BASE:**
+
+```coq
+(** Store relation at base level - just store_max equality *)
+Definition store_rel_n_base (Sigma : store_ty) (st1 st2 : store) : Prop :=
+  store_max st1 = store_max st2.
+```
+
+These lemmas are what make `exp_rel_step1_if` and `exp_rel_step1_case` PROVABLE without axioms!
 
 ---
 
