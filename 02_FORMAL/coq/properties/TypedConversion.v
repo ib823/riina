@@ -522,6 +522,28 @@ Proof.
         apply val_rel_at_type_first_order with
           (sp1 := store_rel_n n Σ) (vl1 := val_rel_n n Σ) (sl1 := store_rel_n n); auto.
 
+  - (* TList T' *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TList is True (simplified) *)
+      simpl. exact I.
+
+  - (* TOption T' *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TOption is True (simplified) *)
+      simpl. exact I.
+
   - (* TRef T sl *)
     simpl in HT.
     destruct HT as [l [Heq1 Heq2]]. subst.
@@ -530,7 +552,7 @@ Proof.
   - (* TSecret T *)
     apply val_rel_n_build_secret; auto.
 
-  - (* TCapability eff *)
+  - (* TLabeled T' sl *)
     induction m as [|m' IHm].
     + simpl. exact I.
     + simpl. split; [apply IHm|].
@@ -538,7 +560,29 @@ Proof.
       split; [exact Hv2|].
       split; [exact Hc1|].
       split; [exact Hc2|].
-      (* val_rel_at_type for TCapability is True *)
+      (* val_rel_at_type for TLabeled is True *)
+      simpl. exact I.
+
+  - (* TTainted T' ts *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TTainted is True *)
+      simpl. exact I.
+
+  - (* TSanitized T' san *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TSanitized is True *)
       simpl. exact I.
 
   - (* TProof T *)
@@ -550,6 +594,50 @@ Proof.
       split; [exact Hc1|].
       split; [exact Hc2|].
       (* val_rel_at_type for TProof is True *)
+      simpl. exact I.
+
+  - (* TCapability ck *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TCapability is True *)
+      simpl. exact I.
+
+  - (* TCapabilityFull cap *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TCapabilityFull is True *)
+      simpl. exact I.
+
+  - (* TConstantTime T' *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TConstantTime is True *)
+      simpl. exact I.
+
+  - (* TZeroizing T' *)
+    induction m as [|m' IHm].
+    + simpl. exact I.
+    + simpl. split; [apply IHm|].
+      split; [exact Hv1|].
+      split; [exact Hv2|].
+      split; [exact Hc1|].
+      split; [exact Hc2|].
+      (* val_rel_at_type for TZeroizing is True *)
       simpl. exact I.
 Qed.
 
@@ -640,8 +728,12 @@ Qed.
 (** Values related at step 1 are related at all steps (base types) *)
 Lemma val_rel_n_step_1_to_all : forall Σ T v1 v2,
   match T with
-  | TUnit | TBool | TInt | TString | TBytes
-  | TSecret _ | TCapability _ => True
+  | TUnit | TBool | TInt | TString | TBytes => True
+  | TList _ | TOption _ => True  (* Simplified *)
+  | TSecret _ | TLabeled _ _ | TTainted _ _ | TSanitized _ _ => True
+  | TProof _ | TCapability _ | TCapabilityFull _ => True
+  | TChan _ | TSecureChan _ _ => True
+  | TConstantTime _ | TZeroizing _ => True
   | _ => False
   end ->
   val_rel_n 1 Σ T v1 v2 ->
@@ -650,18 +742,92 @@ Proof.
   intros Σ T v1 v2 Hbase Hrel1.
   unfold val_rel. intros m.
   destruct T; try contradiction.
-  - apply val_rel_n_step_up_unit with 0. exact Hrel1.
-  - apply val_rel_n_step_up_bool with 0. exact Hrel1.
-  - apply val_rel_n_step_up_int with 0. exact Hrel1.
-  - apply val_rel_n_step_up_string with 0. exact Hrel1.
+  (* Type order: TUnit, TBool, TInt, TString, TBytes, TFn (false), TProd (false), TSum (false),
+     TList, TOption, TRef (false), TSecret, TLabeled, TTainted, TSanitized, TProof,
+     TCapability, TCapabilityFull, TChan, TSecureChan, TConstantTime, TZeroizing *)
+  - (* TUnit *)
+    apply val_rel_n_step_up_unit with 0. exact Hrel1.
+  - (* TBool *)
+    apply val_rel_n_step_up_bool with 0. exact Hrel1.
+  - (* TInt *)
+    apply val_rel_n_step_up_int with 0. exact Hrel1.
+  - (* TString *)
+    apply val_rel_n_step_up_string with 0. exact Hrel1.
   - (* TBytes *)
     simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 Heq]]]]]. subst.
     induction m as [|m' IH].
     + simpl. exact I.
     + simpl. split; [apply IH|].
       repeat split; auto.
-  - apply val_rel_n_step_up_secret with 0. exact Hrel1.
-  - (* TCapability *)
+  - (* TList T' *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TOption T' *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TSecret T' *)
+    apply val_rel_n_step_up_secret with 0. exact Hrel1.
+  - (* TLabeled T' sl *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TTainted T' ts *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TSanitized T' san *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TProof T' *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TCapability ck *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TCapabilityFull cap *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TChan st *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TSecureChan st sl *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TConstantTime T' *)
+    simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + simpl. exact I.
+    + simpl. split; [apply IH|].
+      repeat split; auto.
+  - (* TZeroizing T' *)
     simpl in Hrel1. destruct Hrel1 as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
     induction m as [|m' IH].
     + simpl. exact I.
