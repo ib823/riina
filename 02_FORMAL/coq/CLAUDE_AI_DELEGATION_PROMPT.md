@@ -73,6 +73,30 @@ Import ListNotations.
 
 ## SECTION 2: COMPLETE TYPE DEFINITIONS
 
+### 2.0 Basic Type Aliases
+
+```coq
+(* Identifiers are strings *)
+Definition ident := string.
+
+(* Locations are natural numbers *)
+Definition loc := nat.
+
+(* Configuration: expression, store, effect context *)
+Definition config := (expr * store * effect_ctx)%type.
+
+(* Type aliases for security levels, labels, etc. *)
+Definition security_level := nat.  (* 0 = public, 1 = secret, etc. *)
+Definition label := string.
+Definition taint_source := string.
+Definition sanitizer := string.
+Definition capability := string.
+Definition proposition := expr.
+Definition effect_label := string.
+Definition effect := list effect_label.
+Definition EffectPure := @nil effect_label.
+```
+
 ### 2.1 Core Type Definition (ty)
 
 ```coq
@@ -354,17 +378,41 @@ Inductive step : (expr * store * effect_ctx) -> (expr * store * effect_ctx) -> P
       value v ->
       (ELet x v e2, st, ctx) --> ([x := v] e2, st, ctx)
 
+  (* Effects *)
+  | ST_HandleStep : forall e e' x h st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (EHandle e x h, st, ctx) --> (EHandle e' x h, st', ctx')
+
+  | ST_HandleValue : forall v x h st ctx,
+      value v ->
+      (EHandle v x h, st, ctx) --> ([x := v] h, st, ctx)
+
   (* References *)
+  | ST_RefStep : forall e e' sl st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (ERef e sl, st, ctx) --> (ERef e' sl, st', ctx')
+
   | ST_RefValue : forall v sl st ctx l,
       value v ->
       l = fresh_loc st ->
       (ERef v sl, st, ctx) --> (ELoc l, store_update l v st, ctx)
 
+  | ST_DerefStep : forall e e' st st' ctx ctx',
+      (e, st, ctx) --> (e', st', ctx') ->
+      (EDeref e, st, ctx) --> (EDeref e', st', ctx')
+
   | ST_DerefLoc : forall v l st ctx,
       store_lookup l st = Some v ->
       (EDeref (ELoc l), st, ctx) --> (v, st, ctx)
 
-  (* ... additional congruence rules *)
+  | ST_Assign1 : forall e1 e1' e2 st st' ctx ctx',
+      (e1, st, ctx) --> (e1', st', ctx') ->
+      (EAssign e1 e2, st, ctx) --> (EAssign e1' e2, st', ctx')
+
+  | ST_AssignLoc : forall l v st ctx,
+      value v ->
+      store_lookup l st <> None ->
+      (EAssign (ELoc l) v, st, ctx) --> (EUnit, store_update l v st, ctx)
 
 where "cfg1 '-->' cfg2" := (step cfg1 cfg2).
 
@@ -636,6 +684,141 @@ Definition store_rel_n_base (Sigma : store_ty) (st1 st2 : store) : Prop :=
 ```
 
 These lemmas are what make `exp_rel_step1_if` and `exp_rel_step1_case` PROVABLE without axioms!
+
+### 4.6 COMPLETE PROOF EXAMPLE: exp_rel_step1_if (PROVEN IN NonInterference_v3.v)
+
+```coq
+(** FORMER AXIOM: exp_rel_step1_if - NOW PROVEN *)
+Theorem exp_rel_step1_if : forall Sigma v v' e2 e2' e3 e3' st1 st2 ctx,
+  val_rel_n_base Sigma TBool v v' ->
+  store_rel_n_base Sigma st1 st2 ->
+  exists r1 r2 st1' st2' ctx',
+    (EIf v e2 e3, st1, ctx) -->* (r1, st1', ctx') /\
+    (EIf v' e2' e3', st2, ctx) -->* (r2, st2', ctx').
+Proof.
+  intros Sigma v v' e2 e2' e3 e3' st1 st2 ctx Hval Hstore.
+  (* Extract SAME boolean *)
+  destruct (val_rel_n_base_bool Sigma v v' Hval) as [b [Heq1 Heq2]].
+  subst v v'.
+  (* Both have the SAME boolean b *)
+  destruct b.
+  - (* b = true: both step to then branch *)
+    exists e2, e2', st1, st2, ctx.
+    split.
+    + apply MS_Step with (cfg2 := (e2, st1, ctx)).
+      * apply ST_IfTrue.
+      * apply MS_Refl.
+    + apply MS_Step with (cfg2 := (e2', st2, ctx)).
+      * apply ST_IfTrue.
+      * apply MS_Refl.
+  - (* b = false: both step to else branch *)
+    exists e3, e3', st1, st2, ctx.
+    split.
+    + apply MS_Step with (cfg2 := (e3, st1, ctx)).
+      * apply ST_IfFalse.
+      * apply MS_Refl.
+    + apply MS_Step with (cfg2 := (e3', st2, ctx)).
+      * apply ST_IfFalse.
+      * apply MS_Refl.
+Qed.
+```
+
+**KEY INSIGHT:** The proof works because `val_rel_n_base_bool` extracts the SAME boolean `b` from both `v` and `v'`. This is possible because `val_rel_at_type_fo TBool v v' = exists b, v = EBool b /\ v' = EBool b`.
+
+### 4.7 COMPLETE PROOF EXAMPLE: exp_rel_step1_case_fo (PROVEN)
+
+```coq
+(** FORMER AXIOM: exp_rel_step1_case - NOW PROVEN for FO types *)
+Theorem exp_rel_step1_case_fo : forall Sigma T1 T2 v v' x1 e1 e1' x2 e2 e2' st1 st2 ctx,
+  first_order_type (TSum T1 T2) = true ->
+  val_rel_n_base Sigma (TSum T1 T2) v v' ->
+  store_rel_n_base Sigma st1 st2 ->
+  exists r1 r2 st1' st2' ctx',
+    (ECase v x1 e1 x2 e2, st1, ctx) -->* (r1, st1', ctx') /\
+    (ECase v' x1 e1' x2 e2', st2, ctx) -->* (r2, st2', ctx').
+Proof.
+  intros Sigma T1 T2 v v' x1 e1 e1' x2 e2 e2' st1 st2 ctx Hfo Hval Hstore.
+  (* Extract MATCHING constructors *)
+  destruct (val_rel_n_base_sum_fo Sigma T1 T2 v v' Hfo Hval)
+    as [[a1 [a2 [Heq1 [Heq2 _]]]] | [b1 [b2 [Heq1 [Heq2 _]]]]].
+  - (* Both EInl: step to first branch *)
+    subst v v'.
+    destruct (val_rel_n_base_value Sigma (TSum T1 T2) (EInl a1 T2) (EInl a2 T2) Hval)
+      as [Hva1 Hva2].
+    inversion Hva1; subst.
+    inversion Hva2; subst.
+    exists ([x1 := a1] e1), ([x1 := a2] e1'), st1, st2, ctx.
+    split.
+    + apply MS_Step with (cfg2 := ([x1 := a1] e1, st1, ctx)).
+      * apply ST_CaseInl. exact H0.
+      * apply MS_Refl.
+    + apply MS_Step with (cfg2 := ([x1 := a2] e1', st2, ctx)).
+      * apply ST_CaseInl. exact H1.
+      * apply MS_Refl.
+  - (* Both EInr: step to second branch *)
+    subst v v'.
+    destruct (val_rel_n_base_value Sigma (TSum T1 T2) (EInr b1 T1) (EInr b2 T1) Hval)
+      as [Hvb1 Hvb2].
+    inversion Hvb1; subst.
+    inversion Hvb2; subst.
+    exists ([x2 := b1] e2), ([x2 := b2] e2'), st1, st2, ctx.
+    split.
+    + apply MS_Step with (cfg2 := ([x2 := b1] e2, st1, ctx)).
+      * apply ST_CaseInr. exact H0.
+      * apply MS_Refl.
+    + apply MS_Step with (cfg2 := ([x2 := b2] e2', st2, ctx)).
+      * apply ST_CaseInr. exact H1.
+      * apply MS_Refl.
+Qed.
+```
+
+### 4.8 COMPLETE PROOF EXAMPLE: exp_rel_step1_let (PROVEN)
+
+```coq
+(** FORMER AXIOM: exp_rel_step1_let - NOW PROVEN *)
+Theorem exp_rel_step1_let : forall Sigma T v v' x e2 e2' st1 st2 ctx,
+  val_rel_n_base Sigma T v v' ->
+  store_rel_n_base Sigma st1 st2 ->
+  exists r1 r2 st1' st2' ctx',
+    (ELet x v e2, st1, ctx) -->* (r1, st1', ctx') /\
+    (ELet x v' e2', st2, ctx) -->* (r2, st2', ctx').
+Proof.
+  intros Sigma T v v' x e2 e2' st1 st2 ctx Hval Hstore.
+  destruct (val_rel_n_base_value Sigma T v v' Hval) as [Hv1 Hv2].
+  exists ([x := v] e2), ([x := v'] e2'), st1, st2, ctx.
+  split.
+  - apply MS_Step with (cfg2 := ([x := v] e2, st1, ctx)).
+    + apply ST_LetValue. exact Hv1.
+    + apply MS_Refl.
+  - apply MS_Step with (cfg2 := ([x := v'] e2', st2, ctx)).
+    + apply ST_LetValue. exact Hv2.
+    + apply MS_Refl.
+Qed.
+```
+
+### 4.9 COMPLETE PROOF EXAMPLE: exp_rel_step1_handle (PROVEN)
+
+```coq
+(** FORMER AXIOM: exp_rel_step1_handle - NOW PROVEN *)
+Theorem exp_rel_step1_handle : forall Sigma T v v' x h h' st1 st2 ctx,
+  val_rel_n_base Sigma T v v' ->
+  store_rel_n_base Sigma st1 st2 ->
+  exists r1 r2 st1' st2' ctx',
+    (EHandle v x h, st1, ctx) -->* (r1, st1', ctx') /\
+    (EHandle v' x h', st2, ctx) -->* (r2, st2', ctx').
+Proof.
+  intros Sigma T v v' x h h' st1 st2 ctx Hval Hstore.
+  destruct (val_rel_n_base_value Sigma T v v' Hval) as [Hv1 Hv2].
+  exists ([x := v] h), ([x := v'] h'), st1, st2, ctx.
+  split.
+  - apply MS_Step with (cfg2 := ([x := v] h, st1, ctx)).
+    + apply ST_HandleValue. exact Hv1.
+    + apply MS_Refl.
+  - apply MS_Step with (cfg2 := ([x := v'] h', st2, ctx)).
+    + apply ST_HandleValue. exact Hv2.
+    + apply MS_Refl.
+Qed.
+```
 
 ---
 
