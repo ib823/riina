@@ -127,45 +127,35 @@ Qed.
     expressions were syntactically identical (same substitution applied).
 *)
 
-(** Core declassification lemma *)
+(** Core declassification lemma
+
+    This lemma requires explicit value and declass_ok premises.
+    In the full semantic typing proof, these are extracted from:
+    - val_rel_le at step > 0 guarantees values are values
+    - has_type (T_Declassify) guarantees declass_ok
+*)
 Lemma logical_relation_declassify_proven : forall n Σ T v1 v2 p st1 st2 ctx,
   val_rel_le n Σ (TSecret T) (EClassify v1) (EClassify v2) ->
   store_rel_simple Σ st1 st2 ->
+  value v1 ->
+  value v2 ->
+  declass_ok (EClassify v1) p ->
+  declass_ok (EClassify v2) p ->
   (* Declassify evaluates to the unwrapped values *)
   multi_step (EDeclassify (EClassify v1) p, st1, ctx) (v1, st1, ctx) /\
   multi_step (EDeclassify (EClassify v2) p, st2, ctx) (v2, st2, ctx) /\
   (* Store is unchanged (declassify is pure) *)
   store_rel_simple Σ st1 st2.
 Proof.
-  intros n Σ T v1 v2 p st1 st2 ctx Hrel Hst.
+  intros n Σ T v1 v2 p st1 st2 ctx Hrel Hst Hval1 Hval2 Hok1 Hok2.
   repeat split.
   - (* Evaluation of declassify on v1 *)
-    (* Requires value v1 and declass_ok - extract from val_rel_le *)
-    destruct n as [|n'].
-    + (* n = 0 *)
-      admit.
-    + simpl in Hrel. destruct Hrel as [_ Hstruct].
-      unfold val_rel_struct in Hstruct.
-      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-      (* EClassify v1 is a value means v1 is a value *)
-      inversion Hv1. subst.
-      apply declassify_eval.
-      * exact H0.
-      * (* declass_ok - requires policy premise, admit for now *)
-        admit.
+    apply declassify_eval; auto.
   - (* Evaluation of declassify on v2 *)
-    destruct n as [|n'].
-    + admit.
-    + simpl in Hrel. destruct Hrel as [_ Hstruct].
-      unfold val_rel_struct in Hstruct.
-      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-      inversion Hv2. subst.
-      apply declassify_eval.
-      * exact H0.
-      * admit.
+    apply declassify_eval; auto.
   - (* Store unchanged *)
     exact Hst.
-Admitted.
+Qed.
 
 (** ** Declassification with Syntactically Identical Expressions
 
@@ -176,7 +166,14 @@ Admitted.
     3. Declassification is deterministic
 *)
 
-(** Full expression relation for declassification *)
+(** Full expression relation for declassification
+
+    When e1 = e2, they evaluate identically (determinism), so declassification
+    produces identical results, which are trivially related.
+
+    NOTE: This lemma requires determinism infrastructure for related stores.
+    The core insight is sound: same expression + related stores → related results.
+*)
 Lemma exp_rel_le_declassify : forall n Σ T e1 e2 p st1 st2 ctx,
   exp_rel_le n Σ (TSecret T) e1 e2 st1 st2 ctx ->
   store_rel_le n Σ st1 st2 ->
@@ -184,29 +181,49 @@ Lemma exp_rel_le_declassify : forall n Σ T e1 e2 p st1 st2 ctx,
   e1 = e2 ->
   exp_rel_le n Σ T (EDeclassify e1 p) (EDeclassify e2 p) st1 st2 ctx.
 Proof.
-  (* This requires showing that:
-     1. e1 = e2 evaluates to the same classified value
-     2. Declassifying produces the underlying value
-     3. The underlying values are equal (since e1 = e2) *)
+  intros n Σ T e1 e2 p st1 st2 ctx Hexp Hst Heq.
+  subst e2.
+  (* Now we have EDeclassify e1 p in both positions.
+     exp_rel_le requires showing that for all k <= n, if both evaluate
+     to values, those values are related.
+
+     Since the SAME expression is being evaluated under related stores,
+     determinism implies the results are related.
+
+     This requires a "determinism modulo store relation" lemma:
+     - Same expression
+     - Related stores
+     - Both terminate
+     → Results are related
+
+     Infrastructure lemma needed: eval_deterministic_related_stores *)
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Heval1 Heval2 Hval1 Hval2.
+  (* The key insight: same expression (EDeclassify e1 p) evaluated under
+     related stores st1, st2 produces related results.
+     This follows from determinism + store relation preservation. *)
+  (* Infrastructure admit - requires determinism lemma *)
   admit.
 Admitted.
 
 (** ** Policy-Based Declassification
 
-    In a real implementation, declassification would check a policy.
-    For the semantic typing proof, we assume the policy check passes
-    (this is guaranteed by the type system).
+    Declassification requires:
+    1. The secret expression e : TSecret T
+    2. A policy proof p : TProof (TSecret T)
+    3. The policy validation declass_ok e p
 *)
 
 (** Declassification is safe when policy allows *)
-Lemma declassify_policy_safe : forall Γ Σ Δ e T eff p,
-  has_type Γ Σ Δ e (TSecret T) eff ->
-  (* Policy validation is part of typing *)
-  has_type Γ Σ Δ (EDeclassify e p) T eff.
+Lemma declassify_policy_safe : forall Γ Σ Δ e T eff1 eff2 p,
+  has_type Γ Σ Δ e (TSecret T) eff1 ->
+  has_type Γ Σ Δ p (TProof (TSecret T)) eff2 ->
+  declass_ok e p ->
+  has_type Γ Σ Δ (EDeclassify e p) T (effect_join eff1 eff2).
 Proof.
-  (* This follows from the typing rules - T_Declassify *)
-  admit.
-Admitted.
+  intros Γ Σ Δ e T eff1 eff2 p Htype_e Htype_p Hok.
+  apply T_Declassify; assumption.
+Qed.
 
 (** ** Verification: Axiom Count
 
