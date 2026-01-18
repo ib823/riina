@@ -223,11 +223,23 @@ Proof.
     destruct IH_T2 as [SD2 [SU2 [SS2 SW2]]].
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + (* Step up using IH on components *)
+    + (* Step up - requires edge case handling like TFn *)
       admit.
     + apply val_rel_le_mono_store with Σ; auto.
     + (* Store weakening using IH on components *)
-      admit.
+      (* H : store_ty_extends Σ Σ', H0 : val_rel_le n Σ' (TProd T1 T2) v1 v2 *)
+      generalize dependent v2. generalize dependent v1.
+      induction n as [|n' IHn]; intros v1 v2 Hrel.
+      * simpl. exact I.
+      * simpl in Hrel |- *. destruct Hrel as [Hcum Hstruct].
+        split.
+        -- apply IHn. exact Hcum.
+        -- unfold val_rel_struct in Hstruct |- *.
+           destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & (a1 & b1 & a2 & b2 & Heq1 & Heq2 & Hrel1 & Hrel2)).
+           repeat split; auto.
+           exists a1, b1, a2, b2. repeat split; auto.
+           ++ apply SW1 with Σ'; auto.
+           ++ apply SW2 with Σ'; auto.
 
   - (* TSum T1 T2 *)
     assert (IH_T1 : combined_properties T1).
@@ -238,9 +250,23 @@ Proof.
     destruct IH_T2 as [SD2 [SU2 [SS2 SW2]]].
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + (* Step up - requires edge case handling like TFn *)
+      admit.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + (* Store weakening using IH on components *)
+      generalize dependent v2. generalize dependent v1.
+      induction n as [|n' IHn]; intros v1 v2 Hrel.
+      * simpl. exact I.
+      * simpl in Hrel |- *. destruct Hrel as [Hcum Hstruct].
+        split.
+        -- apply IHn. exact Hcum.
+        -- unfold val_rel_struct in Hstruct |- *.
+           destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & Hsum).
+           repeat split; auto.
+           (* TSum is a disjunction: Left or Right *)
+           destruct Hsum as [(a1 & a2 & Heq1 & Heq2 & Hrel1) | (b1 & b2 & Heq1 & Heq2 & Hrel2)].
+           ++ left. exists a1, a2. repeat split; auto. apply SW1 with Σ'; auto.
+           ++ right. exists b1, b2. repeat split; auto. apply SW2 with Σ'; auto.
 
   - (* TList T - simplified to True in val_rel_struct *)
     unfold combined_properties. repeat split; intros.
