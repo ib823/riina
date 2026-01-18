@@ -214,6 +214,48 @@ Proof.
       * apply IH. exact Hneq.
 Qed.
 
+(** ** Store Typing Update Properties *)
+
+(** Looking up at updated location returns the new type *)
+Lemma store_ty_lookup_update_eq : forall l T sl Σ,
+  store_ty_lookup l (store_ty_update l T sl Σ) = Some (T, sl).
+Proof.
+  intros l T sl Σ. revert l T sl.
+  induction Σ as [| [[l' T'] sl'] Σ' IH]; intros l T sl; simpl.
+  - (* Empty store typing *)
+    rewrite Nat.eqb_refl. reflexivity.
+  - (* Non-empty store typing *)
+    destruct (Nat.eqb l l') eqn:Heq.
+    + (* l = l' *)
+      simpl. rewrite Nat.eqb_refl. reflexivity.
+    + (* l <> l' *)
+      simpl. rewrite Heq. apply IH.
+Qed.
+
+(** Looking up different location after update is unchanged *)
+Lemma store_ty_lookup_update_neq : forall l l' T sl Σ,
+  l <> l' ->
+  store_ty_lookup l' (store_ty_update l T sl Σ) = store_ty_lookup l' Σ.
+Proof.
+  intros l l' T sl Σ Hneq. revert l l' T sl Hneq.
+  induction Σ as [| [[l'' T''] sl''] Σ' IH]; intros l l' T sl Hneq; simpl.
+  - (* Empty store typing *)
+    destruct (Nat.eqb l' l) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. symmetry in Heq. contradiction.
+    + reflexivity.
+  - (* Non-empty store typing *)
+    destruct (Nat.eqb l l'') eqn:Heq1.
+    + (* l = l'' *)
+      simpl. apply Nat.eqb_eq in Heq1. subst l''.
+      destruct (Nat.eqb l' l) eqn:Heq2.
+      * apply Nat.eqb_eq in Heq2. symmetry in Heq2. contradiction.
+      * reflexivity.
+    + (* l <> l'' *)
+      simpl. destruct (Nat.eqb l' l'') eqn:Heq2.
+      * reflexivity.
+      * apply IH. exact Hneq.
+Qed.
+
 (** ** Full Store Relation Update
 
     For the full store relation (including value relations at all locations),
@@ -355,11 +397,51 @@ Lemma store_rel_le_alloc : forall n Σ st1 st2 T sl v1 v2,
   let st2' := store_update (fresh_loc st2) v2 st2 in
   store_rel_le n Σ' st1' st2'.
 Proof.
-  (* This proof requires detailed store operation lemmas.
-     The semantic justification is sound - admitted for infrastructure. *)
-  intros n Σ st1 st2 T sl v1 v2 Hst Hval Hfresh Heq.
-  admit.
-Admitted.
+  intros n Σ st1 st2 T sl v1 v2 Hst Hval Hfresh_none Heq_fresh.
+  unfold store_rel_le in *.
+  destruct Hst as [Hmax Htyped].
+  split.
+  - (* store_max equality *)
+    rewrite Heq_fresh.
+    apply store_max_update_eq. exact Hmax.
+  - (* All typed locations have related values *)
+    intros l T0 sl0 Hlookup.
+    destruct (Nat.eq_dec (fresh_loc st1) l) as [Heql | Hneql].
+    + (* l = fresh_loc st1: the newly allocated location *)
+      subst l.
+      (* Use the helper lemma to establish T0 = T, sl0 = sl *)
+      assert (Hlookup_eq : store_ty_lookup (fresh_loc st1)
+                (store_ty_update (fresh_loc st1) T sl Σ) = Some (T, sl)).
+      { apply store_ty_lookup_update_eq. }
+      rewrite Hlookup_eq in Hlookup.
+      injection Hlookup as HT Hsl. subst T0 sl0.
+      (* Now handle the store lookups *)
+      rewrite Heq_fresh.
+      rewrite store_lookup_update_eq.
+      rewrite store_lookup_update_eq.
+      (* Need val_rel_le n Σ' T v1 v2 from val_rel_le n Σ T v1 v2 *)
+      (* Σ' = store_ty_update (fresh_loc st1) T sl Σ extends Σ *)
+      (* Note: fresh_loc st1 = fresh_loc st2 by Heq_fresh *)
+      apply val_rel_le_store_preserves_step with (Σ := Σ).
+      * rewrite <- Heq_fresh. apply store_ty_extends_add. exact Hfresh_none.
+      * exact Hval.
+    + (* l <> fresh_loc st1: existing location *)
+      rewrite store_lookup_update_neq; auto.
+      rewrite Heq_fresh.
+      rewrite store_lookup_update_neq; auto.
+      * (* Extract lookup from Σ using update_neq *)
+        rewrite store_ty_lookup_update_neq in Hlookup; auto.
+        specialize (Htyped l T0 sl0 Hlookup).
+        destruct (store_lookup l st1) eqn:Hl1, (store_lookup l st2) eqn:Hl2.
+        -- (* Both Some: values are related in old stores *)
+           apply val_rel_le_store_preserves_step with (Σ := Σ).
+           ++ rewrite <- Heq_fresh. apply store_ty_extends_add. exact Hfresh_none.
+           ++ exact Htyped.
+        -- exact Htyped.
+        -- exact Htyped.
+        -- exact Htyped.
+      * rewrite <- Heq_fresh. exact Hneql.
+Qed.
 
 (** ** Reference Location Relation
 
