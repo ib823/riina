@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-18 | SESSION 15 | TFn CASE STRUCTURE
+## Last Updated: 2026-01-18 | SESSION 17 | TFn STORE-WEAKENING COMPLETE
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -26,7 +26,7 @@
 |--------|-------|-------|
 | **Overall Grade** | B+ (80%) | Foundations solid, proofs ongoing |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
-| **Axioms (Current)** | 19 | Target: 0 |
+| **Axioms (Current)** | 20 | Target: 0 (19 legacy + 1 justified semantic) |
 | **Theorems (Required)** | ~2,500 | Comprehensive coverage |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | make succeeds |
@@ -104,7 +104,7 @@
 
 ## AXIOM ELIMINATION PROGRESS
 
-### Current Axioms: 19
+### Current Axioms: 20
 
 | Category | Count | Axioms |
 |----------|-------|--------|
@@ -114,6 +114,7 @@
 | Step-up | 3 | val_rel_n_step_up, store_rel_n_step_up, val_rel_n_lam_cumulative |
 | Higher-order conversion | 2 | val_rel_at_type_to_val_rel_ho, val_rel_n_to_val_rel |
 | Semantic typing | 4 | logical_relation_{ref,deref,assign,declassify} |
+| **Store compatibility** | 1 | store_ty_extensions_compatible (justified semantic) |
 
 ### Elimination History
 
@@ -126,6 +127,7 @@
 | 11 | -1 | 23 | store_rel_n_weaken proven |
 | 11 | -4 | 19 | val_rel_at_type axioms eliminated (unsound) |
 | 14 | +1/-1 | 19 | declass_ok_subst_rho added then proven |
+| 17 | +1 | 20 | store_ty_extensions_compatible (justified for TFn store-weakening) |
 
 ---
 
@@ -197,23 +199,24 @@
 
 ## IMMEDIATE NEXT STEPS
 
-### This Session
+### This Session (Session 17) - COMPLETED
 
-1. ⬜ Complete authoritative document updates
-2. ⬜ Commit and push all changes
-3. ⬜ Verify Coq compilation status
+1. ✅ Verified claude.ai Phase 6 output with ultra-paranoid rules
+2. ✅ Completed TFn store-weakening (Property D) infrastructure
+3. ✅ Added store_ty_compatible, store_ty_union, store_ty_directed_join
+4. ✅ Updated authoritative documents
 
 ### Next Session
 
-1. ⬜ Fix CumulativeMonotone.v TFn case
-2. ⬜ Complete step monotonicity proof
-3. ⬜ Begin axiom elimination (first target: store_extension_refl)
+1. ⬜ Complete step_preserves_closed indexed induction
+2. ⬜ Eliminate val_rel_n_weaken using master_theorem corollary
+3. ⬜ Eliminate val_rel_n_mono_store using master_theorem corollary
 
 ### This Week
 
-1. ⬜ Eliminate first 5 axioms
+1. ⬜ Eliminate first 5 axioms using master_theorem
 2. ⬜ Complete all foundation proofs
-3. ⬜ Start Progress.v theorem
+3. ⬜ Discharge store_ty_extensions_compatible via allocation tracking
 
 ---
 
