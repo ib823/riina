@@ -50,7 +50,7 @@ properties/TypedConversion.v
 properties/ApplicationComplete.v
 
 # Phase 6: Axiom Elimination
-properties/AxiomElimination.v
+properties/AxiomEliminationVerified.v
 
 # Zero-Admits Elimination (WORKER_ζ)
 properties/KripkeMutual.v
