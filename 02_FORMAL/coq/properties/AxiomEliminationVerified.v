@@ -572,16 +572,16 @@ Proof.
   exists l, (store_update l v st1), (store_update l v' st2), ctx, Σ'.
   split. { apply store_ty_extends_refl. }
   split. { apply MS_Step with (cfg2 := (ELoc l, store_update l v st1, ctx)).
-           (* Need ST_Ref rule *)
-           admit. (* Requires ST_Ref: (ERef v sl, st, ctx) --> (ELoc (fresh_loc st), store_update (fresh_loc st) v st, ctx) *)
+           (* Apply ST_RefValue: value v -> l = fresh_loc st -> step *)
+           apply ST_RefValue. exact Hval. exact Heql.
            apply MS_Refl. }
   split. { apply MS_Step with (cfg2 := (ELoc l, store_update l v' st2, ctx)).
-           rewrite Hfresh.
-           admit. (* Same reasoning *)
+           (* Same location l = fresh_loc st2 via Hfresh *)
+           apply ST_RefValue. exact Hval'. exact Hfresh.
            apply MS_Refl. }
   split. { simpl. trivial. }
   { simpl. trivial. }
-Admitted. (* Requires ST_Ref step rule *)
+Qed.
 
 (** EDeref steps to the stored value when argument is a location *)
 Lemma exp_rel_step1_deref_typed : forall Σ Σ' T l v1 v2 st1 st2 ctx,
@@ -653,6 +653,7 @@ Qed.
     - exp_rel_step1_inr_value       : EInr is already a value (no step)
 
     Reference Operation Replacements:
+    - exp_rel_step1_ref_typed       : Ref allocation with same fresh location
     - exp_rel_step1_deref_typed     : Deref with location lookup
     - exp_rel_step1_assign_typed    : Assign with existing location
 
@@ -660,10 +661,9 @@ Qed.
     - val_rel_n_step_up_identical_fo: Step-up for identical values (v=v)
 
     --------------------------------------------------------------------------
-    PARTIALLY PROVEN (3 Admitted with clear gaps):
+    PARTIALLY PROVEN (2 Admitted with clear gaps):
     - val_rel_at_type_reflexive_fo  : TProd/TSum need typing decomposition
     - val_rel_n_step_up_fo_typed    : n=0 case needs relatedness premise
-    - exp_rel_step1_ref_typed       : Needs ST_RefValue application
 
     --------------------------------------------------------------------------
     THEORETICAL ANALYSIS:
