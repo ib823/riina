@@ -50,11 +50,27 @@
 | Axioms | 19 | Target for elimination via master_theorem |
 | Admits | 37 | Down from 40 (-3 this session) |
 
-### Key Insight from claude.ai Research
+### Key Insight from claude.ai Research (Phase 1)
 The TFn contravariance problem is resolved by:
 1. Using `ty_size` (type depth) as induction measure
 2. Proving all 4 properties simultaneously
 3. T1 in TFn T1 T2 has smaller ty_size, so IH provides step-up BEFORE we need it
+
+### Key Insight from claude.ai Research (Phase 2)
+The step-up edge case (step 1 to step 2+) is resolved by:
+1. The "ramp up period": steps 0, 1, 2 all require only syntactic validity
+2. `step_1_to_2` is provable from step-1 content alone
+3. Real behavioral constraints only start at step 3+
+
+### Progress Summary (Session 16)
+| Item | Status | Notes |
+|------|--------|-------|
+| MasterTheorem.v created | ✅ | Combined properties approach |
+| Indistinguishable types | ✅ | TLabeled, TRef, etc. proven |
+| TProd/TSum store-weakening | ✅ | Using IH on components |
+| Edge case lemmas | ✅ | step_0_to_1, step_1_to_2 |
+| TFn step-up | 🔄 | Structure in place |
+| Axiom elimination | 📋 | 19 mapped to corollaries |
 
 ### Commits This Session
 | Hash | Description |
