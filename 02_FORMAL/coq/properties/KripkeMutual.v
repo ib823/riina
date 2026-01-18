@@ -119,12 +119,33 @@ Proof.
   (* For first-order types, val_rel_at_type is purely structural
      and doesn't depend on Σ or the relation parameters.
      The proof requires induction on type structure. *)
-  intros T v1 v2 Σ Σ' sr1 sr2 vr1 vr2 srl1 srl2 Hfo.
-  (* Case analysis on type, handling structural cases *)
-  destruct T; simpl in Hfo; try discriminate; simpl; try reflexivity.
-  (* TProd and TSum require recursion on subcomponents *)
-  all: admit.
-Admitted.
+  intros T. induction T; intros v1 v2 Σ Σ' sr1 sr2 vr1 vr2 srl1 srl2 Hfo;
+  simpl in Hfo; try discriminate; simpl; try reflexivity.
+  - (* TProd T1 T2 *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    split; intros H.
+    + destruct H as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+      exists x1, y1, x2, y2. repeat split; try assumption.
+      * apply IHT1 with (Σ := Σ) (sr1 := sr1) (vr1 := vr1) (srl1 := srl1); auto.
+      * apply IHT2 with (Σ := Σ) (sr1 := sr1) (vr1 := vr1) (srl1 := srl1); auto.
+    + destruct H as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
+      exists x1, y1, x2, y2. repeat split; try assumption.
+      * apply IHT1 with (Σ := Σ') (sr1 := sr2) (vr1 := vr2) (srl1 := srl2); auto.
+      * apply IHT2 with (Σ := Σ') (sr1 := sr2) (vr1 := vr2) (srl1 := srl2); auto.
+  - (* TSum T1 T2 *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    split; intros H.
+    + destruct H as [[x1 [x2 [Heq1 [Heq2 Hr]]]] | [y1 [y2 [Heq1 [Heq2 Hr]]]]].
+      * left. exists x1, x2. repeat split; try assumption.
+        apply IHT1 with (Σ := Σ) (sr1 := sr1) (vr1 := vr1) (srl1 := srl1); auto.
+      * right. exists y1, y2. repeat split; try assumption.
+        apply IHT2 with (Σ := Σ) (sr1 := sr1) (vr1 := vr1) (srl1 := srl1); auto.
+    + destruct H as [[x1 [x2 [Heq1 [Heq2 Hr]]]] | [y1 [y2 [Heq1 [Heq2 Hr]]]]].
+      * left. exists x1, x2. repeat split; try assumption.
+        apply IHT1 with (Σ := Σ') (sr1 := sr2) (vr1 := vr2) (srl1 := srl2); auto.
+      * right. exists y1, y2. repeat split; try assumption.
+        apply IHT2 with (Σ := Σ') (sr1 := sr2) (vr1 := vr2) (srl1 := srl2); auto.
+Qed.
 
 (** ** Main Theorem: Mutual Kripke Monotonicity
 
