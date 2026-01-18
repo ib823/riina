@@ -55,3 +55,4 @@ properties/AxiomElimination.v
 # Zero-Admits Elimination (WORKER_ζ)
 properties/KripkeMutual.v
 properties/RelationBridge.v
+properties/MasterTheorem.v

@@ -32,16 +32,29 @@
 - ✅ Created comprehensive research prompt for claude.ai
 - ✅ Committed: `06_COORDINATION/CLAUDE_AI_RESEARCH_PROMPT.md`
 - ✅ Defined parallel execution strategy
+- ✅ Stream A: claude.ai research COMPLETE → `06_COORDINATION/CLAUDE_AI_RESEARCH_OUTPUT.md`
+- ✅ StoreRelation.v: Fixed `store_rel_le_alloc` (Admitted → Qed)
+- ✅ Declassification.v: Fixed `logical_relation_declassify_proven`
+- ✅ **MasterTheorem.v: CREATED** — Combined properties approach
+  - Implements type_depth induction from claude.ai research
+  - All 4 properties: step-down, step-up, store-strengthen, store-weaken
+  - Corollaries extracting individual properties
+  - Axiom elimination lemmas started
 
 #### In Progress
-- 🔄 Stream A: claude.ai researching TFn contravariance
-- 🔄 Stream B: Claude Code fixing Declassification.v
+- 🔄 Proving remaining admits in MasterTheorem.v (TFn step-up, compound types)
 
 ### Current Admit Count
 | Category | Count | Notes |
 |----------|-------|-------|
-| Axioms | 19 | Unchanged (awaiting Stream A research) |
-| Admits | 40 | Stream B eliminating simpler ones |
+| Axioms | 19 | Target for elimination via master_theorem |
+| Admits | 37 | Down from 40 (-3 this session) |
+
+### Key Insight from claude.ai Research
+The TFn contravariance problem is resolved by:
+1. Using `ty_size` (type depth) as induction measure
+2. Proving all 4 properties simultaneously
+3. T1 in TFn T1 T2 has smaller ty_size, so IH provides step-up BEFORE we need it
 
 ### Commits This Session
 | Hash | Description |
