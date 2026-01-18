@@ -43,6 +43,7 @@ Require Import RIINA.properties.CumulativeRelation.
 Require Import RIINA.properties.CumulativeMonotone.
 Require Import RIINA.properties.KripkeProperties.
 Require Import RIINA.properties.FirstOrderComplete.
+Require Import RIINA.properties.StoreRelation.
 
 Import ListNotations.
 
@@ -241,35 +242,54 @@ Proof.
     + apply val_rel_le_mono_store with Σ; auto.
     + admit.
 
-  - (* TList T *)
-    assert (IH_T : combined_properties T).
-    { apply IH. simpl. lia. }
-    destruct IH_T as [SD [SU [SS SW]]].
+  - (* TList T - simplified to True in val_rel_struct *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
-  - (* TOption T *)
-    assert (IH_T : combined_properties T).
-    { apply IH. simpl. lia. }
-    destruct IH_T as [SD [SU [SS SW]]].
+  - (* TOption T - simplified to True in val_rel_struct *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
-  - (* TRef T sl *)
-    assert (IH_T : combined_properties T).
-    { apply IH. apply ty_size_ref_content. }
-    destruct IH_T as [SD [SU [SS SW]]].
+  - (* TRef T sl - structural content is location equality *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + (* Step up - extract location, rebuild *)
+      destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & (l & Heq1 & Heq2)).
+      subst v1 v2.
+      apply val_rel_le_build_ref.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + (* Store weakening - extract location, rebuild *)
+      destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & (l & Heq1 & Heq2)).
+      subst v1 v2.
+      apply val_rel_le_build_ref.
 
   (* === Security types: val_rel_at_type is True for these === *)
 
@@ -292,86 +312,162 @@ Proof.
   - (* TLabeled T sl - val_rel is always True *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit. (* Trivially True *)
+    + (* Step up - extract value/closed, rebuild *)
+      destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + (* Store weakening - extract value/closed, rebuild *)
+      destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   - (* TTainted T sl - val_rel is always True *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   - (* TSanitized T sl - val_rel is always True *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   - (* TProof T - val_rel is always True *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   (* === Capability types - val_rel is True === *)
 
   - (* TCapability eff *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   - (* TCapabilityFull eff *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   (* === Channel types - val_rel is True === *)
 
   - (* TChan st *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   - (* TSecureChan st sl *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit.
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit.
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
   (* === Constant-time types === *)
 
-  - (* TConstantTime T *)
-    assert (IH_T : combined_properties T).
-    { apply IH. simpl. lia. }
-    destruct IH_T as [SD [SU [SS SW]]].
+  - (* TConstantTime T - val_rel is always True *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit. (* Uses IH *)
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit. (* Uses IH *)
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
-  - (* TZeroizing T *)
-    assert (IH_T : combined_properties T).
-    { apply IH. simpl. lia. }
-    destruct IH_T as [SD [SU [SS SW]]].
+  - (* TZeroizing T - val_rel is always True *)
     unfold combined_properties. repeat split; intros.
     + apply val_rel_le_mono_step with n; auto.
-    + admit. (* Uses IH *)
+    + destruct m as [|m']; [lia|].
+      simpl in H1. destruct H1 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
     + apply val_rel_le_mono_store with Σ; auto.
-    + admit. (* Uses IH *)
+    + destruct n as [|n']; [simpl; exact I|].
+      simpl in H0. destruct H0 as [_ Hstruct].
+      unfold val_rel_struct in Hstruct.
+      destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
+      apply val_rel_le_build_indist; auto.
 
-Admitted. (* Structure established - detailed proofs use IH on components *)
+Admitted. (* Remaining: TFn step-up/store-weaken, compound types *)
 
 (** ** Corollaries: Individual Properties Extracted *)
 
