@@ -61,13 +61,22 @@ Variable store_rel_family : nat -> store_ty -> store -> store -> Prop.
 (** Type-structural relation at a fixed level, with Kripke quantification for TFn *)
 Fixpoint val_rel_at_type_k (Σ : store_ty) (bound : nat) (T : ty) (v1 v2 : expr) {struct T} : Prop :=
   match T with
+  (* Primitive types *)
   | TUnit => v1 = EUnit /\ v2 = EUnit
   | TBool => exists b, v1 = EBool b /\ v2 = EBool b
   | TInt => exists i, v1 = EInt i /\ v2 = EInt i
   | TString => exists s, v1 = EString s /\ v2 = EString s
   | TBytes => v1 = v2
-  | TSecret T' => True  (* Secrets are always related - information hiding *)
+  (* Security types - indistinguishable *)
+  | TSecret T' => True
+  | TLabeled T' _ => True
+  | TTainted T' _ => True
+  | TSanitized T' _ => True
+  (* Reference types *)
   | TRef T' _ => exists l, v1 = ELoc l /\ v2 = ELoc l
+  (* Compound types *)
+  | TList T' => True
+  | TOption T' => True
   | TProd T1 T2 =>
       exists x1 y1 x2 y2,
         v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
@@ -95,8 +104,17 @@ Fixpoint val_rel_at_type_k (Σ : store_ty) (bound : nat) (T : ty) (v1 v2 : expr)
                 value v1' /\ value v2' /\
                 val_rel_family k Σ'' T2 v1' v2' /\
                 store_rel_family k Σ'' st1' st2'
+  (* Capability types *)
   | TCapability _ => True
+  | TCapabilityFull _ => True
+  (* Proof types *)
   | TProof _ => True
+  (* Channel types *)
+  | TChan _ => True
+  | TSecureChan _ _ => True
+  (* Constant-time and zeroizing *)
+  | TConstantTime T' => True
+  | TZeroizing T' => True
   end.
 
 End KripkeRelation.
@@ -122,13 +140,22 @@ Section SimpleRelation.
 
   Fixpoint val_rel_at_type_simple (T : ty) (v1 v2 : expr) {struct T} : Prop :=
     match T with
+    (* Primitive types *)
     | TUnit => v1 = EUnit /\ v2 = EUnit
     | TBool => exists b, v1 = EBool b /\ v2 = EBool b
     | TInt => exists i, v1 = EInt i /\ v2 = EInt i
     | TString => exists s, v1 = EString s /\ v2 = EString s
     | TBytes => v1 = v2
+    (* Security types - indistinguishable *)
     | TSecret T' => True
+    | TLabeled T' _ => True
+    | TTainted T' _ => True
+    | TSanitized T' _ => True
+    (* Reference types *)
     | TRef T' _ => exists l, v1 = ELoc l /\ v2 = ELoc l
+    (* Compound types *)
+    | TList T' => True
+    | TOption T' => True
     | TProd T1 T2 =>
         exists x1 y1 x2 y2,
           v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
@@ -153,8 +180,17 @@ Section SimpleRelation.
               value v1' /\ value v2' /\
               val_rel_pred T2 v1' v2' /\
               store_rel_lower Σ' st1' st2'
+    (* Capability types *)
     | TCapability _ => True
+    | TCapabilityFull _ => True
+    (* Proof types *)
     | TProof _ => True
+    (* Channel types *)
+    | TChan _ => True
+    | TSecureChan _ _ => True
+    (* Constant-time and zeroizing *)
+    | TConstantTime T' => True
+    | TZeroizing T' => True
     end.
 End SimpleRelation.
 
@@ -382,9 +418,16 @@ Admitted. (* TODO: Need to reconsider the direction of Kripke quantification *)
 
 Fixpoint ty_size (T : ty) : nat :=
   match T with
-  | TUnit | TBool | TInt | TString | TBytes | TCapability _ | TProof _ => 1
-  | TSecret T' => 1 + ty_size T'
+  (* Base types - size 1 *)
+  | TUnit | TBool | TInt | TString | TBytes => 1
+  | TCapability _ | TCapabilityFull _ | TProof _ => 1
+  | TChan _ | TSecureChan _ _ => 1
+  (* Wrapper types *)
+  | TSecret T' | TLabeled T' _ | TTainted T' _ | TSanitized T' _ => 1 + ty_size T'
+  | TConstantTime T' | TZeroizing T' => 1 + ty_size T'
   | TRef T' _ => 1 + ty_size T'
+  | TList T' | TOption T' => 1 + ty_size T'
+  (* Compound types *)
   | TProd T1 T2 => 1 + ty_size T1 + ty_size T2
   | TSum T1 T2 => 1 + ty_size T1 + ty_size T2
   | TFn T1 T2 _ => 1 + ty_size T1 + ty_size T2

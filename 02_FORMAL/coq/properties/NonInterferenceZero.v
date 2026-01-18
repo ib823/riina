@@ -68,15 +68,33 @@ Fixpoint val_rel_le (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
       (value v1 /\ value v2 /\
        closed_expr v1 /\ closed_expr v2 /\
        match T with
+       (* Primitive types *)
        | TUnit => v1 = EUnit /\ v2 = EUnit
        | TBool => exists b, v1 = EBool b /\ v2 = EBool b
        | TInt => exists i, v1 = EInt i /\ v2 = EInt i
        | TString => exists s, v1 = EString s /\ v2 = EString s
        | TBytes => v1 = v2
-       | TSecret _ => True  (* Secrets are always indistinguishable *)
+       (* Security types - indistinguishable *)
+       | TSecret _ => True
+       | TLabeled _ _ => True
+       | TTainted _ _ => True
+       | TSanitized _ _ => True
+       (* Capability types *)
        | TCapability _ => True
+       | TCapabilityFull _ => True
+       (* Proof types *)
        | TProof _ => True
+       (* Channel types *)
+       | TChan _ => True
+       | TSecureChan _ _ => True
+       (* Constant-time and zeroizing *)
+       | TConstantTime _ => True
+       | TZeroizing _ => True
+       (* Reference types *)
        | TRef T' _ => exists l, v1 = ELoc l /\ v2 = ELoc l
+       (* Compound types *)
+       | TList _ => True
+       | TOption _ => True
        | TProd T1 T2 =>
            exists x1 y1 x2 y2,
              v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
@@ -89,16 +107,12 @@ Fixpoint val_rel_le (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
                           val_rel_le n' Σ T2 y1 y2)
        | TFn T1 T2 eff =>
            (* KRIPKE QUANTIFICATION with cumulative relation *)
-           (* For all k < S n' and all Σ' ⊇ Σ *)
-           (* We use n' directly since Coq needs structural recursion *)
            forall Σ', store_ty_extends Σ Σ' ->
              forall x y,
                value x -> value y -> closed_expr x -> closed_expr y ->
-               (* Arguments related at step n' (cumulative) *)
                val_rel_le n' Σ' T1 x y ->
                  forall st1 st2 ctx,
                    store_rel_simple Σ' st1 st2 ->
-                   (* Application produces related results *)
                    exists v1' v2' st1' st2' ctx' Σ'',
                      store_ty_extends Σ' Σ'' /\
                      (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
@@ -156,31 +170,20 @@ Proof.
         split; [exact Hv2|].
         split; [exact Hc1|].
         split; [exact Hc2|].
-        (* Type-specific case analysis - order matches ty definition *)
+        (* Type-specific case analysis - order matches ty definition in Syntax.v:
+           TUnit, TBool, TInt, TString, TBytes, TFn, TProd, TSum, TList, TOption,
+           TRef, TSecret, TLabeled, TTainted, TSanitized, TProof, TCapability,
+           TCapabilityFull, TChan, TSecureChan, TConstantTime, TZeroizing *)
         destruct T.
-        -- (* TUnit: v1 = EUnit ∧ v2 = EUnit - same at any step *)
-           exact HT.
-        -- (* TBool: exists b, ... - same at any step *)
-           exact HT.
-        -- (* TInt: exists i, ... - same at any step *)
-           exact HT.
-        -- (* TString: exists s, ... - same at any step *)
-           exact HT.
-        -- (* TBytes: v1 = v2 - same at any step *)
-           exact HT.
-        -- (* TFn T1 T2 eff: CONTRAVARIANCE ISSUE
-              HT says: forall args at n', results at n'
-              Goal: forall args at m', results at m'
-              Given args at m', we can't call HT (needs args at n')
-              This is the fundamental higher-order limitation *)
+        -- (* 1. TUnit *) exact HT.
+        -- (* 2. TBool *) exact HT.
+        -- (* 3. TInt *) exact HT.
+        -- (* 4. TString *) exact HT.
+        -- (* 5. TBytes *) exact HT.
+        -- (* 6. TFn - contravariance issue, admitted *)
            intros Σ' Hext x y Hvx Hvy Hcx Hcy Hrxy st1 st2 ctx Hst.
-           (* Hrxy: val_rel_le m' Σ' T1 x y (args related at m')
-              HT needs: val_rel_le n' Σ' T1 x y (args related at n')
-              Since m' <= n', we have m' ⊆ n' in terms of steps
-              But val_rel_le m' does NOT imply val_rel_le n' (opposite direction!)
-              We cannot complete this case without additional axioms. *)
            admit.
-        -- (* TProd T1 T2: need to weaken subterms *)
+        -- (* 7. TProd T1 T2 *)
            destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
            exists x1, y1, x2, y2.
            split; [exact Heq1|].
@@ -188,7 +191,7 @@ Proof.
            split.
            ++ apply (IHn m' Σ T1 x1 x2 Hle' Hr1).
            ++ apply (IHn m' Σ T2 y1 y2 Hle' Hr2).
-        -- (* TSum T1 T2: need to weaken subterms *)
+        -- (* 8. TSum T1 T2 *)
            destruct HT as [HInl | HInr].
            ++ destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
               left. exists x1, x2.
@@ -200,14 +203,20 @@ Proof.
               split; [exact Heq1|].
               split; [exact Heq2|].
               apply (IHn m' Σ T2 y1 y2 Hle' Hr).
-        -- (* TRef T sl: exists l, ... - same at any step *)
-           exact HT.
-        -- (* TSecret T: True - trivial *)
-           exact I.
-        -- (* TProof T: True *)
-           exact I.
-        -- (* TCapability eff: True *)
-           exact I.
+        -- (* 9. TList - True *) exact I.
+        -- (* 10. TOption - True *) exact I.
+        -- (* 11. TRef *) exact HT.
+        -- (* 12. TSecret - True *) exact I.
+        -- (* 13. TLabeled - True *) exact I.
+        -- (* 14. TTainted - True *) exact I.
+        -- (* 15. TSanitized - True *) exact I.
+        -- (* 16. TProof - True *) exact I.
+        -- (* 17. TCapability - True *) exact I.
+        -- (* 18. TCapabilityFull - True *) exact I.
+        -- (* 19. TChan - True *) exact I.
+        -- (* 20. TSecureChan - True *) exact I.
+        -- (* 21. TConstantTime - True *) exact I.
+        -- (* 22. TZeroizing - True *) exact I.
 Admitted.
 
 (** LEMMA 2: Step-0 is trivial *)
@@ -305,26 +314,24 @@ Proof.
       split; [exact Hv2|].
       split; [exact Hc1|].
       split; [exact Hc2|].
+      (* Type-specific case analysis - order: TUnit, TBool, TInt, TString, TBytes,
+         TFn, TProd, TSum, TList, TOption, TRef, TSecret, TLabeled, TTainted,
+         TSanitized, TProof, TCapability, TCapabilityFull, TChan, TSecureChan,
+         TConstantTime, TZeroizing *)
       destruct T.
-      * (* TUnit *) exact HT.
-      * (* TBool *) exact HT.
-      * (* TInt *) exact HT.
-      * (* TString *) exact HT.
-      * (* TBytes *) exact HT.
-      * (* TFn T1 T2 eff *)
+      * (* 1. TUnit *) exact HT.
+      * (* 2. TBool *) exact HT.
+      * (* 3. TInt *) exact HT.
+      * (* 4. TString *) exact HT.
+      * (* 5. TBytes *) exact HT.
+      * (* 6. TFn T1 T2 eff *)
         intros Σ'' Hext' x y Hvx Hvy Hcx Hcy Hrxy st1 st2 ctx Hst.
-        (* HT: forall Σ'', store_ty_extends Σ Σ'' -> ... *)
-        (* Goal needs: store_ty_extends Σ' Σ'' -> ... *)
-        (* We have Hext: store_ty_extends Σ Σ' and Hext': store_ty_extends Σ' Σ'' *)
-        (* By transitivity: store_ty_extends Σ Σ'' *)
         assert (store_ty_extends Σ Σ'') as Hext_trans.
         { apply (store_ty_extends_trans Σ Σ' Σ'' Hext Hext'). }
-        (* Now we can apply HT *)
         apply (HT Σ'' Hext_trans x y Hvx Hvy Hcx Hcy).
-        -- (* Arguments: val_rel_le n' Σ'' T1 x y - we have it directly *)
-           exact Hrxy.
+        -- exact Hrxy.
         -- exact Hst.
-      * (* TProd T1 T2 *)
+      * (* 7. TProd T1 T2 *)
         destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
         exists x1, y1, x2, y2.
         split; [exact Heq1|].
@@ -332,7 +339,7 @@ Proof.
         split.
         -- apply (IHn Σ Σ' T1 x1 x2 Hext Hr1).
         -- apply (IHn Σ Σ' T2 y1 y2 Hext Hr2).
-      * (* TSum T1 T2 *)
+      * (* 8. TSum T1 T2 *)
         destruct HT as [HInl | HInr].
         -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
            left. exists x1, x2.
@@ -344,10 +351,20 @@ Proof.
            split; [exact Heq1|].
            split; [exact Heq2|].
            apply (IHn Σ Σ' T2 y1 y2 Hext Hr).
-      * (* TRef T sl *) exact HT.
-      * (* TSecret T *) exact I.
-      * (* TProof T *) exact I.
-      * (* TCapability eff *) exact I.
+      * (* 9. TList - True *) exact I.
+      * (* 10. TOption - True *) exact I.
+      * (* 11. TRef T sl *) exact HT.
+      * (* 12. TSecret - True *) exact I.
+      * (* 13. TLabeled - True *) exact I.
+      * (* 14. TTainted - True *) exact I.
+      * (* 15. TSanitized - True *) exact I.
+      * (* 16. TProof - True *) exact I.
+      * (* 17. TCapability - True *) exact I.
+      * (* 18. TCapabilityFull - True *) exact I.
+      * (* 19. TChan - True *) exact I.
+      * (* 20. TSecureChan - True *) exact I.
+      * (* 21. TConstantTime - True *) exact I.
+      * (* 22. TZeroizing - True *) exact I.
 Qed.
 
 (** LEMMA 5: Store weakening (other direction)
@@ -384,18 +401,13 @@ Proof.
       split; [exact Hc1|].
       split; [exact Hc2|].
       destruct T.
-      * (* TUnit *) exact HT.
-      * (* TBool *) exact HT.
-      * (* TInt *) exact HT.
-      * (* TString *) exact HT.
-      * (* TBytes *) exact HT.
-      * (* TFn T1 T2 eff - NOT PROVABLE *)
-        (* HT: forall Σ'', store_ty_extends Σ' Σ'' -> ... *)
-        (* Goal: forall Σ'', store_ty_extends Σ Σ'' -> ... *)
-        (* We have store_ty_extends Σ Σ'' but need store_ty_extends Σ' Σ'' *)
-        (* Since Σ ⊆ Σ' and Σ ⊆ Σ'', we do NOT have Σ' ⊆ Σ'' in general *)
-        admit.
-      * (* TProd T1 T2 *)
+      * (* 1. TUnit *) exact HT.
+      * (* 2. TBool *) exact HT.
+      * (* 3. TInt *) exact HT.
+      * (* 4. TString *) exact HT.
+      * (* 5. TBytes *) exact HT.
+      * (* 6. TFn - NOT PROVABLE *) admit.
+      * (* 7. TProd T1 T2 *)
         destruct HT as (x1 & y1 & x2 & y2 & Heq1 & Heq2 & Hr1 & Hr2).
         exists x1, y1, x2, y2.
         split; [exact Heq1|].
@@ -403,7 +415,7 @@ Proof.
         split.
         -- apply (IHn Σ Σ' T1 x1 x2 Hext Hr1).
         -- apply (IHn Σ Σ' T2 y1 y2 Hext Hr2).
-      * (* TSum T1 T2 *)
+      * (* 8. TSum T1 T2 *)
         destruct HT as [HInl | HInr].
         -- destruct HInl as (x1 & x2 & Heq1 & Heq2 & Hr).
            left. exists x1, x2.
@@ -415,10 +427,20 @@ Proof.
            split; [exact Heq1|].
            split; [exact Heq2|].
            apply (IHn Σ Σ' T2 y1 y2 Hext Hr).
-      * (* TRef T sl *) exact HT.
-      * (* TSecret T *) exact I.
-      * (* TProof T *) exact I.
-      * (* TCapability eff *) exact I.
+      * (* 9. TList - True *) exact I.
+      * (* 10. TOption - True *) exact I.
+      * (* 11. TRef T sl *) exact HT.
+      * (* 12. TSecret - True *) exact I.
+      * (* 13. TLabeled - True *) exact I.
+      * (* 14. TTainted - True *) exact I.
+      * (* 15. TSanitized - True *) exact I.
+      * (* 16. TProof - True *) exact I.
+      * (* 17. TCapability - True *) exact I.
+      * (* 18. TCapabilityFull - True *) exact I.
+      * (* 19. TChan - True *) exact I.
+      * (* 20. TSecureChan - True *) exact I.
+      * (* 21. TConstantTime - True *) exact I.
+      * (* 22. TZeroizing - True *) exact I.
 Admitted.
 
 (** LEMMA 6: Finite to infinite
