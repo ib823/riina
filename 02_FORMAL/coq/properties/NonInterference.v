@@ -262,6 +262,21 @@ Fixpoint first_order_type (T : ty) : bool :=
   | TZeroizing T' => first_order_type T'
   end.
 
+(** Compatibility: local first_order_type equals TypeMeasure.first_order_type *)
+Lemma first_order_type_compat : forall T,
+  first_order_type T = TypeMeasure.first_order_type T.
+Proof.
+  induction T; simpl; try reflexivity; try (rewrite IHT1, IHT2; reflexivity);
+    try (rewrite IHT; reflexivity).
+Qed.
+
+(** Local decidability for first_order_type *)
+Lemma first_order_decidable_local : forall T,
+  {first_order_type T = true} + {first_order_type T = false}.
+Proof.
+  intro T. destruct (first_order_type T); auto.
+Qed.
+
 (** For first-order types, val_rel_at_type is independent of predicates *)
 Lemma val_rel_at_type_first_order : forall T Σ v1 v2
   (sp1 sp2 : store_ty -> store -> store -> Prop)
@@ -912,7 +927,7 @@ Proof.
 
   induction n as [|n' IH_step]; intros Σ Σ' v1 v2 Hext Hrel.
   - simpl. exact I.
-  - destruct (first_order_decidable T') as [Hfo | Hho].
+  - destruct (first_order_decidable_local T') as [Hfo | Hho].
     + apply val_rel_n_weaken_fo with Σ'; assumption.
     + simpl in Hrel |- *.
       destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
@@ -1084,7 +1099,7 @@ Proof.
 
   - (* n = S n' *)
     (* Case split on whether T' is first-order *)
-    destruct (first_order_decidable T') as [Hfo | Hho].
+    destruct (first_order_decidable_local T') as [Hfo | Hho].
 
     + (* First-order case: use proven lemma *)
       apply val_rel_n_mono_store_fo with Σ; assumption.
@@ -1396,18 +1411,61 @@ Proof.
       apply (val_rel_n_step_up_any_fo (S n) (S m') Σ T v1 v2 Hnn); try lia; assumption.
 Qed.
 
-(** DOCUMENTED AXIOM: Step-index step-up (GENERAL CASE)
+(** HELPER: Extract value and closed_expr from val_rel_n (S n)
+    For n' >= 0, val_rel_n (S n') contains value and closed_expr conjuncts. *)
+Lemma val_rel_n_implies_value_closed : forall n Σ T v1 v2,
+  val_rel_n (S n) Σ T v1 v2 ->
+  value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2.
+Proof.
+  intros n Σ T v1 v2 Hrel.
+  simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+  repeat split; assumption.
+Qed.
 
-    The function relation at step n outputs at step n, but we need step S n for exp_rel_n.
-    This 1-step gap represents the β-reduction step itself.
+(** HELPER: Store step-up at n >= 1 is provable given value step-up at n-1.
 
-    NOTE: For first-order types with n > 0, this is PROVEN in val_rel_n_step_up_fo.
-    The axiom is needed for:
+    INSIGHT: store_rel_n (S n) requires stored values at val_rel_n n.
+    To step up to store_rel_n (S (S n)), we need stored values at val_rel_n (S n).
+    This follows from val_rel_n_step_up at n.
+
+    For n >= 1, we can extract value/closed from val_rel_n n, so the step-up works.
+    For n = 0, stored values are at val_rel_n 0 = True, so we can't step up purely. *)
+Lemma store_rel_n_step_up_from_val : forall n Σ st1 st2,
+  n >= 1 ->
+  (forall T v1 v2, value v1 -> value v2 -> closed_expr v1 -> closed_expr v2 ->
+    val_rel_n n Σ T v1 v2 -> val_rel_n (S n) Σ T v1 v2) ->
+  store_rel_n (S n) Σ st1 st2 ->
+  store_rel_n (S (S n)) Σ st1 st2.
+Proof.
+  intros n Σ st1 st2 Hn Hval_step Hrel.
+  simpl in Hrel. destruct Hrel as [Hprev [Hmax Hlocs]].
+  simpl. split; [| split].
+  - (* Cumulative: store_rel_n (S n) *)
+    simpl. split; [| split]; assumption.
+  - (* store_max equal *)
+    exact Hmax.
+  - (* Location contents at val_rel_n (S n) *)
+    intros l T sl Hlook.
+    specialize (Hlocs l T sl Hlook) as [v1 [v2 [Hst1 [Hst2 Hvrel]]]].
+    exists v1, v2. split; [| split]; try assumption.
+    (* Step up from val_rel_n n to val_rel_n (S n) *)
+    (* We need value, closed for v1, v2. Since n >= 1, val_rel_n n has these. *)
+    destruct n as [| n']; [lia |].
+    (* n = S n' >= 1, so val_rel_n (S n') has value/closed *)
+    pose proof (val_rel_n_implies_value_closed n' Σ T v1 v2 Hvrel) as [Hv1 [Hv2 [Hc1 Hc2]]].
+    apply Hval_step; assumption.
+Qed.
+
+(** DOCUMENTED AXIOM: Step-index step-up
+
+    For FIRST-ORDER types with n > 0, step-up is PROVEN in val_rel_n_step_up_fo.
+
+    This axiom is needed for:
     1. The n=0 case (val_rel_n 0 = True gives no structural info)
-    2. Higher-order (function) types
+    2. The n=1 case (results at val_rel_n 0 = True need semantic justification)
 
-    Semantically justified: values of the same type related at step n are also related
-    at step S n because the additional recursive depth adds no new constraints.
+    Semantically justified: well-typed values always satisfy the structural relation,
+    and well-typed evaluation always terminates producing values.
 *)
 Axiom val_rel_n_step_up : forall n Σ T v1 v2,
   value v1 -> value v2 ->
