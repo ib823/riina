@@ -75,6 +75,10 @@ Qed.
 
 (** Reference creation produces same location in related stores *)
 Lemma logical_relation_ref_proven : forall n Σ T sl v1 v2 st1 st2 ctx,
+  n > 0 ->
+  value v1 ->
+  value v2 ->
+  store_wf Σ st1 ->
   val_rel_le n Σ T v1 v2 ->
   store_rel_simple Σ st1 st2 ->
   store_rel_le n Σ st1 st2 ->
@@ -92,7 +96,7 @@ Lemma logical_relation_ref_proven : forall n Σ T sl v1 v2 st1 st2 ctx,
   (* Store typing is extended *)
   store_ty_extends Σ Σ'.
 Proof.
-  intros n Σ T sl v1 v2 st1 st2 ctx Hval Hsimple Hrel.
+  intros n Σ T sl v1 v2 st1 st2 ctx Hn Hv1 Hv2 Hwf Hval Hsimple Hrel.
   simpl.
   (* First, establish that fresh_loc is the same in both stores *)
   assert (Hfresh_eq : fresh_loc st1 = fresh_loc st2).
@@ -100,26 +104,25 @@ Proof.
   (* Split into 5 parts *)
   repeat split.
   - (* ERef v1 sl evaluates to ELoc (fresh_loc st1) *)
-    (* This is a single step: SRef with value v1 *)
-    admit.
+    apply MS_Step with (cfg2 := (ELoc (fresh_loc st1), store_update (fresh_loc st1) v1 st1, ctx)).
+    + apply ST_RefValue; auto.
+    + apply MS_Refl.
   - (* ERef v2 sl evaluates to ELoc (fresh_loc st2) = ELoc (fresh_loc st1) *)
     rewrite Hfresh_eq.
-    admit.
+    apply MS_Step with (cfg2 := (ELoc (fresh_loc st2), store_update (fresh_loc st2) v2 st2, ctx)).
+    + apply ST_RefValue; auto.
+    + rewrite <- Hfresh_eq. apply MS_Refl.
   - (* val_rel_le n Σ' (TRef T sl) (ELoc l) (ELoc l) *)
     apply val_rel_le_build_ref.
   - (* store_rel_simple Σ' st1' st2' *)
-    (* st1' = store_update (fresh_loc st1) v1 st1 *)
-    (* st2' = store_update (fresh_loc st1) v2 st2 *)
-    (* Note: st2' uses fresh_loc st1, which equals fresh_loc st2 by Hfresh_eq *)
-    (* The stores have the same max after updating at the same location *)
     unfold store_rel_simple.
-    admit.
+    apply store_max_update_eq.
+    unfold store_rel_simple in Hsimple. exact Hsimple.
   - (* store_ty_extends Σ Σ' *)
     apply store_ty_extends_alloc.
     apply fresh_loc_not_in_store_ty.
-    (* Need store_wf Σ st1 - this should come from well-typedness *)
-    admit.
-Admitted.
+    exact Hwf.
+Qed.
 
 (** ** Axiom 17: Dereference (EDeref)
 
@@ -159,12 +162,14 @@ Proof.
   exists v1, v2.
   repeat split; auto.
   - (* EDeref (ELoc l) evaluates to v1 in st1 *)
-    (* Single step: SDeref with Hst1 *)
-    admit.
+    apply MS_Step with (cfg2 := (v1, st1, ctx)).
+    + apply ST_DerefLoc. exact Hst1.
+    + apply MS_Refl.
   - (* EDeref (ELoc l) evaluates to v2 in st2 *)
-    (* Single step: SDeref with Hst2 *)
-    admit.
-Admitted.
+    apply MS_Step with (cfg2 := (v2, st2, ctx)).
+    + apply ST_DerefLoc. exact Hst2.
+    + apply MS_Refl.
+Qed.
 
 (** ** Axiom 18: Assignment (EAssign)
 
@@ -190,6 +195,8 @@ Admitted.
 
 (** Assignment preserves store relation and produces related units *)
 Lemma logical_relation_assign_proven : forall n Σ T sl l v1 v2 st1 st2 ctx,
+  value v1 ->
+  value v2 ->
   store_rel_le n Σ st1 st2 ->
   store_ty_lookup l Σ = Some (T, sl) ->
   val_rel_le n Σ T v1 v2 ->
@@ -203,20 +210,26 @@ Lemma logical_relation_assign_proven : forall n Σ T sl l v1 v2 st1 st2 ctx,
   (* Store relation is maintained *)
   store_rel_le n Σ st1' st2'.
 Proof.
-  intros n Σ T sl l v1 v2 st1 st2 ctx Hrel Hlook Hval.
+  intros n Σ T sl l v1 v2 st1 st2 ctx Hv1 Hv2 Hrel Hlook Hval.
   simpl.
+  (* Get old values from store_rel_le_lookup to satisfy ST_AssignLoc precondition *)
+  destruct (store_rel_le_lookup n Σ st1 st2 l T sl Hrel Hlook)
+    as [v1' [v2' [Hst1 [Hst2 _]]]].
   (* Split into 4 parts carefully to avoid splitting store_rel_le *)
   split; [| split; [| split]].
   - (* EAssign (ELoc l) v1 evaluates to EUnit with updated store *)
-    (* Single step: SAssign *)
-    admit.
+    apply MS_Step with (cfg2 := (EUnit, store_update l v1 st1, ctx)).
+    + apply ST_AssignLoc with (v1 := v1'); auto.
+    + apply MS_Refl.
   - (* EAssign (ELoc l) v2 evaluates to EUnit with updated store *)
-    admit.
+    apply MS_Step with (cfg2 := (EUnit, store_update l v2 st2, ctx)).
+    + apply ST_AssignLoc with (v1 := v2'); auto.
+    + apply MS_Refl.
   - (* val_rel_le n Σ TUnit EUnit EUnit *)
     apply val_rel_le_unit.
   - (* store_rel_le n Σ (store_update l v1 st1) (store_update l v2 st2) *)
     apply store_rel_le_update with (T := T) (sl := sl); auto.
-Admitted.
+Qed.
 
 (** ** Combined Lemma: Full Expression Relation for References
 
@@ -224,37 +237,74 @@ Admitted.
     expression relation, which is what the original axioms state.
 *)
 
-(** Expression relation for ERef *)
+(** Expression relation for ERef
+
+    PROOF STRATEGY (requires multi_step inversion):
+    1. Unfold exp_rel_le: need to show that for any evaluation of
+       (ERef e1 sl) and (ERef e2 sl) to values v1, v2, they are related.
+    2. By determinism of evaluation, this reduces to showing that
+       if e1 -->* v1' and e2 -->* v2', then ERef v1' sl and ERef v2' sl
+       both step to ELoc l for the same l.
+    3. Use exp_rel_le hypothesis to get val_rel_le for v1', v2'.
+    4. Apply logical_relation_ref_proven.
+
+    STATUS: Admitted - requires evaluation inversion infrastructure
+*)
 Lemma exp_rel_le_ref : forall n Σ T sl e1 e2 st1 st2 ctx,
   exp_rel_le n Σ T e1 e2 st1 st2 ctx ->
   store_rel_le n Σ st1 st2 ->
   exp_rel_le n Σ (TRef T sl) (ERef e1 sl) (ERef e2 sl) st1 st2 ctx.
 Proof.
-  (* This requires composing the evaluation of e1, e2 to values
-     with the reference creation lemma above. *)
+  intros n Σ T sl e1 e2 st1 st2 ctx Hexp Hst.
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Heval1 Heval2.
+  (* Need to decompose multi_step evaluations and apply core lemma *)
+  (* This requires showing that ERef e sl evaluates by first evaluating e *)
   admit.
 Admitted.
 
-(** Expression relation for EDeref *)
+(** Expression relation for EDeref
+
+    PROOF STRATEGY (requires multi_step inversion):
+    1. Unfold exp_rel_le: show that deref evaluations produce related values.
+    2. By exp_rel_le hypothesis, e1 and e2 evaluate to related references.
+    3. By val_rel_le_ref_same_loc, they point to the same location l.
+    4. Apply logical_relation_deref_proven to get related dereferenced values.
+
+    STATUS: Admitted - requires evaluation inversion infrastructure
+*)
 Lemma exp_rel_le_deref : forall n Σ T sl e1 e2 st1 st2 ctx,
   exp_rel_le n Σ (TRef T sl) e1 e2 st1 st2 ctx ->
   store_rel_le n Σ st1 st2 ->
   exp_rel_le n Σ T (EDeref e1) (EDeref e2) st1 st2 ctx.
 Proof.
-  (* This requires composing the evaluation of e1, e2 to locations
-     with the dereference lemma above. *)
+  intros n Σ T sl e1 e2 st1 st2 ctx Hexp Hst.
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Heval1 Heval2.
+  (* Need to decompose: EDeref e -->* v means e -->* ELoc l then deref *)
   admit.
 Admitted.
 
-(** Expression relation for EAssign *)
+(** Expression relation for EAssign
+
+    PROOF STRATEGY (requires multi_step inversion):
+    1. Unfold exp_rel_le: show that assignment evaluations produce EUnit.
+    2. Assignment evaluates both subexpressions, then does the store update.
+    3. By exp_rel_le hypotheses, references and values are related.
+    4. Apply logical_relation_assign_proven for the final step.
+
+    STATUS: Admitted - requires evaluation inversion infrastructure
+*)
 Lemma exp_rel_le_assign : forall n Σ T sl e1 e2 e1' e2' st1 st2 ctx,
   exp_rel_le n Σ (TRef T sl) e1 e2 st1 st2 ctx ->
   exp_rel_le n Σ T e1' e2' st1 st2 ctx ->
   store_rel_le n Σ st1 st2 ->
   exp_rel_le n Σ TUnit (EAssign e1 e1') (EAssign e2 e2') st1 st2 ctx.
 Proof.
-  (* This requires composing the evaluation of references and values
-     with the assignment lemma above. *)
+  intros n Σ T sl e1 e2 e1' e2' st1 st2 ctx Hexp1 Hexp2 Hst.
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Heval1 Heval2.
+  (* Need to decompose assignment evaluation sequence *)
   admit.
 Admitted.
 
