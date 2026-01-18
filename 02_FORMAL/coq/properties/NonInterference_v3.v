@@ -131,36 +131,23 @@ Proof.
   exact Hfo.
 Qed.
 
-(** Extract pair structure from val_rel_n_base TProd *)
-Lemma val_rel_n_base_prod : forall Sigma T1 T2 v1 v2,
+(** Extract pair structure from val_rel_n_base TProd - FO case only *)
+Lemma val_rel_n_base_prod_fo : forall Sigma T1 T2 v1 v2,
+  first_order_type (TProd T1 T2) = true ->
   val_rel_n_base Sigma (TProd T1 T2) v1 v2 ->
   exists a1 b1 a2 b2,
     v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
     val_rel_at_type_fo T1 a1 a2 /\ val_rel_at_type_fo T2 b1 b2.
 Proof.
-  intros Sigma T1 T2 v1 v2 H.
-  unfold val_rel_n_base in H.
-  destruct H as [Hv1 [Hv2 [_ [_ Hfo]]]].
-  (* first_order_type (TProd T1 T2) might be true or false *)
-  destruct (first_order_type (TProd T1 T2)) eqn:Hcond.
-  - (* true: Hfo is val_rel_at_type_fo *)
-    simpl in Hfo.
-    destruct Hfo as [a1 [b1 [a2 [b2 [Heq1 [Heq2 [Hr1 Hr2]]]]]]].
-    exists a1, b1, a2, b2.
-    repeat split; assumption.
-  - (* false: Hfo is True, but we can still extract from values *)
-    (* v1 is a value, so if it's typed as TProd, it must be a pair *)
-    (* We need typing premise for this - add as assumption *)
-    (* For now, we only handle the FO case *)
-    (* In the false case, we cannot extract structure without typing *)
-    exfalso.
-    (* This case shouldn't happen in practice for FO types *)
-    simpl in Hcond.
-    (* TProd T1 T2 is FO iff both T1 and T2 are FO *)
-    (* If Hcond is false, at least one is HO *)
-    (* We can't proceed without typing *)
-    admit.
-Admitted. (* Requires typing for non-FO case *)
+  intros Sigma T1 T2 v1 v2 Hfo Hrel.
+  unfold val_rel_n_base in Hrel.
+  destruct Hrel as [_ [_ [_ [_ Hrat]]]].
+  rewrite Hfo in Hrat.
+  simpl in Hrat.
+  destruct Hrat as [a1 [b1 [a2 [b2 [Heq1 [Heq2 [Hr1 Hr2]]]]]]].
+  exists a1, b1, a2, b2.
+  repeat split; assumption.
+Qed.
 
 (** Extract sum structure from val_rel_n_base TSum - FO case only *)
 Lemma val_rel_n_base_sum_fo : forall Sigma T1 T2 v1 v2,
