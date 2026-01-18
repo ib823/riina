@@ -192,6 +192,63 @@ Fixpoint first_order_type (T : ty) : bool :=
   end.
 ```
 
+### 2.5 Free Variables and Closed Expressions
+
+```coq
+(* Free variable check *)
+Fixpoint free_in (x : ident) (e : expr) : Prop :=
+  match e with
+  | EVar y => x = y
+  | ELam y T body => x <> y /\ free_in x body
+  | EApp e1 e2 => free_in x e1 \/ free_in x e2
+  | EPair e1 e2 => free_in x e1 \/ free_in x e2
+  | EFst e => free_in x e
+  | ESnd e => free_in x e
+  | EInl e _ => free_in x e
+  | EInr e _ => free_in x e
+  | ECase e y1 e1 y2 e2 =>
+      free_in x e \/ (x <> y1 /\ free_in x e1) \/ (x <> y2 /\ free_in x e2)
+  | EIf e1 e2 e3 => free_in x e1 \/ free_in x e2 \/ free_in x e3
+  | ELet y e1 e2 => free_in x e1 \/ (x <> y /\ free_in x e2)
+  | EHandle e y h => free_in x e \/ (x <> y /\ free_in x h)
+  | _ => False  (* Constants, locations have no free variables *)
+  end.
+
+(* Closed expression: no free variables *)
+Definition closed_expr (e : expr) : Prop :=
+  forall x, ~ free_in x e.
+```
+
+### 2.6 Substitution
+
+```coq
+(* Substitution: [x := v] e *)
+Fixpoint subst (x : ident) (v : expr) (e : expr) : expr :=
+  match e with
+  | EVar y => if string_dec x y then v else EVar y
+  | ELam y T body =>
+      if string_dec x y then ELam y T body else ELam y T (subst x v body)
+  | EApp e1 e2 => EApp (subst x v e1) (subst x v e2)
+  | EPair e1 e2 => EPair (subst x v e1) (subst x v e2)
+  | EFst e => EFst (subst x v e)
+  | ESnd e => ESnd (subst x v e)
+  | EInl e T => EInl (subst x v e) T
+  | EInr e T => EInr (subst x v e) T
+  | ECase e y1 e1 y2 e2 =>
+      ECase (subst x v e)
+        y1 (if string_dec x y1 then e1 else subst x v e1)
+        y2 (if string_dec x y2 then e2 else subst x v e2)
+  | EIf e1 e2 e3 => EIf (subst x v e1) (subst x v e2) (subst x v e3)
+  | ELet y e1 e2 =>
+      ELet y (subst x v e1) (if string_dec x y then e2 else subst x v e2)
+  | EHandle e y h =>
+      EHandle (subst x v e) y (if string_dec x y then h else subst x v h)
+  | other => other  (* Constants, locations unchanged *)
+  end.
+
+Notation "[ x := v ] e" := (subst x v e) (at level 20, x at next level).
+```
+
 ---
 
 ## SECTION 3: STORE AND OPERATIONAL SEMANTICS
@@ -228,6 +285,14 @@ Fixpoint store_max (st : store) : nat :=
   end.
 
 Definition fresh_loc (st : store) : loc := S (store_max st).
+
+(* Store update: replace value at location or add new *)
+Fixpoint store_update (l : loc) (v : expr) (st : store) : store :=
+  match st with
+  | nil => (l, v) :: nil
+  | (l', v') :: st' =>
+      if Nat.eqb l l' then (l, v) :: st' else (l', v') :: store_update l v st'
+  end.
 
 (* Store typing extension - Kripke world ordering *)
 Definition store_ty_extends (Σ Σ' : store_ty) : Prop :=
@@ -451,6 +516,67 @@ Lemma val_rel_at_type_store_ty_indep : forall T Σ Σ' sp vl sl v1 v2,
   val_rel_at_type Σ sp vl sl T v1 v2 ->
   val_rel_at_type Σ' sp vl sl T v1 v2.
 ```
+
+### 4.5 THE STEP-0 FIX: val_rel_at_type_fo (REVOLUTIONARY)
+
+**THE PROBLEM:** With `val_rel_n 0 = True`, we cannot prove:
+- `exp_rel_step1_if`: need SAME boolean to take SAME branch
+- `exp_rel_step1_case`: need MATCHING constructor to take SAME branch
+
+**THE SOLUTION:** Use `val_rel_at_type_fo` which gives structural equality
+for first-order types INDEPENDENT of step index:
+
+```coq
+(** First-order value relation - gives structure even at step 0 *)
+Fixpoint val_rel_at_type_fo (T : ty) (v1 v2 : expr) : Prop :=
+  match T with
+  | TUnit => v1 = EUnit /\ v2 = EUnit
+  | TBool => exists b, v1 = EBool b /\ v2 = EBool b  (* SAME b! *)
+  | TInt => exists i, v1 = EInt i /\ v2 = EInt i
+  | TString => exists s, v1 = EString s /\ v2 = EString s
+  | TBytes => v1 = v2
+  | TSecret _ => True  (* Secrets always indistinguishable *)
+  | TLabeled _ _ => True
+  | TTainted _ _ => True
+  | TSanitized _ _ => True
+  | TRef _ _ => exists l, v1 = ELoc l /\ v2 = ELoc l
+  | TList _ => True  (* Simplified *)
+  | TOption _ => True
+  | TProd T1 T2 =>
+      exists x1 y1 x2 y2, v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\
+        val_rel_at_type_fo T1 x1 x2 /\ val_rel_at_type_fo T2 y1 y2
+  | TSum T1 T2 =>
+      (exists x1 x2, v1 = EInl x1 T2 /\ v2 = EInl x2 T2 /\
+                     val_rel_at_type_fo T1 x1 x2) \/
+      (exists y1 y2, v1 = EInr y1 T1 /\ v2 = EInr y2 T1 /\
+                     val_rel_at_type_fo T2 y1 y2)
+  | TFn _ _ _ => True  (* Functions: defer to step-indexed *)
+  | _ => True
+  end.
+
+(** REVOLUTIONARY: val_rel_n_base gives structure for FO types at ANY step *)
+Definition val_rel_n_base (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
+  value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+  (if first_order_type T then val_rel_at_type_fo T v1 v2 else True).
+```
+
+**WHY THIS WORKS:**
+
+For TBool: `val_rel_at_type_fo TBool v1 v2 = exists b, v1 = EBool b /\ v2 = EBool b`
+
+This means v1 and v2 are THE SAME boolean! So when we prove `exp_rel_step1_if`:
+- If both are `EBool true`, both take the THEN branch
+- If both are `EBool false`, both take the ELSE branch
+
+**KEY EXTRACTION LEMMA (PROVEN in NonInterference_v3.v):**
+
+```coq
+Lemma val_rel_n_base_bool : forall Σ v1 v2,
+  val_rel_n_base Σ TBool v1 v2 ->
+  exists b, v1 = EBool b /\ v2 = EBool b.
+```
+
+This lemma is what makes `exp_rel_step1_if` PROVABLE without axioms!
 
 ---
 
