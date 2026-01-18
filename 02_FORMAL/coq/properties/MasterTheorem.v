@@ -88,13 +88,26 @@ Lemma val_rel_le_store_weaken_fo : forall T,
     val_rel_le n Σ' T v1 v2 ->
     val_rel_le n Σ T v1 v2.
 Proof.
-  intros T Hfo n Σ Σ' v1 v2 Hext Hrel.
-  (* First-order types: the value relation doesn't use Kripke quantification *)
-  (* The structural part only checks value equality, not store contents *)
-  (* This requires showing val_rel_struct is store-independent for FO types *)
-  (* Infrastructure admit - needs val_rel_struct_fo_store_indep lemma *)
-  admit.
-Admitted.
+  intros T Hfo.
+  induction n as [|n' IH]; intros Σ Σ' v1 v2 Hext Hrel.
+  - (* n = 0: trivially True *)
+    simpl. exact I.
+  - (* n = S n' *)
+    simpl in Hrel. simpl.
+    destruct Hrel as [Hprev [Hv1 [Hv2 [Hc1 [Hc2 HT]]]]].
+    split.
+    + (* Cumulative: use IH *)
+      apply IH with Σ'; assumption.
+    + (* Structural part: store-independent for FO types *)
+      repeat split; try assumption.
+      (* Case analysis on first-order T - FO types don't use Σ in structural part
+         Primitive FO types: structural part is just equality, no Σ involvement
+         Compound FO types (TProd, TSum): need recursive call with subtype
+         This requires well-founded induction on type measure *)
+      destruct T; simpl in Hfo; try discriminate; try exact HT.
+      (* TProd and TSum require type-measure induction - admitted for now *)
+      all: admit.
+Admitted. (* Requires well-founded induction on type measure for TProd/TSum *)
 
 (** ** First-Order Types: Properties Are Already Proven
 
