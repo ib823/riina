@@ -186,7 +186,7 @@ Lemma val_rel_n_extract_type_info : forall n Σ T v1 v2,
   val_rel_n (S n) Σ T v1 v2 ->
   value v1 /\ value v2 /\
   closed_expr v1 /\ closed_expr v2 /\
-  val_rel_at_type Σ (store_rel_n n Σ) (val_rel_n n Σ) (store_rel_n n) T v1 v2.
+  val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T v1 v2.
 Proof.
   intros n Σ T v1 v2 Hrel.
   simpl in Hrel.
@@ -481,10 +481,10 @@ Proof.
       split.
       * (* val_rel_at_type T1 a1 a2 at step m' predicates *)
         apply val_rel_at_type_first_order with
-          (sp1 := store_rel_n n Σ) (vl1 := val_rel_n n Σ) (sl1 := store_rel_n n); auto.
+          (sp1 := store_rel_n n) (vl1 := val_rel_n n) (sl1 := store_rel_n n); auto.
       * (* val_rel_at_type T2 b1 b2 at step m' predicates *)
         apply val_rel_at_type_first_order with
-          (sp1 := store_rel_n n Σ) (vl1 := val_rel_n n Σ) (sl1 := store_rel_n n); auto.
+          (sp1 := store_rel_n n) (vl1 := val_rel_n n) (sl1 := store_rel_n n); auto.
 
   - (* TSum T1 T2 *)
     apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
@@ -505,7 +505,7 @@ Proof.
         split; [reflexivity|]. split; [reflexivity|].
         (* Use predicate independence for first-order types *)
         apply val_rel_at_type_first_order with
-          (sp1 := store_rel_n n Σ) (vl1 := val_rel_n n Σ) (sl1 := store_rel_n n); auto.
+          (sp1 := store_rel_n n) (vl1 := val_rel_n n) (sl1 := store_rel_n n); auto.
     + (* EInr case *)
       subst.
       assert (Hvb1: value b1) by (inversion Hv1; auto).
@@ -520,7 +520,7 @@ Proof.
         simpl. right. exists b1, b2.
         split; [reflexivity|]. split; [reflexivity|].
         apply val_rel_at_type_first_order with
-          (sp1 := store_rel_n n Σ) (vl1 := val_rel_n n Σ) (sl1 := store_rel_n n); auto.
+          (sp1 := store_rel_n n) (vl1 := val_rel_n n) (sl1 := store_rel_n n); auto.
 
   - (* TList T' *)
     induction m as [|m' IHm].

@@ -106,10 +106,10 @@ Qed.
 
 (** Check if val_rel_at_type depends on Σ for first-order types *)
 Lemma val_rel_at_type_fo_independent : forall T v1 v2 Σ Σ'
-  (sr1 : store -> store -> Prop)
-  (sr2 : store -> store -> Prop)
-  (vr1 : ty -> expr -> expr -> Prop)
-  (vr2 : ty -> expr -> expr -> Prop)
+  (sr1 : store_ty -> store -> store -> Prop)
+  (sr2 : store_ty -> store -> store -> Prop)
+  (vr1 : store_ty -> ty -> expr -> expr -> Prop)
+  (vr2 : store_ty -> ty -> expr -> expr -> Prop)
   (srl1 : store_ty -> store -> store -> Prop)
   (srl2 : store_ty -> store -> store -> Prop),
   first_order_type T = true ->
