@@ -71,6 +71,95 @@ Qed.
     with related values, the resulting stores are still related.
 *)
 
+(** Helper: store_max after update is bounded by max of l and original max *)
+Lemma store_max_update_bound : forall l v st,
+  store_max (store_update l v st) <= Nat.max l (store_max st).
+Proof.
+  intros l v st. revert l v.
+  induction st as [| [l' v'] st' IH]; intros l v; simpl.
+  - (* Empty store: result is (l,v)::nil, so max is max(l,0) = l *)
+    simpl. lia.
+  - (* Non-empty store *)
+    destruct (Nat.eqb l l') eqn:Heq.
+    + (* l = l': replace at head, max is max of l and rest *)
+      simpl. apply Nat.max_lub.
+      * apply Nat.le_max_l.
+      * apply Nat.le_trans with (m := store_max st').
+        -- apply Nat.le_refl.
+        -- apply Nat.le_trans with (m := Nat.max l' (store_max st')).
+           ++ apply Nat.le_max_r.
+           ++ apply Nat.le_max_r.
+    + (* l <> l': recurse *)
+      simpl. apply Nat.max_lub.
+      * apply Nat.le_trans with (m := Nat.max l' (store_max st')).
+        -- apply Nat.le_max_l.
+        -- apply Nat.le_max_r.
+      * apply Nat.le_trans with (m := Nat.max l (store_max st')).
+        -- apply IH.
+        -- apply Nat.max_le_compat_l. apply Nat.le_max_r.
+Qed.
+
+(** Helper: store_max after update is at least the original max *)
+Lemma store_max_update_lower : forall l v st,
+  store_max st <= store_max (store_update l v st).
+Proof.
+  intros l v st. revert l v.
+  induction st as [| [l' v'] st' IH]; intros l v; simpl.
+  - (* Empty store: 0 <= l *)
+    apply Nat.le_0_l.
+  - (* Non-empty store *)
+    destruct (Nat.eqb l l') eqn:Heq.
+    + (* l = l': replace at head *)
+      simpl. apply Nat.eqb_eq in Heq. subst.
+      apply Nat.le_refl.
+    + (* l <> l': recurse *)
+      simpl. apply Nat.max_le_compat.
+      * apply Nat.le_refl.
+      * apply IH.
+Qed.
+
+(** Helper: l is at most store_max after updating at l *)
+Lemma store_max_update_includes_l : forall l v st,
+  l <= store_max (store_update l v st).
+Proof.
+  intros l v st. revert l v.
+  induction st as [| [l' v'] st' IH]; intros l v; simpl.
+  - (* Empty store: result is (l,v)::nil, max is max(l,0) = l *)
+    simpl. lia.
+  - (* Non-empty store *)
+    destruct (Nat.eqb l l') eqn:Heq.
+    + (* l = l': replace at head, max includes l *)
+      simpl. apply Nat.eqb_eq in Heq. subst.
+      apply Nat.le_max_l.
+    + (* l <> l': recurse, l is in the tail *)
+      simpl. apply Nat.le_trans with (m := store_max (store_update l v st')).
+      * apply IH.
+      * apply Nat.le_max_r.
+Qed.
+
+(** Helper: store_max after update at same location gives same result *)
+Lemma store_max_update_eq : forall l v1 v2 st1 st2,
+  store_max st1 = store_max st2 ->
+  store_max (store_update l v1 st1) = store_max (store_update l v2 st2).
+Proof.
+  intros l v1 v2 st1 st2 Heq.
+  (* Key insight: store_max (store_update l v st) = max(l, store_max st) *)
+  (* Since store_max st1 = store_max st2, the results are equal *)
+  apply Nat.le_antisymm.
+  - (* store_max (store_update l v1 st1) <= store_max (store_update l v2 st2) *)
+    apply Nat.le_trans with (m := Nat.max l (store_max st1)).
+    + apply store_max_update_bound.
+    + rewrite Heq. apply Nat.max_lub.
+      * apply store_max_update_includes_l.
+      * apply store_max_update_lower.
+  - (* Symmetric case *)
+    apply Nat.le_trans with (m := Nat.max l (store_max st2)).
+    + apply store_max_update_bound.
+    + rewrite <- Heq. apply Nat.max_lub.
+      * apply store_max_update_includes_l.
+      * apply store_max_update_lower.
+Qed.
+
 (** Updating same location in related stores preserves simple relation *)
 Lemma store_rel_simple_update : forall Σ st1 st2 l v1 v2,
   store_rel_simple Σ st1 st2 ->
@@ -78,13 +167,52 @@ Lemma store_rel_simple_update : forall Σ st1 st2 l v1 v2,
 Proof.
   intros Σ st1 st2 l v1 v2 H.
   unfold store_rel_simple in *.
-  (* store_max is preserved by store_update at existing location *)
-  (* For fresh location, max increases by 1 *)
-  (* This depends on store_update implementation *)
-  (* In the list-based implementation, update doesn't change max *)
-  (* unless adding new location *)
-  admit.
-Admitted.
+  apply store_max_update_eq. exact H.
+Qed.
+
+(** ** Store Lookup and Update Properties *)
+
+(** Looking up updated location returns the new value *)
+Lemma store_lookup_update_eq : forall l v st,
+  store_lookup l (store_update l v st) = Some v.
+Proof.
+  intros l v st. revert l v.
+  induction st as [| [l' v'] st' IH]; intros l v; simpl.
+  - (* Empty store: store_update l v nil = (l,v)::nil *)
+    (* store_lookup l ((l,v)::nil) = if l=?l then Some v else None *)
+    rewrite Nat.eqb_refl. reflexivity.
+  - (* Non-empty store *)
+    destruct (Nat.eqb l l') eqn:Heq.
+    + (* l = l': store_update returns (l,v)::st' *)
+      (* store_lookup l ((l,v)::st') checks l=?l *)
+      simpl. rewrite Nat.eqb_refl. reflexivity.
+    + (* l <> l': store_update recurses *)
+      simpl. rewrite Heq. apply IH.
+Qed.
+
+(** Looking up different location after update is unchanged *)
+Lemma store_lookup_update_neq : forall l l' v st,
+  l <> l' ->
+  store_lookup l' (store_update l v st) = store_lookup l' st.
+Proof.
+  intros l l' v st Hneq. revert l l' v Hneq.
+  induction st as [| [l'' v''] st' IH]; intros l l' v Hneq; simpl.
+  - (* Empty store *)
+    destruct (Nat.eqb l' l) eqn:Heq.
+    + apply Nat.eqb_eq in Heq. symmetry in Heq. contradiction.
+    + reflexivity.
+  - (* Non-empty store *)
+    destruct (Nat.eqb l l'') eqn:Heq1.
+    + (* l = l'' *)
+      simpl. apply Nat.eqb_eq in Heq1. subst l''.
+      destruct (Nat.eqb l' l) eqn:Heq2.
+      * apply Nat.eqb_eq in Heq2. symmetry in Heq2. contradiction.
+      * reflexivity.
+    + (* l <> l'' *)
+      simpl. destruct (Nat.eqb l' l'') eqn:Heq2.
+      * reflexivity.
+      * apply IH. exact Hneq.
+Qed.
 
 (** ** Full Store Relation Update
 
@@ -103,8 +231,8 @@ Proof.
   unfold store_rel_le in *.
   destruct Hst as [Hmax Hlocs].
   split.
-  - (* store_max preserved - similar to above *)
-    admit.
+  - (* store_max preserved *)
+    apply store_max_update_eq. exact Hmax.
   - (* All locations still related *)
     intros l' T' sl' Hlook'.
     destruct (Nat.eq_dec l l') as [Heq | Hneq].
@@ -114,12 +242,16 @@ Proof.
       rewrite Hlook in Hlook'. injection Hlook' as Heq1 Heq2.
       subst T' sl'.
       (* After update, we have the new related values *)
-      admit.
+      rewrite store_lookup_update_eq.
+      rewrite store_lookup_update_eq.
+      exact Hval.
     + (* l <> l' - unchanged location *)
       specialize (Hlocs l' T' sl' Hlook').
       (* store_update at different location doesn't change lookup *)
-      admit.
-Admitted.
+      rewrite store_lookup_update_neq by exact Hneq.
+      rewrite store_lookup_update_neq by exact Hneq.
+      exact Hlocs.
+Qed.
 
 (** ** Store Allocation Properties
 
