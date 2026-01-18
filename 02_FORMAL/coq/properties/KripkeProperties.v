@@ -191,6 +191,32 @@ Proof.
   subst. apply val_rel_le_build_string.
 Qed.
 
+(** Build val_rel_le for TBytes at any step (requires v1 = v2) *)
+Lemma val_rel_le_build_bytes : forall m Σ v,
+  value v -> closed_expr v ->
+  val_rel_le m Σ TBytes v v.
+Proof.
+  induction m as [|m' IH]; intros Σ v Hv Hc.
+  - simpl. exact I.
+  - simpl. split.
+    + apply IH; auto.
+    + unfold val_rel_struct. repeat split; auto.
+Qed.
+
+(** Step-up for TBytes (requires v1 = v2 from val_rel_struct) *)
+Lemma val_rel_le_step_up_bytes : forall n m Σ v1 v2,
+  val_rel_le n Σ TBytes v1 v2 ->
+  n > 0 ->
+  val_rel_le m Σ TBytes v1 v2.
+Proof.
+  intros n m Σ v1 v2 Hrel Hn.
+  destruct n as [|n']; [lia|].
+  simpl in Hrel. destruct Hrel as [_ Hstruct].
+  unfold val_rel_struct in Hstruct.
+  destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & Heq).
+  subst. apply val_rel_le_build_bytes; auto.
+Qed.
+
 (** Build val_rel_le for secrets at any step (requires knowing the values) *)
 Lemma val_rel_le_build_secret : forall m Σ l v1 v2,
   value v1 -> value v2 ->
@@ -303,11 +329,12 @@ Qed.
     The full proof would use ty_size_induction from TypeMeasure.v.
 *)
 (** Helper lemma for building relations on indistinguishable types.
-    NOTE: Full proof requires handling all type cases; admitted for now. *)
+    These are types where val_rel_struct is True (not requiring equality).
+    NOTE: TBytes is excluded because it requires v1 = v2. *)
 Lemma val_rel_le_build_indist : forall m Σ T v1 v2,
   value v1 -> value v2 -> closed_expr v1 -> closed_expr v2 ->
   match T with
-  | TBytes | TSecret _ | TLabeled _ _ | TTainted _ _ | TSanitized _ _
+  | TSecret _ | TLabeled _ _ | TTainted _ _ | TSanitized _ _
   | TCapability _ | TCapabilityFull _ | TProof _
   | TChan _ | TSecureChan _ _ | TConstantTime _ | TZeroizing _
   | TList _ | TOption _ => True
@@ -321,9 +348,9 @@ Proof.
   - simpl. split.
     + apply IH.
     + unfold val_rel_struct. repeat split; auto.
-      (* Match T against the indistinguishable types *)
+      (* Match T against the indistinguishable types - all have True as their case *)
       destruct T; simpl in *; auto; try contradiction.
-Admitted.
+Qed.
 
 Lemma val_rel_le_step_up_fo : forall n m Σ T v1 v2,
   first_order_type T = true ->
@@ -343,11 +370,7 @@ Proof.
   - (* 3. TInt *) apply val_rel_le_step_up_int with n; auto.
   - (* 4. TString *) apply val_rel_le_step_up_string with n; auto.
   - (* 5. TBytes *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
+    apply val_rel_le_step_up_bytes with n; auto.
   - (* 6. TFn - not first-order, contradiction *)
     simpl in Hfo. discriminate.
   - (* 7. TProd - use step independence for first-order types *)

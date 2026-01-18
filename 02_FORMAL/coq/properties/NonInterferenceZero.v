@@ -244,10 +244,19 @@ Lemma val_rel_le_step_up_pos : forall n Σ T v1 v2,
   val_rel_le (S n) Σ T v1 v2 ->
   val_rel_le (S (S n)) Σ T v1 v2.
 Proof.
-  (* This lemma requires complex bullet structure that Coq's bullet
-     mechanism doesn't handle well. The proof sketch is documented
-     in the comments above. Full proof requires Phase 2 infrastructure. *)
-Admitted.
+  intros n Σ T v1 v2 Hrel.
+  simpl in Hrel. destruct Hrel as [Hprev [Hv1 [Hv2 [Hc1 [Hc2 HT]]]]].
+  simpl. split.
+  - (* val_rel_le (S n): we have this as premise *)
+    simpl. split; [exact Hprev|].
+    repeat split; assumption.
+  - (* Structural part at S (S n) *)
+    repeat split; try assumption.
+    (* Type-specific: TFn, TProd, TSum need recursive step_up.
+       All other types have HT directly usable.
+       Full proof requires well-founded induction on type measure. *)
+    destruct T; try exact HT; admit.
+Admitted. (* Requires well-founded induction on type structure *)
 
 (** LEMMA 3b: Original step_up - requires typing for n=0 case
 
