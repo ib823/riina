@@ -101,13 +101,15 @@ Qed.
 (** Declassification evaluates to the unwrapped value *)
 Lemma declassify_eval : forall v p st ctx,
   value v ->
+  declass_ok (EClassify v) p ->
   multi_step (EDeclassify (EClassify v) p, st, ctx) (v, st, ctx).
 Proof.
-  (* Single step: SDeclassify *)
-  intros v p st ctx Hv.
-  (* This requires showing the operational semantics step *)
-  admit.
-Admitted.
+  intros v p st ctx Hv Hok.
+  (* Single step via ST_DeclassifyValue, then reflexivity *)
+  apply MS_Step with (cfg2 := (v, st, ctx)).
+  - apply ST_DeclassifyValue; auto.
+  - apply MS_Refl.
+Qed.
 
 (** ** Main Lemma: Declassification Preserves Relation
 
@@ -138,7 +140,7 @@ Proof.
   intros n Σ T v1 v2 p st1 st2 ctx Hrel Hst.
   repeat split.
   - (* Evaluation of declassify on v1 *)
-    (* Requires value v1 - extract from val_rel_le *)
+    (* Requires value v1 and declass_ok - extract from val_rel_le *)
     destruct n as [|n'].
     + (* n = 0 *)
       admit.
@@ -147,7 +149,10 @@ Proof.
       destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
       (* EClassify v1 is a value means v1 is a value *)
       inversion Hv1. subst.
-      apply declassify_eval. exact H0.
+      apply declassify_eval.
+      * exact H0.
+      * (* declass_ok - requires policy premise, admit for now *)
+        admit.
   - (* Evaluation of declassify on v2 *)
     destruct n as [|n'].
     + admit.
@@ -155,7 +160,9 @@ Proof.
       unfold val_rel_struct in Hstruct.
       destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
       inversion Hv2. subst.
-      apply declassify_eval. exact H0.
+      apply declassify_eval.
+      * exact H0.
+      * admit.
   - (* Store unchanged *)
     exact Hst.
 Admitted.
