@@ -72,6 +72,24 @@ RIINA is the world's **first formally verified programming language** with:
 
 **Full syntax specification:** `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md`
 
+### 0.5 Current Project Status (2026-01-18)
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Overall Grade** | B+ (80%) | Foundations solid, proofs ongoing |
+| **Research Tracks** | 218 | 55 existing + 163 new identified |
+| **Axioms (Current)** | 19 | Target: 0 |
+| **Theorems (Required)** | ~2,500 | Comprehensive coverage |
+| **Threats Covered** | 1,231+ | All made obsolete |
+| **Coq Compilation** | ✅ PASSING | make succeeds |
+| **Rust Tests** | ✅ 503 PASSING | All tests pass |
+
+**Phase Status:**
+- Phase 0 (Foundation): 85% complete
+- Phase 1-6: Defined, not started
+
+**See `PROGRESS.md` for detailed status.**
+
 ---
 
 ## 1. REPOSITORY OVERVIEW
@@ -521,31 +539,32 @@ git add -A && git commit -m "[RECOVERY] Uncommitted work from disconnect"
 
 ## 8. CURRENT PRIORITIES
 
-### Immediate (P0)
+### Phase 0: Foundation Verification (Current Phase - 85% Complete)
 
-1. **Complete TERAS → RIINA rename** — All crates, modules, documentation
-2. **Track F** — Complete ML-KEM/ML-DSA implementations
-3. **Track A** — Fix `Typing.v` proof for extended rules
+1. **Fix CumulativeMonotone.v TFn case** — Step monotonicity proof
+2. **Complete step monotonicity proof** — Required for axiom elimination
+3. **Verify all foundations compile** — Zero compilation errors
 
-### Short-term (P1)
+### Phase 1: Axiom Elimination (19 → 0) — Next Phase
 
-1. **Track A** — Extend non-interference to stateful programs
-2. **Track V** — Formalize termination system in Coq
-3. **Track Z** — Formalize declassification policies
-4. **Create example .rii files** — Demonstrate Bahasa Melayu syntax
+| Priority | Axiom Category | Count | Target |
+|----------|----------------|-------|--------|
+| P0 | Semantic typing axioms | 4 | Prove or eliminate |
+| P0 | Step-up axioms | 3 | Prove via step-indexed structure |
+| P1 | Step-1 termination axioms | 7 | Extract from semantics |
+| P1 | Higher-order conversion | 2 | Prove type compatibility |
+| P2 | Higher-order Kripke | 2 | Prove world monotonicity |
+| P2 | Application | 1 | Complete application proof |
 
-### Medium-term (P2)
+### Phase 2-6: Future Phases
 
-1. **Track R** — Begin translation validation prototype
-2. **Track X** — Formalize session types
-3. **Track W** — Formalize memory allocator
+- **Phase 2**: Core Properties (~375 theorems)
+- **Phase 3**: Domain Properties (~2,570 theorems)
+- **Phase 4**: Implementation Verification
+- **Phase 5**: Multi-Prover Verification (Coq + Lean + Isabelle)
+- **Phase 6**: Production Hardening
 
-### Long-term (P3)
-
-1. **Track T** — Hermetic bootstrap chain
-2. **Track S** — Formal ISA model
-3. **Track U** — seL4 integration
-4. **Track Y** — Verified standard library
+**See `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` for full phase definitions.**
 
 ---
 
@@ -553,11 +572,27 @@ git add -A && git commit -m "[RECOVERY] Uncommitted work from disconnect"
 
 ### 9.1 Key Specifications (in 01_RESEARCH/)
 
+**Authoritative Planning Documents:**
+- `MASTER_ATTACK_PLAN_COMPLETE.md` — **Definitive 6-phase attack plan**
+- `MASTER_THREAT_MODEL.md` — All 350+ threat categories
+- `TRACEABILITY_MATRIX.md` — Threat → Proof mapping
+- `COMPLETE_GAP_ANALYSIS.md` — Consolidated gap analysis
+
+**Gap Analysis Documents:**
+- `NETWORKING_COMPLETE_ENUMERATION.md` — 439 protocols, 449 threats
+- `FULLSTACK_UIUX_REVOLUTIONARY.md` — 627 technologies, 432 threats
+- `DATA_STORAGE_COMPLETE_ENUMERATION.md` — 77 types, 312 threats
+- `PERFORMANCE_ABSOLUTE_SUPREMACY.md` — 127 techniques, proven bounds
+- `REMAINING_CONCERNS_ZERO_AXIOMS.md` — 74 post-axiom concerns
+
+**Language Specifications:**
 - `RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md` — **Bahasa Melayu syntax specification**
 - `CTSS_v1_0_1.md` — Core Type System Specification
 - `RIINA-LANG-LEXER-SPEC_v1_0_0.md` — Lexer specification
 - `RIINA-LANG-GRAMMAR-*.md` — Grammar specifications
 - `RIINA-LANG-AST_v1_0_0.md` — AST specification
+
+**Track Foundation Documents:**
 - `RESEARCH_R01_FOUNDATION.md` — Translation Validation
 - `RESEARCH_S01_FOUNDATION.md` — Hardware Contracts
 - `RESEARCH_T01_FOUNDATION.md` — Hermetic Bootstrap
@@ -627,4 +662,4 @@ When encountering old references, update them to the new naming.
 
 *"Security proven. Family driven."*
 
-*Last updated: 2026-01-15*
+*Last updated: 2026-01-18*
