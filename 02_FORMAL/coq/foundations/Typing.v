@@ -470,4 +470,174 @@ Proof.
     end.
 Qed.
 
+(** ** Canonical Forms
+
+    Canonical forms lemmas: if a value has a certain type, it must have
+    a specific syntactic form. These are essential for proving progress
+    and for the exp_rel_step1_* axioms in NonInterference.v.
+
+    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
+*)
+
+(** Unit type: only EUnit is a value of type TUnit *)
+Lemma canonical_forms_unit : forall Γ Σ Δ v ε,
+  value v ->
+  has_type Γ Σ Δ v TUnit ε ->
+  v = EUnit.
+Proof.
+  intros Γ Σ Δ v ε Hval Htype.
+  inversion Hval; subst; inversion Htype; reflexivity.
+Qed.
+
+(** Bool type: only EBool b is a value of type TBool *)
+Lemma canonical_forms_bool : forall Γ Σ Δ v ε,
+  value v ->
+  has_type Γ Σ Δ v TBool ε ->
+  exists b, v = EBool b.
+Proof.
+  intros Γ Σ Δ v ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists b. reflexivity.
+Qed.
+
+(** Int type: only EInt n is a value of type TInt *)
+Lemma canonical_forms_int : forall Γ Σ Δ v ε,
+  value v ->
+  has_type Γ Σ Δ v TInt ε ->
+  exists n, v = EInt n.
+Proof.
+  intros Γ Σ Δ v ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists n. reflexivity.
+Qed.
+
+(** String type: only EString s is a value of type TString *)
+Lemma canonical_forms_string : forall Γ Σ Δ v ε,
+  value v ->
+  has_type Γ Σ Δ v TString ε ->
+  exists s, v = EString s.
+Proof.
+  intros Γ Σ Δ v ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists s. reflexivity.
+Qed.
+
+(** Function type: only ELam is a value of function type *)
+Lemma canonical_forms_fn : forall Γ Σ Δ v T1 T2 ε_fn ε,
+  value v ->
+  has_type Γ Σ Δ v (TFn T1 T2 ε_fn) ε ->
+  exists x body, v = ELam x T1 body.
+Proof.
+  intros Γ Σ Δ v T1 T2 ε_fn ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists x, e. reflexivity.
+Qed.
+
+(** Product type: only EPair is a value of product type *)
+Lemma canonical_forms_prod : forall Γ Σ Δ v T1 T2 ε,
+  value v ->
+  has_type Γ Σ Δ v (TProd T1 T2) ε ->
+  exists v1 v2, v = EPair v1 v2 /\ value v1 /\ value v2.
+Proof.
+  intros Γ Σ Δ v T1 T2 ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists v1, v2. repeat split; assumption.
+Qed.
+
+(** Sum type: only EInl or EInr is a value of sum type *)
+Lemma canonical_forms_sum : forall Γ Σ Δ v T1 T2 ε,
+  value v ->
+  has_type Γ Σ Δ v (TSum T1 T2) ε ->
+  (exists v', v = EInl v' T2 /\ value v') \/
+  (exists v', v = EInr v' T1 /\ value v').
+Proof.
+  intros Γ Σ Δ v T1 T2 ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  - (* VInl *)
+    left. exists v0. split; [reflexivity | assumption].
+  - (* VInr *)
+    right. exists v0. split; [reflexivity | assumption].
+Qed.
+
+(** Reference type: only ELoc is a value of reference type *)
+Lemma canonical_forms_ref : forall Γ Σ Δ v T sl ε,
+  value v ->
+  has_type Γ Σ Δ v (TRef T sl) ε ->
+  exists l, v = ELoc l.
+Proof.
+  intros Γ Σ Δ v T sl ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists l. reflexivity.
+Qed.
+
+(** Secret type: only EClassify is a value of secret type *)
+Lemma canonical_forms_secret : forall Γ Σ Δ v T ε,
+  value v ->
+  has_type Γ Σ Δ v (TSecret T) ε ->
+  exists v', v = EClassify v' /\ value v'.
+Proof.
+  intros Γ Σ Δ v T ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists v0. split; [reflexivity | assumption].
+Qed.
+
+(** Proof type: only EProve is a value of proof type *)
+Lemma canonical_forms_proof : forall Γ Σ Δ v T ε,
+  value v ->
+  has_type Γ Σ Δ v (TProof T) ε ->
+  exists v', v = EProve v' /\ value v'.
+Proof.
+  intros Γ Σ Δ v T ε Hval Htype.
+  inversion Hval; subst; inversion Htype; subst.
+  exists v0. split; [reflexivity | assumption].
+Qed.
+
+(** ** Combined Canonical Forms
+
+    A single lemma that provides canonical form information for any type.
+    Useful for automated proofs.
+*)
+Lemma canonical_forms : forall Γ Σ Δ v T ε,
+  value v ->
+  has_type Γ Σ Δ v T ε ->
+  match T with
+  | TUnit => v = EUnit
+  | TBool => exists b, v = EBool b
+  | TInt => exists n, v = EInt n
+  | TString => exists s, v = EString s
+  | TFn T1 T2 _ => exists x body, v = ELam x T1 body
+  | TProd T1 T2 => exists v1 v2, v = EPair v1 v2 /\ value v1 /\ value v2
+  | TSum T1 T2 => (exists v', v = EInl v' T2 /\ value v') \/
+                   (exists v', v = EInr v' T1 /\ value v')
+  | TRef T' sl => exists l, v = ELoc l
+  | TSecret T' => exists v', v = EClassify v' /\ value v'
+  | TProof T' => exists v', v = EProve v' /\ value v'
+  (* Other types - treat as True for extensibility *)
+  | _ => True
+  end.
+Proof.
+  intros Γ Σ Δ v T ε Hval Htype.
+  destruct T; try exact I.
+  - (* TUnit *)
+    eapply canonical_forms_unit; eassumption.
+  - (* TBool *)
+    eapply canonical_forms_bool; eassumption.
+  - (* TInt *)
+    eapply canonical_forms_int; eassumption.
+  - (* TString *)
+    eapply canonical_forms_string; eassumption.
+  - (* TFn *)
+    eapply canonical_forms_fn; eassumption.
+  - (* TProd *)
+    eapply canonical_forms_prod; eassumption.
+  - (* TSum *)
+    eapply canonical_forms_sum; eassumption.
+  - (* TRef *)
+    eapply canonical_forms_ref; eassumption.
+  - (* TSecret *)
+    eapply canonical_forms_secret; eassumption.
+  - (* TProof *)
+    eapply canonical_forms_proof; eassumption.
+Qed.
+
 (** End of Typing.v *)
