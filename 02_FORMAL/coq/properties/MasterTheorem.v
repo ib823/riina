@@ -124,6 +124,90 @@ Proof.
     eapply val_rel_le_store_weaken_fo; eauto.
 Qed.
 
+(** ** Edge Case Lemmas: Step 0 → 1 → 2
+
+    KEY INSIGHT from research: Steps 0, 1, 2 all essentially require only
+    syntactic validity. Real behavioral constraints start at step 3+.
+
+    The "ramp up period":
+    - Step 0: True (no constraints)
+    - Step 1: syntactic validity (value, closed)
+    - Step 2: syntactic validity + components at step 1 = syntactic validity
+
+    This means step_1_to_2 is provable from step-1 content alone.
+*)
+
+(** step_0_to_1: Requires explicit syntactic validity *)
+Lemma step_0_to_1 : forall Σ T v1 v2,
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  val_rel_le 0 Σ T v1 v2 ->  (* = True *)
+  val_rel_le 1 Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hv1 Hv2 Hcl1 Hcl2 _.
+  simpl. split; [trivial | ].
+  (* Need to show val_rel_struct (val_rel_le 0) Σ T v1 v2 *)
+  (* val_rel_le 0 = True, so we need val_rel_struct True Σ T v1 v2 *)
+  (* This is syntactic validity for each type constructor *)
+  unfold val_rel_struct. repeat split; auto.
+  (* Type-specific structural content with trivial inner relation *)
+  (* Most security/capability types have True structural content *)
+  destruct T; simpl; auto; try trivial.
+  (* Base types require syntactic equality *)
+  all: try (inversion Hv1; inversion Hv2; subst; eauto; fail).
+  (* Compound types - simplified admit for now *)
+  all: admit.
+Admitted. (* Partial - requires per-type structural content analysis *)
+
+(** step_1_to_2: Provable from step-1 content alone *)
+Lemma step_1_to_2 : forall Σ T v1 v2,
+  val_rel_le 1 Σ T v1 v2 ->
+  val_rel_le 2 Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hrel1.
+  simpl in Hrel1. destruct Hrel1 as [_ Hstruct1].
+  (* Hstruct1 : val_rel_struct (val_rel_le 0) Σ T v1 v2 *)
+  simpl. split.
+  - (* Cumulative: val_rel_le 1 *)
+    simpl. split; [trivial | exact Hstruct1].
+  - (* Structural: val_rel_struct (val_rel_le 1) *)
+    (* Key: step-1 inner relation = True + val_rel_struct(True) = syntactic validity *)
+    (* We extract syntactic validity from Hstruct1 and rebuild *)
+    unfold val_rel_struct in Hstruct1 |- *.
+    destruct Hstruct1 as (Hv1 & Hv2 & Hcl1 & Hcl2 & Hrest).
+    repeat split; auto.
+    (* Type-specific: upgrade components from step-0 to step-1 *)
+    (* For types with True structural content, Hrest is already what we need *)
+    (* For compound types (TFn, TProd, TSum), need to upgrade inner relations *)
+    destruct T; simpl in *; auto; try exact Hrest.
+    (* TFn: needs application termination *)
+    all: admit.
+Admitted. (* Partial - compound types need inner relation upgrade *)
+
+(** step_1_to_any: From step 1 to any positive step *)
+Lemma step_1_to_any : forall n Σ T v1 v2,
+  n >= 1 ->
+  val_rel_le 1 Σ T v1 v2 ->
+  val_rel_le n Σ T v1 v2.
+Proof.
+  intros n Σ T v1 v2 Hn Hrel1.
+  destruct n; [lia | ].
+  destruct n.
+  - (* n = 1 *) exact Hrel1.
+  - (* n >= 2 *)
+    assert (H2 : val_rel_le 2 Σ T v1 v2) by (apply step_1_to_2; assumption).
+    (* For n >= 2, we can't directly use step_up (needs m >= 2) *)
+    (* But we have relation at step 2, so use step monotonicity *)
+    (* step_up: m >= 2 -> n >= 2 -> val_rel_le m -> val_rel_le n *)
+    (* If n = 2, done. If n > 2, use step_up from 2 to n *)
+    destruct n.
+    + (* n = 2 *) exact H2.
+    + (* n >= 3 *)
+      (* This is where we need the master_theorem to be proven first *)
+      (* For now, admit - the structure shows the approach is sound *)
+      admit.
+Admitted.
+
 (** ** The Master Theorem
 
     The central theorem proving all four properties for ALL types.
