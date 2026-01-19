@@ -259,6 +259,79 @@ Proof.
   intros T H. simpl in H. exact H.
 Qed.
 
+(** ** First-Order Compound Type Depth
+
+    For first-order types, the step count needed for full structural
+    information is determined by the nesting depth of TProd/TSum only.
+    Other type constructors (TRef, TList, etc.) don't require extra steps.
+
+    CRITICAL FOR val_rel_le_fo_step_independent:
+    - At step 0: val_rel_le 0 = True (no info)
+    - At step 1: outer structure known, components at step 0
+    - At step n+1: outer + component relations at step n
+    - Need m > fo_compound_depth T for full structural info
+*)
+
+Fixpoint fo_compound_depth (T : ty) : nat :=
+  match T with
+  (* Compound types that need recursive structure *)
+  | TProd T1 T2 => 1 + Nat.max (fo_compound_depth T1) (fo_compound_depth T2)
+  | TSum T1 T2 => 1 + Nat.max (fo_compound_depth T1) (fo_compound_depth T2)
+  (* Everything else: depth 0 (no cumulative structure needed) *)
+  | _ => 0
+  end.
+
+(** fo_compound_depth for TProd *)
+Lemma fo_compound_depth_prod : forall T1 T2,
+  fo_compound_depth (TProd T1 T2) = 1 + Nat.max (fo_compound_depth T1) (fo_compound_depth T2).
+Proof.
+  intros. reflexivity.
+Qed.
+
+(** fo_compound_depth for TSum *)
+Lemma fo_compound_depth_sum : forall T1 T2,
+  fo_compound_depth (TSum T1 T2) = 1 + Nat.max (fo_compound_depth T1) (fo_compound_depth T2).
+Proof.
+  intros. reflexivity.
+Qed.
+
+(** Component depths are less than parent *)
+Lemma fo_compound_depth_prod_left : forall T1 T2,
+  fo_compound_depth T1 < fo_compound_depth (TProd T1 T2).
+Proof.
+  intros. simpl. lia.
+Qed.
+
+Lemma fo_compound_depth_prod_right : forall T1 T2,
+  fo_compound_depth T2 < fo_compound_depth (TProd T1 T2).
+Proof.
+  intros. simpl. lia.
+Qed.
+
+Lemma fo_compound_depth_sum_left : forall T1 T2,
+  fo_compound_depth T1 < fo_compound_depth (TSum T1 T2).
+Proof.
+  intros. simpl. lia.
+Qed.
+
+Lemma fo_compound_depth_sum_right : forall T1 T2,
+  fo_compound_depth T2 < fo_compound_depth (TSum T1 T2).
+Proof.
+  intros. simpl. lia.
+Qed.
+
+(** Primitive and simple types have depth 0 *)
+Lemma fo_compound_depth_primitive : forall T,
+  match T with
+  | TProd _ _ | TSum _ _ => False
+  | _ => True
+  end ->
+  fo_compound_depth T = 0.
+Proof.
+  intros T H.
+  destruct T; simpl in *; try reflexivity; try contradiction.
+Qed.
+
 (** ** Type Depth for Alternative Measure
 
     Depth = max nesting level, alternative to size.

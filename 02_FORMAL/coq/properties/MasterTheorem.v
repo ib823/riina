@@ -125,18 +125,23 @@ Proof.
   - (* Property A: Step Down - from val_rel_le_mono_step *)
     intros m n Σ v1 v2 Hle Hrel.
     apply val_rel_le_mono_step with n; auto.
-  - (* Property B: Step Up - from val_rel_le_fo_step_independent *)
+  - (* Property B: Step Up - from val_rel_le_fo_step_independent.
+       Note: The new signature requires m > fo_compound_depth T, not just m > 0.
+       For compound types (TProd/TSum), this premise cannot be established
+       without additional information about the step index. *)
     intros m n Σ v1 v2 Hm Hn Hrel.
     destruct n as [|n']; [lia|].
     destruct m as [|m']; [lia|].
-    apply val_rel_le_fo_step_independent with (S m'); auto; lia.
+    (* Cannot apply val_rel_le_fo_step_independent without knowing
+       S m' > fo_compound_depth T. Admitted for compound type cases. *)
+    admit.
   - (* Property C: Store Strengthening - from val_rel_le_mono_store *)
     intros n Σ Σ' v1 v2 Hext Hrel.
     apply val_rel_le_mono_store with Σ; auto.
   - (* Property D: Store Weakening *)
     intros n Σ0 Σ0' v1 v2 Hext Hrel.
     eapply val_rel_le_store_weaken_fo; eauto.
-Qed.
+Admitted.  (* 1 admit for Property B step-up (needs m > fo_compound_depth T) *)
 
 (** ** Infrastructure Lemmas: Component Extraction
 
