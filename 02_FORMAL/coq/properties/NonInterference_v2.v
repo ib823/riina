@@ -237,6 +237,65 @@ Lemma store_rel_n_S_unfold : forall n Σ st1 st2,
 Proof. reflexivity. Qed.
 
 (** ========================================================================
+    SECTION 3.5: FIRST-ORDER EQUIVALENCE
+    ========================================================================
+
+    KEY THEOREM: For first-order types, val_rel_at_type equals val_rel_at_type_fo.
+
+    This is because first-order types don't use the predicate parameters (sp, vl, sl).
+    The predicates are only used for TFn types (function types).
+*)
+
+Lemma val_rel_at_type_fo_equiv : forall T Σ sp vl sl v1 v2,
+  first_order_type T = true ->
+  val_rel_at_type Σ sp vl sl T v1 v2 <-> val_rel_at_type_fo T v1 v2.
+Proof.
+  intros T.
+  induction T; intros Σ' sp vl sl v1 v2 Hfo; simpl in Hfo; try discriminate.
+  - (* TUnit *) simpl. tauto.
+  - (* TBool *) simpl. tauto.
+  - (* TInt *) simpl. tauto.
+  - (* TString *) simpl. tauto.
+  - (* TBytes *) simpl. tauto.
+  - (* TProd *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    simpl. split.
+    + intros [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hr1 Hr2]]]]]]].
+      exists x1, y1, x2, y2. repeat split; try assumption.
+      * apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
+      * apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+    + intros [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hr1 Hr2]]]]]]].
+      exists x1, y1, x2, y2. repeat split; try assumption.
+      * apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
+      * apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+  - (* TSum *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    simpl. split.
+    + intros [[x1 [x2 [Heq1 [Heq2 Hr]]]] | [y1 [y2 [Heq1 [Heq2 Hr]]]]].
+      * left. exists x1, x2. repeat split; try assumption.
+        apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
+      * right. exists y1, y2. repeat split; try assumption.
+        apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+    + intros [[x1 [x2 [Heq1 [Heq2 Hr]]]] | [y1 [y2 [Heq1 [Heq2 Hr]]]]].
+      * left. exists x1, x2. repeat split; try assumption.
+        apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
+      * right. exists y1, y2. repeat split; try assumption.
+        apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+  - (* TList *) simpl. tauto.
+  - (* TOption *) simpl. tauto.
+  - (* TRef *) simpl. tauto.
+  - (* TSecret *) simpl. tauto.
+  - (* TLabeled *) simpl. tauto.
+  - (* TTainted *) simpl. tauto.
+  - (* TSanitized *) simpl. tauto.
+  - (* TProof *) simpl. tauto.
+  - (* TCapability *) simpl. tauto.
+  - (* TCapabilityFull *) simpl. tauto.
+  - (* TConstantTime *) simpl. tauto.
+  - (* TZeroizing *) simpl. tauto.
+Qed.
+
+(** ========================================================================
     SECTION 4: EXTRACTION LEMMAS FROM THE NEW VAL_REL_N
     ========================================================================
 
@@ -375,11 +434,9 @@ Proof.
       repeat split; try assumption.
       destruct (first_order_type T) eqn:Hfo.
       * (* First-order: need to extract val_rel_at_type_fo from val_rel_at_type *)
-        (* This requires showing FO predicates are independent - use recursion *)
-        clear IHn.
-        (* For first-order types, val_rel_at_type = val_rel_at_type_fo *)
-        (* This is proven separately in ValRelFOEquiv.v *)
-        admit.
+        (* Use val_rel_at_type_fo_equiv to convert *)
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+        exact Hrat.
       * (* Higher-order: True *)
         exact I.
     + (* m = S m' *)
@@ -389,7 +446,17 @@ Proof.
       * apply IHn. lia. exact Hrec.
       * repeat split; try assumption.
         (* val_rel_at_type at m' from val_rel_at_type at n' *)
-        admit. (* Requires predicate monotonicity - tedious but standard *)
+        destruct (first_order_type T) eqn:Hfo.
+        -- (* First-order: predicates don't matter *)
+           apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
+           apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+           exact Hrat.
+        -- (* Higher-order: requires predicate monotonicity for TFn *)
+           (* For TFn types, val_rel_at_type uses val_rel_lower and store_rel_lower *)
+           (* which are val_rel_n m' and store_rel_n m' respectively *)
+           (* We have it at n', need it at m' where m' <= n' *)
+           (* This requires showing Kripke property at lower steps *)
+           admit. (* TFn predicate monotonicity - complex *)
 Admitted.
 
 (** Downward monotonicity for store_rel_n *)
@@ -729,7 +796,16 @@ Proof.
     (* val_rel_at_type at step n *)
     destruct (first_order_type T) eqn:Hfo.
     + (* First-order: predicate-independent, can extract from val_rel_n n *)
-      admit. (* Follows from val_rel_at_type_fo_equiv *)
+      (* For FO types: extract val_rel_at_type_fo from Hrel, then convert *)
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
+      destruct n; simpl in Hrel.
+      * (* n = 0: val_rel_at_type_fo is directly in Hrel *)
+        destruct Hrel as [_ [_ [_ [_ Hfo_rel]]]].
+        rewrite Hfo in Hfo_rel. exact Hfo_rel.
+      * (* n = S n': val_rel_at_type is in Hrel, convert to val_rel_at_type_fo *)
+        destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]].
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
+        exact Hrat.
     + (* Higher-order (TFn): requires strong normalization *)
       admit. (* Requires strong normalization proof *)
 Admitted.
