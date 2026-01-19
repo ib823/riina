@@ -40,6 +40,7 @@ properties/Declassification.v
 
 # Properties - Core
 properties/NonInterference.v
+properties/NonInterference_v2.v
 properties/NonInterferenceKripke.v
 properties/NonInterferenceZero.v
 properties/SecurityProperties.v
