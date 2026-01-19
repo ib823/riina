@@ -343,7 +343,74 @@ Proof.
       rewrite Hfo in Hrat. exact Hrat.
 Qed.
 
+(** CRITICAL: Downward monotonicity for first-order types.
+    For FO types, val_rel_n at larger step index implies val_rel_n at smaller step index.
+    This is the FO-specific version that avoids the Kripke complications of TFn.
+
+    Proof strategy:
+    - Induction on n with m generalized
+    - For FO types, val_rel_at_type equals val_rel_at_type_fo at ALL steps
+    - So the structural content is step-independent
+*)
+Lemma val_rel_n_mono_fo : forall m n Σ T v1 v2,
+  first_order_type T = true ->
+  m <= n ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n m Σ T v1 v2.
+Proof.
+  intros m n. generalize dependent m.
+  induction n as [| n' IHn]; intros m Σ T v1 v2 Hfo Hle Hn.
+  - (* Base case: n = 0, so m = 0 *)
+    inversion Hle. exact Hn.
+  - (* Inductive case: n = S n' *)
+    destruct m as [| m'].
+    + (* m = 0: need val_rel_n 0 from val_rel_n (S n') *)
+      rewrite val_rel_n_0_unfold.
+      rewrite val_rel_n_S_unfold in Hn.
+      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+      repeat split; try assumption.
+      (* Need: if first_order_type T then val_rel_at_type_fo T v1 v2 else True *)
+      rewrite Hfo.
+      (* Extract val_rel_at_type_fo from val_rel_at_type *)
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      exact Hrat.
+    + (* m = S m': need val_rel_n (S m') from val_rel_n (S n') *)
+      rewrite val_rel_n_S_unfold.
+      rewrite val_rel_n_S_unfold in Hn.
+      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+      split.
+      * (* val_rel_n m' Σ T v1 v2: use IH *)
+        apply IHn with (Σ := Σ) (T := T); [exact Hfo | lia | exact Hrec].
+      * (* Structural parts *)
+        repeat split; try assumption.
+        (* val_rel_at_type at m' from val_rel_at_type at n' *)
+        (* For FO types, both equal val_rel_at_type_fo *)
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+        exact Hrat.
+Qed.
+
 (** Corollary: For FO types, val_rel_n at any step index implies val_rel_n at any other.
+    Now provable using val_rel_n_step_up_fo and val_rel_n_mono_fo.
+*)
+Lemma val_rel_n_fo_equiv : forall m n Σ T v1 v2,
+  first_order_type T = true ->
+  val_rel_n m Σ T v1 v2 ->
+  val_rel_n n Σ T v1 v2.
+Proof.
+  intros m n Σ T v1 v2 Hfo Hrel.
+  destruct (le_lt_dec m n) as [Hle | Hlt].
+  - (* m <= n: use step_up_fo from 0, then mono_fo down to n *)
+    (* First get val_rel_n 0 *)
+    assert (H0 : val_rel_n 0 Σ T v1 v2).
+    { apply val_rel_n_mono_fo with m; auto. lia. }
+    (* Then step up to n *)
+    apply val_rel_n_step_up_fo; assumption.
+  - (* n < m: use mono_fo *)
+    apply val_rel_n_mono_fo with m; auto. lia.
+Qed.
+
+(** Old corollary comment preserved for reference:
     This follows from step_up_fo + val_rel_n_mono (defined later in Section 5).
     See val_rel_n_fo_step_roundtrip_full at end of file for the proven version.
 *)
