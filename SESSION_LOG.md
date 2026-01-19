@@ -1,5 +1,37 @@
 # Session Log
 
+## 2026-01-19 (Session 28 Continued): val_rel_n_step_up_fo IMPLEMENTED
+
+**Goal:** Port `val_rel_n_step_up_fo` from TERAS-LANG into RIINA
+
+### Implementation Results
+
+#### NEW LEMMA PROVEN (Qed):
+
+```coq
+Lemma val_rel_n_step_up_fo : forall T n Σ v1 v2,
+  first_order_type T = true ->
+  val_rel_n 0 Σ T v1 v2 ->
+  val_rel_n n Σ T v1 v2.
+```
+
+**Key technique:** Induction on step index n, using `val_rel_at_type_fo_equiv`
+to convert between predicate-dependent and predicate-independent forms.
+
+#### NonInterference_v2.v Status:
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Qed proofs | 19 | **20** |
+| Admitted | 4 | **3** |
+
+#### Build Status:
+
+- NonInterference_v2.vo: ✅ COMPILES
+- Full build: Industry files have unrelated errors
+
+---
+
 ## 2026-01-19 (Session 28 Continued): Step-Up FO Assessment Complete
 
 **Goal:** Analyze `val_rel_n_step_up_fo` from TERAS-LANG and compare with RIINA

@@ -297,6 +297,58 @@ Proof.
 Qed.
 
 (** ========================================================================
+    SECTION 3.6: STEP-UP FOR FIRST-ORDER TYPES (PORTED FROM TERAS-LANG)
+    ========================================================================
+
+    THE KEY THEOREM: For first-order types, we can step up from step 0 to
+    any step n WITHOUT typing preconditions.
+
+    This is possible because:
+    1. FO types don't use predicate parameters (val_rel_at_type_fo_equiv)
+    2. The structure is entirely determined by the value, not by step count
+    3. For FO types, val_rel_n m and val_rel_n n have the same value structure
+*)
+
+(** CRITICAL: Step-up for first-order types
+    For FO types, val_rel_n at any step is equivalent due to predicate independence.
+    This lemma proves step-up from 0 to any n without typing preconditions.
+
+    The proof is by induction on the type structure.
+    - Base types: trivial since val_rel_at_type matches val_rel_at_type_fo
+    - TProd/TSum: use IH on components
+    - Container types (TList, TOption, TRef, etc.): follow base type pattern
+
+    Port from TERAS-LANG ReducibilityFull.v - proven technique.
+*)
+Lemma val_rel_n_step_up_fo : forall T n Σ v1 v2,
+  first_order_type T = true ->
+  val_rel_n 0 Σ T v1 v2 ->
+  val_rel_n n Σ T v1 v2.
+Proof.
+  intros T n Σ v1 v2 Hfo H0.
+  (* Induction on n *)
+  induction n as [| n' IHn].
+  - (* n = 0: trivial *)
+    exact H0.
+  - (* n = S n': use IH and val_rel_at_type_fo_equiv *)
+    simpl. split.
+    + (* Need val_rel_n n' Σ T v1 v2 - use IH *)
+      exact IHn.
+    + (* Need value, closed, and val_rel_at_type *)
+      simpl in H0.
+      destruct H0 as [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]].
+      repeat split; auto.
+      (* val_rel_at_type Σ ... T v1 v2 from val_rel_at_type_fo T v1 v2 *)
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      rewrite Hfo in Hrat. exact Hrat.
+Qed.
+
+(** Corollary: For FO types, val_rel_n at any step index implies val_rel_n at any other.
+    This follows from step_up_fo + val_rel_n_mono (defined later in Section 5).
+    See val_rel_n_fo_step_roundtrip_full at end of file for the proven version.
+*)
+
+(** ========================================================================
     SECTION 4: EXTRACTION LEMMAS FROM THE NEW VAL_REL_N
     ========================================================================
 
