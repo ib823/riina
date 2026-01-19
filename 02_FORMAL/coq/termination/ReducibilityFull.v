@@ -300,11 +300,82 @@ Qed.
     development effort.
 *)
 
-(** FUNDAMENTAL THEOREM AXIOM: Well-typed terms are reducible *)
-Axiom fundamental_reducibility : forall Γ Σ pc e T ε ρ,
+(** FUNDAMENTAL THEOREM: Well-typed terms are reducible
+
+    With the simplified Reducible definition (Reducible T e = SN_expr e),
+    this theorem states: well-typed terms under SN substitution are SN.
+
+    The proof is by induction on the typing derivation. Key cases:
+    - Values (Unit, Bool, Int, String, Lam): directly SN by value_SN
+    - Variable: lookup in env_reducible gives SN value
+    - Compound expressions: use IH to get SN components, then construct SN
+*)
+Lemma fundamental_reducibility : forall Γ Σ pc e T ε ρ,
   has_type Γ Σ pc e T ε ->
   env_reducible Γ ρ ->
   Reducible T (subst_env ρ e).
+Proof.
+  intros Γ Σ pc e T ε ρ Hty Henv.
+  unfold Reducible.
+  induction Hty; simpl.
+  (* Base value cases - all are values, hence SN *)
+  - (* T_Unit *) apply value_SN. constructor.
+  - (* T_Bool *) apply value_SN. constructor.
+  - (* T_Int *) apply value_SN. constructor.
+  - (* T_String *) apply value_SN. constructor.
+  - (* T_Loc *) apply value_SN. constructor.
+  - (* T_Var *)
+    unfold env_reducible in Henv.
+    specialize (Henv x T H).
+    destruct Henv as [Hval Hred].
+    unfold Reducible in Hred. exact Hred.
+  - (* T_Lam - lambdas are values *)
+    apply value_SN. constructor.
+  - (* T_App - KEY CASE: need to show EApp is SN *)
+    (* IHHty1 : SN_expr (subst_env ρ e1) where e1 : TFn T1 T2 ε1 *)
+    (* IHHty2 : SN_expr (subst_env ρ e2) where e2 : T1 *)
+    (* Goal: SN_expr (EApp (subst_env ρ e1) (subst_env ρ e2)) *)
+    (* This requires the SN closure property for application.
+       The standard proof uses: SN closed under head expansion.
+       Here we use the typing information to ensure termination. *)
+    admit. (* Requires: SN_app_from_components or head expansion lemma *)
+  - (* T_Pair - requires SN closure for pair context *)
+    admit.
+  - (* T_Fst - requires head expansion from SN pair to SN fst *)
+    admit.
+  - (* T_Snd *)
+    admit.
+  - (* T_Inl - requires SN closure for inl context *)
+    admit.
+  - (* T_Inr *)
+    admit.
+  - (* T_Case *)
+    admit.
+  - (* T_If *)
+    admit.
+  - (* T_Let *)
+    admit.
+  - (* T_Perform *)
+    admit.
+  - (* T_Handle *)
+    admit.
+  - (* T_Ref *)
+    admit.
+  - (* T_Deref *)
+    admit.
+  - (* T_Assign *)
+    admit.
+  - (* T_Classify - requires SN closure for classify context *)
+    admit.
+  - (* T_Declassify *)
+    admit.
+  - (* T_Prove - requires SN closure for prove context *)
+    admit.
+  - (* T_Require *)
+    admit.
+  - (* T_Grant *)
+    admit.
+Admitted. (* 18 compound cases need SN closure / head expansion lemmas *)
 
 (** ========================================================================
     SECTION 11: MAIN THEOREMS
