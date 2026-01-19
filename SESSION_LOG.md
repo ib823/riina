@@ -1,5 +1,60 @@
 # Session Log
 
+## 2026-01-19 (Session 28 Continued): Step-Up FO Assessment Complete
+
+**Goal:** Analyze `val_rel_n_step_up_fo` from TERAS-LANG and compare with RIINA
+
+### Assessment Results
+
+#### Files Analyzed:
+- `06_COORDINATION/extracted_proofs/ReducibilityFull.v` (TERAS-LANG, 1659 lines)
+- `06_COORDINATION/files_20_extract/NonInterference_v2.v` (RIINA, 740 lines)
+
+#### Key Finding: Same "Step-0 Fix" Approach
+
+Both implementations use the revolutionary insight:
+- **Step 0 carries structural information** (not vacuously true)
+- **For first-order types**: Structure is predicate-independent
+- **Critical theorem**: `val_rel_n_step_up_fo` bootstraps semantic info
+
+#### TERAS-LANG Proof Pattern (Line 748-831)
+
+```coq
+Theorem val_rel_n_step_up_fo :
+  forall τ n v σ Σ W,
+    is_first_order τ = true ->
+    val_rel_n 0 τ v σ Σ W ->
+    val_rel_n n τ v σ Σ W.
+Proof.
+  induction τ; intros n v σ Σ W Hfo H0;
+  try (simpl in Hfo; discriminate).
+  (* Per-type case analysis *)
+```
+
+#### Integration Path to Zero Admits
+
+| Phase | Action | Admits Eliminated |
+|-------|--------|-------------------|
+| 1 | Port `val_rel_n_step_up_fo` pattern | ~12 |
+| 2 | Complete `val_rel_n_mono` using step-up | ~3 |
+| 3 | Add store consistency lemma for TRef | ~5 |
+| 4 | Prove SN or add single axiom for TFn | ~16 |
+| **Total** | | **~36 → 0 (or 1)** |
+
+#### Files Created
+
+- `06_COORDINATION/STEP_UP_FO_ASSESSMENT.md` - Complete assessment report
+
+### Build Status
+
+| Metric | Value |
+|--------|-------|
+| Axioms | 0 |
+| Admits | ~36 |
+| Build | ✅ PASSING |
+
+---
+
 ## 2026-01-19 (Session 28): fundamental_reducibility Progress - 17/25 Cases PROVEN
 
 **Goal:** Eliminate remaining admits, prove fundamental_reducibility
