@@ -1,36 +1,67 @@
 # Session Log
 
-## 2026-01-19 (Session 26): VERIFIED Claude AI Delegation Proofs
+## 2026-01-19 (Session 26): VERIFIED 20 Claude AI Delegation Lemmas
 
 **Goal:** Verify and compile proofs from Claude AI (web) delegation
 
 **Branch:** `main`
 
-### Session Results
+### Session Results — 20 LEMMAS VERIFIED (ZERO AXIOMS)
 
-#### Claude AI (web) Delegation Proofs Verified
-
-Received `files (23).zip` containing two self-contained Coq proofs:
+#### Phase 1: Initial Verification (files 23)
 
 | File | Lines | Status |
 |------|-------|--------|
 | RIINA_exp_rel_step1_fst_PROOF.v | 522 | ✅ VERIFIED |
 | RIINA_exp_rel_step1_snd_PROOF.v | 460 | ✅ VERIFIED |
 
-**Verification Results:**
-- `coqc`: Both compiled successfully
-- `coqchk`: "Modules were successfully checked"
-- Status: "Closed under the global context" (no axioms)
+#### Phase 2: Extraction Lemmas (tasks 3-5)
 
-Both proofs are self-contained with:
-- Complete type definitions (redefines RIINA types)
-- Complete operational semantics
-- `val_rel_n_base` and extraction lemmas
-- Main theorems with full `Qed` proofs
+| File | Lemmas | Status |
+|------|--------|--------|
+| RIINA_extraction_lemmas_tasks_3_5.v | 9 | ✅ VERIFIED |
 
-**Note:** These proofs confirm the approach already used in NonInterference_v2.v.
-The proof technique uses `val_rel_n_base_prod_fo` to extract pair structure,
-then applies ST_Fst/ST_Snd reduction.
+Lemmas verified:
+- `val_rel_n_base_int`, `val_rel_n_base_unit`, `val_rel_n_base_ref`
+- Bonus: `val_rel_n_base_bool`, `val_rel_n_base_string`
+- Bonus: `val_rel_n_base_value`, `val_rel_n_base_closed`
+- Bonus: `val_rel_n_base_prod_fo`, `val_rel_n_base_sum_fo`
+
+#### Phase 3: Case Expression
+
+| File | Lines | Status |
+|------|-------|--------|
+| RIINA_exp_rel_step1_case_PROOF.v | 366 | ✅ VERIFIED |
+
+#### Phase 4: Reference Operations
+
+| File | Theorems | Status |
+|------|----------|--------|
+| RIINA_reference_operations_PROOF.v | 8 | ✅ VERIFIED |
+
+Main theorems:
+- `exp_rel_step1_ref` - Reference creation allocates to SAME location
+- `exp_rel_step1_deref` - Dereference retrieves stored values
+- `exp_rel_step1_assign` - Assignment produces EUnit, preserves store relation
+
+Helper lemmas:
+- `store_rel_fresh_eq`, `store_extend_size`, `store_update_size_helper`
+- `store_lookup_in`, `store_update_preserves_size`
+
+### Verification Method
+
+All proofs verified with:
+1. `coqc` compilation: PASSED
+2. `coqchk` verification: "Modules were successfully checked"
+3. `Print Assumptions`: "Closed under the global context" (ZERO axioms)
+
+### Delegation Prompts Created
+
+| File | Purpose | Status |
+|------|---------|--------|
+| DELEGATION_PROMPT_exp_rel_step1_case.md | Case expression | ✅ Used, verified |
+| DELEGATION_PROMPT_reference_operations.md | ref/deref/assign | ✅ Used, verified |
+| DELEGATION_PROMPT_val_rel_n_step_up.md | Step-up for FO types | 📤 Pending |
 
 ### Current Admit Status
 
@@ -38,20 +69,26 @@ then applies ST_Fst/ST_Snd reduction.
 |--------|-------|
 | Axioms (NonInterference.v) | 17 |
 | Axioms (MasterTheorem.v) | 1 |
-| Admitted proofs | 27 across 17 files |
-| Completion rate | 96.3% (705 Qed) |
+| Admitted proofs | 41 across 18 files |
+| Delegation verified | 20 lemmas (ZERO axioms) |
 
 ### Commits This Session
 
 | Hash | Description |
 |------|-------------|
-| 7d01fe0 | VERIFIED: Claude AI delegation proofs (files 23) - exp_rel_step1_fst/snd |
+| 7d01fe0 | VERIFIED: exp_rel_step1_fst/snd (files 23) |
+| f7cffc2 | VERIFIED: extraction lemmas tasks 3-5 (9 lemmas) |
+| 95566a6 | CREATE: delegation prompt for exp_rel_step1_case |
+| f3daf7d | VERIFIED: exp_rel_step1_case_PROOF |
+| 74a028d | CREATE: delegation prompt for reference operations |
+| 0f5b7c6 | CREATE: delegation prompt for val_rel_n_step_up |
+| e068bcb | VERIFIED: reference operations (3 theorems, 5 helpers) |
 
 ### Next Steps
 
-1. Continue delegation tasks 3-5 (val_rel_n_base_int, val_rel_n_base_unit, val_rel_n_base_ref)
-2. Apply verification technique to remaining step-1 axioms
-3. Infrastructure lemmas for multi-step inversion
+1. ⏳ Await val_rel_n_step_up proof from Claude AI delegation
+2. 📋 Create additional delegation prompts for remaining admits
+3. 🔗 Plan integration of verified proofs into main Coq development
 
 ---
 
