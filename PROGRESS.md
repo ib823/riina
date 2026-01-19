@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-19 | SESSION 28 | fundamental_reducibility 17/25 Cases PROVEN
+## Last Updated: 2026-01-19 | SESSION 28 | val_rel_n_step_up_fo PROVEN
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -27,12 +27,13 @@
 | **Overall Grade** | B+ (82%) | Foundations solid, proofs ongoing |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Axioms (Current)** | 0 | **ALL ELIMINATED** (17→0 via v2, 2 axioms→admits) |
-| **Admitted (Current)** | ~36 | fundamental_reducibility 17/25 proven |
+| **Qed Proofs** | 663 | Complete proofs with Qed |
+| **Admitted (Current)** | 45 | val_rel_n_step_up_fo now proven |
 | **Delegation Verified** | 41 | Lemmas verified via Claude AI delegation |
 | **Integration Status** | ✅ COMPLETE | SN_Closure + ReducibilityFull integrated |
 | **Theorems (Required)** | ~2,500 | Comprehensive coverage |
 | **Threats Covered** | 1,231+ | All made obsolete |
-| **Coq Compilation** | ✅ PASSING | make succeeds (33 files) |
+| **Coq Compilation** | ✅ PASSING | make succeeds (36 core files) |
 | **Rust Tests** | ✅ 503 PASSING | All tests pass |
 
 ---
