@@ -842,8 +842,27 @@ Proof.
         admit. (* Store unchanged after pure beta reduction *)
 Admitted.
 
+(** Helper: typing in nil context implies closed *)
+Lemma typing_nil_implies_closed : forall Σ Δ e T ε,
+  has_type nil Σ Δ e T ε ->
+  closed_expr e.
+Proof.
+  intros Σ Δ e T ε Hty x Hfree.
+  (* Use free_in_context from Preservation.v *)
+  destruct (free_in_context x e nil Σ Δ T ε Hfree Hty) as [T' Hlook].
+  simpl in Hlook. discriminate.
+Qed.
+
 (** store_rel_n_step_up - Follows from val_rel_n_step_up
-    Requires store_wf to establish value relations for store locations *)
+    Requires store_wf to establish value relations for store locations
+
+    NOTE: The n=0 case requires that values in related stores agree on
+    low-observable first-order types. This is a semantic property that
+    cannot be derived from store_wf alone - it's the essence of
+    non-interference.
+
+    For n >= 1, this lemma is fully provable using val_rel_n_step_up.
+*)
 Lemma store_rel_n_step_up : forall n Σ st1 st2,
   store_rel_n n Σ st1 st2 ->
   store_wf Σ st1 ->
@@ -864,26 +883,29 @@ Proof.
     specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
     exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
     (* Now we need to show val_rel_n n Σ T v1 v2 *)
-    (* Values in stores are well-typed, so val_rel_n holds *)
     destruct n.
     + (* n = 0: establish base case from values being well-typed *)
       rewrite val_rel_n_0_unfold.
-      (* Values in well-typed stores are values (from Progress) *)
-      assert (Hv1: value v1) by admit. (* Need value_from_typing lemma *)
-      assert (Hv2: value v2) by admit. (* Need value_from_typing lemma *)
       (* Closed from being well-typed in empty context *)
-      assert (Hc1: closed_expr v1) by admit. (* Need closed_from_typing lemma *)
-      assert (Hc2: closed_expr v2) by admit. (* Need closed_from_typing lemma *)
+      assert (Hc1: closed_expr v1).
+      { apply typing_nil_implies_closed with (Σ := Σ) (Δ := Public) (T := T) (ε := EffectPure).
+        exact Hty1. }
+      assert (Hc2: closed_expr v2).
+      { apply typing_nil_implies_closed with (Σ := Σ) (Δ := Public) (T := T) (ε := EffectPure).
+        exact Hty2. }
+      (* Values in stores are values - this is an invariant of well-formed stores
+         that should ideally be part of store_wf. For now, admit. *)
+      assert (Hv1: value v1) by admit.
+      assert (Hv2: value v2) by admit.
       repeat split; try assumption.
       destruct (first_order_type T) eqn:Hfo.
-      * (* FO type: need same value structure - but v1, v2 may differ *)
-        (* This is the key semantic property: low values agree *)
-        admit. (* Requires low-equivalence for FO types *)
+      * (* FO type: need same value structure - but v1, v2 may differ
+           This is the key semantic property of non-interference:
+           values at low-observable locations must agree.
+           Cannot be derived from store_wf alone. *)
+        admit.
       * (* HO type: True at step 0 for HO *) exact I.
     + (* n = S n': use existing val_rel_n from store_rel_n (S n') *)
-      (* store_rel_n (S n') gives us val_rel_n n' for locations *)
-      (* We need val_rel_n (S n') = val_rel_n n for store_rel_n (S (S n')) *)
-      (* But val_rel_n_step_up requires typing, which we have from store_wf *)
       rewrite store_rel_n_S_unfold in Hrel.
       destruct Hrel as [Hrel_n' [_ Hlocs]].
       specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
@@ -893,11 +915,9 @@ Proof.
       (* We have val_rel_n n' Σ T v1 v2, need val_rel_n (S n') Σ T v1 v2 *)
       apply val_rel_n_step_up.
       * exact Hvrel_n'.
-      * (* Typing for v1 when T is HO *)
-        intros Hho. exact Hty1.
-      * (* Typing for v2 when T is HO *)
-        intros Hho. exact Hty2.
-Admitted. (* n = 0 case needs low-equivalence for store values *)
+      * intros Hho. exact Hty1.
+      * intros Hho. exact Hty2.
+Admitted.
 
 (** ========================================================================
     SECTION 8: LIMIT DEFINITIONS (Compatibility with v1)
