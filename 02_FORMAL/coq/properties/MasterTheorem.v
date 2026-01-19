@@ -915,8 +915,10 @@ Proof.
   intros Σ T v Hv Hcl Hfo Hty.
   simpl. split; [trivial | ].
   unfold val_rel_struct. repeat split; auto.
-  (* For identical values with typing, use canonical forms *)
-  destruct T; simpl in Hfo; try discriminate; simpl; auto; try trivial.
+  (* For identical values with typing, use canonical forms.
+     Handle each type case. After destruct and discriminate on first_order_type,
+     we have 19 cases (all except TFn, TChan, TSecureChan). *)
+  destruct T; simpl in Hfo; try discriminate; simpl.
   - (* TUnit *)
     pose proof (canonical_forms_unit nil Σ Public v EffectPure Hv Hty) as Heq.
     subst. split; reflexivity.
@@ -929,7 +931,8 @@ Proof.
   - (* TString *)
     pose proof (canonical_forms_string nil Σ Public v EffectPure Hv Hty) as [s Heq].
     subst. exists s. split; reflexivity.
-  - (* TBytes - structural content is v = v *) trivial.
+  - (* TBytes - structural content is v = v *)
+    reflexivity.
   - (* TProd *)
     apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
     pose proof (canonical_forms_prod nil Σ Public v T1 T2 EffectPure Hv Hty)
@@ -941,9 +944,31 @@ Proof.
       as [[a [Heq Hva]] | [b [Heq Hvb]]].
     + subst. left. exists a, a. repeat split; auto.
     + subst. right. exists b, b. repeat split; auto.
-  - (* TRef *)
-    pose proof (canonical_forms_ref nil Σ Public v T s EffectPure Hv Hty) as [l Heq].
+  - (* TList - structural content is True *)
+    trivial.
+  - (* TOption - structural content is True *)
+    trivial.
+  - (* TRef - use underscores since destruct names vary *)
+    pose proof (canonical_forms_ref nil Σ Public v _ _ EffectPure Hv Hty) as [l Heq].
     subst. exists l. split; reflexivity.
+  - (* TSecret - structural content is True *)
+    trivial.
+  - (* TLabeled - structural content is True *)
+    trivial.
+  - (* TTainted - structural content is True *)
+    trivial.
+  - (* TSanitized - structural content is True *)
+    trivial.
+  - (* TProof - structural content is True *)
+    trivial.
+  - (* TCapability - structural content is True *)
+    trivial.
+  - (* TCapabilityFull - structural content is True *)
+    trivial.
+  - (* TConstantTime - structural content is True *)
+    trivial.
+  - (* TZeroizing - structural content is True *)
+    trivial.
 Qed.
 
 (** Original lemma kept for API but with documented limitations *)
@@ -1208,10 +1233,38 @@ Qed.
     NOTE: This is the ONLY semantic assumption needed for TFn store-weakening.
     It will be proven once allocation tracking is formalized.
 *)
-Axiom store_ty_extensions_compatible : forall Σ Σ' Σ'',
+(** This lemma is provable for locations in the original store Σ.
+    For locations NOT in Σ (fresh allocations), it requires the semantic
+    property that different execution branches allocate distinct locations.
+
+    The proof handles the case where l is in Σ completely.
+    The fresh allocation case is admitted pending allocation tracking. *)
+Lemma store_ty_extensions_compatible : forall Σ Σ' Σ'',
   store_ty_extends Σ Σ' ->
   store_ty_extends Σ Σ'' ->
   store_ty_compatible Σ' Σ''.
+Proof.
+  intros Σ Σ' Σ'' Hext1 Hext2.
+  unfold store_ty_compatible.
+  intros l T1 sl1 T2 sl2 Hlook1 Hlook2.
+  (* Key insight: check if l was in the original Σ *)
+  destruct (store_ty_lookup l Σ) as [[T0 sl0]|] eqn:HlookΣ.
+  - (* CASE: l IS in Σ - both extensions preserve it identically *)
+    unfold store_ty_extends in Hext1, Hext2.
+    specialize (Hext1 l T0 sl0 HlookΣ).
+    specialize (Hext2 l T0 sl0 HlookΣ).
+    rewrite Hext1 in Hlook1. injection Hlook1 as -> ->.
+    rewrite Hext2 in Hlook2. injection Hlook2 as -> ->.
+    split; reflexivity.
+  - (* CASE: l is NOT in Σ - fresh allocation case *)
+    (* This case requires semantic tracking of fresh allocation.
+       In RIINA's operational semantics, fresh_loc produces globally
+       unique locations, so different execution branches cannot
+       allocate the same location with different types.
+
+       Admitted pending allocation tracking infrastructure. *)
+    admit.
+Admitted. (* Fresh allocation case needs operational semantics tracking *)
 
 (** ** The Master Theorem
 
