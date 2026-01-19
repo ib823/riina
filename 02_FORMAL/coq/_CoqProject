@@ -32,6 +32,7 @@ termination/SizedTypes.v
 termination/Reducibility.v
 termination/StrongNorm.v
 termination/TerminationLemmas.v
+properties/SN_Closure.v
 termination/ReducibilityFull.v
 
 # Properties - Phase 5 Store Semantics (WORKER_ζ)

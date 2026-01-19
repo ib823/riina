@@ -1,5 +1,54 @@
 # Session Log
 
+## 2026-01-19 (Session 28): fundamental_reducibility Progress - 17/25 Cases PROVEN
+
+**Goal:** Eliminate remaining admits, prove fundamental_reducibility
+
+**Branch:** `main`
+
+### Session Results — 10 NEW CASES PROVEN
+
+#### Key Achievement: fundamental_reducibility Restructured
+
+1. **Fixed IH Structure:** Used `revert ρ` before induction for properly quantified IHs
+2. **Added Bridge Lemma:** `subst_subst_env_commute` for binding cases
+3. **Integrated SN_Closure:** All SN closure lemmas now used effectively
+
+#### Cases Proven This Session (10):
+- T_Pair, T_Fst, T_Snd (pairs/projections)
+- T_Inl, T_Inr, T_Case (sums with branch substitution)
+- T_If (conditionals)
+- T_Let (let bindings with substitution)
+- T_Ref, T_Assign (reference operations)
+
+#### Cases Still Admitted (8):
+- T_App (beta premise)
+- T_Perform (effects infrastructure)
+- T_Deref (store well-formedness)
+- T_Classify, T_Declassify, T_Prove (security constructs)
+- T_Require, T_Grant (capability constructs)
+
+### Build Status
+
+| Metric | Value |
+|--------|-------|
+| Axioms | 0 |
+| Admits | ~36 |
+| Build | ✅ PASSING |
+
+---
+
+## 2026-01-19 (Session 27): Axiom Elimination + ReducibilityFull Integration
+
+**Goal:** Eliminate 2 remaining axioms
+
+### Session Results:
+- Converted `fundamental_reducibility` axiom to lemma (7 value cases proven)
+- Converted `store_ty_extensions_compatible` axiom to lemma (shared location proven)
+- Added SN_Closure.v to build with all SN closure lemmas
+
+---
+
 ## 2026-01-19 (Session 26): VERIFIED 41 Claude AI Delegation Lemmas
 
 **Goal:** Verify and compile proofs from Claude AI (web) delegation
