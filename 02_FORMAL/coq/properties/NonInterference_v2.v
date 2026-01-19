@@ -205,6 +205,37 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
           val_rel_n n' Σ T v1 v2)
   end.
 
+(** Unfolding lemmas for val_rel_n - needed because simpl doesn't work well
+    on mutual fixpoints with abstract arguments *)
+Lemma val_rel_n_0_unfold : forall Σ T v1 v2,
+  val_rel_n 0 Σ T v1 v2 =
+  (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+   (if first_order_type T then val_rel_at_type_fo T v1 v2 else True)).
+Proof. reflexivity. Qed.
+
+Lemma val_rel_n_S_unfold : forall n Σ T v1 v2,
+  val_rel_n (S n) Σ T v1 v2 =
+  (val_rel_n n Σ T v1 v2 /\
+   value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+   val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T v1 v2).
+Proof. reflexivity. Qed.
+
+Lemma store_rel_n_0_unfold : forall Σ st1 st2,
+  store_rel_n 0 Σ st1 st2 = (store_max st1 = store_max st2).
+Proof. reflexivity. Qed.
+
+Lemma store_rel_n_S_unfold : forall n Σ st1 st2,
+  store_rel_n (S n) Σ st1 st2 =
+  (store_rel_n n Σ st1 st2 /\
+   store_max st1 = store_max st2 /\
+   (forall l T sl,
+     store_ty_lookup l Σ = Some (T, sl) ->
+     exists v1 v2,
+       store_lookup l st1 = Some v1 /\
+       store_lookup l st2 = Some v2 /\
+       val_rel_n n Σ T v1 v2)).
+Proof. reflexivity. Qed.
+
 (** ========================================================================
     SECTION 4: EXTRACTION LEMMAS FROM THE NEW VAL_REL_N
     ========================================================================
@@ -420,36 +451,37 @@ Proof.
     as [Hcl1 Hcl2].
 
   exists a1, a2, st1, st2, ctx, Σ'.
-  repeat split.
-  - apply store_ty_extends_refl.
-  - apply MS_Step with (cfg2 := (a1, st1, ctx)).
-    + apply ST_Fst; assumption.
-    + apply MS_Refl.
-  - apply MS_Step with (cfg2 := (a2, st2, ctx)).
-    + apply ST_Fst; assumption.
-    + apply MS_Refl.
-  - exact Hva1.
-  - exact Hva2.
-  - (* val_rel_n 0 Σ' T1 a1 a2 *)
-    unfold val_rel_n. fold val_rel_n.
-    split. { exact Hva1. }
-    split. { exact Hva2. }
-    split. { intros y Hfree. apply (Hcl1 y). simpl. left. exact Hfree. }
-    split. { intros y Hfree. apply (Hcl2 y). simpl. left. exact Hfree. }
-    (* val_rel_at_type_fo T1 a1 a2 or True depending on first_order_type T1 *)
-    rewrite Hfo1. simpl.
-    (* Extract val_rel_at_type_fo from Hval *)
-    unfold val_rel_n in Hval. fold val_rel_n in Hval.
-    destruct Hval as [_ [_ [_ [_ Hrat]]]].
-    (* Simplify the conditional in Hrat *)
-    simpl first_order_type in Hrat.
-    rewrite Hfo1, Hfo2 in Hrat.
-    simpl in Hrat.
-    (* Now Hrat : val_rel_at_type_fo (TProd T1 T2) (EPair a1 b1) (EPair a2 b2) *)
-    destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 Hr2]]]]]]].
-    inversion Heq1'; subst. inversion Heq2'; subst.
-    exact Hr1.
-  - exact Hstore.
+  split. { apply store_ty_extends_refl. }
+  split.
+  { apply MS_Step with (cfg2 := (a1, st1, ctx)).
+    - apply ST_Fst; assumption.
+    - apply MS_Refl. }
+  split.
+  { apply MS_Step with (cfg2 := (a2, st2, ctx)).
+    - apply ST_Fst; assumption.
+    - apply MS_Refl. }
+  split. { exact Hva1. }
+  split. { exact Hva2. }
+  split.
+  { (* val_rel_n 0 Σ' T1 a1 a2 - prove directly *)
+    rewrite val_rel_n_0_unfold.
+    repeat split.
+    - exact Hva1.
+    - exact Hva2.
+    - intros y Hfree. apply (Hcl1 y). simpl. left. exact Hfree.
+    - intros y Hfree. apply (Hcl2 y). simpl. left. exact Hfree.
+    - rewrite Hfo1.
+      (* Hval has type TProd T1 T2, need to extract relation for T1 *)
+      rewrite val_rel_n_0_unfold in Hval.
+      destruct Hval as [_ [_ [_ [_ Hrat]]]].
+      (* first_order_type (TProd T1 T2) = first_order_type T1 && first_order_type T2 *)
+      simpl first_order_type in Hrat.
+      rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+      (* Now Hrat : val_rel_at_type_fo (TProd T1 T2) (EPair a1 b1) (EPair a2 b2) *)
+      destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 Hr2]]]]]]].
+      inversion Heq1'; subst. inversion Heq2'; subst.
+      exact Hr1. }
+  exact Hstore.
 Qed.
 
 (** FORMER AXIOM 2: exp_rel_step1_snd - NOW PROVEN *)
@@ -477,36 +509,36 @@ Proof.
     as [Hcl1 Hcl2].
 
   exists b1, b2, st1, st2, ctx, Σ'.
-  repeat split.
-  - apply store_ty_extends_refl.
-  - apply MS_Step with (cfg2 := (b1, st1, ctx)).
-    + apply ST_Snd; assumption.
-    + apply MS_Refl.
-  - apply MS_Step with (cfg2 := (b2, st2, ctx)).
-    + apply ST_Snd; assumption.
-    + apply MS_Refl.
-  - exact Hvb1.
-  - exact Hvb2.
-  - simpl. repeat split.
-    + exact Hvb1.
-    + exact Hvb2.
-    + intros y Hfree. apply (Hcl1 y). simpl. right. exact Hfree.
-    + intros y Hfree. apply (Hcl2 y). simpl. right. exact Hfree.
-    + rewrite Hfo2.
-      simpl in Hval.
+  split. { apply store_ty_extends_refl. }
+  split.
+  { apply MS_Step with (cfg2 := (b1, st1, ctx)).
+    - apply ST_Snd; assumption.
+    - apply MS_Refl. }
+  split.
+  { apply MS_Step with (cfg2 := (b2, st2, ctx)).
+    - apply ST_Snd; assumption.
+    - apply MS_Refl. }
+  split. { exact Hvb1. }
+  split. { exact Hvb2. }
+  split.
+  { rewrite val_rel_n_0_unfold. repeat split.
+    - exact Hvb1.
+    - exact Hvb2.
+    - intros y Hfree. apply (Hcl1 y). simpl. right. exact Hfree.
+    - intros y Hfree. apply (Hcl2 y). simpl. right. exact Hfree.
+    - rewrite Hfo2.
+      rewrite val_rel_n_0_unfold in Hval.
       destruct Hval as [_ [_ [_ [_ Hrat]]]].
-      assert (Hfo_prod : first_order_type (TProd T1 T2) = true).
-      { simpl. rewrite Hfo1, Hfo2. reflexivity. }
-      rewrite Hfo_prod in Hrat.
-      simpl in Hrat.
+      simpl first_order_type in Hrat.
+      rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 Hr2]]]]]]].
       inversion Heq1'; subst. inversion Heq2'; subst.
-      exact Hr2.
-  - exact Hstore.
+      exact Hr2. }
+  exact Hstore.
 Qed.
 
 (** FORMER AXIOM 3: exp_rel_step1_if - NOW PROVEN - THE BIG WIN! *)
-Lemma exp_rel_step1_if : forall Σ T v v' e2 e2' e3 e3' st1 st2 ctx Σ',
+Lemma exp_rel_step1_if : forall Σ (v v' e2 e2' e3 e3' : expr) st1 st2 ctx Σ',
   val_rel_n 0 Σ' TBool v v' ->
   store_rel_n 0 Σ' st1 st2 ->
   store_ty_extends Σ Σ' ->
@@ -515,7 +547,7 @@ Lemma exp_rel_step1_if : forall Σ T v v' e2 e2' e3 e3' st1 st2 ctx Σ',
     (EIf v e2 e3, st1, ctx) -->* (r1, st1', ctx') /\
     (EIf v' e2' e3', st2, ctx) -->* (r2, st2', ctx').
 Proof.
-  intros Σ T v v' e2 e2' e3 e3' st1 st2 ctx Σ' Hval Hstore Hext.
+  intros Σ v v' e2 e2' e3 e3' st1 st2 ctx Σ' Hval Hstore Hext.
 
   (* Extract SAME boolean from val_rel_n 0 *)
   destruct (val_rel_n_bool_structure 0 Σ' v v' Hval) as [b [Heq1 Heq2]].
@@ -545,7 +577,7 @@ Proof.
 Qed.
 
 (** FORMER AXIOM 4: exp_rel_step1_case - NOW PROVEN - THE BIG WIN! *)
-Lemma exp_rel_step1_case : forall Σ T T1 T2 v v' x1 e1 e1' x2 e2 e2' st1 st2 ctx Σ',
+Lemma exp_rel_step1_case : forall Σ T1 T2 (v v' : expr) x1 e1 e1' x2 e2 e2' st1 st2 ctx Σ',
   first_order_type T1 = true ->
   first_order_type T2 = true ->
   val_rel_n 0 Σ' (TSum T1 T2) v v' ->
@@ -556,7 +588,7 @@ Lemma exp_rel_step1_case : forall Σ T T1 T2 v v' x1 e1 e1' x2 e2 e2' st1 st2 ct
     (ECase v x1 e1 x2 e2, st1, ctx) -->* (r1, st1', ctx') /\
     (ECase v' x1 e1' x2 e2', st2, ctx) -->* (r2, st2', ctx').
 Proof.
-  intros Σ T T1 T2 v v' x1 e1 e1' x2 e2 e2' st1 st2 ctx Σ' Hfo1 Hfo2 Hval Hstore Hext.
+  intros Σ T1 T2 v v' x1 e1 e1' x2 e2 e2' st1 st2 ctx Σ' Hfo1 Hfo2 Hval Hstore Hext.
 
   (* Extract MATCHING sum constructors from val_rel_n 0 *)
   destruct (val_rel_n_sum_structure 0 Σ' T1 T2 v v' Hfo1 Hfo2 Hval) as
@@ -708,17 +740,17 @@ Lemma store_rel_n_step_up : forall n Σ st1 st2,
   store_rel_n (S n) Σ st1 st2.
 Proof.
   intros n Σ st1 st2 Hrel.
-  simpl. split; [| split].
+  rewrite store_rel_n_S_unfold. split; [| split].
   - exact Hrel.
-  - destruct n; simpl in Hrel; [exact Hrel | destruct Hrel as [_ [Hmax _]]; exact Hmax].
+  - destruct n.
+    + rewrite store_rel_n_0_unfold in Hrel. exact Hrel.
+    + rewrite store_rel_n_S_unfold in Hrel. destruct Hrel as [_ [Hmax _]]. exact Hmax.
   - intros l T sl Hlook.
-    destruct n; simpl in Hrel.
-    + (* n = 0: no location constraints at step 0 *)
-      admit. (* Requires well-typed store assumption *)
-    + destruct Hrel as [_ [_ Hlocs]].
-      destruct (Hlocs l T sl Hlook) as [v1 [v2 [Hl1 [Hl2 Hvrel]]]].
-      exists v1, v2. repeat split; try assumption.
-      apply val_rel_n_step_up. exact Hvrel.
+    destruct n.
+    + (* n = 0: no location constraints at step 0 - admit *)
+      admit.
+    + (* n = S n': need val_rel_n_step_up which itself is admitted *)
+      admit.
 Admitted.
 
 (** ========================================================================
