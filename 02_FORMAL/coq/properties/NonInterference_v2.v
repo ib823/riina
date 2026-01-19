@@ -840,6 +840,7 @@ Admitted.
     ✓ val_rel_n_bool_structure
     ✓ val_rel_n_sum_structure (with FO premises)
     ✓ store_rel_n_mono
+    ✓ val_rel_at_type_fo_equiv (NEW: FO types are predicate-independent)
     ✓ exp_rel_step1_fst (with FO premises)
     ✓ exp_rel_step1_snd (with FO premises)
     ✓ exp_rel_step1_if (THE BIG WIN!)
@@ -848,15 +849,25 @@ Admitted.
     ✓ exp_rel_step1_handle
     ✓ exp_rel_step1_app (with typing premise)
 
-    ADMITTED (require additional infrastructure):
-    - val_rel_n_mono (tedious but standard - needs FO equiv lemma)
-    - val_rel_n_step_up (needs strong normalization for TFn)
-    - store_rel_n_step_up (depends on val_rel_n_step_up)
+    ADMITTED WITH PARTIAL PROOFS:
+    - val_rel_n_mono: FO case PROVEN using val_rel_at_type_fo_equiv
+      Remaining: TFn predicate monotonicity (requires HO reasoning)
+    - val_rel_n_step_up: FO case PROVEN using val_rel_at_type_fo_equiv
+      Remaining: TFn case (requires strong normalization proof)
+    - store_rel_n_step_up: Depends on val_rel_n_step_up
+      Remaining: Needs well-typed store premise or full val_rel_n_step_up
 
-    KEY ACHIEVEMENT:
+    KEY ACHIEVEMENTS:
+    - val_rel_at_type_fo_equiv proves FO types don't use predicates
+    - FO cases of val_rel_n_mono and val_rel_n_step_up are now PROVEN
     - exp_rel_step1_if and exp_rel_step1_case are NOW PROVEN with Qed
     - These were previously IMPOSSIBLE because val_rel_n 0 = True
     - With val_rel_at_type_fo at step 0, we get SAME boolean/MATCHING constructors
+
+    REMAINING WORK FOR TFn (Higher-Order Types):
+    - Need strong normalization to prove applications terminate
+    - This unlocks TFn step-up and predicate monotonicity
+    - See SN_Core_v3.v for strong normalization infrastructure
 
     ========================================================================
 *)
