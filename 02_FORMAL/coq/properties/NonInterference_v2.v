@@ -830,7 +830,46 @@ Proof.
 Admitted.
 
 (** ========================================================================
-    SECTION 8: SUMMARY
+    SECTION 8: LIMIT DEFINITIONS (Compatibility with v1)
+    ========================================================================
+
+    These definitions provide the "forall n" versions for compatibility
+    with files that imported NonInterference.v (v1).
+*)
+
+(** Expression relation - step-indexed *)
+Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} : Prop :=
+  match n with
+  | 0 => True
+  | S n' =>
+      forall Σ_cur st1 st2 ctx,
+        store_ty_extends Σ Σ_cur ->
+        store_rel_n n' Σ_cur st1 st2 ->
+        exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store)
+               (ctx' : effect_ctx) (Σ' : store_ty),
+          store_ty_extends Σ_cur Σ' /\
+          (e1, st1, ctx) -->* (v1, st1', ctx') /\
+          (e2, st2, ctx) -->* (v2, st2', ctx') /\
+          value v1 /\ value v2 /\
+          val_rel_n n' Σ' T v1 v2 /\
+          store_rel_n n' Σ' st1' st2'
+  end.
+
+(** Limit definitions - hold for all step indices *)
+Definition val_rel (Σ : store_ty) (T : ty) (v1 v2 : expr) : Prop :=
+  forall n, val_rel_n n Σ T v1 v2.
+
+Definition store_rel (Σ : store_ty) (st1 st2 : store) : Prop :=
+  forall n, store_rel_n n Σ st1 st2.
+
+Definition exp_rel (Σ : store_ty) (T : ty) (e1 e2 : expr) : Prop :=
+  forall n, exp_rel_n n Σ T e1 e2.
+
+(** Notation for expression relation *)
+Notation "e1 '~' e2 ':' T ':' Σ" := (exp_rel Σ T e1 e2) (at level 40).
+
+(** ========================================================================
+    SECTION 9: SUMMARY
     ========================================================================
 
     FULLY PROVEN LEMMAS (with Qed):
