@@ -19,6 +19,8 @@ they can help eliminate in NonInterference.v.
 | `RIINA_extraction_lemmas_tasks_3_5.v` | 9 | coqc + coqchk PASSED |
 | `RIINA_exp_rel_step1_case_PROOF.v` | 1 | coqc + coqchk PASSED |
 | `RIINA_reference_operations_PROOF.v` | 8 | coqc + coqchk PASSED |
+| `val_rel_n_step_up_fo.v` | 7 | coqc + coqchk PASSED |
+| **TOTAL** | **27** | **ALL ZERO AXIOMS** |
 
 ---
 
@@ -51,9 +53,9 @@ requires multi-step evaluation decomposition.
 
 | Axiom in NonInterference.v | Verified Proof | Integration Path |
 |---------------------------|----------------|------------------|
-| `val_rel_n_step_up` (line 1548) | PENDING: val_rel_n_step_up_fo | Handles FO types only |
-| `store_rel_n_step_up` (line 1554) | Follows from val_rel_n_step_up | After val_rel_n_step_up |
-| `val_rel_n_lam_cumulative` (line 1564) | Special case of step-up | After val_rel_n_step_up |
+| `val_rel_n_step_up` (line 1548) | ✅ `val_rel_n_step_up_fo.v` | **FO types verified!** TFn needs SN |
+| `store_rel_n_step_up` (line 1554) | Follows from val_rel_n_step_up | Use FO step-up for store values |
+| `val_rel_n_lam_cumulative` (line 1564) | Special case of step-up | For FO argument types |
 
 ### Category D: Higher-Order (2 axioms)
 

@@ -43,7 +43,7 @@
 | **Theorems Required** | ~2,500 | Comprehensive coverage |
 | **Axioms (Current)** | 18 | Target: 0 (17 in NonInterference.v + 1 in MasterTheorem.v) |
 | **Admitted (Current)** | 41 | Across 18 property files |
-| **Delegation Verified** | 20 | Lemmas via Claude AI (ZERO axioms) |
+| **Delegation Verified** | 27 | Lemmas via Claude AI (ZERO axioms) |
 | **Threats Covered** | 1,231+ | All made obsolete |
 
 ### Recent Progress (Session 26)
@@ -54,7 +54,7 @@
 | Extraction lemmas (9) | ✅ VERIFIED | val_rel_n_base extraction lemmas |
 | exp_rel_step1_case | ✅ VERIFIED | Sum case matching, ZERO axioms |
 | Reference operations (8) | ✅ VERIFIED | ref/deref/assign + helpers |
-| val_rel_n_step_up prompt | 📤 SENT | Awaiting Claude AI response |
+| **val_rel_n_step_up_fo (7)** | ✅ **VERIFIED** | **KEY: Step-up for FO types** |
 
 ### Session 17 Progress (Previous)
 
