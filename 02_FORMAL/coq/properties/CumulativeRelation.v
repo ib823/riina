@@ -288,7 +288,18 @@ Qed.
     1. Extract structural content from val_rel_le m (at step m > 0)
     2. Rebuild val_rel_le n using the same structural content
     3. For primitive types, structural content is equality (independent of step)
-    4. For compound first-order types, use induction on type structure *)
+    4. For compound first-order types, use induction on type structure
+
+    KNOWN LIMITATION (admits at lines 338, 345, 355, 362):
+    For compound types (TProd, TSum) when m = 1, the cumulative structure only
+    gives component relations at step 0 (which is trivial). We cannot step up
+    from val_rel_le 0 = True to val_rel_le (S n'') without additional info.
+
+    This affects the case: m = 1, n >= 2, T = TProd/TSum.
+
+    WORKAROUND: Callers should ensure m >= 2 for compound first-order types,
+    or use val_rel_le_mono_step_fo (downward monotonicity) which always works.
+*)
 Lemma val_rel_le_fo_step_independent : forall m n Σ T v1 v2,
   first_order_type T = true ->
   m > 0 ->
@@ -330,11 +341,15 @@ Proof.
            ++ (* Need val_rel_le (S n'') from val_rel_le m' *)
               (* Hr1 : val_rel_le m' Σ T1 a1 a2 *)
               destruct m' as [|m''].
-              ** (* m' = 0: Hr1 is trivial, need to build from structural info *)
-                 (* This case shouldn't happen for compound types with related components *)
-                 simpl in Hr1. (* Hr1 : True *)
-                 (* We need structural info, but at m'=0 we don't have it *)
-                 (* Use the fact that T1 is first-order and extract from Hprev *)
+              ** (* m' = 0: FUNDAMENTAL GAP
+                    Hr1 : val_rel_le 0 Σ T1 a1 a2 = True (no structural info)
+                    Goal: val_rel_le (S n'') Σ T1 a1 a2 (needs structural info)
+
+                    At m = 1, compound types have outer structure but component
+                    relations are trivial. Cannot step up from True.
+
+                    This case occurs when: m = 1, n >= 2, T = TProd T1 T2
+                    Workaround: callers should use m >= 2 for compound types. *)
                  admit.
               ** (* m' = S m'': Hr1 : val_rel_le (S m'') at first-order T1 *)
                  apply IHn with (m := S m''); auto; lia.
@@ -342,7 +357,8 @@ Proof.
            destruct n' as [|n''].
            ++ simpl. exact I.
            ++ destruct m' as [|m''].
-              ** admit.
+              ** (* m' = 0: Same fundamental gap as above for T2 component *)
+                 admit.
               ** apply IHn with (m := S m''); auto; lia.
       * (* TSum T1 T2 - first-order compound *)
         apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
@@ -352,16 +368,18 @@ Proof.
            destruct n' as [|n''].
            ++ simpl. exact I.
            ++ destruct m' as [|m''].
-              ** admit.
+              ** (* m' = 0: Same fundamental gap - TSum left component *)
+                 admit.
               ** apply IHn with (m := S m''); auto; lia.
         -- (* Right case *)
            right. exists b1, b2. repeat split; auto.
            destruct n' as [|n''].
            ++ simpl. exact I.
            ++ destruct m' as [|m''].
-              ** admit.
+              ** (* m' = 0: Same fundamental gap - TSum right component *)
+                 admit.
               ** apply IHn with (m := S m''); auto; lia.
-Admitted.
+Admitted. (* 4 admits: all m' = 0 cases for compound type components *)
 
 (** ** Expression Relation *)
 
