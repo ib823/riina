@@ -308,24 +308,35 @@ Proof.
     pose proof (canonical_forms_prod nil Σ Public v T1 T2 EffectPure Hval Hty)
       as [a [b [Heq [Hva Hvb]]]].
     subst. exists a, b, a, b.
-    repeat split; try reflexivity.
-    (* Recursion requires typing for components - admit for now *)
-    + admit.
-    + admit.
+    (* Get typing for components via inversion *)
+    inversion Hty; subst.
+    (* After inversion, we have hypotheses for component typing *)
+    (* Effect join of two effects equals Pure means both are Pure *)
+    match goal with
+    | [ H1 : has_type _ _ _ a T1 ?e1, H2 : has_type _ _ _ b T2 ?e2 |- _ ] =>
+      assert (Hε1_pure : e1 = EffectPure) by (destruct e1, e2; simpl; try reflexivity; try discriminate);
+      assert (Hε2_pure : e2 = EffectPure) by (destruct e1, e2; simpl; try reflexivity; try discriminate);
+      subst
+    end.
+    repeat split; try reflexivity; eapply IHT1 + eapply IHT2; eassumption.
   - (* TSum - requires recursive typing decomposition *)
     apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
     pose proof (canonical_forms_sum nil Σ Public v T1 T2 EffectPure Hval Hty)
       as [[a [Heq Hva]] | [b [Heq Hvb]]].
     + subst. left. exists a, a.
+      (* Get typing for Inl component via inversion *)
+      inversion Hty; subst.
       repeat split; try reflexivity.
-      admit.
+      apply IHT1; assumption.
     + subst. right. exists b, b.
+      (* Get typing for Inr component via inversion *)
+      inversion Hty; subst.
       repeat split; try reflexivity.
-      admit.
+      apply IHT2; assumption.
   - (* TRef *)
     pose proof (canonical_forms_ref nil Σ Public v T s EffectPure Hval Hty) as [l Heq].
     subst. exists l. split; reflexivity.
-Admitted. (* Admits in TProd/TSum for effect subsumption - technical detail *)
+Qed.
 
 (** --------------------------------------------------------------------------
     LEMMA: val_rel_n_step_up for IDENTICAL values at first-order types.
@@ -364,34 +375,45 @@ Qed.
     Works for ANY n including n=0.
     -------------------------------------------------------------------------- *)
 
-Lemma val_rel_n_step_up_fo_typed : forall n Σ T v1 v2,
+(** NOTE: For n=0, this requires an additional relatedness premise.
+    val_rel_n 0 = True gives no structural information. We split into two lemmas:
+    1. For n > 0: use existing val_rel_n_step_up_fo
+    2. For n = 0: requires explicit val_rel_at_type premise *)
+
+Lemma val_rel_n_step_up_fo_typed_pos : forall n Σ T v1 v2,
+  n > 0 ->
   first_order_type T = true ->
-  has_type nil Σ Public v1 T EffectPure ->
-  has_type nil Σ Public v2 T EffectPure ->
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
   val_rel_n n Σ T v1 v2 ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
-  intros n Σ T v1 v2 Hfo Hty1 Hty2 Hval1 Hval2 Hcl1 Hcl2 Hrel.
-  destruct n as [| n'].
-  - (* n = 0: Build from typing + canonical forms *)
-    simpl. split.
-    + (* Cumulative: val_rel_n 0 = True *)
-      simpl. trivial.
-    + split. { exact Hval1. }
-      split. { exact Hval2. }
-      split. { exact Hcl1. }
-      split. { exact Hcl2. }
-      (* Build val_rel_at_type from typing *)
-      (* We need to show v1 and v2 have the same structure *)
-      (* For this, we need an additional premise: v1 and v2 are RELATED *)
-      (* Without knowing they're related (e.g., from low-equivalence), *)
-      (* we can't prove they have the same boolean/int value *)
-      admit.  (* Requires relatedness premise - see ANALYSIS below *)
-  - (* n = S n' > 0: Use existing val_rel_n_step_up_fo *)
-    apply val_rel_n_step_up_fo; try assumption. lia.
-Admitted.
+  intros n Σ T v1 v2 Hn Hfo Hval1 Hval2 Hcl1 Hcl2 Hrel.
+  apply val_rel_n_step_up_fo; assumption.
+Qed.
+
+(** For n = 0, we need val_rel_at_type as an explicit premise.
+    This reflects the semantic reality that at step 0, we have no
+    structural information about the values. *)
+Lemma val_rel_n_step_0_to_1_with_structure : forall Σ T v1 v2,
+  first_order_type T = true ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2 ->
+  val_rel_n 1 Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hfo Hval1 Hval2 Hcl1 Hcl2 Hstruct.
+  simpl. split.
+  - (* Cumulative: val_rel_n 0 = True *)
+    simpl. trivial.
+  - (* Structural part *)
+    split. { exact Hval1. }
+    split. { exact Hval2. }
+    split. { exact Hcl1. }
+    split. { exact Hcl2. }
+    (* val_rel_at_type - provided as premise *)
+    exact Hstruct.
+Qed.
 
 (** --------------------------------------------------------------------------
     ANALYSIS: Why val_rel_n_step_up cannot be fully proven
