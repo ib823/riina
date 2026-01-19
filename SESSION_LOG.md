@@ -1,12 +1,12 @@
 # Session Log
 
-## 2026-01-19 (Session 26): VERIFIED 27 Claude AI Delegation Lemmas
+## 2026-01-19 (Session 26): VERIFIED 41 Claude AI Delegation Lemmas
 
 **Goal:** Verify and compile proofs from Claude AI (web) delegation
 
 **Branch:** `main`
 
-### Session Results — 27 LEMMAS VERIFIED (ZERO AXIOMS)
+### Session Results — 41 LEMMAS VERIFIED (ZERO AXIOMS)
 
 #### Phase 1: Initial Verification (files 23)
 
@@ -68,6 +68,28 @@ Lemmas verified:
 - `val_rel_n_step_up_fo_multi` - n → n + k
 - `val_rel_n_value`, `val_rel_n_closed`, `val_rel_n_fo_extract`
 
+#### Phase 6: Cumulative Step-Independent for First-Order Types
+
+| File | Lemmas | Status |
+|------|--------|--------|
+| val_rel_le_fo_step_independent_PROOF.v | 14 | ✅ VERIFIED |
+
+**FIXES CumulativeRelation.v admits** using type_depth premise.
+
+Main theorem:
+- `val_rel_le_fo_step_independent` - **THE MAIN THEOREM**: m > type_depth T → step-independent
+
+Key lemmas:
+- `val_rel_le_extract_fo` - Extract val_rel_at_type_fo from val_rel_le
+- `val_rel_le_construct_fo` - Construct val_rel_le from val_rel_at_type_fo
+- `val_rel_at_type_fo_refl/sym/trans` - Equivalence relation properties
+
+Corollaries:
+- `val_rel_le_fo_step_independent_primitive` - For primitive types (depth=0)
+- `val_rel_le_fo_step_independent_depth1` - For depth-1 types (m ≥ 2)
+- `val_rel_le_fo_step_independent_compound` - Alternative with m ≥ 2
+- `val_rel_le_step_independent_TUnit/TBool/TInt/TRef` - Base type shortcuts
+
 ### Delegation Prompts Created
 
 | File | Purpose | Status |
@@ -75,6 +97,7 @@ Lemmas verified:
 | DELEGATION_PROMPT_exp_rel_step1_case.md | Case expression | ✅ Used, verified |
 | DELEGATION_PROMPT_reference_operations.md | ref/deref/assign | ✅ Used, verified |
 | DELEGATION_PROMPT_val_rel_n_step_up.md | Step-up for FO types | ✅ Used, verified |
+| DELEGATION_PROMPT_cumulative_step_independent.md | Cumulative step-independent | ✅ Used, verified |
 
 ### Current Admit Status
 
@@ -83,7 +106,7 @@ Lemmas verified:
 | Axioms (NonInterference.v) | 17 |
 | Axioms (MasterTheorem.v) | 1 |
 | Admitted proofs | 41 across 18 files |
-| Delegation verified | **27 lemmas** (ZERO axioms) |
+| Delegation verified | **41 lemmas** (ZERO axioms) |
 
 ### Commits This Session
 
@@ -99,6 +122,9 @@ Lemmas verified:
 | 78d34aa | DOCS: Update authoritative documents |
 | 637fa18 | DOCS: Create integration guide for verified proofs |
 | 90cd581 | **VERIFIED: val_rel_n_step_up_fo (7 lemmas, ZERO AXIOMS)** |
+| 6952559 | DOCS: CumulativeRelation.v gap analysis |
+| acdd265 | CREATE: delegation prompt for cumulative step-independent |
+| 5cb9117 | **VERIFIED: val_rel_le_fo_step_independent (14 lemmas, ZERO AXIOMS)** |
 
 ### Next Steps
 
