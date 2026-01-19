@@ -25,6 +25,7 @@ Require Import RIINA.foundations.Syntax.
 Require Import RIINA.foundations.Semantics.
 Require Import RIINA.foundations.Typing.
 Require Import RIINA.type_system.Preservation.
+Require Import RIINA.termination.ReducibilityFull.
 Require Import Coq.Lists.List.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Strings.String.
@@ -782,12 +783,16 @@ Proof.
 Qed.
 
 (** val_rel_n_step_up - The core semantic lemma
-    ADMITTED: Requires strong normalization for TFn types *)
+    For FO types: proven using val_rel_at_type_fo_equiv
+    For HO types (TFn): requires typing preconditions to use SN_app *)
 Lemma val_rel_n_step_up : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
+  (* Typing preconditions for HO types - trivially satisfied for FO types *)
+  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
+  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
-  intros n Σ T v1 v2 Hrel.
+  intros n Σ T v1 v2 Hrel Hty1 Hty2.
   simpl. split.
   - exact Hrel.
   - destruct (val_rel_n_value n Σ T v1 v2 Hrel) as [Hv1 Hv2].
@@ -806,28 +811,93 @@ Proof.
         destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]].
         apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
         exact Hrat.
-    + (* Higher-order (TFn): requires strong normalization *)
-      admit. (* Requires strong normalization proof *)
+    + (* Higher-order (TFn): use typing + SN_app *)
+      (* For TFn T1 T2 ε, val_rel_at_type means: forall related args, apps terminate and are related *)
+      destruct T; try discriminate Hfo.
+      (* T = TFn T1 T2 ε *)
+      simpl.
+      intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel.
+      (* v1 and v2 are well-typed functions; x and y are values related at T1 *)
+      (* Applications v1 x and v2 y are SN by well_typed_SN *)
+      specialize (Hty1 eq_refl). specialize (Hty2 eq_refl).
+      (* From typing v1 : TFn T1 T2 ε and v1 is a value, v1 = ELam ... *)
+      destruct (canonical_forms_fn nil Σ Public v1 T1 T2 e EffectPure Hv1 Hty1) as [x1 [body1 Heq1]].
+      destruct (canonical_forms_fn nil Σ Public v2 T1 T2 e EffectPure Hv2 Hty2) as [x2 [body2 Heq2]].
+      subst v1 v2.
+      (* EApp (ELam x1 T1 body1) x -->* [x1 := x] body1 *)
+      exists ([x1 := x] body1), ([x2 := y] body2), st1, st2, ctx, Σ'.
+      repeat split.
+      * apply store_ty_extends_refl.
+      * apply MS_Step with (cfg2 := ([x1 := x] body1, st1, ctx)).
+        apply ST_AppAbs. exact Hvx.
+        apply MS_Refl.
+      * apply MS_Step with (cfg2 := ([x2 := y] body2, st2, ctx)).
+        apply ST_AppAbs. exact Hvy.
+        apply MS_Refl.
+      * (* Need val_rel_n n Σ' T2 result1 result2 *)
+        (* This requires preservation + step-indexed reasoning *)
+        (* For now, we establish the beta reduction completes *)
+        admit. (* Result relation requires deeper preservation proof *)
+      * (* Store relation preserved *)
+        admit. (* Store unchanged after pure beta reduction *)
 Admitted.
 
-(** store_rel_n_step_up - Follows from val_rel_n_step_up *)
+(** store_rel_n_step_up - Follows from val_rel_n_step_up
+    Requires store_wf to establish value relations for store locations *)
 Lemma store_rel_n_step_up : forall n Σ st1 st2,
   store_rel_n n Σ st1 st2 ->
+  store_wf Σ st1 ->
+  store_wf Σ st2 ->
   store_rel_n (S n) Σ st1 st2.
 Proof.
-  intros n Σ st1 st2 Hrel.
+  intros n Σ st1 st2 Hrel Hwf1 Hwf2.
   rewrite store_rel_n_S_unfold. split; [| split].
   - exact Hrel.
   - destruct n.
     + rewrite store_rel_n_0_unfold in Hrel. exact Hrel.
     + rewrite store_rel_n_S_unfold in Hrel. destruct Hrel as [_ [Hmax _]]. exact Hmax.
   - intros l T sl Hlook.
+    (* Use store_wf to get well-typed values at location l *)
+    destruct Hwf1 as [HΣ_to_st1 _].
+    destruct Hwf2 as [HΣ_to_st2 _].
+    specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
+    specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
+    exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
+    (* Now we need to show val_rel_n n Σ T v1 v2 *)
+    (* Values in stores are well-typed, so val_rel_n holds *)
     destruct n.
-    + (* n = 0: no location constraints at step 0 - admit *)
-      admit.
-    + (* n = S n': need val_rel_n_step_up which itself is admitted *)
-      admit.
-Admitted.
+    + (* n = 0: establish base case from values being well-typed *)
+      rewrite val_rel_n_0_unfold.
+      (* Values in well-typed stores are values (from Progress) *)
+      assert (Hv1: value v1) by admit. (* Need value_from_typing lemma *)
+      assert (Hv2: value v2) by admit. (* Need value_from_typing lemma *)
+      (* Closed from being well-typed in empty context *)
+      assert (Hc1: closed_expr v1) by admit. (* Need closed_from_typing lemma *)
+      assert (Hc2: closed_expr v2) by admit. (* Need closed_from_typing lemma *)
+      repeat split; try assumption.
+      destruct (first_order_type T) eqn:Hfo.
+      * (* FO type: need same value structure - but v1, v2 may differ *)
+        (* This is the key semantic property: low values agree *)
+        admit. (* Requires low-equivalence for FO types *)
+      * (* HO type: True at step 0 for HO *) exact I.
+    + (* n = S n': use existing val_rel_n from store_rel_n (S n') *)
+      (* store_rel_n (S n') gives us val_rel_n n' for locations *)
+      (* We need val_rel_n (S n') = val_rel_n n for store_rel_n (S (S n')) *)
+      (* But val_rel_n_step_up requires typing, which we have from store_wf *)
+      rewrite store_rel_n_S_unfold in Hrel.
+      destruct Hrel as [Hrel_n' [_ Hlocs]].
+      specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
+      (* v1 = v1' and v2 = v2' by determinism of store_lookup *)
+      rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
+      rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
+      (* We have val_rel_n n' Σ T v1 v2, need val_rel_n (S n') Σ T v1 v2 *)
+      apply val_rel_n_step_up.
+      * exact Hvrel_n'.
+      * (* Typing for v1 when T is HO *)
+        intros Hho. exact Hty1.
+      * (* Typing for v2 when T is HO *)
+        intros Hho. exact Hty2.
+Admitted. (* n = 0 case needs low-equivalence for store values *)
 
 (** ========================================================================
     SECTION 8: LIMIT DEFINITIONS (Compatibility with v1)
