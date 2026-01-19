@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-19 | SESSION 26 | 27 DELEGATION LEMMAS VERIFIED
+## Last Updated: 2026-01-19 | SESSION 26 | 41 DELEGATION LEMMAS VERIFIED
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -28,7 +28,7 @@
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Axioms (Current)** | 18 | Target: 0 (17 in NonInterference.v, 1 in MasterTheorem.v) |
 | **Admitted (Current)** | 41 | ~705 Qed (~95% completion rate) |
-| **Delegation Verified** | 27 | Lemmas verified via Claude AI delegation (ZERO axioms) |
+| **Delegation Verified** | 41 | Lemmas verified via Claude AI delegation (ZERO axioms) |
 | **Theorems (Required)** | ~2,500 | Comprehensive coverage |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | make succeeds (33 files) |
@@ -136,15 +136,20 @@
 | `RIINA_exp_rel_step1_case_PROOF.v` | 1 | ✅ ZERO AXIOMS | Sum case matching |
 | `RIINA_reference_operations_PROOF.v` | 8 | ✅ ZERO AXIOMS | ref/deref/assign + helpers |
 | `val_rel_n_step_up_fo.v` | 7 | ✅ ZERO AXIOMS | **KEY: Step-up for FO types** |
-| **TOTAL** | **27** | ✅ ALL VERIFIED | coqc + coqchk passed |
+| `val_rel_le_fo_step_independent_PROOF.v` | 14 | ✅ ZERO AXIOMS | **KEY: Cumulative step-independent** |
+| **TOTAL** | **41** | ✅ ALL VERIFIED | coqc + coqchk passed |
 
-### Step-Up Unlocks (val_rel_n_step_up_fo)
+### Step-Up Unlocks (val_rel_n_step_up_fo + val_rel_le_fo_step_independent)
 
-The step-up theorem enables proving:
-- CumulativeRelation.v admits (m'=0 cases)
+The step-up theorems enable proving:
+- ✅ CumulativeRelation.v admits (m'=0 cases) - **FIXED by val_rel_le_fo_step_independent**
 - store_rel_n_step_up (follows as corollary)
 - NonInterference_v2.v FO step-up cases
 - **Note:** TFn step-up still needs strong normalization
+
+**val_rel_le_fo_step_independent key insight:** For first-order types, structural relation
+is predicate-independent. Uses type_depth premise (m > type_depth T) to ensure sufficient
+structural information even for nested compound types.
 
 ### Elimination History
 
