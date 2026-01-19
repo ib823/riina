@@ -1,4 +1,14 @@
-(** * Non-Interference for RIINA
+(** * Non-Interference for RIINA - VERSION 1 (DEPRECATED)
+
+    ╔══════════════════════════════════════════════════════════════════════╗
+    ║  DEPRECATED: Use NonInterference_v2.v instead                        ║
+    ║                                                                      ║
+    ║  This file: 17 AXIOMS                                                ║
+    ║  v2 file:   0 AXIOMS, 3 admits (FO cases proven)                     ║
+    ║                                                                      ║
+    ║  Kept for backward compatibility with dependent files.               ║
+    ║  New development should use NonInterference_v2.v                     ║
+    ╚══════════════════════════════════════════════════════════════════════╝
 
     Information flow security property.
 
@@ -7,10 +17,10 @@
     Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
     ========================================================================
-    AXIOM STATUS SUMMARY (2026-01-18)
+    AXIOM STATUS SUMMARY (2026-01-18) - DEPRECATED
     ========================================================================
 
-    Total Axioms: 17
+    Total Axioms: 17 (SEE NonInterference_v2.v FOR 0-AXIOM VERSION)
 
     CATEGORY A: Step Conversion (3 axioms)
     ----------------------------------------
