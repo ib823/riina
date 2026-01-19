@@ -883,6 +883,70 @@ Qed.
     canonical form for type T (from typing or structural decomposition).
     For types where v1, v2 don't match the structure, the relation is False.
     We handle each case with type-specific tactics. *)
+(** NOTE: step_0_to_1 without typing has fundamental issues.
+    At step 0, val_rel_le 0 = True provides no structural info.
+    To build val_rel_le 1, we need actual structural facts about v1, v2.
+
+    For practical use, we provide two versions:
+    1. val_rel_le_build_indist - for indistinguishable types (Secret, Proof, etc.)
+    2. step_0_to_1_typed - with typing premise for base types *)
+
+(** For indistinguishable types where structural content is True *)
+Lemma val_rel_le_build_secret : forall n Σ T v1 v2,
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  val_rel_le n Σ (TSecret T) v1 v2.
+Proof.
+  induction n as [|n' IH]; intros Σ T v1 v2 Hv1 Hv2 Hcl1 Hcl2.
+  - simpl. trivial.
+  - simpl. split.
+    + apply IH; auto.
+    + unfold val_rel_struct. simpl. repeat split; auto.
+Qed.
+
+(** For first-order identical values with typing *)
+Lemma step_0_to_1_identical_typed : forall Σ T v,
+  value v ->
+  closed_expr v ->
+  first_order_type T = true ->
+  has_type nil Σ Public v T EffectPure ->
+  val_rel_le 1 Σ T v v.
+Proof.
+  intros Σ T v Hv Hcl Hfo Hty.
+  simpl. split; [trivial | ].
+  unfold val_rel_struct. repeat split; auto.
+  (* For identical values with typing, use canonical forms *)
+  destruct T; simpl in Hfo; try discriminate; simpl; auto; try trivial.
+  - (* TUnit *)
+    pose proof (canonical_forms_unit nil Σ Public v EffectPure Hv Hty) as Heq.
+    subst. split; reflexivity.
+  - (* TBool *)
+    pose proof (canonical_forms_bool nil Σ Public v EffectPure Hv Hty) as [b Heq].
+    subst. exists b. split; reflexivity.
+  - (* TInt *)
+    pose proof (canonical_forms_int nil Σ Public v EffectPure Hv Hty) as [n Heq].
+    subst. exists n. split; reflexivity.
+  - (* TString *)
+    pose proof (canonical_forms_string nil Σ Public v EffectPure Hv Hty) as [s Heq].
+    subst. exists s. split; reflexivity.
+  - (* TBytes - structural content is v = v *) trivial.
+  - (* TProd *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    pose proof (canonical_forms_prod nil Σ Public v T1 T2 EffectPure Hv Hty)
+      as [a [b [Heq [Hva Hvb]]]].
+    subst. exists a, b, a, b. repeat split; auto.
+  - (* TSum *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    pose proof (canonical_forms_sum nil Σ Public v T1 T2 EffectPure Hv Hty)
+      as [[a [Heq Hva]] | [b [Heq Hvb]]].
+    + subst. left. exists a, a. repeat split; auto.
+    + subst. right. exists b, b. repeat split; auto.
+  - (* TRef *)
+    pose proof (canonical_forms_ref nil Σ Public v T s EffectPure Hv Hty) as [l Heq].
+    subst. exists l. split; reflexivity.
+Qed.
+
+(** Original lemma kept for API but with documented limitations *)
 Lemma step_0_to_1 : forall Σ T v1 v2,
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
@@ -891,31 +955,22 @@ Lemma step_0_to_1 : forall Σ T v1 v2,
 Proof.
   intros Σ T v1 v2 Hv1 Hv2 Hcl1 Hcl2 _.
   simpl. split; [trivial | ].
-  (* Need to show val_rel_struct (val_rel_le 0) Σ T v1 v2 *)
   unfold val_rel_struct. repeat split; auto.
-  (* Type-specific structural content with trivial inner relation (True) *)
   destruct T; simpl; auto; try trivial.
-  (* Base types - these require v1, v2 to have matching canonical form *)
-  (* In actual usage, this is guaranteed by typing *)
+  (* Indistinguishable types have True structural content - use I *)
+  all: try exact I.
+  (* Base types need actual v1,v2 relationship - admit with justification *)
+  (* In practice, this lemma is only called with well-typed related values *)
   - (* TUnit *) admit. (* Requires v1=v2=EUnit from typing *)
   - (* TBool *) admit. (* Requires v1=EBool b, v2=EBool b *)
-  - (* TInt *) admit.  (* Requires v1=EInt i, v2=EInt i *)
-  - (* TString *) admit. (* Requires matching strings *)
-  - (* TBytes *) admit. (* Requires v1=v2 *)
-  (* TFn: functional behavior at step 0 - inner relation is True *)
-  - intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 _.
-    intros st1 st2 ctx Hstore.
-    (* At step 0, we need to show application terminates *)
-    (* This requires normalization/termination property *)
-    admit. (* Requires: well-typed terms terminate *)
-  (* TProd: v1 = EPair a1 b1, v2 = EPair a2 b2, inner rel True *)
-  - (* In actual use, v1 and v2 are pairs from structural decomposition *)
-    admit. (* Requires shape from typing or context *)
-  (* TSum: similar to TProd *)
-  - admit.
-  (* TRef: requires v1 = ELoc l, v2 = ELoc l *)
-  - admit.
-Admitted. (* Partial - type-specific cases need typing/context assumptions *)
+  - (* TInt *) admit.
+  - (* TString *) admit.
+  - (* TBytes *) admit.
+  - (* TFn *) admit. (* Requires termination *)
+  - (* TProd *) admit.
+  - (* TSum *) admit.
+  - (* TRef *) admit.
+Admitted.
 
 (** step_1_to_2: Provable from step-1 content alone *)
 Lemma step_1_to_2 : forall Σ T v1 v2,
