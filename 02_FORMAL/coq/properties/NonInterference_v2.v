@@ -452,12 +452,48 @@ Proof.
            apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
            apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
            exact Hrat.
-        -- (* Higher-order: requires predicate monotonicity for TFn *)
-           (* For TFn types, val_rel_at_type uses val_rel_lower and store_rel_lower *)
-           (* which are val_rel_n m' and store_rel_n m' respectively *)
-           (* We have it at n', need it at m' where m' <= n' *)
-           (* This requires showing Kripke property at lower steps *)
-           admit. (* TFn predicate monotonicity - complex *)
+        -- (* Higher-order (TFn): Kripke monotonicity *)
+           (* For TFn T1 T2 e, we have Hrat at step n' and need val_rel_at_type at step m'.
+              The key issue is that Hrat expects arguments in val_rel_n n', but we're
+              given arguments in val_rel_n m' where m' <= n'.
+
+              Since val_rel_n n' ⊆ val_rel_n m' (downward mono), we have MORE args at m'.
+              For args that are also in val_rel_n n', we can use Hrat and weaken results.
+              For args only in val_rel_n m' \ val_rel_n n', we need typing + SN arguments.
+
+              SOLUTION: For TFn where T1 is first-order, val_rel_n m' and val_rel_n n'
+              give the SAME concrete values (via val_rel_at_type_fo), so we can use Hrat.
+              For TFn where T1 is higher-order, we need the full Kripke argument. *)
+           destruct T; try discriminate Hfo.
+           (* T = TFn T1 T2 e *)
+           simpl. simpl in Hrat.
+           intros Σ' Hext' x y Hvx Hvy Hcx Hcy Hxyrel_m st1 st2 ctx Hstrel_m.
+           destruct (first_order_type T1) eqn:Hfo_T1.
+           ++ (* T1 is first-order: val_rel_at_type_fo gives same concrete values at all steps *)
+              (* For FO argument types, we can extract val_rel_at_type_fo from val_rel_n m',
+                 build val_rel_n n' for arguments, call Hrat, then weaken results.
+                 The store relation strengthening requires additional machinery.
+                 For this proof, we admit the store strengthening part. *)
+              (* Extract val_rel_at_type_fo from Hxyrel_m *)
+              assert (Hxy_fo : val_rel_at_type_fo T1 x y).
+              { destruct m'.
+                - simpl in Hxyrel_m.
+                  destruct Hxyrel_m as [_ [_ [_ [_ Hxy_if]]]].
+                  rewrite Hfo_T1 in Hxy_if. exact Hxy_if.
+                - simpl in Hxyrel_m.
+                  destruct Hxyrel_m as [_ [_ [_ [_ [_ Hrat_m]]]]].
+                  apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n m') (val_rel_n m') (store_rel_n m') x y Hfo_T1).
+                  exact Hrat_m. }
+              (* The full proof would build val_rel_n n' for x y, strengthen store_rel,
+                 call Hrat, then weaken results. For now, admit this case. *)
+              admit.
+           ++ (* T1 is higher-order: need full Kripke reasoning with typing *)
+              (* For HO arguments, val_rel_n m' does not imply val_rel_n n' without typing.
+                 The full proof requires either:
+                 1. Typing premises (then use step_up)
+                 2. The fundamental theorem (which uses typing internally)
+                 For this development, we admit this case. *)
+              admit.
 Admitted.
 
 (** Downward monotonicity for store_rel_n *)
@@ -835,11 +871,12 @@ Proof.
         apply ST_AppAbs. exact Hvy.
         apply MS_Refl.
       * (* Need val_rel_n n Σ' T2 result1 result2 *)
-        (* This requires preservation + step-indexed reasoning *)
-        (* For now, we establish the beta reduction completes *)
-        admit. (* Result relation requires deeper preservation proof *)
-      * (* Store relation preserved *)
-        admit. (* Store unchanged after pure beta reduction *)
+        (* This requires the fundamental theorem of logical relations:
+           if related values are substituted into related terms, results are related.
+           For now, we admit this semantic property. *)
+        admit.
+      * (* Store relation preserved - stores unchanged after pure beta reduction *)
+        exact Hstrel.
 Admitted.
 
 (** Helper: typing in nil context implies closed *)
@@ -893,8 +930,11 @@ Proof.
       assert (Hc2: closed_expr v2).
       { apply typing_nil_implies_closed with (Σ := Σ) (Δ := Public) (T := T) (ε := EffectPure).
         exact Hty2. }
-      (* Values in stores are values - this is an invariant of well-formed stores
-         that should ideally be part of store_wf. For now, admit. *)
+      (* Values in stores should be syntactic values - this is an invariant
+         maintained by the operational semantics (ST_RefValue only stores values).
+         The current store_wf only captures typing, not the value property.
+         A stronger store_wf definition would include: value v.
+         For this proof, we admit this property. *)
       assert (Hv1: value v1) by admit.
       assert (Hv2: value v2) by admit.
       repeat split; try assumption.
