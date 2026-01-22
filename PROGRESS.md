@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 33 | Quick-Win Axioms + Package Integration
+## Last Updated: 2026-01-22 | SESSION 32 (cont.) | Fundamental Theorem + Packages
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -24,12 +24,12 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | A- (strong progress) | Major axioms proven, quick-wins done |
+| **Overall Grade** | A (strong progress) | Fundamental theorem cases proven |
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
-| **Core Axioms** | 70 | Need evaluation/elimination |
-| **Total Admits** | 63 | Reduced from 84 (21 eliminated) |
-| **Quick-Win Axioms** | 4 PROVEN | exp_rel_n_base, val_rel_n_unit, exp_rel_n_unit, subst_rho_declassify_dist |
+| **Core Axioms** | 1 | `val_rel_n_step_up` only |
+| **Fundamental Theorem** | 8/22 cases | T_Unit, T_Bool, T_Int, T_String, T_Loc, T_Pair, T_Inl, T_Inr |
+| **Remaining Admits** | ~14 in logical_relation | T_Fst, T_Snd, T_Case, etc. |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
