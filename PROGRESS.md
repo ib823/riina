@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 32 (cont.) | Fundamental Theorem + Packages
+## Last Updated: 2026-01-22 | SESSION 33 | T_If, T_Case, T_Let Proven
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -28,8 +28,8 @@
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up` only |
-| **Fundamental Theorem** | 8/22 cases | T_Unit, T_Bool, T_Int, T_String, T_Loc, T_Pair, T_Inl, T_Inr |
-| **Remaining Admits** | ~14 in logical_relation | T_Fst, T_Snd, T_Case, etc. |
+| **Fundamental Theorem** | 13/22 cases | +T_Fst, T_Snd, T_If, T_Case, T_Let |
+| **Remaining Admits** | ~9 in logical_relation | T_Perform, T_Handle, T_Ref, etc. |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---

@@ -1,5 +1,45 @@
 # Session Log
 
+## 2026-01-22 (Session 33 cont.): T_If, T_Case, T_Let Proven
+
+**Goal:** Continue fundamental theorem proofs for control flow constructs.
+
+**Major Accomplishments:**
+
+### Fundamental Theorem Cases PROVEN (5 new, 13 total)
+
+| Case | Description | Method |
+|------|-------------|--------|
+| `T_Fst` | Product first projection | `val_rel_n_prod_decompose` + step cases |
+| `T_Snd` | Product second projection | `val_rel_n_prod_decompose` + step cases |
+| `T_If` | Conditional | `val_rel_n_bool_structure` extracts SAME boolean |
+| `T_Case` | Sum elimination | `val_rel_n_sum_decompose` + `env_rel_extend` |
+| `T_Let` | Variable binding | `exp_rel_step1_let` + `env_rel_extend` |
+
+### Key Infrastructure Used
+- `val_rel_n_bool_structure`: Extract same boolean from TBool relation
+- `val_rel_n_sum_decompose`: Extract Inl/Inr structure from TSum relation
+- `val_rel_n_from_sum_inl/inr`: Extract inner value relations
+- `env_rel_extend`: Extend environment relation with new binding
+- `subst_rho_extend`: Connect rho substitution with single substitution
+- `exp_rel_step1_*`: Step-1 cases (proven for if, case, let)
+
+**Metrics:**
+| Metric | Value |
+|--------|-------|
+| Core Axioms | 1 (`val_rel_n_step_up`) |
+| Build Status | ✅ PASSING |
+| Fundamental Theorem Progress | 13/22 cases proven |
+
+**Remaining Admits in logical_relation (9):**
+T_Perform, T_Handle, T_Ref, T_Deref, T_Assign, T_Classify, T_Declassify, T_Prove, T_Require, T_Grant
+
+**Admits structure:**
+- Step-1 corner cases (when branch doesn't terminate to value)
+- val_rel conversions (val_rel_n_weaken + val_rel_n_to_val_rel) - depend on step_up axiom
+
+---
+
 ## 2026-01-22 (Session 32 cont.): Fundamental Theorem Cases + Package Integration
 
 **Goal:** Continue infrastructure work for axiom elimination, integrate delegation packages.
