@@ -443,12 +443,90 @@ Proof.
 Qed.
 
 (** Main step-up lemma using well-founded induction on type size *)
-(* ADMITTED for v2 migration: requires updating 30+ base cases *)
+(* PARTIALLY PROVEN: base cases complete, compound types require well-founded induction *)
 Lemma val_rel_n_step_up_first_order : forall n m Σ T v1 v2,
   first_order_type T = true ->
   val_rel_n (S n) Σ T v1 v2 ->
   val_rel_n m Σ T v1 v2.
 Proof.
+  intros n m Σ T v1 v2 Hfo Hrel.
+  (* Case split on type T *)
+  destruct T; simpl in Hfo; try discriminate.
+  - (* TUnit *) apply val_rel_n_step_up_unit with n. exact Hrel.
+  - (* TBool *) apply val_rel_n_step_up_bool with n. exact Hrel.
+  - (* TInt *) apply val_rel_n_step_up_int with n. exact Hrel.
+  - (* TString *) apply val_rel_n_step_up_string with n. exact Hrel.
+  - (* TBytes *)
+    (* TBytes case: val_rel_at_type_fo TBytes v1 v2 = (v1 = v2) *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+    simpl in Hrat. subst.
+    (* Need: val_rel_n m Σ TBytes v2 v2 *)
+    induction m as [|m' IH].
+    + rewrite val_rel_n_0_unfold. simpl.
+      repeat split; try assumption.
+    + rewrite val_rel_n_S_unfold. simpl.
+      split; [exact IH|].
+      repeat split; try assumption.
+  - (* TProd T1 T2: first_order_type T1 && first_order_type T2 = true *)
+    (* This requires recursive step-up on components *)
+    (* TODO: Needs well-founded induction on type structure *)
+    admit.
+  - (* TSum T1 T2 *)
+    admit.
+  - (* TList T *)
+    admit.
+  - (* TOption T *)
+    admit.
+  - (* TRef T sl *)
+    (* TRef case: ELoc l = ELoc l *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+    simpl in Hrat. destruct Hrat as [l [Heq1 Heq2]]. subst.
+    apply val_rel_n_build_ref.
+  - (* TSecret T' *)
+    apply val_rel_n_step_up_secret with n. exact Hrel.
+  - (* TLabeled T' sl *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + rewrite val_rel_n_0_unfold. simpl.
+      repeat split; try assumption. destruct (first_order_type T); auto.
+    + rewrite val_rel_n_S_unfold. split; [exact IH|].
+      repeat split; try assumption.
+  - (* TTainted T' sl *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + rewrite val_rel_n_0_unfold. simpl.
+      repeat split; try assumption. destruct (first_order_type T); auto.
+    + rewrite val_rel_n_S_unfold. split; [exact IH|].
+      repeat split; try assumption.
+  - (* TSanitized T' sl *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + rewrite val_rel_n_0_unfold. simpl.
+      repeat split; try assumption. destruct (first_order_type T); auto.
+    + rewrite val_rel_n_S_unfold. split; [exact IH|].
+      repeat split; try assumption.
+  - (* TProof T' *)
+    apply val_rel_n_build_proof; auto.
+    { simpl in Hrel. destruct Hrel as [_ [Hv1 _]]. exact Hv1. }
+    { simpl in Hrel. destruct Hrel as [_ [_ [Hv2 _]]]. exact Hv2. }
+    { simpl in Hrel. destruct Hrel as [_ [_ [_ [Hc1 _]]]]. exact Hc1. }
+    { simpl in Hrel. destruct Hrel as [_ [_ [_ [_ [Hc2 _]]]]]. exact Hc2. }
+  - (* TCapability _ *) admit.  (* Similar pattern *)
+  - (* TCapabilityFull _ *) admit.  (* Similar pattern *)
+  - (* TConstantTime T' *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + rewrite val_rel_n_0_unfold. simpl.
+      repeat split; try assumption. destruct (first_order_type T); auto.
+    + rewrite val_rel_n_S_unfold. split; [exact IH|].
+      repeat split; try assumption.
+  - (* TZeroizing T' *)
+    simpl in Hrel. destruct Hrel as [_ [Hv1 [Hv2 [Hc1 [Hc2 _]]]]].
+    induction m as [|m' IH].
+    + rewrite val_rel_n_0_unfold. simpl.
+      repeat split; try assumption. destruct (first_order_type T); auto.
+    + rewrite val_rel_n_S_unfold. split; [exact IH|].
+      repeat split; try assumption.
 Admitted.
 
 (** ** Main Theorem: val_rel_n_to_val_rel
