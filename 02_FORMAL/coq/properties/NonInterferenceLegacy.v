@@ -1421,6 +1421,7 @@ Axiom tapp_step0_complete : forall Σ' Σ''' T2
     - n = S n': Extract val_rel_at_type from val_rel_n (S n'), then use
       val_rel_at_type_fo_full_indep to convert predicates.
 *)
+(* Spec: 04_SPECS/scope/RIINA_DEFINITIVE_SCOPE.md §4.2 *)
 Lemma val_rel_n_step_up_fo : forall n Σ T v1 v2,
   n > 0 ->
   first_order_type T = true ->

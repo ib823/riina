@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-19 | SESSION 28 | val_rel_n_step_up_fo PROVEN
+## Last Updated: 2026-01-22 | SESSION 29 | v2 Logical Relation Migration In Progress
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -24,26 +24,61 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | B+ (82%) | Foundations solid, proofs ongoing |
+| **Overall Grade** | B (status mixed) | v2 migration underway, build not green |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
-| **Axioms (Current)** | 0 | **ALL ELIMINATED** (17→0 via v2, 2 axioms→admits) |
-| **Qed Proofs** | 663 | Complete proofs with Qed |
-| **Admitted (Current)** | 45 | val_rel_n_step_up_fo now proven |
+| **Axioms (Current)** | Audit pending | Prior counts now stale during v2 migration |
+| **Qed Proofs** | Audit pending | Not re-counted this session |
+| **Admitted (Current)** | Audit pending | Not re-counted this session |
 | **Delegation Verified** | 41 | Lemmas verified via Claude AI delegation |
 | **Integration Status** | ✅ COMPLETE | SN_Closure + ReducibilityFull integrated |
 | **Theorems (Required)** | ~2,500 | Comprehensive coverage |
 | **Threats Covered** | 1,231+ | All made obsolete |
-| **Coq Compilation** | ✅ PASSING | make succeeds (36 core files) |
-| **Rust Tests** | ✅ 503 PASSING | All tests pass |
+| **Coq Compilation** | ❌ FAILING | `NonInterference_v2_LogicalRelation.v` base-case proofs |
+| **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
+
+## ACTIVE WORKSTREAM (SESSION 29)
+
+### Goal
+Migrate `SecurityProperties.v` to the v2 logical-relation stack and remove the legacy
+`NonInterferenceLegacy.v` dependency.
+
+### What Changed
+- New v2 modules: `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v`,
+  `02_FORMAL/coq/properties/NonInterference_v2_Monotone.v`
+- `_CoqProject` updated to include v2 modules and exclude legacy.
+- `SecurityProperties.v` imports updated to use v2 logical relation.
+
+### Current Build Blocker (Must Fix First)
+- `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v` fails on
+  base-case proofs after v2’s structured `val_rel_n 0` change.
+- Many legacy `simpl. trivial.` base cases are now invalid.
+
+### Immediate Fix Strategy
+1. Add `val_rel_n0_*` helper lemmas (pair/sum/base/constants/loc/fn).
+2. Replace **all** `simpl. trivial.` occurrences in
+   `NonInterference_v2_LogicalRelation.v` with the helpers.
+3. Rebuild `02_FORMAL/coq` and resolve remaining proof mismatches.
+4. Re-audit axioms/admits after build is green.
+
+### Attack Plan (Near-Term, Strict Order)
+1. **Green Build:** finish v2 base-case refactor until `make -j4` passes.
+2. **Axiom Audit:** regenerate `axiom_audit_report.txt` and update counts.
+3. **Axiom Elimination (Core 17):**
+   - Replace logical-relation ref/deref/assign/declassify axioms with
+     proofs in `ReferenceOps.v` + `Declassification.v`.
+   - Eliminate `val_rel_n_to_val_rel`/step-up obligations where possible.
+4. **Legacy Removal:** delete or fully decouple any remaining imports of
+   `NonInterferenceLegacy.v`.
+5. **Spec Traceability:** ensure axioms and proofs cite `04_SPECS/` per protocol.
 
 ## PHASE STATUS
 
 | Phase | Description | Status | Progress |
 |-------|-------------|--------|----------|
 | **Phase 0** | Foundation Verification | 🟡 IN PROGRESS | 85% |
-| **Phase 1** | Axiom Elimination (19→0) | 🟡 IN PROGRESS | 20% (step-up FO verified) |
+| **Phase 1** | Axiom Elimination (19→0) | 🟡 IN PROGRESS | v2 migration blocking audit |
 | **Phase 2** | Core Properties (~375) | ⚪ NOT STARTED | 0% |
 | **Phase 3** | Domain Properties (~2,570) | ⚪ NOT STARTED | 0% |
 | **Phase 4** | Implementation Verification | ⚪ NOT STARTED | 0% |
@@ -107,6 +142,9 @@
 ---
 
 ## AXIOM ELIMINATION PROGRESS
+
+**NOTE:** Counts below are **stale** until the v2 logical-relation migration builds cleanly.
+Run a fresh audit after the build is green.
 
 ### Current Axioms: 17 (all in NonInterference.v)
 
