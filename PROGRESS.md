@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 34 cont. | T_Var, T_Classify, T_Prove Proven
+## Last Updated: 2026-01-22 | SESSION 34 cont. | T_Lam, T_App Structure Complete
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -28,8 +28,8 @@
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up` only |
-| **Fundamental Theorem** | 22/24 cases | +T_Var, T_Classify, T_Prove complete this session |
-| **Remaining Cases** | 2 | T_Lam, T_App (need typing judgment preservation) |
+| **Fundamental Theorem** | 22/24 structure | T_Lam, T_App have structure, need step_up |
+| **Remaining Cases** | 26 admits | Mostly FO/HO corner cases + step_up |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
