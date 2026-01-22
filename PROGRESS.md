@@ -28,8 +28,8 @@
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up` only |
-| **Fundamental Theorem** | 13/22 cases | +T_Fst, T_Snd, T_If, T_Case, T_Let |
-| **Remaining Admits** | ~9 in logical_relation | T_Perform, T_Handle, T_Ref, etc. |
+| **Fundamental Theorem** | 14/22 cases | +T_Fst, T_Snd, T_If, T_Case, T_Let, T_Classify |
+| **Remaining Admits** | ~8 in logical_relation | T_Perform, T_Handle, T_Prove, etc. |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
