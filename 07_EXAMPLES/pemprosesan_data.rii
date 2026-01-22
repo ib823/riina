@@ -1,0 +1,281 @@
+// pemprosesan_data.rii
+// RIINA = Rigorous Immutable Integrity No-attack Assured
+// Named for: Reena + Isaac + Imaan
+//
+// Data Processing Example - Demonstrating collection operations,
+// pattern matching, and secure data handling
+
+modul pemprosesan_data;
+
+guna std::koleksi;
+guna std::io;
+
+// ============================================================================
+// DATA TYPES (Jenis Data)
+// ============================================================================
+
+// User record structure
+bentuk Pengguna {
+    id: Nombor,
+    nama: Teks,
+    umur: Nombor,
+    emel: Rahsia<Teks>,  // Email is sensitive
+    aktif: Benar,
+}
+
+// Transaction record
+bentuk Transaksi {
+    id: Nombor,
+    pengguna_id: Nombor,
+    jumlah: Nombor,        // Amount in cents
+    jenis: JenisTransaksi,
+    masa: Masa,
+}
+
+pilihan JenisTransaksi {
+    Deposit,
+    Pengeluaran,
+    Pindahan,
+}
+
+// Processing result
+bentuk HasilPemprosesan {
+    jumlah_diproses: Nombor,
+    jumlah_berjaya: Nombor,
+    jumlah_gagal: Nombor,
+}
+
+// ============================================================================
+// COLLECTION OPERATIONS (Operasi Koleksi)
+// ============================================================================
+
+// Filter active users - pure function
+fungsi tapis_pengguna_aktif(
+    senarai: Senarai<Pengguna>
+) -> Senarai<Pengguna> kesan Bersih {
+    pulang senarai.tapis(|p| p.aktif);
+}
+
+// Filter users by age range
+fungsi tapis_umur(
+    senarai: Senarai<Pengguna>,
+    min_umur: Nombor,
+    max_umur: Nombor
+) -> Senarai<Pengguna> kesan Bersih {
+    pulang senarai.tapis(|p| p.umur >= min_umur && p.umur <= max_umur);
+}
+
+// Map: extract user IDs
+fungsi dapatkan_id_pengguna(
+    senarai: Senarai<Pengguna>
+) -> Senarai<Nombor> kesan Bersih {
+    pulang senarai.peta(|p| p.id);
+}
+
+// Fold: calculate total transaction amount
+fungsi jumlah_transaksi(
+    senarai: Senarai<Transaksi>
+) -> Nombor kesan Bersih {
+    pulang senarai.lipat(0, |jumlah, t| {
+        padan t.jenis {
+            JenisTransaksi::Deposit => jumlah + t.jumlah,
+            JenisTransaksi::Pengeluaran => jumlah - t.jumlah,
+            JenisTransaksi::Pindahan => jumlah,  // Net zero
+        }
+    });
+}
+
+// ============================================================================
+// PATTERN MATCHING (Padanan Corak)
+// ============================================================================
+
+// Categorize transaction by amount
+fungsi kategorikan_transaksi(t: Transaksi) -> Teks kesan Bersih {
+    padan t.jumlah {
+        0..=10000 => "kecil",            // Small: 0-100.00
+        10001..=100000 => "sederhana",   // Medium: 100.01-1000.00
+        100001..=1000000 => "besar",     // Large: 1000.01-10000.00
+        _ => "sangat_besar",              // Very large: >10000.00
+    }
+}
+
+// Process transaction with validation
+fungsi proses_transaksi(
+    t: Transaksi,
+    baki: Nombor
+) -> Hasil<Nombor, RalatTransaksi> kesan Bersih {
+    padan t.jenis {
+        JenisTransaksi::Deposit => {
+            pulang Jadi(baki + t.jumlah);
+        }
+        JenisTransaksi::Pengeluaran => {
+            kalau baki >= t.jumlah {
+                pulang Jadi(baki - t.jumlah);
+            } lain {
+                pulang Gagal(RalatTransaksi::BakiTidakCukup);
+            }
+        }
+        JenisTransaksi::Pindahan => {
+            kalau baki >= t.jumlah {
+                pulang Jadi(baki - t.jumlah);
+            } lain {
+                pulang Gagal(RalatTransaksi::BakiTidakCukup);
+            }
+        }
+    }
+}
+
+pilihan RalatTransaksi {
+    BakiTidakCukup,
+    TransaksiTidakSah,
+    HadMelebihi,
+}
+
+// ============================================================================
+// SECURE DATA HANDLING (Pengendalian Data Selamat)
+// ============================================================================
+
+// Statistics without exposing sensitive data
+bentuk StatistikPengguna {
+    jumlah_pengguna: Nombor,
+    purata_umur: Nombor,
+    pengguna_aktif: Nombor,
+}
+
+// Calculate statistics - no secrets exposed
+fungsi kira_statistik(
+    senarai: Senarai<Pengguna>
+) -> StatistikPengguna kesan Bersih {
+    biar jumlah = senarai.panjang();
+    biar jumlah_umur = senarai.lipat(0, |j, p| j + p.umur);
+    biar aktif = senarai.tapis(|p| p.aktif).panjang();
+
+    pulang StatistikPengguna {
+        jumlah_pengguna: jumlah,
+        purata_umur: kalau jumlah > 0 { jumlah_umur / jumlah } lain { 0 },
+        pengguna_aktif: aktif,
+    };
+}
+
+// Anonymize user data for export
+bentuk PenggunaAnonim {
+    id_rawak: Teks,
+    kumpulan_umur: Teks,
+    aktif: Benar,
+}
+
+fungsi anonimkan_pengguna(p: Pengguna) -> PenggunaAnonim kesan Kripto {
+    biar kumpulan = padan p.umur {
+        0..=17 => "bawah_umur",
+        18..=25 => "muda",
+        26..=45 => "dewasa",
+        46..=65 => "pertengahan",
+        _ => "warga_emas",
+    };
+
+    pulang PenggunaAnonim {
+        id_rawak: jana_id_rawak(),
+        kumpulan_umur: kumpulan,
+        aktif: p.aktif,
+    };
+}
+
+// ============================================================================
+// BATCH PROCESSING (Pemprosesan Kelompok)
+// ============================================================================
+
+// Process batch of transactions
+awam fungsi proses_kelompok(
+    transaksi: Senarai<Transaksi>,
+    ubah baki: Nombor
+) -> HasilPemprosesan kesan Tulis {
+    biar ubah berjaya = 0;
+    biar ubah gagal = 0;
+
+    untuk t dalam transaksi {
+        padan proses_transaksi(t, baki) {
+            Jadi(baki_baru) => {
+                baki = baki_baru;
+                berjaya = berjaya + 1;
+                laku Tulis log_transaksi(t.id, "berjaya");
+            }
+            Gagal(ralat) => {
+                gagal = gagal + 1;
+                laku Tulis log_ralat_transaksi(t.id, ralat);
+            }
+        }
+    }
+
+    pulang HasilPemprosesan {
+        jumlah_diproses: transaksi.panjang(),
+        jumlah_berjaya: berjaya,
+        jumlah_gagal: gagal,
+    };
+}
+
+// Pipeline: filter -> transform -> aggregate
+awam fungsi analisis_pengguna_aktif(
+    pengguna: Senarai<Pengguna>,
+    min_umur: Nombor
+) -> StatistikPengguna kesan Bersih {
+    // Filter chain
+    biar ditapis = pengguna
+        .tapis(|p| p.aktif)
+        .tapis(|p| p.umur >= min_umur);
+
+    // Calculate statistics on filtered data
+    pulang kira_statistik(ditapis);
+}
+
+// ============================================================================
+// HELPER FUNCTIONS (Fungsi Pembantu)
+// ============================================================================
+
+fungsi log_transaksi(id: Nombor, status: Teks) kesan Tulis {
+    biar mesej = format!("Transaksi {}: {}", id, status);
+    laku Tulis cetak_baris(mesej);
+}
+
+fungsi log_ralat_transaksi(id: Nombor, ralat: RalatTransaksi) kesan Tulis {
+    biar sebab = padan ralat {
+        RalatTransaksi::BakiTidakCukup => "Baki tidak mencukupi",
+        RalatTransaksi::TransaksiTidakSah => "Transaksi tidak sah",
+        RalatTransaksi::HadMelebihi => "Had transaksi melebihi",
+    };
+    biar mesej = format!("Transaksi {} gagal: {}", id, sebab);
+    laku Tulis cetak_baris(mesej);
+}
+
+fungsi jana_id_rawak() -> Teks kesan Kripto {
+    // Generate random UUID
+    pulang kripto::uuid_v4();
+}
+
+// ============================================================================
+// EXAMPLE USAGE (Contoh Penggunaan)
+// ============================================================================
+
+awam fungsi contoh_utama() kesan Tulis + Kripto {
+    // Sample data
+    biar pengguna = [
+        Pengguna { id: 1, nama: "Ahmad", umur: 28, emel: rahsia("ahmad@contoh.com"), aktif: betul },
+        Pengguna { id: 2, nama: "Siti", umur: 35, emel: rahsia("siti@contoh.com"), aktif: betul },
+        Pengguna { id: 3, nama: "Muthu", umur: 42, emel: rahsia("muthu@contoh.com"), aktif: salah },
+        Pengguna { id: 4, nama: "Mei Ling", umur: 25, emel: rahsia("meiling@contoh.com"), aktif: betul },
+    ];
+
+    biar transaksi = [
+        Transaksi { id: 1, pengguna_id: 1, jumlah: 50000, jenis: JenisTransaksi::Deposit, masa: sekarang() },
+        Transaksi { id: 2, pengguna_id: 2, jumlah: 25000, jenis: JenisTransaksi::Pengeluaran, masa: sekarang() },
+        Transaksi { id: 3, pengguna_id: 1, jumlah: 10000, jenis: JenisTransaksi::Pindahan, masa: sekarang() },
+    ];
+
+    // Process and report
+    biar statistik = analisis_pengguna_aktif(pengguna, 25);
+    laku Tulis cetak_baris(format!("Pengguna aktif berumur 25+: {}", statistik.pengguna_aktif));
+
+    biar ubah baki = 100000;  // Initial balance: 1000.00
+    biar hasil = proses_kelompok(transaksi, baki);
+    laku Tulis cetak_baris(format!("Diproses: {}, Berjaya: {}, Gagal: {}",
+        hasil.jumlah_diproses, hasil.jumlah_berjaya, hasil.jumlah_gagal));
+}
