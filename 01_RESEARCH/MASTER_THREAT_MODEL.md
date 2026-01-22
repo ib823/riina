@@ -316,6 +316,7 @@ AXIOM 10: All assumptions are attack surfaces
 | CRY-028 | Certificate Attack | Fake/Compromised cert | Certificate transparency | G |
 | CRY-029 | Random Fault | Fault during crypto | Fault detection | G, Φ |
 | CRY-030 | Bleichenbacher | RSA PKCS#1 v1.5 | OAEP, Modern padding | G |
+| CRY-031 | Whisper Leak | LLM timing side channel | Constant-time LLM inference | G, ν, NEW |
 
 ### 4.7 HARDWARE/MICROARCHITECTURAL ATTACKS [HW]
 
@@ -351,6 +352,10 @@ AXIOM 10: All assumptions are attack surfaces
 | HW-028 | Hardware Implant | Inserted hardware | Inspection, Attestation | Φ, T |
 | HW-029 | Microcode Attack | Malicious microcode | Signed microcode | S, T |
 | HW-030 | Firmware Attack | Malicious firmware | Verified boot | T, U |
+| HW-031 | SpyHammer | Temperature-based Rowhammer inference | Thermal isolation | S, NEW |
+| HW-032 | DDR5 Rowhammer | ZenHammer/rhoHammer/SledgeHammer | DDR5-specific mitigations | S, NEW |
+| HW-033 | Post-Barrier Spectre | Bypasses barrier mitigations | Conservative barriers | S, NEW |
+| HW-034 | GoFetch DMP | Data Memory Prefetcher side channel | Disable DMP, constant-time | S, G, NEW |
 
 ### 4.8 NETWORK ATTACKS [NET]
 
@@ -471,6 +476,7 @@ AXIOM 10: All assumptions are attack surfaces
 | HUM-018 | Password Reuse | Same password multiple | Unique passwords, MFA | NEW |
 | HUM-019 | Unsafe Behavior | Risky user actions | Training, Controls | Ψ |
 | HUM-020 | Configuration Error | Misconfiguration | Automated config | Ψ |
+| HUM-021 | Sock Puppet Campaign | Coordinated fake accounts pressure | Multi-maintainer review | Ψ, NEW |
 
 ### 4.13 SUPPLY CHAIN ATTACKS [SUPPLY]
 
@@ -491,6 +497,7 @@ AXIOM 10: All assumptions are attack surfaces
 | SUP-013 | Binary Backdoor | Backdoored binaries | Reproducible builds | T |
 | SUP-014 | Certificate Compromise | CA compromise | Certificate transparency | G |
 | SUP-015 | Developer Compromise | Developer account | MFA, Access control | Ψ, NEW |
+| SUP-016 | Self-Replicating Malware | Auto-propagating OSS malware | Dependency isolation | NEW |
 
 ### 4.14 AI/ML ATTACKS [AI]
 
@@ -511,6 +518,9 @@ AXIOM 10: All assumptions are attack surfaces
 | AI-013 | Gradient Leakage | Leak data via gradients | Differential privacy | ν |
 | AI-014 | Evasion Attack | Evade detection | Robust classifiers | ν |
 | AI-015 | Model DoS | Resource exhaustion | Resource limits | ν, V |
+| AI-016 | Cross-Prompt Injection | Malicious files/MCP inject commands | Input isolation, sandboxing | ν, NEW |
+| AI-017 | AI Agent Swarms | Self-coordinating reconnaissance | Agent verification, rate limits | ν, NEW |
+| AI-018 | MCP Server Exploitation | MCP protocol attacks | Protocol verification | ν, NEW |
 
 ### 4.15 DISTRIBUTED SYSTEM ATTACKS [DIST]
 
