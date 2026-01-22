@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 34 | All Effect/Memory/Capability Cases Proven
+## Last Updated: 2026-01-22 | SESSION 34 cont. | T_Var, T_Classify, T_Prove Proven
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -28,8 +28,8 @@
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up` only |
-| **Fundamental Theorem** | 21/24 cases | +T_Perform, T_Handle, T_Ref, T_Deref, T_Assign, T_Declassify, T_Prove, T_Require, T_Grant |
-| **Remaining Cases** | 3 | T_Var, T_Lam, T_App |
+| **Fundamental Theorem** | 22/24 cases | +T_Var, T_Classify, T_Prove complete this session |
+| **Remaining Cases** | 2 | T_Lam, T_App (need typing judgment preservation) |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
