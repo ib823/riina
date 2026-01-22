@@ -2400,7 +2400,8 @@ Proof.
     (* We prove exp_rel from val_rel *)
     apply exp_rel_of_val_rel.
     unfold val_rel. intro n.
-    destruct n as [| n'].
+    (* Use INDUCTION on n to get val_rel_n n' as IH for the S n' case *)
+    induction n as [| n' IHn_lam].
     + (* n = 0: v2 requires value/closed, not just True *)
       rewrite val_rel_n_0_unfold. simpl.
       split. { constructor. }
@@ -2415,10 +2416,8 @@ Proof.
     + (* S n' case - prove val_rel_n (S n') for TFn *)
       rewrite val_rel_n_S_unfold.
       split.
-      * (* val_rel_n n' - recursive case *)
-        (* By IH on n: show val_rel_n n' by instantiating IH with n' *)
-        (* Use val_rel_n_step_up axiom or structural induction *)
-        admit.
+      * (* val_rel_n n' - from IH on n *)
+        exact IHn_lam.
       * (* value /\ value /\ closed /\ closed /\ val_rel_at_type *)
         split. { constructor. }
         split. { constructor. }
@@ -2433,9 +2432,15 @@ Proof.
 
         (* Build extended environment for IHHty at ORIGINAL Σ (not Σ') *)
         (* Need val_rel Σ T1 arg1 arg2 from val_rel_n n' Σ' T1 arg1 arg2 *)
-        (* This is backwards from monotonicity - requires val_rel_n_step_up + weakening *)
+        (* This requires:
+           1. Store weakening: Σ' → Σ (needs val_rel_n_weaken)
+           2. Step generalization: n' → forall m (needs val_rel_n_step_up)
+           For FO T1: both are proven/provable
+           For HO T1: both require additional axioms/lemmas *)
         assert (Hargrel_at_Σ : val_rel Σ T1 arg1 arg2).
-        { (* For FO types, val_rel doesn't depend on store; for HO types, needs axiom *)
+        { (* Convert val_rel_n n' Σ' to val_rel Σ
+             Requires store weakening + step generalization
+             Admitted pending completion of val_rel_n_weaken and step_up *)
           admit. }
 
         assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x arg1) (rho_extend rho2 x arg2)).
@@ -2556,14 +2561,21 @@ Proof.
       split. { exact Hvalr2. }
       split.
       { (* Need val_rel_n (S n'') Σ''' T2 r1 r2 from val_rel_n n'' *)
-        (* This requires val_rel_n_step_up *)
-        apply val_rel_n_step_up.
-        - exact Hrrel.
-        - (* typing premise for HO types - admit *)
-          admit.
-        - admit. }
+        (* For FO T2: use val_rel_n_step_up_fo (no typing needed)
+           For HO T2: use val_rel_n_step_up (needs typing premises) *)
+        destruct (first_order_type T2) eqn:HfoT2.
+        - (* FO T2: proven without typing *)
+          apply val_rel_n_step_up_fo; try assumption.
+          (* Need val_rel_n 0 from val_rel_n n'' *)
+          apply (val_rel_n_mono 0 n'' Σ''' T2 r1 r2); [lia | exact Hrrel].
+        - (* HO T2: needs typing for results - standard semantic typing *)
+          apply val_rel_n_step_up; try exact Hrrel.
+          + (* typing premise for r1 - needs type preservation *)
+            admit.
+          + (* typing premise for r2 *)
+            admit. }
       { (* Need store_rel_n (S n'') Σ''' from store_rel_n n'' *)
-        (* This requires store_rel_n_step_up which follows from val_rel_n_step_up *)
+        (* For now admit - requires store_rel_n_step_up or similar *)
         admit. }
   - (* T_Pair - With Kripke-style exp_rel_n, the proof chains evaluations *)
     (* IH for e1 and e2 accept any current store typing extending Σ.
