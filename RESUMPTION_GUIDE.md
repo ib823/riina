@@ -6,7 +6,7 @@
 cd /workspaces/proof
 git pull origin main
 head -50 PROGRESS.md
-tail -50 SESSION_LOG.md
+tail -30 SESSION_LOG.md
 ```
 
 ---
@@ -23,49 +23,47 @@ git status
 ### 2. Check Current Status
 ```bash
 # Quick status (key metrics)
-head -50 PROGRESS.md
+head -80 PROGRESS.md
 
 # Recent session (what was done)
-tail -50 SESSION_LOG.md
+tail -40 SESSION_LOG.md
 
 # Track coordination (dependencies)
-head -100 06_COORDINATION/COORDINATION_LOG.md
+head -80 06_COORDINATION/COORDINATION_LOG.md
 ```
 
 ### 3. Verify Build Status
 ```bash
 # Coq proofs
 cd /workspaces/proof/02_FORMAL/coq && make 2>&1 | tail -20
-
-# Rust prototype
-cd /workspaces/proof && cargo test --workspace 2>&1 | tail -20
 ```
 
 ---
 
-## Current Metrics (2026-01-22)
+## Current Metrics (2026-01-22, Session 30)
 
 | Metric | Value |
 |--------|-------|
-| Overall Grade | B (status mixed) |
+| Overall Grade | B+ (improving) |
+| Coq Status | **GREEN** |
+| Compliance Axioms | 75 (KEEP - industry regulations) |
+| Core Axioms | 25 (must eliminate → 0) |
+| Admits | 84 (incomplete proofs → 0) |
 | Research Tracks | 218 |
-| Axioms | Audit pending (v2 migration) |
-| Theorems Required | ~2,500 |
 | Threats Covered | 1,231+ |
-| Coq Status | ❌ FAILING (v2 logical-relation base cases) |
-| Rust Tests | ⚪ NOT VERIFIED |
 
 ---
 
 ## Current Phase
 
-**Phase 0: Foundation Verification** (paused for v2 migration)
+**Phase 0: Foundation Verification** - COMPLETE (Build GREEN)
 
-Next tasks (strict order):
-1. Add `val_rel_n0_*` helpers (pair/sum/base/constants/loc/fn)
-2. Replace all `simpl. trivial.` base cases in `NonInterference_v2_LogicalRelation.v`
-3. Rebuild and resolve remaining proof mismatches
-4. Re-audit axioms/admits once build is green
+**Phase 1: Axiom Elimination (25→0)** - IN PROGRESS
+
+Next tasks:
+1. Eliminate 25 core axioms using logical relation infrastructure
+2. Resolve 84 admits (most share common v2 base case pattern)
+3. Verification & hardening
 
 ---
 
@@ -77,26 +75,24 @@ Next tasks (strict order):
 | 2 | `SESSION_LOG.md` | Recent session details |
 | 3 | `CLAUDE.md` | Master instructions |
 | 4 | `06_COORDINATION/COORDINATION_LOG.md` | Track coordination |
-| 5 | `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` | Full attack plan |
 
 ---
 
 ## Key Files by Task
+
+### If Working on Axiom Elimination
+```
+02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v  # 5 axioms
+02_FORMAL/coq/properties/NonInterference_v2.v                  # 1 axiom
+02_FORMAL/coq/properties/AxiomEliminationVerified.v           # 16 admits
+02_FORMAL/coq/properties/ApplicationComplete.v                 # 11 admits
+```
 
 ### If Working on Coq Proofs (Track A)
 ```
 02_FORMAL/coq/foundations/Syntax.v      # Core definitions
 02_FORMAL/coq/foundations/Semantics.v   # Operational semantics
 02_FORMAL/coq/properties/TypeSafety.v   # Safety proofs
-02_FORMAL/coq/properties/TypeMeasure.v  # Measure definitions
-```
-
-### If Working on Axiom Elimination
-```
-02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v  # v2 logical relation
-02_FORMAL/coq/properties/NonInterference_v2.v  # v2 relations + step-up lemmas
-02_FORMAL/coq/properties/ReferenceOps.v  # ref/deref/assign proofs
-02_FORMAL/coq/properties/Declassification.v  # declassify proofs
 ```
 
 ### If Working on Rust Prototype (Track B)
@@ -107,24 +103,16 @@ Next tasks (strict order):
 03_PROTO/crates/riinac/          # Compiler driver
 ```
 
-### If Working on Tooling (Track F)
-```
-05_TOOLING/crates/riina-core/src/crypto/  # Crypto primitives
-```
-
 ---
 
 ## Attack Plan Quick Reference
 
 | Phase | Status | Focus |
 |-------|--------|-------|
-| 0 | 🟡 85% | Foundation Verification |
-| 1 | ⚪ 0% | Axiom Elimination (19→0) |
-| 2 | ⚪ 0% | Core Properties (~375 theorems) |
-| 3 | ⚪ 0% | Domain Properties (~2,570 theorems) |
-| 4 | ⚪ 0% | Implementation Verification |
-| 5 | ⚪ 0% | Multi-Prover Verification |
-| 6 | ⚪ 0% | Production Hardening |
+| 0 | **COMPLETE** | Foundation Verification |
+| 1 | 🟡 IN PROGRESS | Axiom Elimination (25→0) |
+| 2 | ⚪ NOT STARTED | Admit Resolution (84→0) |
+| 3 | ⚪ NOT STARTED | Verification & Hardening |
 
 ---
 
@@ -135,8 +123,9 @@ Before committing:
 # 1. Verify Coq compiles
 cd /workspaces/proof/02_FORMAL/coq && make
 
-# 2. Verify Rust tests pass
-cd /workspaces/proof && cargo test --workspace
+# 2. Update authoritative docs
+# - PROGRESS.md (if metrics changed)
+# - SESSION_LOG.md (add session entry)
 
 # 3. Commit with proper format
 git add -A
@@ -160,15 +149,6 @@ git revert HEAD
 git diff
 git stash
 ```
-
----
-
-## Contact
-
-Questions? Check:
-1. `CLAUDE.md` for instructions
-2. `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` for strategy
-3. `06_COORDINATION/DECISIONS.md` for past decisions
 
 ---
 
