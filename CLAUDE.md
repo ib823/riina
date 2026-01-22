@@ -663,3 +663,55 @@ When encountering old references, update them to the new naming.
 *"Security proven. Family driven."*
 
 *Last updated: 2026-01-18*
+
+---
+
+## SPECIFICATION INTEGRATION (2026-01-22)
+
+### Authoritative Specifications Location
+All proof work MUST reference the specifications in `04_SPECS/`:
+```
+04_SPECS/
+├── scope/
+│   ├── RIINA_DEFINITIVE_SCOPE.md      ← Core language definition (§4-§7)
+│   ├── RIINA_ARCHITECTURE_CORRECTED.md
+│   └── RIINA_RESEARCH_EXECUTION_MAP.md
+├── industries/                         ← 15 industry compliance specs
+│   ├── IND_A_MILITARY.md              ← CMMC, ITAR axioms
+│   ├── IND_B_HEALTHCARE.md            ← HIPAA axioms
+│   ├── IND_C_FINANCIAL.md             ← PCI-DSS, SOX axioms
+│   └── ... (IND_D through IND_O)
+└── cross-cutting/
+    ├── EXHAUSTIVENESS_AUDIT.md        ← Gap analysis
+    ├── SYNERGY_MATRIX.md              ← Cross-industry reuse
+    ├── PERFORMANCE_TEMPLATES.md       ← WCET/size requirements
+    └── UI_UX_TEMPLATES.md             ← Interface specs
+```
+
+### Spec→Proof Traceability Requirements
+
+When working on ANY axiom or proof:
+1. **FIRST** check if a spec section defines the requirement
+2. **CITE** the spec reference in Coq comments: `(* Spec: 04_SPECS/industries/IND_B_HEALTHCARE.md §3.2 *)`
+3. **VERIFY** the axiom statement matches the spec's security property
+
+### Axiom Categories
+
+**CORE AXIOMS (15) — Must Eliminate:**
+- `exp_rel_step1_*`, `logical_relation_*`, `val_rel_*`, `store_rel_*`
+- Spec Reference: `04_SPECS/scope/RIINA_DEFINITIVE_SCOPE.md §4-§6`
+
+**COMPLIANCE AXIOMS (77) — Keep as Justified:**
+- `hipaa_*`, `pci_*`, `do_178c_*`, etc.
+- These encode external regulatory requirements
+- Each maps to a spec in `04_SPECS/industries/`
+- Justification required, not proof elimination
+
+### Before Starting Proof Work
+
+Always check:
+```bash
+# See current axiom→spec alignment
+grep -l "$(basename $AXIOM_NAME)" 04_SPECS/**/*.md
+```
+
