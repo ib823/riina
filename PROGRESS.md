@@ -27,7 +27,8 @@
 | **Overall Grade** | B+ (improving) | Build green, audit complete |
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
-| **Core Axioms** | 25 | Must eliminate → 0 |
+| **Active Core Axioms** | **6** | In build, must eliminate |
+| **Archived Axioms** | 19 | Deprecated, not in build |
 | **Admits** | 84 | Incomplete proofs → 0 |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
@@ -48,14 +49,31 @@ These STAY as justified assumptions since we cannot prove that laws exist.
 
 **Core axioms** are mathematical claims that must be proven or eliminated.
 
-### Core Axioms Detail (25 total)
+### Active Core Axioms (6 total - in build)
 
-| File | Count | Axioms |
+| ID | Axiom | File | Delegatable |
+|----|-------|------|-------------|
+| AX-01 | `logical_relation_ref` | NonInterference_v2_LogicalRelation.v | ✅ YES |
+| AX-02 | `logical_relation_deref` | NonInterference_v2_LogicalRelation.v | ✅ YES |
+| AX-03 | `logical_relation_assign` | NonInterference_v2_LogicalRelation.v | ✅ YES |
+| AX-04 | `logical_relation_declassify` | NonInterference_v2_LogicalRelation.v | ✅ YES |
+| AX-05 | `val_rel_n_to_val_rel` | NonInterference_v2_LogicalRelation.v | ⚠️ PARTIAL |
+| AX-06 | `observer` (Parameter) | NonInterference_v2.v | ❌ Config |
+
+### Archived Axioms (19 total - not in build)
+
+| File | Count | Status |
 |------|-------|--------|
-| `NonInterference_v2_LogicalRelation.v` | 5 | ref, deref, assign, declassify, val_rel_n_to_val_rel |
-| `NonInterferenceLegacy.v` (archived) | 18 | step1_*, step_up, lam_cumulative, etc. |
-| `NonInterference_v2.v` | 1 | observer parameter |
-| `StepUpFromSN.v` (archived) | 1 | strong_normalization parameter |
+| `NonInterferenceLegacy.v` | 18 | Archived, replaced by v2 |
+| `StepUpFromSN.v` | 1 | Archived |
+
+### Claude.ai Delegation Package
+
+Ready-to-use prompts created in `06_COORDINATION/prompts/`:
+- `PROMPT_AX01_logical_relation_ref.md`
+- `PROMPT_AX02_logical_relation_deref.md`
+- `PROMPT_AX03_logical_relation_assign.md`
+- `PROMPT_AX04_logical_relation_declassify.md`
 
 ### Admits by File (84 total)
 
