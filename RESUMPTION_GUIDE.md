@@ -43,28 +43,29 @@ cd /workspaces/proof && cargo test --workspace 2>&1 | tail -20
 
 ---
 
-## Current Metrics (2026-01-18)
+## Current Metrics (2026-01-22)
 
 | Metric | Value |
 |--------|-------|
-| Overall Grade | B+ (80%) |
+| Overall Grade | B (status mixed) |
 | Research Tracks | 218 |
-| Axioms | 19 (target: 0) |
+| Axioms | Audit pending (v2 migration) |
 | Theorems Required | ~2,500 |
 | Threats Covered | 1,231+ |
-| Coq Status | ✅ COMPILES |
-| Rust Tests | ✅ 503 PASSING |
+| Coq Status | ❌ FAILING (v2 logical-relation base cases) |
+| Rust Tests | ⚪ NOT VERIFIED |
 
 ---
 
 ## Current Phase
 
-**Phase 0: Foundation Verification** (85% complete)
+**Phase 0: Foundation Verification** (paused for v2 migration)
 
-Next tasks:
-1. Fix CumulativeMonotone.v TFn case
-2. Complete step monotonicity proof
-3. Begin axiom elimination
+Next tasks (strict order):
+1. Add `val_rel_n0_*` helpers (pair/sum/base/constants/loc/fn)
+2. Replace all `simpl. trivial.` base cases in `NonInterference_v2_LogicalRelation.v`
+3. Rebuild and resolve remaining proof mismatches
+4. Re-audit axioms/admits once build is green
 
 ---
 
@@ -92,8 +93,10 @@ Next tasks:
 
 ### If Working on Axiom Elimination
 ```
-02_FORMAL/coq/properties/LogicalRelation.v  # 19 axioms here
-02_FORMAL/coq/properties/CumulativeMonotone.v  # Step monotonicity
+02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v  # v2 logical relation
+02_FORMAL/coq/properties/NonInterference_v2.v  # v2 relations + step-up lemmas
+02_FORMAL/coq/properties/ReferenceOps.v  # ref/deref/assign proofs
+02_FORMAL/coq/properties/Declassification.v  # declassify proofs
 ```
 
 ### If Working on Rust Prototype (Track B)

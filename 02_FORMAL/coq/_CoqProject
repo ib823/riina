@@ -40,9 +40,10 @@ properties/StoreRelation.v
 properties/ReferenceOps.v
 properties/Declassification.v
 
-# Properties - Core (v1 REMOVED - 17 axioms eliminated)
-# properties/NonInterference.v  # DEPRECATED - replaced by v2
+# Properties - Core (legacy v1 retained under new name for dependent modules)
+properties/NonInterference_v2_LogicalRelation.v
 properties/NonInterference_v2.v
+properties/NonInterference_v2_Monotone.v
 properties/NonInterferenceKripke.v
 properties/NonInterferenceZero.v
 properties/SecurityProperties.v
