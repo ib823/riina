@@ -24,7 +24,7 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | A- (strong progress) | Major axioms proven |
+| **Overall Grade** | A- (strong progress) | Major axioms proven, gaps documented |
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Active Core Axioms** | **6** → **3 proven** | AX-01, AX-02, AX-03 done |
