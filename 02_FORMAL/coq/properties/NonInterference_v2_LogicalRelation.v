@@ -3036,19 +3036,135 @@ Proof.
       split; [exact Hvalv2 |].
       split; [exact Hval2 |].
       { exact Hstore''. }
-  - (* T_Perform - ADMIT for v2 migration *)
-    admit.
-  - (* T_Handle - ADMIT for v2 migration *)
-    admit.
+  - (* T_Perform - Effect perform just passes through the value *)
+    (* EPerform eff e evaluates e to a value v, then EPerform eff v --> v *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: trivially true *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* EPerform eff v --> v by ST_PerformValue *)
+      exists v, v', st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split.
+      { (* Multi-step: EPerform eff (subst_rho rho1 e) -->* v *)
+        apply multi_step_trans with (cfg2 := (EPerform eff v, st1', ctx')).
+        - apply multi_step_perform. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_PerformValue. exact Hvalv.
+          + apply MS_Refl. }
+      split.
+      { (* Multi-step for second execution *)
+        apply multi_step_trans with (cfg2 := (EPerform eff v', st2', ctx')).
+        - apply multi_step_perform. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_PerformValue. exact Hvalv'.
+          + apply MS_Refl. }
+      split; [exact Hvalv |].
+      split; [exact Hvalv' |].
+      split; [exact Hval |].
+      { exact Hstore'. }
+  - (* T_Handle - Effect handler is like let-binding *)
+    (* EHandle e x h evaluates e to v, then steps to [x := v] h *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: trivially true *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+
+      destruct n' as [| n''].
+      { (* n' = 0: Step-1 case - simple admit *)
+        admit. }
+
+      (* n' = S n'': have budget to evaluate handler body *)
+      assert (Hext_for_h : store_ty_extends Σ Σ').
+      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+
+      (* Build extended environment at ORIGINAL Σ *)
+      assert (Hval_at_Σ : val_rel Σ T1 v v').
+      { admit. }
+
+      assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+      { apply env_rel_extend.
+        - exact Henv.
+        - exact Hval_at_Σ. }
+
+      destruct (val_rel_n_closed (S n'') Σ' T1 v v' Hval) as [Hcl1 Hcl2].
+      assert (Hno1' : rho_no_free_all (rho_extend rho1 x v)).
+      { apply rho_no_free_extend. exact Hno1. exact Hcl1. }
+      assert (Hno2' : rho_no_free_all (rho_extend rho2 x v')).
+      { apply rho_no_free_extend. exact Hno2. exact Hcl2. }
+
+      specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as Hh_rel.
+      unfold exp_rel in Hh_rel.
+
+      (* Connect substitutions *)
+      assert (Hsubst1 : [x := v] (subst_rho (rho_shadow rho1 x) h) =
+                        subst_rho (rho_extend rho1 x v) h).
+      { apply subst_rho_extend. exact Hno1. }
+      assert (Hsubst2 : [x := v'] (subst_rho (rho_shadow rho2 x) h) =
+                        subst_rho (rho_extend rho2 x v') h).
+      { apply subst_rho_extend. exact Hno2. }
+
+      specialize (Hh_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_h Hstore') as
+        [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 Hstore'']]]]]]]]]]]].
+
+      exists r1, r2, st1'', st2'', ctx'', Σ''.
+      split; [apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2) |].
+      split.
+      { apply multi_step_trans with (cfg2 := (EHandle v x (subst_rho (rho_shadow rho1 x) h), st1', ctx')).
+        - apply multi_step_handle. exact Hstep1.
+        - eapply MS_Step.
+          + apply ST_HandleValue. exact Hvalv.
+          + rewrite Hsubst1. exact Hstep_h. }
+      split.
+      { apply multi_step_trans with (cfg2 := (EHandle v' x (subst_rho (rho_shadow rho2 x) h), st2', ctx')).
+        - apply multi_step_handle. exact Hstep1'.
+        - eapply MS_Step.
+          + apply ST_HandleValue. exact Hvalv'.
+          + rewrite Hsubst2. exact Hstep_h'. }
+      split; [exact Hvalr1 |].
+      split; [exact Hvalr2 |].
+      split; [exact Hval2 |].
+      { exact Hstore''. }
   - (* T_Ref - Uses logical_relation_ref axiom *)
-    (* The axiom logical_relation_ref connects this directly *)
-    admit.
+    (* The axiom logical_relation_ref directly proves this case. *)
+    simpl.
+    unfold exp_rel. intro n.
+    eapply logical_relation_ref.
+    + eassumption.  (* has_type for e *)
+    + exact Henv.
+    + exact Hno1.
+    + exact Hno2.
   - (* T_Deref - Uses logical_relation_deref axiom *)
-    (* The axiom logical_relation_deref connects this directly *)
-    admit.
+    (* The axiom logical_relation_deref directly proves this case. *)
+    simpl.
+    unfold exp_rel. intro n.
+    eapply logical_relation_deref.
+    + eassumption.  (* has_type for e *)
+    + exact Henv.
+    + exact Hno1.
+    + exact Hno2.
   - (* T_Assign - Uses logical_relation_assign axiom *)
-    (* The axiom logical_relation_assign connects this directly *)
-    admit.
+    (* The axiom logical_relation_assign directly proves this case. *)
+    simpl.
+    unfold exp_rel. intro n.
+    eapply logical_relation_assign.
+    + eassumption.  (* has_type for e1 *)
+    + eassumption.  (* has_type for e2 *)
+    + exact Henv.
+    + exact Hno1.
+    + exact Hno2.
   - (* T_Classify - Wrapping in TSecret is trivially related *)
     simpl.
     specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
@@ -3072,14 +3188,99 @@ Proof.
         admit. }
       { exact Hstore'. }
   - (* T_Declassify - Uses logical_relation_declassify axiom *)
-    (* The axiom logical_relation_declassify connects this directly *)
-    admit.
-  - (* T_Prove - ADMIT for v2 migration *)
-    admit.
-  - (* T_Require - ADMIT for v2 migration *)
-    admit.
-  - (* T_Grant - ADMIT for v2 migration *)
-    admit.
+    (* The axiom logical_relation_declassify directly proves this case. *)
+    simpl.
+    unfold exp_rel. intro n.
+    eapply logical_relation_declassify.
+    + eassumption.  (* has_type for e *)
+    + exact Henv.
+    + exact Hno1.
+    + exact Hno2.
+  - (* T_Prove - Wrapping in EProve produces proof type *)
+    (* EProve e evaluates e to v, then EProve v is a value of type TProof T *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: trivially true *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* EProve v is a value *)
+      exists (EProve v), (EProve v'), st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split. { apply multi_step_prove. exact Hstep. }
+      split. { apply multi_step_prove. exact Hstep'. }
+      split. { constructor. assumption. }
+      split. { constructor. assumption. }
+      split.
+      { (* val_rel_n for TProof T - val_rel_at_type is True *)
+        admit. }
+      { exact Hstore'. }
+  - (* T_Require - Effect require just passes through the value *)
+    (* ERequire eff e evaluates e to v, then ERequire eff v --> v *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: trivially true *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* ERequire eff v --> v by ST_RequireValue *)
+      exists v, v', st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split.
+      { apply multi_step_trans with (cfg2 := (ERequire eff v, st1', ctx')).
+        - apply multi_step_require. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_RequireValue. exact Hvalv.
+          + apply MS_Refl. }
+      split.
+      { apply multi_step_trans with (cfg2 := (ERequire eff v', st2', ctx')).
+        - apply multi_step_require. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_RequireValue. exact Hvalv'.
+          + apply MS_Refl. }
+      split; [exact Hvalv |].
+      split; [exact Hvalv' |].
+      split; [exact Hval |].
+      { exact Hstore'. }
+  - (* T_Grant - Effect grant just passes through the value *)
+    (* EGrant eff e evaluates e to v, then EGrant eff v --> v *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: trivially true *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* EGrant eff v --> v by ST_GrantValue *)
+      exists v, v', st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split.
+      { apply multi_step_trans with (cfg2 := (EGrant eff v, st1', ctx')).
+        - apply multi_step_grant. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_GrantValue. exact Hvalv.
+          + apply MS_Refl. }
+      split.
+      { apply multi_step_trans with (cfg2 := (EGrant eff v', st2', ctx')).
+        - apply multi_step_grant. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_GrantValue. exact Hvalv'.
+          + apply MS_Refl. }
+      split; [exact Hvalv |].
+      split; [exact Hvalv' |].
+      split; [exact Hval |].
+      { exact Hstore'. }
 Admitted. (* Remaining cases admitted for v2 migration *)
 
 
