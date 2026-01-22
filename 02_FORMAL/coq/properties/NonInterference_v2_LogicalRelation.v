@@ -2412,10 +2412,159 @@ Proof.
       split. { (* closed_expr for lambda 2 - same issue *)
                admit. }
       exact I. (* TFn is not first-order, so this is True *)
-    + (* S n' case - ADMIT for v2 migration (extensive infrastructure changes needed) *)
-      admit.
-  - (* T_App - ADMIT for v2 migration (needs store_ty_extends_trans, val_rel_n_weaken) *)
-    admit.
+    + (* S n' case - prove val_rel_n (S n') for TFn *)
+      rewrite val_rel_n_S_unfold.
+      split.
+      * (* val_rel_n n' - recursive case *)
+        (* By IH on n: show val_rel_n n' by instantiating IH with n' *)
+        (* Use val_rel_n_step_up axiom or structural induction *)
+        admit.
+      * (* value /\ value /\ closed /\ closed /\ val_rel_at_type *)
+        split. { constructor. }
+        split. { constructor. }
+        split. { (* closed_expr for lambda 1 - needs typing *) admit. }
+        split. { (* closed_expr for lambda 2 - needs typing *) admit. }
+        (* val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
+        simpl.
+        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel.
+        (* Apply lambdas: EApp (ELam x T1 body) arg --> [x := arg] body *)
+        (* lam1 = ELam x T1 (subst_rho (rho_shadow rho1 x) e) *)
+        (* lam2 = ELam x T1 (subst_rho (rho_shadow rho2 x) e) *)
+
+        (* Build extended environment for IHHty at ORIGINAL Σ (not Σ') *)
+        (* Need val_rel Σ T1 arg1 arg2 from val_rel_n n' Σ' T1 arg1 arg2 *)
+        (* This is backwards from monotonicity - requires val_rel_n_step_up + weakening *)
+        assert (Hargrel_at_Σ : val_rel Σ T1 arg1 arg2).
+        { (* For FO types, val_rel doesn't depend on store; for HO types, needs axiom *)
+          admit. }
+
+        assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x arg1) (rho_extend rho2 x arg2)).
+        { apply env_rel_extend.
+          - exact Henv.
+          - exact Hargrel_at_Σ. }
+
+        assert (Hno1' : rho_no_free_all (rho_extend rho1 x arg1)).
+        { apply rho_no_free_extend; assumption. }
+        assert (Hno2' : rho_no_free_all (rho_extend rho2 x arg2)).
+        { apply rho_no_free_extend; assumption. }
+
+        (* Apply IHHty to get exp_rel at Σ *)
+        specialize (IHHty (rho_extend rho1 x arg1) (rho_extend rho2 x arg2) Henv' Hno1' Hno2') as He_rel.
+        unfold exp_rel in He_rel.
+
+        (* Connect substitutions: [x := arg](subst_rho (rho_shadow rho x) e) = subst_rho (rho_extend rho x arg) e *)
+        assert (Hsubst1 : [x := arg1] (subst_rho (rho_shadow rho1 x) e) = subst_rho (rho_extend rho1 x arg1) e).
+        { apply subst_rho_extend. exact Hno1. }
+        assert (Hsubst2 : [x := arg2] (subst_rho (rho_shadow rho2 x) e) = subst_rho (rho_extend rho2 x arg2) e).
+        { apply subst_rho_extend. exact Hno2. }
+
+        (* Apply exp_rel at step S n' with Σ_cur = Σ' (since Σ ⊆ Σ') *)
+        specialize (He_rel (S n') Σ' st1 st2 ctx Hext_Σ' Hstrel) as
+          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval Hstore']]]]]]]]]]]].
+
+        (* Result *)
+        exists v1, v2, st1', st2', ctx', Σ''.
+        split. { exact Hext''. }
+        split.
+        { (* EApp (ELam x T1 body1) arg1 -->* v1 *)
+          eapply MS_Step.
+          - apply ST_AppAbs. exact Hvarg1.
+          - rewrite Hsubst1. exact Hstep1. }
+        split.
+        { (* EApp (ELam x T1 body2) arg2 -->* v2 *)
+          eapply MS_Step.
+          - apply ST_AppAbs. exact Hvarg2.
+          - rewrite Hsubst2. exact Hstep2. }
+        split. { exact Hval. }
+        { exact Hstore'. }
+  - (* T_App - function application *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
+    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as Ha_rel.  (* argument *)
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+
+      (* Step 1: Evaluate function to lambda *)
+      specialize (Hf_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep_f1 [Hstep_f2 [Hvalf1 [Hvalf2 [Hfrel Hstore1]]]]]]]]]]]].
+
+      (* Step 2: Evaluate argument *)
+      assert (Hext_arg : store_ty_extends Σ Σ').
+      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext1). }
+      specialize (Ha_rel (S n') Σ' st1' st2' ctx' Hext_arg Hstore1) as
+        [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_a1 [Hstep_a2 [Hvala1 [Hvala2 [Harel Hstore2]]]]]]]]]]]].
+
+      (* Step 3: Apply function to argument *)
+      (* f1, f2 are val_rel_n n' at TFn - extract val_rel_at_type *)
+      (* Need to use the TFn val_rel_at_type property *)
+      destruct n' as [| n''].
+      { (* n' = 0: Step-1 case *)
+        admit. }
+
+      (* n' = S n'': have val_rel_n (S n'') which includes val_rel_at_type *)
+      (* Extract the function application property from Hfrel *)
+      rewrite val_rel_n_S_unfold in Hfrel.
+      destruct Hfrel as [Hfrel_lower [Hvf1 [Hvf2 [Hclf1 [Hclf2 Hfn_at_type]]]]].
+
+      (* Use val_rel_at_type for TFn: given related args, apps produce related results *)
+      simpl in Hfn_at_type.
+
+      (* Get closed_expr for arguments from val_rel_n at S n'' *)
+      destruct (val_rel_n_closed (S n'') Σ'' T1 a1 a2 Harel) as [Hcla1 Hcla2].
+
+      (* Downgrade Harel and Hstore2 to step n'' for Hfn_at_type *)
+      assert (Harel' : val_rel_n n'' Σ'' T1 a1 a2).
+      { apply (val_rel_n_mono n'' (S n'') Σ'' T1 a1 a2); [lia | exact Harel]. }
+      assert (Hstore2' : store_rel_n n'' Σ'' st1'' st2'').
+      { apply (store_rel_n_mono n'' (S n'') Σ'' st1'' st2''); [lia | exact Hstore2]. }
+
+      (* Apply Hfn_at_type with:
+         - Σ' extended to Σ''
+         - args a1, a2 which are val_rel_n n'' at T1
+         - stores st1'', st2'' which are store_rel_n n'' at Σ'' *)
+      specialize (Hfn_at_type Σ'' Hext2 a1 a2 Hvala1 Hvala2 Hcla1 Hcla2).
+
+      (* val_rel_n n'' Σ'' T1 a1 a2 from downgraded Harel' *)
+      specialize (Hfn_at_type Harel' st1'' st2'' ctx'' Hstore2') as
+        [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel Hstore3]]]]]]]]]].
+
+      (* Build result *)
+      exists r1, r2, st1''', st2''', ctx''', Σ'''.
+      split. { (* Σ_cur → Σ' → Σ'' → Σ''' *)
+               apply (store_ty_extends_trans_early Σ_cur Σ'' Σ''').
+               - apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext1 Hext2).
+               - exact Hext3. }
+      split.
+      { (* Multi-step: EApp f a --> ... --> r1 *)
+        apply multi_step_trans with (cfg2 := (EApp f1 (subst_rho rho1 e2), st1', ctx')).
+        - apply multi_step_app1. exact Hstep_f1.
+        - apply multi_step_trans with (cfg2 := (EApp f1 a1, st1'', ctx'')).
+          + apply multi_step_app2. exact Hvalf1. exact Hstep_a1.
+          + exact Hstep_app1. }
+      split.
+      { (* Multi-step for second execution *)
+        apply multi_step_trans with (cfg2 := (EApp f2 (subst_rho rho2 e2), st2', ctx')).
+        - apply multi_step_app1. exact Hstep_f2.
+        - apply multi_step_trans with (cfg2 := (EApp f2 a2, st2'', ctx'')).
+          + apply multi_step_app2. exact Hvalf2. exact Hstep_a2.
+          + exact Hstep_app2. }
+      destruct (val_rel_n_value n'' Σ''' T2 r1 r2 Hrrel) as [Hvalr1 Hvalr2].
+      split. { exact Hvalr1. }
+      split. { exact Hvalr2. }
+      split.
+      { (* Need val_rel_n (S n'') Σ''' T2 r1 r2 from val_rel_n n'' *)
+        (* This requires val_rel_n_step_up *)
+        apply val_rel_n_step_up.
+        - exact Hrrel.
+        - (* typing premise for HO types - admit *)
+          admit.
+        - admit. }
+      { (* Need store_rel_n (S n'') Σ''' from store_rel_n n'' *)
+        (* This requires store_rel_n_step_up which follows from val_rel_n_step_up *)
+        admit. }
   - (* T_Pair - With Kripke-style exp_rel_n, the proof chains evaluations *)
     (* IH for e1 and e2 accept any current store typing extending Σ.
        We chain: Σ_cur → Σ' (after e1) → Σ'' (after e2). *)
