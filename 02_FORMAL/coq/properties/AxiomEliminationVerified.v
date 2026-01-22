@@ -292,7 +292,8 @@ Admitted.
     1. For n > 0: use existing val_rel_n_step_up_fo
     2. For n = 0: requires explicit val_rel_at_type premise *)
 
-(* ADMITTED for v2 migration: uses missing val_rel_n_step_up_fo *)
+(* TODO: Complete proof using val_rel_n_S_unfold and val_rel_at_type_fo_equiv *)
+(* The key insight is that for first-order types, val_rel_at_type_fo is step-independent *)
 Lemma val_rel_n_step_up_fo_typed_pos : forall n Σ T v1 v2,
   n > 0 ->
   first_order_type T = true ->
