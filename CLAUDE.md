@@ -72,17 +72,17 @@ RIINA is the world's **first formally verified programming language** with:
 
 **Full syntax specification:** `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md`
 
-### 0.5 Current Project Status (2026-01-18)
+### 0.5 Current Project Status (2026-01-22)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | B+ (80%) | Foundations solid, proofs ongoing |
+| **Overall Grade** | B (status mixed) | v2 migration underway |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
-| **Axioms (Current)** | 19 | Target: 0 |
+| **Axioms (Current)** | Audit pending | v2 migration makes prior counts stale |
 | **Theorems (Required)** | ~2,500 | Comprehensive coverage |
 | **Threats Covered** | 1,231+ | All made obsolete |
-| **Coq Compilation** | ✅ PASSING | make succeeds |
-| **Rust Tests** | ✅ 503 PASSING | All tests pass |
+| **Coq Compilation** | ❌ FAILING | v2 logical-relation base cases |
+| **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 **Phase Status:**
 - Phase 0 (Foundation): 85% complete
@@ -714,4 +714,3 @@ Always check:
 # See current axiom→spec alignment
 grep -l "$(basename $AXIOM_NAME)" 04_SPECS/**/*.md
 ```
-

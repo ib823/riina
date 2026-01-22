@@ -30,7 +30,7 @@ Require Import RIINA.foundations.Syntax.
 Require Import RIINA.foundations.Typing.
 Require Import RIINA.foundations.Semantics.
 Require Import RIINA.properties.TypeMeasure.
-Require Import RIINA.properties.NonInterference.
+Require Import RIINA.properties.NonInterference_v2_LogicalRelation.
 
 Import ListNotations.
 

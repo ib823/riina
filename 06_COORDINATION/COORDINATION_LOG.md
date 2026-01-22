@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
 ## Version: 3.1.0
-## Last Updated: 2026-01-19
+## Last Updated: 2026-01-22
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -41,8 +41,8 @@
 |--------|-------|-------|
 | **Total Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Theorems Required** | ~2,500 | Comprehensive coverage |
-| **Axioms (Current)** | 18 | Target: 0 (17 in NonInterference.v + 1 in MasterTheorem.v) |
-| **Admitted (Current)** | 41 | Across 18 property files |
+| **Axioms (Current)** | Audit pending | v2 migration makes prior counts stale |
+| **Admitted (Current)** | Audit pending | Recount after build is green |
 | **Delegation Verified** | 41 | Lemmas via Claude AI (ZERO axioms) |
 | **Threats Covered** | 1,231+ | All made obsolete |
 
@@ -56,6 +56,13 @@
 | Reference operations (8) | ✅ VERIFIED | ref/deref/assign + helpers |
 | **val_rel_n_step_up_fo (7)** | ✅ **VERIFIED** | **KEY: Step-up for FO types** |
 | **val_rel_le_fo_step_independent (14)** | ✅ **VERIFIED** | **KEY: Cumulative step-independent for FO** |
+
+### Current Coordination Note (Session 29)
+
+- v2 logical-relation migration is in progress; core build is **not green**.
+- Primary dependency: finish base-case `val_rel_n 0` proof refactor in
+  `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v`.
+- Defer axiom/admit audit until after the build succeeds.
 
 ### Session 17 Progress (Previous)
 

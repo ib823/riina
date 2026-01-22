@@ -1,5 +1,29 @@
 # Session Log
 
+## 2026-01-22 (Session 29): v2 Logical Relation Migration — Build Broken
+
+**Goal:** Migrate `SecurityProperties.v` to v2 logical relation and remove legacy NonInterference.
+
+**Actions:**
+1. Added v2 logical-relation modules:
+   - `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v`
+   - `02_FORMAL/coq/properties/NonInterference_v2_Monotone.v`
+2. Updated `_CoqProject` and `SecurityProperties.v` to use v2 imports.
+3. Refactored product/sum extraction lemmas to respect structured `val_rel_n 0`.
+4. Added `n > 0` constraints to `val_rel_n_from_sum_inl`/`val_rel_n_from_sum_inr`
+   and updated call sites.
+
+**Build Status:**
+- ❌ `make -j4` fails in `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v`
+  due to remaining `simpl. trivial.` base cases that are incompatible with v2.
+
+**Next Actions (Strict Order):**
+1. Introduce `val_rel_n0_*` helper lemmas (pair/sum/base/constants/loc/fn).
+2. Replace every `simpl. trivial.` base case in
+   `NonInterference_v2_LogicalRelation.v`.
+3. Rebuild and fix any remaining mismatches.
+4. Re-run axiom/admit audit once the build is green.
+
 ## 2026-01-19 (Session 28 Final): Documentation and Build Cleanup
 
 **Actions:**

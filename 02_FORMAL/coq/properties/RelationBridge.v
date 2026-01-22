@@ -28,7 +28,7 @@ Require Import RIINA.foundations.Semantics.
 Require Import RIINA.properties.TypeMeasure.
 Require Import RIINA.properties.CumulativeRelation.
 Require Import RIINA.properties.CumulativeMonotone.
-Require Import RIINA.properties.NonInterference.
+Require Import RIINA.properties.NonInterference_v2_LogicalRelation.
 
 Import ListNotations.
 
