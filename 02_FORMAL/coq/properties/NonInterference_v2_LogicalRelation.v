@@ -2471,10 +2471,158 @@ Proof.
           - apply (val_rel_n_mono_store n' Σ' Σ'' T1 v1 v1' Hext2 Hval1).
           - exact Hval2. }
         { exact Hstore2. }
-  - (* T_Fst - ADMIT for v2 migration *)
-    admit.
-  - (* T_Snd - ADMIT for v2 migration *)
-    admit.
+  - (* T_Fst - First projection *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: exp_rel_n 0 is trivially True *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Run the product expression using IH *)
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* v and v' are related products at type TProd T1 T2 *)
+
+      destruct n' as [| n''].
+      { (* n' = 0: Step-1 case - use exp_rel_step1_fst for FO types *)
+        destruct (first_order_decidable T1) as [Hfo1 | Hho1];
+        destruct (first_order_decidable T2) as [Hfo2 | Hho2].
+        - (* Both FO - use exp_rel_step1_fst *)
+          assert (HextΣ : store_ty_extends Σ Σ').
+          { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+          destruct (exp_rel_step1_fst Σ T1 T2 v v' st1' st2' ctx' Σ'
+                     Hfo1 Hfo2 Hval Hstore' HextΣ)
+            as [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepF1 [HstepF2 [Hva1 [Hva2 [Hvrel'' Hstore'']]]]]]]]]]]].
+          exists a1, a2, st1'', st2'', ctx'', Σ''.
+          split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+          split. { apply multi_step_trans with (cfg2 := (EFst v, st1', ctx')).
+                   - apply multi_step_fst. exact Hstep.
+                   - exact HstepF1. }
+          split. { apply multi_step_trans with (cfg2 := (EFst v', st2', ctx')).
+                   - apply multi_step_fst. exact Hstep'.
+                   - exact HstepF2. }
+          split; [exact Hva1 |].
+          split; [exact Hva2 |].
+          split; [exact Hvrel'' |].
+          exact Hstore''.
+        - (* T1 FO, T2 not FO - admit this corner case *)
+          admit.
+        - (* T1 not FO, T2 FO - admit this corner case *)
+          admit.
+        - (* Neither FO - admit this corner case *)
+          admit. }
+      (* n' = S n'': use val_rel_n_prod_decompose since n' > 0 *)
+      destruct (val_rel_n_prod_decompose (S n'') Σ' T1 T2 v v')
+        as [a1 [b1 [a2 [b2 [Heqv [Heqv' [Hva1 [Hvb1 [Hva2 [Hvb2
+            [Hcla1 [Hclb1 [Hcla2 [Hclb2 [Hrat1 Hrat2]]]]]]]]]]]]]]].
+      { lia. }
+      { exact Hval. }
+      subst v v'.
+      (* Now: v = EPair a1 b1, v' = EPair a2 b2 *)
+
+      (* Step 3: EFst (EPair a1 b1) --> a1 *)
+      exists a1, a2, st1', st2', ctx', Σ'.
+      split; [exact Hext |].
+      split.
+      { (* EFst (subst_rho rho1 e) -->* a1 *)
+        apply multi_step_trans with (cfg2 := (EFst (EPair a1 b1), st1', ctx')).
+        - apply multi_step_fst. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_Fst; assumption.
+          + apply MS_Refl. }
+      split.
+      { (* EFst (subst_rho rho2 e) -->* a2 *)
+        apply multi_step_trans with (cfg2 := (EFst (EPair a2 b2), st2', ctx')).
+        - apply multi_step_fst. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_Fst; assumption.
+          + apply MS_Refl. }
+      split; [exact Hva1 |].
+      split; [exact Hva2 |].
+      split.
+      { (* val_rel_n (S n'') Σ' T1 a1 a2 *)
+        apply (val_rel_n_from_prod_fst (S n'') Σ' T1 T2 a1 b1 a2 b2).
+        - lia.
+        - exact Hval. }
+      { exact Hstore'. }
+  - (* T_Snd - Second projection *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: exp_rel_n 0 is trivially True *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Run the product expression using IH *)
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* v and v' are related products at type TProd T1 T2 *)
+
+      destruct n' as [| n''].
+      { (* n' = 0: Step-1 case - use exp_rel_step1_snd for FO types *)
+        destruct (first_order_decidable T1) as [Hfo1 | Hho1];
+        destruct (first_order_decidable T2) as [Hfo2 | Hho2].
+        - (* Both FO - use exp_rel_step1_snd *)
+          assert (HextΣ : store_ty_extends Σ Σ').
+          { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+          destruct (exp_rel_step1_snd Σ T1 T2 v v' st1' st2' ctx' Σ'
+                     Hfo1 Hfo2 Hval Hstore' HextΣ)
+            as [b1 [b2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepS1 [HstepS2 [Hvb1 [Hvb2 [Hvrel'' Hstore'']]]]]]]]]]]].
+          exists b1, b2, st1'', st2'', ctx'', Σ''.
+          split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+          split. { apply multi_step_trans with (cfg2 := (ESnd v, st1', ctx')).
+                   - apply multi_step_snd. exact Hstep.
+                   - exact HstepS1. }
+          split. { apply multi_step_trans with (cfg2 := (ESnd v', st2', ctx')).
+                   - apply multi_step_snd. exact Hstep'.
+                   - exact HstepS2. }
+          split; [exact Hvb1 |].
+          split; [exact Hvb2 |].
+          split; [exact Hvrel'' |].
+          exact Hstore''.
+        - (* T1 FO, T2 not FO - admit this corner case *)
+          admit.
+        - (* T1 not FO, T2 FO - admit this corner case *)
+          admit.
+        - (* Neither FO - admit this corner case *)
+          admit. }
+      (* n' = S n'': use val_rel_n_prod_decompose since n' > 0 *)
+      destruct (val_rel_n_prod_decompose (S n'') Σ' T1 T2 v v')
+        as [a1 [b1 [a2 [b2 [Heqv [Heqv' [Hva1 [Hvb1 [Hva2 [Hvb2
+            [Hcla1 [Hclb1 [Hcla2 [Hclb2 [Hrat1 Hrat2]]]]]]]]]]]]]]].
+      { lia. }
+      { exact Hval. }
+      subst v v'.
+      (* Now: v = EPair a1 b1, v' = EPair a2 b2 *)
+
+      (* Step 3: ESnd (EPair a1 b1) --> b1 *)
+      exists b1, b2, st1', st2', ctx', Σ'.
+      split; [exact Hext |].
+      split.
+      { (* ESnd (subst_rho rho1 e) -->* b1 *)
+        apply multi_step_trans with (cfg2 := (ESnd (EPair a1 b1), st1', ctx')).
+        - apply multi_step_snd. exact Hstep.
+        - eapply MS_Step.
+          + apply ST_Snd; assumption.
+          + apply MS_Refl. }
+      split.
+      { (* ESnd (subst_rho rho2 e) -->* b2 *)
+        apply multi_step_trans with (cfg2 := (ESnd (EPair a2 b2), st2', ctx')).
+        - apply multi_step_snd. exact Hstep'.
+        - eapply MS_Step.
+          + apply ST_Snd; assumption.
+          + apply MS_Refl. }
+      split; [exact Hvb1 |].
+      split; [exact Hvb2 |].
+      split.
+      { (* val_rel_n (S n'') Σ' T2 b1 b2 *)
+        apply (val_rel_n_from_prod_snd (S n'') Σ' T1 T2 a1 b1 a2 b2).
+        - lia.
+        - exact Hval. }
+      { exact Hstore'. }
   - (* T_Inl - Left injection *)
     simpl.
     specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
