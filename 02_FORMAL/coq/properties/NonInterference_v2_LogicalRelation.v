@@ -2659,8 +2659,108 @@ Proof.
       { exact Hstore'. }
   - (* T_Case - ADMIT for v2 migration *)
     admit.
-  - (* T_If - ADMIT for v2 migration *)
-    admit.
+  - (* T_If - Conditional with same boolean evaluates same branch *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* condition *)
+    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as He2_rel.  (* then branch *)
+    specialize (IHHty3 rho1 rho2 Henv Hno1 Hno2) as He3_rel.  (* else branch *)
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: exp_rel_n 0 is trivially True *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Evaluate condition using IH1 *)
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      (* v and v' are related booleans: val_rel_n (S n') Σ' TBool v v' *)
+
+      destruct n' as [| n''].
+      { (* n' = 0: Step-1 case - use exp_rel_step1_if *)
+        (* At step S 0, IH gave us val_rel_n 0 and store_rel_n 0 *)
+        assert (HextΣ : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        (* Use exp_rel_step1_if - Hval and Hstore' are already at step 0 *)
+        destruct (exp_rel_step1_if Σ v v' (subst_rho rho1 e2) (subst_rho rho2 e2)
+                   (subst_rho rho1 e3) (subst_rho rho2 e3) st1' st2' ctx' Σ'
+                   Hval Hstore' HextΣ)
+          as [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepIf1 HstepIf2]]]]]]]].
+        exists r1, r2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+        split. { apply multi_step_trans with (cfg2 := (EIf v (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
+                 - apply multi_step_if. exact Hstep.
+                 - exact HstepIf1. }
+        split. { apply multi_step_trans with (cfg2 := (EIf v' (subst_rho rho2 e2) (subst_rho rho2 e3), st2', ctx')).
+                 - apply multi_step_if. exact Hstep'.
+                 - exact HstepIf2. }
+        (* Step-1 case: we've shown both take same branch, but result isn't necessarily a value *)
+        (* This is actually exp_rel_step1, which doesn't require termination to value *)
+        admit. }
+      (* n' = S n'': n' >= 1, have budget to evaluate branch *)
+      (* At step (S n'), IH1 gives val_rel_n n' = val_rel_n (S n''), store_rel_n n' = store_rel_n (S n'') *)
+      (* Extract same boolean from val_rel_n (S n'') *)
+      destruct (val_rel_n_bool_structure (S n'') Σ' v v' Hval) as [b [Heq1 Heq2]].
+      subst v v'.
+      (* Now we know: v = EBool b, v' = EBool b - SAME boolean! *)
+
+      (* Step 2: Step EIf (EBool b) e2 e3 to the appropriate branch *)
+      destruct b.
+      * (* b = true: both step to then branch *)
+        assert (HextΣ' : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        (* Apply IH2 for then branch at step (S n') = (S (S n''))
+           This needs store_rel_n n' = store_rel_n (S n''), which is Hstore' *)
+        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx'
+                     HextΣ' Hstore') as
+          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [Hstep2 [Hstep2' [Hvalr1 [Hvalr2 [Hval2 Hstore2]]]]]]]]]]]].
+        exists r1, r2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+        split.
+        { (* Chain: e1 -->* EBool true, then EIf (EBool true) e2 e3 --> e2, then e2 -->* r1 *)
+          apply multi_step_trans with (cfg2 := (EIf (EBool true) (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
+          - apply multi_step_if. exact Hstep.
+          - apply multi_step_trans with (cfg2 := (subst_rho rho1 e2, st1', ctx')).
+            + eapply MS_Step. { apply ST_IfTrue. } apply MS_Refl.
+            + exact Hstep2. }
+        split.
+        { (* Same for second expression *)
+          apply multi_step_trans with (cfg2 := (EIf (EBool true) (subst_rho rho2 e2) (subst_rho rho2 e3), st2', ctx')).
+          - apply multi_step_if. exact Hstep'.
+          - apply multi_step_trans with (cfg2 := (subst_rho rho2 e2, st2', ctx')).
+            + eapply MS_Step. { apply ST_IfTrue. } apply MS_Refl.
+            + exact Hstep2'. }
+        split; [exact Hvalr1 |].
+        split; [exact Hvalr2 |].
+        split; [exact Hval2 |].
+        { exact Hstore2. }
+      * (* b = false: both step to else branch *)
+        assert (HextΣ' : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        (* Apply IH3 for else branch at step (S n') = (S (S n''))
+           This needs store_rel_n n' = store_rel_n (S n''), which is Hstore' *)
+        specialize (He3_rel (S (S n'')) Σ' st1' st2' ctx'
+                     HextΣ' Hstore') as
+          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [Hstep3 [Hstep3' [Hvalr1 [Hvalr2 [Hval3 Hstore3]]]]]]]]]]]].
+        exists r1, r2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+        split.
+        { (* Chain: e1 -->* EBool false, then EIf (EBool false) e2 e3 --> e3, then e3 -->* r1 *)
+          apply multi_step_trans with (cfg2 := (EIf (EBool false) (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
+          - apply multi_step_if. exact Hstep.
+          - apply multi_step_trans with (cfg2 := (subst_rho rho1 e3, st1', ctx')).
+            + eapply MS_Step. { apply ST_IfFalse. } apply MS_Refl.
+            + exact Hstep3. }
+        split.
+        { (* Same for second expression *)
+          apply multi_step_trans with (cfg2 := (EIf (EBool false) (subst_rho rho2 e2) (subst_rho rho2 e3), st2', ctx')).
+          - apply multi_step_if. exact Hstep'.
+          - apply multi_step_trans with (cfg2 := (subst_rho rho2 e3, st2', ctx')).
+            + eapply MS_Step. { apply ST_IfFalse. } apply MS_Refl.
+            + exact Hstep3'. }
+        split; [exact Hvalr1 |].
+        split; [exact Hvalr2 |].
+        split; [exact Hval3 |].
+        { exact Hstore3. }
   - (* T_Let - ADMIT for v2 migration *)
     admit.
   - (* T_Perform - ADMIT for v2 migration *)
