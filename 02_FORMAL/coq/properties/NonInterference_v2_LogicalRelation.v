@@ -1209,6 +1209,24 @@ Proof.
   - rewrite (IHe rho0 x0 v0 Hno). reflexivity.
 Qed.
 
+(** Empty environment is related to any environments (step-indexed version)
+    Package I Proof Integration: env_rel_empty *)
+Lemma env_rel_empty_n : forall n Σ rho1 rho2,
+  env_rel_n n Σ nil rho1 rho2.
+Proof.
+  intros n Σ rho1 rho2.
+  unfold env_rel_n. intros x T Hlook.
+  simpl in Hlook. discriminate.
+Qed.
+
+(** Empty environment is related (forall-n version) *)
+Lemma env_rel_empty : forall Σ rho1 rho2,
+  env_rel Σ nil rho1 rho2.
+Proof.
+  intros Σ rho1 rho2 n.
+  apply env_rel_empty_n.
+Qed.
+
 Lemma env_rel_extend_n : forall n Σ G rho1 rho2 x T v1 v2,
   env_rel_n n Σ G rho1 rho2 ->
   val_rel_n n Σ T v1 v2 ->
