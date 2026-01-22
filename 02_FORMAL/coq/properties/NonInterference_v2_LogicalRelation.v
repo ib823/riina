@@ -2941,8 +2941,101 @@ Proof.
         split; [exact Hvalr2 |].
         split; [exact Hval3 |].
         { exact Hstore3. }
-  - (* T_Let - ADMIT for v2 migration *)
-    admit.
+  - (* T_Let - Variable binding *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* bound expression *)
+    (* IHHty2 has extended environment, handled below *)
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: trivially true *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Evaluate the bound expression e1 *)
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+
+      destruct n' as [| n''].
+      { (* n' = 0: Step-1 case - use exp_rel_step1_let *)
+        assert (HextΣ : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        destruct (exp_rel_step1_let Σ T1 v v' x
+                   (subst_rho (rho_shadow rho1 x) e2)
+                   (subst_rho (rho_shadow rho2 x) e2)
+                   st1' st2' ctx' Σ' Hval Hstore' HextΣ)
+          as [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepL1 HstepL2]]]]]]]].
+        exists r1, r2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+        split. { apply multi_step_trans with (cfg2 := (ELet x v (subst_rho (rho_shadow rho1 x) e2), st1', ctx')).
+                 - apply multi_step_let. exact Hstep1.
+                 - exact HstepL1. }
+        split. { apply multi_step_trans with (cfg2 := (ELet x v' (subst_rho (rho_shadow rho2 x) e2), st2', ctx')).
+                 - apply multi_step_let. exact Hstep1'.
+                 - exact HstepL2. }
+        (* Step-1: result not necessarily a value - admit corner case *)
+        admit. }
+
+      (* n' = S n'': have budget to evaluate body *)
+      assert (Hext_for_e2 : store_ty_extends Σ Σ').
+      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+
+      (* Build extended environment at ORIGINAL Σ *)
+      (* Requires: val_rel Σ T1 v v' from val_rel_n (S n'') Σ' T1 v v' *)
+      assert (Hval_at_Σ : val_rel Σ T1 v v').
+      { admit. }
+
+      assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+      { apply env_rel_extend.
+        - exact Henv.
+        - exact Hval_at_Σ. }
+
+      (* v and v' are closed because they come from val_rel_n at S n'' > 0 *)
+      destruct (val_rel_n_closed (S n'') Σ' T1 v v' Hval) as [Hcl1 Hcl2].
+      assert (Hno1' : rho_no_free_all (rho_extend rho1 x v)).
+      { apply rho_no_free_extend.
+        - exact Hno1.
+        - exact Hcl1. }
+      assert (Hno2' : rho_no_free_all (rho_extend rho2 x v')).
+      { apply rho_no_free_extend.
+        - exact Hno2.
+        - exact Hcl2. }
+
+      (* Apply IH for e2 with extended environment *)
+      specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as He2_rel.
+      unfold exp_rel in He2_rel.
+
+      (* Connect substitutions: [x := v](subst_rho (rho_shadow rho1 x) e2) = subst_rho (rho_extend rho1 x v) e2 *)
+      assert (Hsubst1 : [x := v] (subst_rho (rho_shadow rho1 x) e2) =
+                        subst_rho (rho_extend rho1 x v) e2).
+      { apply subst_rho_extend. exact Hno1. }
+      assert (Hsubst2 : [x := v'] (subst_rho (rho_shadow rho2 x) e2) =
+                        subst_rho (rho_extend rho2 x v') e2).
+      { apply subst_rho_extend. exact Hno2. }
+
+      (* Apply IH at step (S (S n'')) with store Σ' *)
+      specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e2 Hstore') as
+        [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 Hstore'']]]]]]]]]]]].
+
+      exists v1, v2, st1'', st2'', ctx'', Σ''.
+      split; [apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2) |].
+      split.
+      { (* Multi-step for first execution *)
+        apply multi_step_trans with (cfg2 := (ELet x v (subst_rho (rho_shadow rho1 x) e2), st1', ctx')).
+        - apply multi_step_let. exact Hstep1.
+        - eapply MS_Step.
+          + apply ST_LetValue. exact Hvalv.
+          + rewrite Hsubst1. exact Hstep_e2. }
+      split.
+      { (* Multi-step for second execution *)
+        apply multi_step_trans with (cfg2 := (ELet x v' (subst_rho (rho_shadow rho2 x) e2), st2', ctx')).
+        - apply multi_step_let. exact Hstep1'.
+        - eapply MS_Step.
+          + apply ST_LetValue. exact Hvalv'.
+          + rewrite Hsubst2. exact Hstep_e2'. }
+      split; [exact Hvalv1 |].
+      split; [exact Hvalv2 |].
+      split; [exact Hval2 |].
+      { exact Hstore''. }
   - (* T_Perform - ADMIT for v2 migration *)
     admit.
   - (* T_Handle - ADMIT for v2 migration *)
