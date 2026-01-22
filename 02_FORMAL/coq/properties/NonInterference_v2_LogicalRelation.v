@@ -2473,18 +2473,63 @@ Proof.
       * (* HO type: first_order_type T = false *)
         (* We have: Hrel : val_rel_n (S n') Σ T v1 v2 *)
         (* Goal: val_rel_n (S (S n')) Σ T v1 v2 *)
-        (* Strategy: Use the cumulative structure + step up val_rel_at_type *)
         destruct (val_rel_n_value (S n') Σ T v1 v2 Hrel) as [Hv1 Hv2].
         destruct (val_rel_n_closed (S n') Σ T v1 v2 Hrel) as [Hc1 Hc2].
+        (* Extract val_rel_at_type at step n' from Hrel *)
+        assert (Hrat_n' : val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2).
+        { simpl in Hrel. destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]]. exact Hrat. }
         rewrite val_rel_n_S_unfold.
         split. { exact Hrel. }
         repeat split; try assumption.
-        (* val_rel_at_type at step S n' - requires converting predicates from n' to S n' *)
-        (* For TFn: downgrade arguments/stores, apply, step up results *)
-        (* For other HO types: similar recursive structure *)
-        (* This is the core of the step_up proof for HO types *)
-        (* Admit for now - requires val_rel_at_type predicate monotonicity lemma *)
-        admit.
+        (* Goal: val_rel_at_type Σ (store_rel_n (S n')) (val_rel_n (S n')) (store_rel_n (S n')) T v1 v2 *)
+
+        (* Handle TFn case - only TFn has first_order_type = false at the top level *)
+        destruct T as [| | | | | T1 T2 eff | T1 T2 | T1 T2 | T' | T' | T' sec |
+                       T' | T' lab | T' src | T' src | cap | cap | T' |
+                       proto | T' sec | T' | T' ]; simpl; simpl in Hrat_n'.
+        (* TUnit through TBytes: first_order_type = true, contradiction *)
+        1-5: discriminate HfoT.
+        (* TFn: the main higher-order case *)
+        { intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel.
+          (* Downgrade arguments: val_rel_n (S n') → val_rel_n n' *)
+          assert (Hargrel_n' : val_rel_n n' Σ' T1 arg1 arg2).
+          { apply (val_rel_n_mono n' (S n') Σ' T1 arg1 arg2); [lia | exact Hargrel]. }
+          (* Downgrade stores: store_rel_n (S n') → store_rel_n n' *)
+          assert (Hstrel_n' : store_rel_n n' Σ' st1 st2).
+          { apply (store_rel_n_mono n' (S n') Σ' st1 st2); [lia | exact Hstrel]. }
+          (* Apply val_rel_at_type at step n' *)
+          specialize (Hrat_n' Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel_n' st1 st2 ctx Hstrel_n')
+            as [r1 [r2 [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hrrel_n' Hsrel_n']]]]]]]]]].
+          (* Build existential witnesses *)
+          exists r1, r2, st1', st2', ctx', Σ''.
+          split. { exact Hext'. }
+          split. { exact Hstep1. }
+          split. { exact Hstep2. }
+          split.
+          { (* val_rel_n (S n') Σ'' T2 r1 r2 - step up from n' using IH_step_up *)
+            apply (IH_step_up n'); [lia | exact Hrrel_n' | | ].
+            - (* typing for r1 if T2 is HO - requires preservation *)
+              intros HhoT2. admit.
+            - (* typing for r2 if T2 is HO *)
+              intros HhoT2. admit. }
+          { (* store_rel_n (S n') Σ'' st1' st2' *)
+            apply store_rel_n_step_up; try exact Hsrel_n'. all: admit. } }
+        (* TProd, TSum: recursive - components may be HO *)
+        1-2: admit.
+        (* TList, TOption: val_rel_at_type is True *)
+        1-2: exact I.
+        (* TRef: structural (location equality) *)
+        { exact Hrat_n'. }
+        (* TSecret, TLabeled, TTainted, TSanitized: val_rel_at_type is True *)
+        1-4: exact I.
+        (* TCapability, TCapabilityFull: first_order_type = true *)
+        1-2: exact I.
+        (* TProof: val_rel_at_type is True or recursive *)
+        { exact I. }
+        (* TChan, TSecureChan: val_rel_at_type is True *)
+        1-2: exact I.
+        (* TConstantTime, TZeroizing: recursive on inner type *)
+        all: admit.
     + (* fundamental at S n' *)
       unfold fundamental_at_step.
       intros Γ Σ Δ e0 T ε rho1 rho2 Hty Henv Hno1 Hno2.
