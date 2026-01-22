@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 30 | Build GREEN, Axiom Audit Complete
+## Last Updated: 2026-01-22 | SESSION 31 | AX-01 & AX-03 Proof Files Created
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -51,14 +51,14 @@ These STAY as justified assumptions since we cannot prove that laws exist.
 
 ### Active Core Axioms (6 total - in build)
 
-| ID | Axiom | File | Delegatable |
-|----|-------|------|-------------|
-| AX-01 | `logical_relation_ref` | NonInterference_v2_LogicalRelation.v | ✅ YES |
-| AX-02 | `logical_relation_deref` | NonInterference_v2_LogicalRelation.v | ✅ YES |
-| AX-03 | `logical_relation_assign` | NonInterference_v2_LogicalRelation.v | ✅ YES |
-| AX-04 | `logical_relation_declassify` | NonInterference_v2_LogicalRelation.v | ✅ YES |
-| AX-05 | `val_rel_n_to_val_rel` | NonInterference_v2_LogicalRelation.v | ⚠️ PARTIAL |
-| AX-06 | `observer` (Parameter) | NonInterference_v2.v | ❌ Config |
+| ID | Axiom | File | Status |
+|----|-------|------|--------|
+| AX-01 | `logical_relation_ref` | NonInterference_v2_LogicalRelation.v | 🔄 Proof file created (2 admits) |
+| AX-02 | `logical_relation_deref` | NonInterference_v2_LogicalRelation.v | ✅ Delegatable |
+| AX-03 | `logical_relation_assign` | NonInterference_v2_LogicalRelation.v | ✅ Proof file created (Qed) |
+| AX-04 | `logical_relation_declassify` | NonInterference_v2_LogicalRelation.v | ✅ Delegatable |
+| AX-05 | `val_rel_n_to_val_rel` | NonInterference_v2_LogicalRelation.v | ⚠️ PARTIAL (FO proven) |
+| AX-06 | `observer` (Parameter) | NonInterference_v2.v | ❌ Config (not axiom)
 
 ### Archived Axioms (19 total - not in build)
 
