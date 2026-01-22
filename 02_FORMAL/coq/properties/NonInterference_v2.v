@@ -1069,6 +1069,109 @@ Definition exp_rel (Σ : store_ty) (T : ty) (e1 e2 : expr) : Prop :=
 Notation "e1 '~' e2 ':' T ':' Σ" := (exp_rel Σ T e1 e2) (at level 40).
 
 (** ========================================================================
+    SECTION 8.5: QUICK-WIN LEMMAS FOR AXIOM ELIMINATION
+    ========================================================================
+
+    These lemmas prove properties that were previously axioms in
+    LogicalRelationAssign_PROOF.v. By proving them here with the actual
+    definitions, we mark those axioms as verified.
+*)
+
+(** QUICK-WIN 1: exp_rel_n at step 0 is trivially true
+    This follows from the definition: exp_rel_n 0 = True.
+    Proves: Axiom exp_rel_n_base from LogicalRelationAssign_PROOF.v
+*)
+Lemma exp_rel_n_base : forall Σ T e1 e2,
+  exp_rel_n 0 Σ T e1 e2.
+Proof.
+  intros Σ T e1 e2.
+  simpl.
+  exact I.
+Qed.
+
+(** QUICK-WIN 2: val_rel_n for EUnit at TUnit (n > 0)
+    EUnit is a closed value and satisfies val_rel_at_type_fo TUnit.
+    Proves: Axiom val_rel_n_unit from LogicalRelationAssign_PROOF.v
+*)
+
+(** Helper: val_rel_n 0 for TUnit with EUnit *)
+Lemma val_rel_n_0_unit : forall Σ,
+  val_rel_n 0 Σ TUnit EUnit EUnit.
+Proof.
+  intros Σ.
+  rewrite val_rel_n_0_unfold.
+  split; [constructor |].
+  split; [constructor |].
+  split; [intros x Hfree; inversion Hfree |].
+  split; [intros x Hfree; inversion Hfree |].
+  simpl. split; reflexivity.
+Qed.
+
+Lemma val_rel_n_unit : forall n Σ,
+  n > 0 ->
+  val_rel_n n Σ TUnit EUnit EUnit.
+Proof.
+  intros n Σ Hn.
+  destruct n as [| n'].
+  - (* n = 0: contradiction with n > 0 *)
+    lia.
+  - (* n = S n': use induction *)
+    clear Hn.
+    induction n' as [| n'' IHn''].
+    + (* n = 1 *)
+      rewrite val_rel_n_S_unfold. split.
+      * apply val_rel_n_0_unit.
+      * split; [constructor |].
+        split; [constructor |].
+        split; [intros x Hfree; inversion Hfree |].
+        split; [intros x Hfree; inversion Hfree |].
+        simpl. split; reflexivity.
+    + (* n = S (S n''): use IH for S n'' *)
+      rewrite val_rel_n_S_unfold. split.
+      * apply IHn''.
+      * split; [constructor |].
+        split; [constructor |].
+        split; [intros x Hfree; inversion Hfree |].
+        split; [intros x Hfree; inversion Hfree |].
+        simpl. split; reflexivity.
+Qed.
+
+(** QUICK-WIN 3: exp_rel_n for EUnit at TUnit (all n)
+    EUnit is already a value, so it terminates to itself immediately.
+    Proves: Axiom exp_rel_n_unit from LogicalRelationAssign_PROOF.v
+*)
+Lemma exp_rel_n_unit : forall n Σ,
+  exp_rel_n n Σ TUnit EUnit EUnit.
+Proof.
+  intros n Σ.
+  destruct n as [| n'].
+  - (* n = 0: trivially true *)
+    apply exp_rel_n_base.
+  - (* n = S n': show that EUnit terminates to EUnit with related values *)
+    simpl.
+    intros Σ_cur st1 st2 ctx Hext Hstrel.
+    (* EUnit is already a value, so it terminates in 0 steps to itself *)
+    exists EUnit, EUnit, st1, st2, ctx, Σ_cur.
+    repeat split.
+    + (* store_ty_extends Σ_cur Σ_cur *)
+      apply store_ty_extends_refl.
+    + (* (EUnit, st1, ctx) -->* (EUnit, st1, ctx) *)
+      apply MS_Refl.
+    + (* (EUnit, st2, ctx) -->* (EUnit, st2, ctx) *)
+      apply MS_Refl.
+    + (* value EUnit *)
+      constructor.
+    + (* value EUnit *)
+      constructor.
+    + (* val_rel_n n' Σ_cur TUnit EUnit EUnit *)
+      destruct n' as [| n''].
+      * apply val_rel_n_0_unit.
+      * apply val_rel_n_unit. lia.
+    + (* store_rel_n n' Σ_cur st1 st2 *)
+      exact Hstrel.
+Qed.
+
+(** ========================================================================
     SECTION 9: SUMMARY
     ========================================================================
 

@@ -2483,4 +2483,26 @@ Proof.
     destruct (val_rel_closed nil T_in v1 v2 Hval) as [_ Hc2]. exact Hc2.
 Qed.
 
+(** ========================================================================
+    SECTION: QUICK-WIN LEMMAS FOR AXIOM ELIMINATION
+    ========================================================================
+
+    These lemmas prove properties that were previously axioms in the
+    LogicalRelationDeclassify_PROOF_REFINED.v and LogicalRelationAssign_PROOF.v
+    files. By proving them here with the actual definitions, we can mark
+    those axioms as verified.
+*)
+
+(** QUICK-WIN 1: Substitution distributes over EDeclassify
+    This follows directly from the definition of subst_rho.
+    Proves: Axiom subst_rho_declassify_dist from LogicalRelationDeclassify_PROOF_REFINED.v
+*)
+Lemma subst_rho_declassify_dist : forall rho e1 e2,
+  subst_rho rho (EDeclassify e1 e2) = EDeclassify (subst_rho rho e1) (subst_rho rho e2).
+Proof.
+  intros rho e1 e2.
+  simpl.
+  reflexivity.
+Qed.
+
 (** End of NonInterference.v *)
