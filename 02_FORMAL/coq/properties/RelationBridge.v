@@ -198,67 +198,21 @@ Admitted.
 *)
 
 (** First, let's prove the store relation direction we need *)
+(* ADMITTED for v2 migration: base case no longer trivial + direction wrong *)
 Lemma store_rel_n_mono_store : forall n Σ Σ' st1 st2,
   store_ty_extends Σ Σ' ->
   store_rel_n n Σ st1 st2 ->
   store_rel_n n Σ' st1 st2.
 Proof.
-  (* ANALYSIS:
-     store_rel_n n Σ says: for each location l typed in Σ,
-     the values at l in st1 and st2 are related.
-
-     store_rel_n n Σ' says: for each location l typed in Σ',
-     the values at l in st1 and st2 are related.
-
-     Since Σ ⊆ Σ', the set of locations in Σ is a SUBSET of locations in Σ'.
-     So store_rel_n n Σ' checks MORE locations than store_rel_n n Σ.
-
-     This means store_rel_n n Σ does NOT imply store_rel_n n Σ'!
-     We have LESS information in the premise than needed in the goal.
-
-     CORRECTION: The direction we're proving here (Σ → Σ') is the
-     WRONG direction for this lemma. We can prove Σ' → Σ (weaken).
-  *)
-  induction n as [|n' IH]; intros Σ Σ' st1 st2 Hext Hrel.
-  - simpl. exact I.
-  - simpl in Hrel. simpl.
-    destruct Hrel as [Hprev [Hmax Hlocs]].
-    split; [|split].
-    + apply IH with Σ; auto.
-    + exact Hmax.
-    + (* For each location in Σ', show values are related.
-         But we only know about locations in Σ!
-         Locations in Σ' \ Σ are unknown. *)
-      intros l T sl Hlook'.
-      (* If l is in Σ, we can use Hlocs. *)
-      (* But if l is in Σ' \ Σ, we have no information! *)
-      admit.
 Admitted.
 
 (** The correct direction: weakening (Σ' → Σ) *)
+(* ADMITTED for v2 migration: base case no longer trivial *)
 Lemma store_rel_n_weaken : forall n Σ Σ' st1 st2,
   store_ty_extends Σ Σ' ->
   store_rel_n n Σ' st1 st2 ->
   store_rel_n n Σ st1 st2.
 Proof.
-  induction n as [|n' IH]; intros Σ Σ' st1 st2 Hext Hrel.
-  - simpl. exact I.
-  - simpl in Hrel. simpl.
-    destruct Hrel as [Hprev [Hmax Hlocs]].
-    split; [|split].
-    + apply IH with Σ'; auto.
-    + exact Hmax.
-    + intros l T sl Hlook.
-      (* l is in Σ, so l is also in Σ' (by extension) *)
-      assert (Hlook' : store_ty_lookup l Σ' = Some (T, sl)).
-      { apply Hext. exact Hlook. }
-      specialize (Hlocs l T sl Hlook').
-      destruct Hlocs as (v1 & v2 & Hst1 & Hst2 & Hval).
-      exists v1, v2.
-      repeat split; auto.
-      (* We have val_rel_n n' Σ' T v1 v2, need val_rel_n n' Σ T v1 v2.
-         This is Axiom 1 (val_rel_n_weaken) recursively! *)
-      admit.
 Admitted.
 
 (** * Section 6: Final Analysis
