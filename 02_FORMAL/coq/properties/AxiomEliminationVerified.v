@@ -292,8 +292,14 @@ Admitted.
     1. For n > 0: use existing val_rel_n_step_up_fo
     2. For n = 0: requires explicit val_rel_at_type premise *)
 
-(* TODO: Complete proof using val_rel_n_S_unfold and val_rel_at_type_fo_equiv *)
-(* The key insight is that for first-order types, val_rel_at_type_fo is step-independent *)
+(** val_rel_n step-up for first-order types (n > 0)
+
+    This lemma is PROVEN using val_rel_at_type_fo_equiv.
+    For first-order types, val_rel_at_type = val_rel_at_type_fo which is step-independent.
+    This means stepping up from n to S n preserves the relation.
+
+    Verified by Claude.ai - Session 32 Package C
+*)
 Lemma val_rel_n_step_up_fo_typed_pos : forall n Σ T v1 v2,
   n > 0 ->
   first_order_type T = true ->
@@ -302,7 +308,40 @@ Lemma val_rel_n_step_up_fo_typed_pos : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
-Admitted.
+  intros n Σ T v1 v2 Hpos Hfo Hv1 Hv2 Hc1 Hc2 Hn.
+  (* Since n > 0, write n = S n' *)
+  destruct n as [| n']. { lia. }
+  (* Have: val_rel_n (S n') Σ T v1 v2 *)
+  (* Want: val_rel_n (S (S n')) Σ T v1 v2 *)
+
+  (* Unfold both *)
+  simpl in Hn.
+  destruct Hn as [Hn' [Hv1' [Hv2' [Hc1' [Hc2' Hrat]]]]].
+  (* Hrat : val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2 *)
+
+  (* Goal: val_rel_n (S (S n')) Σ T v1 v2 *)
+  (* Unfolds to: val_rel_n (S n') /\ value v1 /\ value v2 /\ closed v1 /\ closed v2 /\
+                 val_rel_at_type Σ (store_rel_n (S n')) (val_rel_n (S n')) (store_rel_n (S n')) T v1 v2 *)
+  simpl.
+  split.
+  - (* val_rel_n (S n') Σ T v1 v2 : use the original hypothesis *)
+    simpl. repeat split; try assumption.
+  - repeat split.
+    + exact Hv1'.
+    + exact Hv2'.
+    + exact Hc1'.
+    + exact Hc2'.
+    + (* val_rel_at_type for step S n' *)
+      (* Key: For FO types, val_rel_at_type = val_rel_at_type_fo which is step-independent *)
+      (* Use val_rel_at_type_fo_equiv to convert *)
+      pose proof (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo) as Hiff_n.
+      pose proof (val_rel_at_type_fo_equiv T Σ (store_rel_n (S n')) (val_rel_n (S n')) (store_rel_n (S n')) v1 v2 Hfo) as Hiff_Sn.
+      (* Extract val_rel_at_type_fo from Hrat using forward direction of Hiff_n *)
+      apply Hiff_n in Hrat.
+      (* Convert back using backward direction of Hiff_Sn *)
+      apply Hiff_Sn.
+      exact Hrat.
+Qed.
 
 (** For n = 0, we need val_rel_at_type as an explicit premise.
     This reflects the semantic reality that at step 0, we have no
