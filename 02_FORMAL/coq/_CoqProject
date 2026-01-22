@@ -61,6 +61,9 @@ properties/KripkeMutual.v
 properties/RelationBridge.v
 properties/MasterTheorem.v
 
+# Axiom Elimination Proofs (Session 30)
+properties/ValRelStepLimit_PROOF.v
+
 # Phase 7: Industry-Specific Proofs (DISABLED - placeholder stubs need type fixes)
 # Reference: 04_SPECS/industries/*.md
 # Industries/IndustryMilitary.v
