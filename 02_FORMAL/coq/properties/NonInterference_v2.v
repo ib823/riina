@@ -888,9 +888,30 @@ Proof.
     + apply MS_Refl.
 Qed.
 
-(** val_rel_n_step_up - The core semantic lemma
-    For FO types: proven using val_rel_at_type_fo_equiv
-    For HO types (TFn): requires typing preconditions to use SN_app *)
+(** val_rel_n_step_up - The core semantic lemma (FUNDAMENTAL THEOREM)
+
+    STATUS: Axiom (TFn case requires Fundamental Theorem of Logical Relations)
+
+    For FO types: PROVEN using val_rel_at_type_fo_equiv
+
+    For HO types (TFn): Requires the Fundamental Theorem stating that
+    substituting related values into well-typed expressions preserves
+    the logical relation. This is a standard result in the literature
+    but requires proving compatibility lemmas for every typing rule.
+
+    JUSTIFICATION for keeping as axiom:
+    - The lemma is semantically sound (standard result in PL theory)
+    - FO types (base types, products, sums) are fully proven
+    - Only TFn requires the fundamental theorem machinery
+    - Proving the fundamental theorem would require ~500 lines of
+      compatibility lemmas (one per typing rule)
+
+    REFERENCES:
+    - Ahmed (2006) "Step-Indexed Syntactic Logical Relations"
+    - Dreyer et al. (2011) "Logical Step-Indexed Logical Relations"
+
+    TO PROVE: Implement semantic typing / compatibility lemmas.
+    See _archive_deprecated/FundamentalTheorem.v for partial approach. *)
 Lemma val_rel_n_step_up : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
   (* Typing preconditions for HO types - trivially satisfied for FO types *)
@@ -940,10 +961,15 @@ Proof.
       * apply MS_Step with (cfg2 := ([x2 := y] body2, st2, ctx)).
         apply ST_AppAbs. exact Hvy.
         apply MS_Refl.
-      * (* Need val_rel_n n Σ' T2 result1 result2 *)
-        (* This requires the fundamental theorem of logical relations:
-           if related values are substituted into related terms, results are related.
-           For now, we admit this semantic property. *)
+      * (* Need val_rel_n n Σ' T2 ([x1 := x] body1) ([x2 := y] body2)
+           This is the Fundamental Theorem of Logical Relations:
+           If body1 : T2 in context (x1 : T1), body2 : T2 in context (x2 : T1),
+           and x ~_{T1} y (related at T1), then [x1 := x]body1 ~_{T2} [x2 := y]body2.
+
+           Proof requires: compatibility lemmas for all typing rules showing
+           that well-typed terms are semantically related.
+
+           Reference: Ahmed (2006), Dreyer et al. (2011) *)
         admit.
       * (* Store relation preserved - stores unchanged after pure beta reduction *)
         exact Hstrel.
@@ -974,9 +1000,11 @@ Lemma store_rel_n_step_up : forall n Σ st1 st2,
   store_rel_n n Σ st1 st2 ->
   store_wf Σ st1 ->
   store_wf Σ st2 ->
+  store_has_values st1 ->
+  store_has_values st2 ->
   store_rel_n (S n) Σ st1 st2.
 Proof.
-  intros n Σ st1 st2 Hrel Hwf1 Hwf2.
+  intros n Σ st1 st2 Hrel Hwf1 Hwf2 Hvals1 Hvals2.
   rewrite store_rel_n_S_unfold. split; [| split].
   - exact Hrel.
   - destruct n.
@@ -1000,13 +1028,11 @@ Proof.
       assert (Hc2: closed_expr v2).
       { apply typing_nil_implies_closed with (Σ := Σ) (Δ := Public) (T := T) (ε := EffectPure).
         exact Hty2. }
-      (* Values in stores should be syntactic values - this is an invariant
-         maintained by the operational semantics (ST_RefValue only stores values).
-         The current store_wf only captures typing, not the value property.
-         A stronger store_wf definition would include: value v.
-         For this proof, we admit this property. *)
-      assert (Hv1: value v1) by admit.
-      assert (Hv2: value v2) by admit.
+      (* Values in stores are syntactic values - established from store_has_values *)
+      assert (Hv1: value v1).
+      { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
+      assert (Hv2: value v2).
+      { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
       repeat split; try assumption.
       destruct (first_order_type T) eqn:Hfo.
       * (* FO type: need same value structure - but v1, v2 may differ
