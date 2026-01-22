@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 32 | Major Axiom Elimination Progress
+## Last Updated: 2026-01-22 | SESSION 33 | Quick-Win Axioms + Package Integration
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -24,12 +24,12 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | A- (strong progress) | Major axioms proven, gaps documented |
+| **Overall Grade** | A- (strong progress) | Major axioms proven, quick-wins done |
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
-| **Active Core Axioms** | **6** → **3 proven** | AX-01, AX-02, AX-03 done |
-| **Archived Axioms** | 19 | Deprecated, not in build |
-| **Admits** | 84 → ~74 | Reduced by ~10 this session |
+| **Core Axioms** | 70 | Need evaluation/elimination |
+| **Total Admits** | 63 | Reduced from 84 (21 eliminated) |
+| **Quick-Win Axioms** | 4 PROVEN | exp_rel_n_base, val_rel_n_unit, exp_rel_n_unit, subst_rho_declassify_dist |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
@@ -41,13 +41,24 @@
 | Category | Count | Target | Location |
 |----------|-------|--------|----------|
 | **Compliance Axioms** | 75 | KEEP | `Industries/*.v` |
-| **Core Axioms** | 25 | → 0 | `properties/*.v` |
-| **TOTAL** | 100 | 75 | |
+| **Core Axioms** | 70 | → 0 | `properties/*.v` |
+| **TOTAL** | 145 | 75 | |
 
 **Compliance axioms** encode external regulatory requirements (HIPAA, PCI-DSS, DO-178C, etc.).
 These STAY as justified assumptions since we cannot prove that laws exist.
 
 **Core axioms** are mathematical claims that must be proven or eliminated.
+
+### Core Axiom Breakdown by File
+
+| File | Axioms | Notes |
+|------|--------|-------|
+| `LogicalRelationDeclassify_PROOF_REFINED.v` | 27 | Declassify module |
+| `LogicalRelationAssign_PROOF.v` | 18 | Assign module |
+| `LogicalRelationDeclassify_PROOF.v` | 10 | Older declassify module |
+| `LogicalRelationDeref_PROOF_FINAL.v` | 7 | Deref module |
+| `NonInterference_v2_LogicalRelation.v` | 5 | Core logical relation |
+| Others | 3 | Scattered |
 
 ### Active Core Axioms (6 total - in build)
 
@@ -67,30 +78,56 @@ These STAY as justified assumptions since we cannot prove that laws exist.
 | `NonInterferenceLegacy.v` | 18 | Archived, replaced by v2 |
 | `StepUpFromSN.v` | 1 | Archived |
 
-### Claude.ai Delegation Package
+### Session 33: Quick-Win Axioms PROVEN
 
-Ready-to-use prompts created in `06_COORDINATION/prompts/`:
+| Axiom | File | Proof Location |
+|-------|------|----------------|
+| `exp_rel_n_base` | NonInterference_v2.v | Line 1085 |
+| `val_rel_n_0_unit` (helper) | NonInterference_v2.v | Line 1090 |
+| `val_rel_n_unit` | NonInterference_v2.v | Line 1096 |
+| `exp_rel_n_unit` | NonInterference_v2.v | Line 1127 |
+| `subst_rho_declassify_dist` | NonInterference_v2_LogicalRelation.v | Line 2502 |
+
+### Claude.ai Delegation Packages
+
+**Completed (Session 32):**
 - `PROMPT_AX01_logical_relation_ref.md`
 - `PROMPT_AX02_logical_relation_deref.md`
 - `PROMPT_AX03_logical_relation_assign.md`
 - `PROMPT_AX04_logical_relation_declassify.md`
+- `PROMPT_PKG_A_exp_rel_step1.md`
+- `PROMPT_PKG_B_master_theorem.md`
+- `PROMPT_PKG_C_reference_ops.md`
+- `PROMPT_PKG_D_zero_step.md`
+- `PROMPT_PKG_E_kripke.md`
 
-### Admits by File (~74 total, reduced from 84)
+**Package Results (uploaded to prompts/):**
+- `exp_rel_step1.v` - Fst/Snd projection proofs (partial)
+- `ReferenceOps.v` - Memory operations (8+ Qed)
+- `NonInterferenceZero.v` - Zero-step base cases (12+ Qed)
+- `KripkeMonotonicity.v` - Store extension (11 Qed, 2 Admitted)
+- `PACKAGE_E_KRIPKE_REPORT.md` - Detailed report
 
-| File | Admits | Category | Session 32 Changes |
-|------|--------|----------|-------------------|
-| `AxiomEliminationVerified.v` | 15 | Step-1 termination | -1 (val_rel_n_step_up_fo_typed_pos proven) |
-| `ApplicationComplete.v` | 3 | Function application | -8 (base cases + FO canonical proven, FALSE lemmas removed) |
-| `MasterTheorem.v` | 7 | Main theorem | |
-| `KripkeMutual.v` | 6 | Kripke monotonicity | FO version proven |
-| `NonInterferenceZero.v` | 5 | Zero-step cases | |
-| `NonInterferenceLegacy.v` (archived) | 3 | Legacy | |
+**Next Delegation Packages (ready to create):**
+1. **PKG-F: AxiomEliminationVerified admits** - 15 admits in step-1 termination
+2. **PKG-G: MasterTheorem composition** - 7 admits in main theorem
+3. **PKG-H: NonInterferenceZero cleanup** - 5 admits in zero-step
+4. **PKG-I: LogicalRelation module unification** - Unify the 4 separate proof modules
+
+### Admits by File (63 total, reduced from 84)
+
+| File | Admits | Category | Notes |
+|------|--------|----------|-------|
+| `AxiomEliminationVerified.v` | 15 | Step-1 termination | Largest concentration |
+| `MasterTheorem.v` | 7 | Main theorem | Composition lemmas |
+| `NonInterferenceZero.v` | 5 | Zero-step cases | Base case handling |
+| `KripkeMutual.v` | 3 | Kripke monotonicity | HO types |
 | `NonInterferenceKripke.v` | 3 | Kripke properties | |
-| `Composition.v` | 3 | Composition lemmas | |
 | `ReferenceOps.v` | 3 | Reference operations | |
 | `RelationBridge.v` | 3 | Relation bridging | |
-| `LogicalRelationRef_PROOF.v` | 1 | AX-01 proof | -2 (main theorem now Qed) |
-| Others | ~21 | Various | |
+| `NonInterference_v2.v` | 2 | Main NI | val_rel_n_step_up (HO) |
+| `TypedConversion.v` | 2 | Type conversion | Compound types |
+| Others | ~20 | Various | Scattered |
 
 ---
 
@@ -160,8 +197,8 @@ Ready-to-use prompts created in `06_COORDINATION/prompts/`:
 | Phase | Description | Status | Progress |
 |-------|-------------|--------|----------|
 | **Phase 0** | Foundation Verification | ✅ COMPLETE | Build green |
-| **Phase 1** | Axiom Elimination (25→0) | 🟡 IN PROGRESS | 0/25 |
-| **Phase 2** | Admit Resolution (84→0) | ⚪ NOT STARTED | 0/84 |
+| **Phase 1** | Axiom Elimination (70→0) | 🟡 IN PROGRESS | 4 quick-wins proven |
+| **Phase 2** | Admit Resolution (63→0) | 🟡 IN PROGRESS | 21 eliminated |
 | **Phase 3** | Verification & Hardening | ⚪ NOT STARTED | 0% |
 
 ---
