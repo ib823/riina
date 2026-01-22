@@ -2380,8 +2380,16 @@ Proof.
       simpl. exists l. split; reflexivity.
 
   - (* T_Var *)
-    (* TEMPORARY ADMIT for v2 migration debugging *)
-    admit.
+    (* subst_rho rho (EVar x) = rho x by definition.
+       From env_rel and lookup x Γ = Some T, we get val_rel for rho1 x and rho2 x. *)
+    simpl.
+    apply exp_rel_of_val_rel.
+    unfold val_rel. intro n.
+    unfold env_rel in Henv.
+    specialize (Henv n) as Henv_n.
+    unfold env_rel_n in Henv_n.
+    apply Henv_n.
+    exact H.
 
   - (* T_Lam - lambda abstraction *)
     (* Lambda is a value, so exp_rel follows from val_rel.
@@ -2397,9 +2405,11 @@ Proof.
       rewrite val_rel_n_0_unfold. simpl.
       split. { constructor. }
       split. { constructor. }
-      split. { (* closed_expr for lambda 1 - ADMIT for v2 migration *)
+      split. { (* closed_expr for lambda 1 - needs typing judgment which is not preserved *)
+               (* Would use closed_expr_lam + closed_except_subst_rho_shadow but
+                  the typing premise is consumed by induction to form IHHty *)
                admit. }
-      split. { (* closed_expr for lambda 2 - ADMIT for v2 migration *)
+      split. { (* closed_expr for lambda 2 - same issue *)
                admit. }
       exact I. (* TFn is not first-order, so this is True *)
     + (* S n' case - ADMIT for v2 migration (extensive infrastructure changes needed) *)
@@ -3184,8 +3194,9 @@ Proof.
       split. { constructor. assumption. }
       split. { constructor. assumption. }
       split.
-      { (* val_rel_n for TSecret T - trivially related *)
-        admit. }
+      { (* val_rel_n for TSecret T - use val_rel_n_classify *)
+        destruct (val_rel_n_closed n' Σ' T v v' Hval) as [Hcl1 Hcl2].
+        apply val_rel_n_classify; assumption. }
       { exact Hstore'. }
   - (* T_Declassify - Uses logical_relation_declassify axiom *)
     (* The axiom logical_relation_declassify directly proves this case. *)
@@ -3216,8 +3227,9 @@ Proof.
       split. { constructor. assumption. }
       split. { constructor. assumption. }
       split.
-      { (* val_rel_n for TProof T - val_rel_at_type is True *)
-        admit. }
+      { (* val_rel_n for TProof T - use val_rel_n_prove *)
+        destruct (val_rel_n_closed n' Σ' T v v' Hval) as [Hcl1 Hcl2].
+        apply val_rel_n_prove; assumption. }
       { exact Hstore'. }
   - (* T_Require - Effect require just passes through the value *)
     (* ERequire eff e evaluates e to v, then ERequire eff v --> v *)
