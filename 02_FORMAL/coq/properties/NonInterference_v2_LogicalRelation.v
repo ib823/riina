@@ -2473,19 +2473,17 @@ Proof.
       * (* HO type: first_order_type T = false *)
         (* We have: Hrel : val_rel_n (S n') Σ T v1 v2 *)
         (* Goal: val_rel_n (S (S n')) Σ T v1 v2 *)
-        (* Strategy: extract val_rel_at_type at step n' from Hrel,
-           apply it with downgraded arguments, step up results using IH_step_up(n') *)
+        (* Strategy: Use the cumulative structure + step up val_rel_at_type *)
         destruct (val_rel_n_value (S n') Σ T v1 v2 Hrel) as [Hv1 Hv2].
         destruct (val_rel_n_closed (S n') Σ T v1 v2 Hrel) as [Hc1 Hc2].
         rewrite val_rel_n_S_unfold.
         split. { exact Hrel. }
         repeat split; try assumption.
-        (* val_rel_at_type at step S n' *)
-        (* Use val_rel_at_type at step n' (from Hrel) and convert predicates:
-           - Arguments: val_rel_n (S n') → val_rel_n n' via mono
-           - Stores: store_rel_n (S n') → store_rel_n n' via mono
-           - Results: val_rel_n n' → val_rel_n (S n') via IH_step_up(n') *)
-        (* For now, admit - this requires showing predicate monotonicity *)
+        (* val_rel_at_type at step S n' - requires converting predicates from n' to S n' *)
+        (* For TFn: downgrade arguments/stores, apply, step up results *)
+        (* For other HO types: similar recursive structure *)
+        (* This is the core of the step_up proof for HO types *)
+        (* Admit for now - requires val_rel_at_type predicate monotonicity lemma *)
         admit.
     + (* fundamental at S n' *)
       unfold fundamental_at_step.
