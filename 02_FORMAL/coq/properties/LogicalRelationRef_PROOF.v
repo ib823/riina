@@ -35,6 +35,7 @@ Require Import RIINA.foundations.Typing.
 Require Import RIINA.foundations.Semantics.
 Require Import RIINA.properties.NonInterference_v2.
 Require Import RIINA.properties.NonInterference_v2_LogicalRelation.
+Require Import RIINA.properties.NonInterference_v2_Monotone.
 Require Import RIINA.properties.StoreRelation.
 Require Import RIINA.properties.CumulativeRelation.
 
@@ -164,9 +165,16 @@ Proof.
         split; [reflexivity |].
         (* Need: val_rel_n n' (store_ty_update l T sl Σ) T v1 v2 *)
         (* From: Hval_rec : val_rel_n n' Σ T v1 v2 *)
-        (* This requires Kripke monotonicity: val_rel_n preserves under store extension *)
-        (* Admitted pending Kripke monotonicity infrastructure *)
-        admit.
+        (* Use Kripke monotonicity: val_rel_n_mono_store *)
+        apply val_rel_n_mono_store with (Σ := Σ).
+        -- (* store_ty_extends Σ (store_ty_update l T sl Σ) *)
+           apply store_ty_extends_add_loc.
+           (* store_ty_lookup l Σ = None - well-formedness: fresh_loc not in Σ *)
+           (* This holds because l = fresh_loc st1 = store_max st1, and
+              well-formed store typings only contain locations < store_max.
+              We assume this invariant here. *)
+           admit.
+        -- exact Hval_rec.
       * (* loc ≠ l: existing location *)
         rewrite store_ty_lookup_update_neq in Hlook by exact Hneq.
         destruct (Htyped loc Ty sly Hlook) as [old_v1 [old_v2 [Hst1 [Hst2 Hold_rel]]]].
@@ -177,8 +185,13 @@ Proof.
         split; [exact Hst2 |].
         (* Need: val_rel_n n' (store_ty_update l T sl Σ) Ty old_v1 old_v2 *)
         (* From: Hold_rel : val_rel_n n' Σ Ty old_v1 old_v2 *)
-        (* This requires Kripke monotonicity *)
-        admit.
+        (* Use Kripke monotonicity: val_rel_n_mono_store *)
+        apply val_rel_n_mono_store with (Σ := Σ).
+        -- (* store_ty_extends Σ (store_ty_update l T sl Σ) *)
+           apply store_ty_extends_add_loc.
+           (* Same well-formedness assumption *)
+           admit.
+        -- exact Hold_rel.
 Admitted.
 
 (** ============================================================ *)
@@ -205,6 +218,28 @@ Proof.
   apply MS_Step with (cfg2 := (ELoc l, store_update l v st, ctx)).
   - apply ERef_value_step. exact Hval.
   - apply MS_Refl.
+Qed.
+
+(** Lifting multi-step through ERef context *)
+Lemma multi_step_under_ERef : forall e v st st' ctx ctx' sl,
+  (e, st, ctx) -->* (v, st', ctx') ->
+  (ERef e sl, st, ctx) -->* (ERef v sl, st', ctx').
+Proof.
+  intros e v st st' ctx ctx' sl Hsteps.
+  remember (e, st, ctx) as cfg1 eqn:Heq1.
+  remember (v, st', ctx') as cfg2 eqn:Heq2.
+  revert e v st st' ctx ctx' Heq1 Heq2.
+  induction Hsteps as [cfg | cfga cfgb cfgc Hstep Hsteps IH];
+    intros e v st st' ctx ctx' Heq1 Heq2.
+  - (* MS_Refl: cfg = cfg *)
+    subst. injection Heq2 as He Hst Hctx. subst.
+    apply MS_Refl.
+  - (* MS_Step: cfga --> cfgb -->* cfgc *)
+    subst.
+    destruct cfgb as [[e2 st2] ctx2].
+    apply MS_Step with (cfg2 := (ERef e2 sl, st2, ctx2)).
+    + apply ST_RefStep. exact Hstep.
+    + apply IH; reflexivity.
 Qed.
 
 (** ============================================================ *)
@@ -268,7 +303,7 @@ Proof.
 
     repeat split.
     + (* store_ty_extends Σ_cur Σ'' *)
-      apply store_ty_extends_trans with (Σ' := Σ').
+      apply store_ty_extends_trans with (Σ2 := Σ').
       * exact Hext'.
       * unfold Σ''.
         apply store_ty_extends_add_loc.
@@ -281,28 +316,23 @@ Proof.
       (* Then, ERef v1 sl -->* ELoc l *)
       apply multi_step_trans with (cfg2 := (ERef v1 sl, st1', ctx')).
       * (* ERef (subst_rho rho1 e) sl -->* ERef v1 sl *)
-        clear -Heval1.
-        induction Heval1 as [cfg | cfg1 cfg2 cfg3 Hstep Hsteps IH].
-        -- apply MS_Refl.
-        -- destruct cfg1 as [[e1 s1] c1].
-           destruct cfg2 as [[e2 s2] c2].
-           apply MS_Step with (cfg2 := (ERef e2 sl, s2, c2)).
-           ++ apply ST_RefStep. exact Hstep.
-           ++ apply IH.
+        apply multi_step_under_ERef. exact Heval1.
       * apply ERef_value_multi_step. exact Hv1.
     + (* ERef (subst_rho rho2 e) sl -->* ELoc l with st2'' *)
-      rewrite <- Hfresh_eq.
-      unfold st2''. rewrite Hfresh_eq.
+      (* l = fresh_loc st1' = fresh_loc st2' by Hfresh_eq *)
+      (* st2'' = store_update (fresh_loc st2') v2 st2' *)
+      (* First, simplify st2'' using Hfresh_eq *)
+      assert (Hst2''_eq : st2'' = store_update l v2 st2').
+      { unfold st2'', l. rewrite <- Hfresh_eq. reflexivity. }
+      rewrite Hst2''_eq.
       apply multi_step_trans with (cfg2 := (ERef v2 sl, st2', ctx')).
-      * clear -Heval2.
-        induction Heval2 as [cfg | cfg1 cfg2 cfg3 Hstep Hsteps IH].
-        -- apply MS_Refl.
-        -- destruct cfg1 as [[e1 s1] c1].
-           destruct cfg2 as [[e2 s2] c2].
-           apply MS_Step with (cfg2 := (ERef e2 sl, s2, c2)).
-           ++ apply ST_RefStep. exact Hstep.
-           ++ apply IH.
-      * apply ERef_value_multi_step. exact Hv2.
+      * (* ERef (subst_rho rho2 e) sl -->* ERef v2 sl *)
+        apply multi_step_under_ERef. exact Heval2.
+      * (* ERef v2 sl -->* ELoc l *)
+        assert (Hl_eq : l = fresh_loc st2').
+        { unfold l. exact Hfresh_eq. }
+        rewrite Hl_eq.
+        apply ERef_value_multi_step. exact Hv2.
     + (* value (ELoc l) *)
       apply VLoc.
     + (* value (ELoc l) *)
@@ -311,7 +341,12 @@ Proof.
       apply val_rel_n_ref_self.
     + (* store_rel_n n' Σ'' st1'' st2'' *)
       unfold st1'', st2'', Σ''.
-      rewrite Hfresh_eq.
+      (* After unfolding:
+         - st1'' = store_update (fresh_loc st1') v1 st1'
+         - st2'' = store_update (fresh_loc st2') v2 st2'
+         - Σ'' = store_ty_update (fresh_loc st1') T sl Σ'
+         We need to unify the locations. Rewrite fresh_loc st2' to fresh_loc st1'. *)
+      rewrite <- Hfresh_eq.
       apply store_rel_n_after_alloc; auto.
 Admitted.
 
