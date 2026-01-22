@@ -2406,16 +2406,109 @@ Proof.
       admit.
   - (* T_App - ADMIT for v2 migration (needs store_ty_extends_trans, val_rel_n_weaken) *)
     admit.
-  - (* T_Pair - ADMIT for v2 migration *)
-    admit.
+  - (* T_Pair - With Kripke-style exp_rel_n, the proof chains evaluations *)
+    (* IH for e1 and e2 accept any current store typing extending Σ.
+       We chain: Σ_cur → Σ' (after e1) → Σ'' (after e2). *)
+    simpl.
+    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.
+    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as He2_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0: exp_rel_n 0 is trivially True *)
+      simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      (* Step 1: Evaluate e1 using IH with current store typing Σ_cur *)
+      assert (Hext1_input : store_ty_extends Σ Σ_cur) by exact Hext_cur.
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext1_input Hstore) as
+        [v1 [v1' [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv1' [Hval1 Hstore1]]]]]]]]]]]].
+      (* After e1: Σ_cur → Σ' and stores related at Σ' *)
+
+      (* Step 2: Evaluate e2 using IH with Σ' as current store typing *)
+      (* First show Σ ⊆ Σ' for the IH *)
+      assert (Hext2_input : store_ty_extends Σ Σ').
+      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext1). }
+      specialize (He2_rel (S n') Σ' st1' st2' ctx' Hext2_input Hstore1) as
+        [v2 [v2' [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep2 [Hstep2' [Hvalv2 [Hvalv2' [Hval2 Hstore2]]]]]]]]]]]].
+      (* After e2: Σ' → Σ'' and stores related at Σ'' *)
+
+      (* Step 3: Construct the result *)
+      exists (EPair v1 v2), (EPair v1' v2'), st1'', st2'', ctx'', Σ''.
+      split.
+      * (* store_ty_extends Σ_cur Σ'' - compose Σ_cur → Σ' → Σ'' *)
+        apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext1 Hext2).
+      * split.
+        { (* (EPair e1 e2, st1, ctx) -->* (EPair v1 v2, st1'', ctx'') *)
+          apply multi_step_trans with (cfg2 := (EPair v1 (subst_rho rho1 e2), st1', ctx')).
+          - apply multi_step_pair1. exact Hstep1.
+          - apply multi_step_trans with (cfg2 := (EPair v1 v2, st1'', ctx'')).
+            + apply multi_step_pair2.
+              * exact Hvalv1.
+              * exact Hstep2.
+            + apply MS_Refl. }
+        split.
+        { (* (EPair e1' e2', st2, ctx) -->* (EPair v1' v2', st2'', ctx'') *)
+          apply multi_step_trans with (cfg2 := (EPair v1' (subst_rho rho2 e2), st2', ctx')).
+          - apply multi_step_pair1. exact Hstep1'.
+          - apply multi_step_trans with (cfg2 := (EPair v1' v2', st2'', ctx'')).
+            + apply multi_step_pair2.
+              * exact Hvalv1'.
+              * exact Hstep2'.
+            + apply MS_Refl. }
+        split.
+        { (* value (EPair v1 v2) *) constructor; assumption. }
+        split.
+        { (* value (EPair v1' v2') *) constructor; assumption. }
+        split.
+        { (* val_rel_n n' Σ'' (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') *)
+          (* We have:
+             - Hval1 : val_rel_n n' Σ' T1 v1 v1'
+             - Hval2 : val_rel_n n' Σ'' T2 v2 v2'
+             By store monotonicity (Σ' ⊆ Σ''):
+             - val_rel_n n' Σ'' T1 v1 v1'
+             Then use val_rel_n_prod_compose. *)
+          apply val_rel_n_prod_compose.
+          - apply (val_rel_n_mono_store n' Σ' Σ'' T1 v1 v1' Hext2 Hval1).
+          - exact Hval2. }
+        { exact Hstore2. }
   - (* T_Fst - ADMIT for v2 migration *)
     admit.
   - (* T_Snd - ADMIT for v2 migration *)
     admit.
-  - (* T_Inl - ADMIT for v2 migration *)
-    admit.
-  - (* T_Inr - ADMIT *)
-    admit.
+  - (* T_Inl - Left injection *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      exists (EInl v T2), (EInl v' T2), st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split. { apply multi_step_inl. exact Hstep. }
+      split. { apply multi_step_inl. exact Hstep'. }
+      split. { constructor; assumption. }
+      split. { constructor; assumption. }
+      split. { apply val_rel_n_sum_inl. exact Hval. }
+      { exact Hstore'. }
+  - (* T_Inr - Right injection *)
+    simpl.
+    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + simpl. trivial.
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval Hstore']]]]]]]]]]]].
+      exists (EInr v T1), (EInr v' T1), st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split. { apply multi_step_inr. exact Hstep. }
+      split. { apply multi_step_inr. exact Hstep'. }
+      split. { constructor; assumption. }
+      split. { constructor; assumption. }
+      split. { apply val_rel_n_sum_inr. exact Hval. }
+      { exact Hstore'. }
   - (* T_Case - ADMIT for v2 migration *)
     admit.
   - (* T_If - ADMIT for v2 migration *)
