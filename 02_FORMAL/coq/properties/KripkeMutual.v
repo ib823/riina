@@ -91,21 +91,39 @@ Qed.
     For first-order types, val_rel_at_type is Σ-independent, so weakening
     is straightforward using val_rel_at_type_fo_independent.
 *)
-(* ADMITTED for v2 migration: base case no longer trivial *)
+(* PROVEN: For first-order types, val_rel_n doesn't depend on Σ *)
 Lemma val_rel_n_weaken_fo : forall n Σ Σ' T v1 v2,
   first_order_type T = true ->
   store_ty_extends Σ Σ' ->
   val_rel_n n Σ' T v1 v2 ->
   val_rel_n n Σ T v1 v2.
 Proof.
-Admitted.
+  induction n as [| n' IH]; intros Σ Σ' T v1 v2 Hfo Hext Hrel.
+  - (* n = 0: val_rel_n 0 doesn't depend on Σ at all *)
+    rewrite val_rel_n_0_unfold in Hrel.
+    rewrite val_rel_n_0_unfold.
+    destruct Hrel as (Hv1 & Hv2 & Hc1 & Hc2 & Hrat).
+    (* For n=0, the definition doesn't involve Σ at all, so this is immediate *)
+    repeat split; assumption.
+  - (* n = S n': use induction and val_rel_at_type_fo_independent *)
+    rewrite val_rel_n_S_unfold in Hrel.
+    destruct Hrel as (Hrec & Hv1 & Hv2 & Hc1 & Hc2 & Hrat).
+    rewrite val_rel_n_S_unfold.
+    repeat split; try assumption.
+    + (* Recursive case: val_rel_n n' Σ T v1 v2 *)
+      apply IH with Σ'; assumption.
+    + (* val_rel_at_type case: use FO independence *)
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      apply (val_rel_at_type_fo_equiv T Σ' (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      exact Hrat.
+Qed.
 
 (** ** Helper: Store relation weakening for first-order store types
 
     If stores are related at Σ' (larger), they remain related at Σ (smaller),
     assuming all types in Σ are first-order.
 *)
-(* ADMITTED for v2 migration: base case no longer trivial *)
+(* PROVEN: Store weakening for first-order store types *)
 Lemma store_rel_n_weaken_aux_fo : forall n Σ Σ' st1 st2,
   (* Restriction: all types in Σ must be first-order *)
   (forall l T sl, store_ty_lookup l Σ = Some (T, sl) -> first_order_type T = true) ->
@@ -113,7 +131,33 @@ Lemma store_rel_n_weaken_aux_fo : forall n Σ Σ' st1 st2,
   store_rel_n n Σ' st1 st2 ->
   store_rel_n n Σ st1 st2.
 Proof.
-Admitted.
+  induction n as [| n' IH]; intros Σ Σ' st1 st2 Hfo_all Hext Hrel.
+  - (* n = 0: store_rel_n 0 is just store_max equality - Σ-independent *)
+    rewrite store_rel_n_0_unfold in Hrel.
+    rewrite store_rel_n_0_unfold.
+    exact Hrel.
+  - (* n = S n' *)
+    rewrite store_rel_n_S_unfold in Hrel.
+    destruct Hrel as (Hrec & Hmax & Htyped).
+    rewrite store_rel_n_S_unfold.
+    repeat split.
+    + (* Recursive: store_rel_n n' Σ st1 st2 *)
+      apply IH with Σ'; assumption.
+    + (* store_max equality *)
+      exact Hmax.
+    + (* Typed locations in Σ *)
+      intros l T sl Hlook.
+      (* Since store_ty_extends Σ Σ', l is also in Σ' *)
+      assert (Hlook' : store_ty_lookup l Σ' = Some (T, sl)).
+      { apply Hext. exact Hlook. }
+      destruct (Htyped l T sl Hlook') as (v1 & v2 & Hst1 & Hst2 & Hval_rel).
+      exists v1, v2.
+      repeat split; try assumption.
+      (* val_rel_n n' Σ' T v1 v2 -> val_rel_n n' Σ T v1 v2 *)
+      (* T is first-order by Hfo_all, so we can use val_rel_n_weaken_fo *)
+      apply val_rel_n_weaken_fo with Σ'; try assumption.
+      apply Hfo_all with l sl. exact Hlook.
+Qed.
 
 (** Original lemma without restriction - kept for API compatibility but
     requires mutual induction for TFn types which is not structurally
@@ -184,14 +228,32 @@ Proof.
 Admitted.
 
 (** Axiom 2: Strengthening (smaller store to larger store) - First-order *)
-(* ADMITTED for v2 migration: base case no longer trivial *)
+(* PROVEN: For first-order types, val_rel_n doesn't depend on Σ *)
 Lemma val_rel_n_mono_store_fo : forall n Σ Σ' T v1 v2,
   first_order_type T = true ->
   store_ty_extends Σ Σ' ->
   val_rel_n n Σ T v1 v2 ->
   val_rel_n n Σ' T v1 v2.
 Proof.
-Admitted.
+  (* For first-order types, val_rel_n is Σ-independent.
+     Both weakening and strengthening are the same: just transfer the relation. *)
+  induction n as [| n' IH]; intros Σ Σ' T v1 v2 Hfo Hext Hrel.
+  - (* n = 0: val_rel_n 0 doesn't depend on Σ at all *)
+    rewrite val_rel_n_0_unfold in Hrel.
+    rewrite val_rel_n_0_unfold.
+    exact Hrel.
+  - (* n = S n': use induction and val_rel_at_type_fo_independent *)
+    rewrite val_rel_n_S_unfold in Hrel.
+    destruct Hrel as (Hrec & Hv1 & Hv2 & Hc1 & Hc2 & Hrat).
+    rewrite val_rel_n_S_unfold.
+    repeat split; try assumption.
+    + (* Recursive case: val_rel_n n' Σ' T v1 v2 *)
+      apply IH with Σ; assumption.
+    + (* val_rel_at_type case: use FO independence *)
+      apply (val_rel_at_type_fo_equiv T Σ' (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      exact Hrat.
+Qed.
 
 (** Axiom 2: Strengthening (smaller store to larger store) - General *)
 (* ADMITTED for v2 migration: base case no longer trivial *)
