@@ -484,4 +484,104 @@ Proof.
   inversion Heq; subst; split; [reflexivity | split; reflexivity].
 Qed.
 
+(** ** Store Update Lemmas *)
+
+Lemma store_update_lookup_eq : forall st l v,
+  store_lookup l (store_update l v st) = Some v.
+Proof.
+  induction st as [| [l' v'] st' IH]; intros l v; simpl.
+  - rewrite Nat.eqb_refl. reflexivity.
+  - destruct (Nat.eqb l l') eqn:Heq.
+    + (* l = l', updated entry is (l, v) :: st' *)
+      simpl. rewrite Nat.eqb_refl. reflexivity.
+    + (* l <> l', updated list is (l', v') :: ... *)
+      simpl. rewrite Heq. apply IH.
+Qed.
+
+Lemma store_update_lookup_neq : forall st l l' v,
+  l <> l' ->
+  store_lookup l' (store_update l v st) = store_lookup l' st.
+Proof.
+  induction st as [| [l'' v'] st' IH]; intros l l' v Hneq; simpl.
+  - assert (l' <> l) as Hneq' by auto.
+    apply Nat.eqb_neq in Hneq'. rewrite Hneq'. reflexivity.
+  - destruct (Nat.eqb l l'') eqn:Heq_l.
+    + (* l = l'', so we replaced this entry *)
+      simpl. destruct (Nat.eqb l' l) eqn:Heq_l'.
+      * apply Nat.eqb_eq in Heq_l'. apply Nat.eqb_eq in Heq_l.
+        subst. exfalso. apply Hneq. reflexivity.
+      * destruct (Nat.eqb l' l'') eqn:Heq_l''.
+        -- apply Nat.eqb_eq in Heq_l. apply Nat.eqb_eq in Heq_l''. subst.
+           exfalso. apply Hneq. reflexivity.
+        -- reflexivity.
+    + (* l <> l'', so we continue *)
+      simpl. destruct (Nat.eqb l' l'') eqn:Heq_l'.
+      * reflexivity.
+      * apply IH. exact Hneq.
+Qed.
+
+(** Store values property: all values in store are syntactic values *)
+Definition store_has_values (st : store) : Prop :=
+  forall l v, store_lookup l st = Some v -> value v.
+
+(** Empty store has the values property *)
+Lemma store_has_values_empty : store_has_values nil.
+Proof.
+  unfold store_has_values. intros l v H. simpl in H. discriminate.
+Qed.
+
+(** store_update preserves store_has_values when updating with a value *)
+Lemma store_update_preserves_values : forall st l v,
+  store_has_values st ->
+  value v ->
+  store_has_values (store_update l v st).
+Proof.
+  unfold store_has_values. intros st l v Hst Hv l' v' Hlook.
+  destruct (Nat.eq_dec l l') as [Heq | Hneq].
+  - subst. rewrite store_update_lookup_eq in Hlook.
+    injection Hlook as Heq. subst. exact Hv.
+  - rewrite store_update_lookup_neq in Hlook; auto.
+    apply Hst with l'. exact Hlook.
+Qed.
+
+(** Step preserves store_has_values - auxiliary for proving by induction *)
+Lemma step_preserves_store_values_aux : forall cfg1 cfg2,
+  cfg1 --> cfg2 ->
+  store_has_values (snd (fst cfg1)) ->
+  store_has_values (snd (fst cfg2)).
+Proof.
+  intros cfg1 cfg2 Hstep.
+  induction Hstep; simpl; intro Hst;
+    try exact Hst;
+    try (apply store_update_preserves_values; assumption);
+    try apply IHHstep; auto.
+Qed.
+
+(** Step preserves store_has_values *)
+Lemma step_preserves_store_values : forall e st ctx e' st' ctx',
+  (e, st, ctx) --> (e', st', ctx') ->
+  store_has_values st ->
+  store_has_values st'.
+Proof.
+  intros e st ctx e' st' ctx' Hstep Hst.
+  apply (step_preserves_store_values_aux (e, st, ctx) (e', st', ctx') Hstep).
+  simpl. exact Hst.
+Qed.
+
+(** Multi-step preserves store_has_values *)
+Lemma multi_step_preserves_store_values : forall cfg1 cfg2,
+  multi_step cfg1 cfg2 ->
+  store_has_values (snd (fst cfg1)) ->
+  store_has_values (snd (fst cfg2)).
+Proof.
+  intros cfg1 cfg2 Hms.
+  induction Hms; simpl; intro Hst.
+  - exact Hst.
+  - apply IHHms.
+    destruct cfg1 as [[e1 st1] ctx1].
+    destruct cfg2 as [[e2 st2] ctx2].
+    simpl in *.
+    apply (step_preserves_store_values e1 st1 ctx1 e2 st2 ctx2 H Hst).
+Qed.
+
 (** End of Semantics.v *)
