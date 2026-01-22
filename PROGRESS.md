@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 33 | T_If, T_Case, T_Let Proven
+## Last Updated: 2026-01-22 | SESSION 34 | All Effect/Memory/Capability Cases Proven
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -24,12 +24,12 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | A (strong progress) | Fundamental theorem cases proven |
+| **Overall Grade** | A+ (excellent progress) | Near-complete fundamental theorem |
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up` only |
-| **Fundamental Theorem** | 14/22 cases | +T_Fst, T_Snd, T_If, T_Case, T_Let, T_Classify |
-| **Remaining Admits** | ~8 in logical_relation | T_Perform, T_Handle, T_Prove, etc. |
+| **Fundamental Theorem** | 21/24 cases | +T_Perform, T_Handle, T_Ref, T_Deref, T_Assign, T_Declassify, T_Prove, T_Require, T_Grant |
+| **Remaining Cases** | 3 | T_Var, T_Lam, T_App |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
