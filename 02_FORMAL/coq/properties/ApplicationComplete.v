@@ -88,35 +88,48 @@ Admitted. (* Needs v2 update *)
 *)
 
 (** Build val_rel_n 1 for TUnit *)
-(* ADMITTED for v2 migration: base case structure changed *)
+(** Verified via Session 32 Package A delegation *)
 Lemma val_rel_n_1_unit : forall Σ,
   val_rel_n 1 Σ TUnit EUnit EUnit.
 Proof.
-Admitted.
+  intros Σ.
+  simpl.
+  repeat split; try apply VUnit; try (unfold closed_expr; intros x Hfree; inversion Hfree); auto.
+Qed.
 
 (** Build val_rel_n 1 for TBool *)
-(* ADMITTED for v2 migration: base case structure changed *)
+(** Verified via Session 32 Package A delegation *)
 Lemma val_rel_n_1_bool : forall Σ b,
   val_rel_n 1 Σ TBool (EBool b) (EBool b).
 Proof.
-Admitted.
+  intros Σ b.
+  simpl.
+  repeat split; try apply VBool; try (unfold closed_expr; intros x Hfree; inversion Hfree); try (exists b; auto); auto.
+Qed.
 
 (** Build val_rel_n 1 for TInt *)
-(* ADMITTED for v2 migration: base case structure changed *)
+(** Verified via Session 32 Package A delegation *)
 Lemma val_rel_n_1_int : forall Σ i,
   val_rel_n 1 Σ TInt (EInt i) (EInt i).
 Proof.
-Admitted.
+  intros Σ i.
+  simpl.
+  repeat split; try apply VInt; try (unfold closed_expr; intros x Hfree; inversion Hfree); try (exists i; auto); auto.
+Qed.
 
 (** Build val_rel_n 1 for TString *)
-(* ADMITTED for v2 migration: base case structure changed *)
+(** Verified via Session 32 Package A delegation *)
 Lemma val_rel_n_1_string : forall Σ s,
   val_rel_n 1 Σ TString (EString s) (EString s).
 Proof.
-Admitted.
+  intros Σ s.
+  simpl.
+  repeat split; try apply VString; try (unfold closed_expr; intros x Hfree; inversion Hfree); try (exists s; auto); auto.
+Qed.
 
 (** Build val_rel_n 1 for TSecret (secrets are indistinguishable) *)
-(* ADMITTED for v2 migration: base case structure changed *)
+(** For TSecret T, val_rel_at_type = True, so this is straightforward *)
+(* ADMITTED for now - needs v2 analysis of goal structure *)
 Lemma val_rel_n_1_secret : forall Σ T v1 v2,
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
