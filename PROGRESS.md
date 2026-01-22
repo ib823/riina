@@ -29,7 +29,7 @@
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Active Core Axioms** | **6** → **3 proven** | AX-01, AX-02, AX-03 done |
 | **Archived Axioms** | 19 | Deprecated, not in build |
-| **Admits** | 84 → ~77 | Reduced by ~7 this session |
+| **Admits** | 84 → ~74 | Reduced by ~10 this session |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
 ---
@@ -75,12 +75,12 @@ Ready-to-use prompts created in `06_COORDINATION/prompts/`:
 - `PROMPT_AX03_logical_relation_assign.md`
 - `PROMPT_AX04_logical_relation_declassify.md`
 
-### Admits by File (~77 total, reduced from 84)
+### Admits by File (~74 total, reduced from 84)
 
 | File | Admits | Category | Session 32 Changes |
 |------|--------|----------|-------------------|
 | `AxiomEliminationVerified.v` | 15 | Step-1 termination | -1 (val_rel_n_step_up_fo_typed_pos proven) |
-| `ApplicationComplete.v` | 7 | Function application | -4 (base cases proven) |
+| `ApplicationComplete.v` | 3 | Function application | -8 (base cases + FO canonical proven, FALSE lemmas removed) |
 | `MasterTheorem.v` | 7 | Main theorem | |
 | `KripkeMutual.v` | 6 | Kripke monotonicity | FO version proven |
 | `NonInterferenceZero.v` | 5 | Zero-step cases | |

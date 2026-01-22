@@ -55,24 +55,18 @@ Require Import RIINA.properties.NonInterference_v2_LogicalRelation.
 
 Import ListNotations.
 
-(** ** Step 0 Properties
+(** ** Step 0 Properties (V2 Semantics)
 
-    At step 0, the value and store relations are trivially true.
-    This is the "base case" of the step-indexed construction.
+    IMPORTANT: In v2 semantics, step 0 is NOT trivially True!
+
+    - val_rel_n 0 Σ T v1 v2 = value v1 /\ value v2 /\ closed v1 /\ closed v2 /\
+                              (if first_order_type T then val_rel_at_type_fo T v1 v2 else True)
+
+    - store_rel_n 0 Σ st1 st2 = store_max st1 = store_max st2
+
+    The old "trivial" lemmas were FALSE and have been removed.
+    Use val_rel_n_0_unfold and store_rel_n_0_unfold from NonInterference_v2 instead.
 *)
-
-(* IMPORTANT: These lemmas are FALSE in v2 semantics.
-   In v2, val_rel_n 0 requires value, closed, and first-order conditions.
-   These need to be replaced with proper structural lemmas. *)
-Lemma val_rel_n_0_trivial : forall Σ T v1 v2,
-  val_rel_n 0 Σ T v1 v2.
-Proof.
-Admitted. (* FALSE in v2 - needs structural conditions *)
-
-Lemma store_rel_n_0_trivial : forall Σ st1 st2,
-  store_rel_n 0 Σ st1 st2.
-Proof.
-Admitted. (* Needs v2 update *)
 
 (** ** Building val_rel_n 1 from Structural Information
 
@@ -129,13 +123,27 @@ Qed.
 
 (** Build val_rel_n 1 for TSecret (secrets are indistinguishable) *)
 (** For TSecret T, val_rel_at_type = True, so this is straightforward *)
-(* ADMITTED for now - needs v2 analysis of goal structure *)
 Lemma val_rel_n_1_secret : forall Σ T v1 v2,
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
   val_rel_n 1 Σ (TSecret T) v1 v2.
 Proof.
-Admitted.
+  intros Σ T v1 v2 Hv1 Hv2 Hc1 Hc2.
+  (* Use the unfolding lemma: val_rel_n (S n) = val_rel_n n /\ value /\ closed /\ val_rel_at_type *)
+  rewrite val_rel_n_S_unfold.
+  (* For TSecret T: val_rel_at_type = True, val_rel_at_type_fo = True *)
+  split.
+  (* val_rel_n 0 Σ (TSecret T) v1 v2 *)
+  + rewrite val_rel_n_0_unfold.
+    (* value /\ value /\ closed /\ closed /\ (if first_order_type (TSecret T) then ... else True) *)
+    (* first_order_type (TSecret T) = first_order_type T *)
+    (* val_rel_at_type_fo (TSecret T) = True *)
+    repeat split; try assumption.
+    (* The last goal: if first_order_type T then True else True = True either way *)
+    simpl. destruct (first_order_type T); auto.
+  (* value /\ value /\ closed /\ closed /\ val_rel_at_type *)
+  + repeat split; try assumption; simpl; auto.
+Qed.
 
 (** ** Store Relation at Step 1
 
@@ -145,17 +153,30 @@ Admitted.
     3. For each typed location, values are related at step 0 (trivial)
 *)
 
-(* ADMITTED for v2 migration: base case structure changed *)
+(** CORRECTED: Premise must include val_rel_n 0 for stored values.
+    In v2, val_rel_n 0 is NOT trivial - it requires value/closed/type structure. *)
 Lemma store_rel_n_1_from_same_max : forall Σ st1 st2,
   store_max st1 = store_max st2 ->
   (forall l T sl,
     store_ty_lookup l Σ = Some (T, sl) ->
     exists v1 v2,
       store_lookup l st1 = Some v1 /\
-      store_lookup l st2 = Some v2) ->
+      store_lookup l st2 = Some v2 /\
+      val_rel_n 0 Σ T v1 v2) ->
   store_rel_n 1 Σ st1 st2.
 Proof.
-Admitted.
+  intros Σ st1 st2 Hmax Hlocs.
+  (* store_rel_n 1 = store_rel_n 0 /\ store_max equal /\ value relation at step 0 *)
+  rewrite store_rel_n_S_unfold.
+  split.
+  - (* store_rel_n 0 Σ st1 st2 = store_max st1 = store_max st2 *)
+    rewrite store_rel_n_0_unfold. exact Hmax.
+  - split.
+    + (* store_max st1 = store_max st2 *)
+      exact Hmax.
+    + (* forall l T sl, store_ty_lookup -> exists v1 v2, ... /\ val_rel_n 0 *)
+      exact Hlocs.
+Qed.
 
 (** ** The Main Theorem: tapp_step0_complete
 
@@ -340,7 +361,40 @@ Qed.
     NOTE: This lemma provides COMPLETE structural information for all types.
     For TProd/TSum, the caller must provide component structure.
 *)
-(* ADMITTED for v2 migration: base case structure changed *)
+(** For first-order types, val_rel_at_type is predicate-independent,
+    so we can build val_rel_n 1 from val_rel_at_type with trivial predicates.
+
+    For higher-order types (TFn), this requires special handling because
+    the predicates matter for the function body. *)
+Lemma val_rel_n_1_from_canonical_fo : forall Σ T v1 v2,
+  first_order_type T = true ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  val_rel_at_type Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) T v1 v2 ->
+  val_rel_n 1 Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hfo Hv1 Hv2 Hc1 Hc2 Hrat.
+  rewrite val_rel_n_S_unfold.
+  split.
+  - (* val_rel_n 0 Σ T v1 v2 *)
+    rewrite val_rel_n_0_unfold.
+    repeat split; try assumption.
+    rewrite Hfo.
+    (* Need val_rel_at_type_fo T v1 v2 from val_rel_at_type (trivial preds) *)
+    apply (val_rel_at_type_fo_equiv T Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
+    exact Hrat.
+  - (* value /\ value /\ closed /\ closed /\ val_rel_at_type *)
+    repeat split; try assumption.
+    (* val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2 *)
+    (* For FO types, val_rel_at_type is predicate-independent *)
+    apply (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo).
+    apply (val_rel_at_type_fo_equiv T Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
+    exact Hrat.
+Qed.
+
+(** General version for all types - requires either FO or TFn-specific handling.
+    For TFn, the caller must ensure function body satisfies the step-0 predicates.
+    This is typically established via typing + termination. *)
 Lemma val_rel_n_1_from_canonical : forall Σ T v1 v2,
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
@@ -348,6 +402,22 @@ Lemma val_rel_n_1_from_canonical : forall Σ T v1 v2,
   val_rel_at_type Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) T v1 v2 ->
   val_rel_n 1 Σ T v1 v2.
 Proof.
+  intros Σ T v1 v2 Hv1 Hv2 Hc1 Hc2 Hrat.
+  destruct (first_order_type T) eqn:Hfo.
+  - (* First-order type - use val_rel_n_1_from_canonical_fo *)
+    apply (val_rel_n_1_from_canonical_fo Σ T v1 v2 Hfo Hv1 Hv2 Hc1 Hc2 Hrat).
+  - (* Higher-order type (TFn) - needs special handling *)
+    rewrite val_rel_n_S_unfold.
+    split.
+    + (* val_rel_n 0 Σ T v1 v2 *)
+      rewrite val_rel_n_0_unfold.
+      repeat split; try assumption.
+      rewrite Hfo. auto.
+    + repeat split; try assumption.
+      (* For TFn, val_rel_at_type structure depends on function body *)
+      (* The trivial predicates (fun _ _ _ => True) are STRONGER than needed *)
+      (* because they accept any store_rel/val_rel, including step-0 ones *)
+      (* TODO: This requires TFn-specific analysis *)
 Admitted.
 
 (** Typed step 0 complete theorem
