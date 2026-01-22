@@ -1,5 +1,42 @@
 # Session Log
 
+## 2026-01-22 (Session 34 cont.): T_Var, T_Classify, T_Prove Proven
+
+**Goal:** Complete remaining fundamental theorem cases.
+
+**Major Accomplishments:**
+
+### Fundamental Theorem Cases PROVEN (3 new, 22/24 total)
+
+| Case | Description | Method |
+|------|-------------|--------|
+| `T_Var` | Variable lookup | Use `env_rel` directly - `env_rel n x T` gives `val_rel_n n Σ T (rho1 x) (rho2 x)` |
+| `T_Classify` | Secret wrapping | Use `val_rel_n_classify` lemma - TSecret val_rel_at_type is True |
+| `T_Prove` | Proof wrapping | Use `val_rel_n_prove` lemma - TProof val_rel_at_type is True |
+
+### Key Insight: Wrapper Types
+T_Classify and T_Prove were straightforward because `TSecret` and `TProof` have trivial
+`val_rel_at_type` (always True). The existing `val_rel_n_classify` and `val_rel_n_prove`
+lemmas build the full cumulative val_rel_n structure from value/closed_expr properties.
+
+### Key Insight: T_Var
+T_Var is trivial because:
+1. `subst_rho rho (EVar x) = rho x` by definition
+2. `env_rel Σ Γ rho1 rho2` directly gives `val_rel_n n Σ T (rho1 x) (rho2 x)` for any `lookup x Γ = Some T`
+
+**Remaining Cases (2):**
+- `T_Lam`: Needs typing judgment preservation in induction (closed_expr requires original typing)
+- `T_App`: Most complex - needs function application val_rel handling
+
+**Metrics:**
+| Metric | Value |
+|--------|-------|
+| Core Axioms | 1 (`val_rel_n_step_up`) |
+| Build Status | ✅ PASSING |
+| Fundamental Theorem Progress | 22/24 cases proven |
+
+---
+
 ## 2026-01-22 (Session 34): All Effect/Memory/Capability Cases Proven
 
 **Goal:** Complete fundamental theorem for remaining cases.
