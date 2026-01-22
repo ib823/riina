@@ -29,7 +29,11 @@
 - `val_rel_n_1_bool` - **PROVEN**
 - `val_rel_n_1_int` - **PROVEN**
 - `val_rel_n_1_string` - **PROVEN**
-- Reduced admits from 11 to 7
+- `val_rel_n_1_secret` - **PROVEN** (secrets trivially related)
+- `store_rel_n_1_from_same_max` - **PROVEN** (corrected precondition)
+- `val_rel_n_1_from_canonical_fo` - **PROVEN** (FO version)
+- Removed FALSE lemmas: `val_rel_n_0_trivial`, `store_rel_n_0_trivial`
+- Reduced admits from 11 to 3
 
 ### Package B (store weakening) - REVIEWED
 - FO version `store_rel_n_weaken_aux_fo` already proven
@@ -39,8 +43,8 @@
 | Metric | Before | After |
 |--------|--------|-------|
 | Active Axioms Proven | 0 | 3 (AX-01, AX-02, AX-03) |
-| Total Admits | ~84 | ~77 |
-| ApplicationComplete admits | 11 | 7 |
+| Total Admits | ~84 | ~74 |
+| ApplicationComplete admits | 11 | 3 |
 | AxiomEliminationVerified admits | 16 | 15 |
 
 **Build Status:** ✅ All files compile
