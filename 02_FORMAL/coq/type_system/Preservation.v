@@ -1201,4 +1201,54 @@ Proof.
     try reflexivity; eassumption.
 Qed.
 
+(** Store typing extension is transitive *)
+Lemma store_ty_extends_trans : forall Σ1 Σ2 Σ3,
+  store_ty_extends Σ1 Σ2 ->
+  store_ty_extends Σ2 Σ3 ->
+  store_ty_extends Σ1 Σ3.
+Proof.
+  intros Σ1 Σ2 Σ3 H12 H23.
+  unfold store_ty_extends in *.
+  intros l T sl H1.
+  apply H23. apply H12. exact H1.
+Qed.
+
+(** Multi-step preservation: extends single-step preservation to -->* *)
+Theorem multi_step_preservation : forall cfg cfg',
+  cfg -->* cfg' ->
+  forall e e' T ε st st' ctx ctx' Σ,
+  cfg = (e, st, ctx) ->
+  cfg' = (e', st', ctx') ->
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
+  exists Σ' ε',
+    store_ty_extends Σ Σ' /\
+    store_wf Σ' st' /\
+    has_type nil Σ' Public e' T ε'.
+Proof.
+  intros cfg cfg' Hmulti.
+  induction Hmulti as [cfg0 | cfg1 cfg2 cfg3 Hstep Hmulti' IH].
+  - (* MS_Refl: cfg0 = cfg0' *)
+    intros e e' T ε st st' ctx ctx' Σ Heq Heq' Hty Hwf.
+    rewrite Heq in Heq'. injection Heq' as He Hst Hctx. subst.
+    exists Σ, ε. split; [| split].
+    + apply store_ty_extends_refl.
+    + exact Hwf.
+    + exact Hty.
+  - (* MS_Step: cfg1 --> cfg2 -->* cfg3 *)
+    intros e e' T ε st st' ctx ctx' Σ Heq1 Heq3 Hty Hwf.
+    subst cfg1 cfg3.
+    destruct cfg2 as [[e2 st2] ctx2].
+    (* Apply single-step preservation to (e, st, ctx) --> (e2, st2, ctx2) *)
+    destruct (preservation e e2 T ε st st2 ctx ctx2 Σ Hty Hwf Hstep)
+      as [Σ2 [ε2 [Hext2 [Hwf2 Hty2]]]].
+    (* Apply IH to (e2, st2, ctx2) -->* (e', st', ctx') *)
+    specialize (IH e2 e' T ε2 st2 st' ctx2 ctx' Σ2 eq_refl eq_refl Hty2 Hwf2)
+      as [Σ3 [ε3 [Hext3 [Hwf3 Hty3]]]].
+    exists Σ3, ε3. split; [| split].
+    + apply store_ty_extends_trans with Σ2; assumption.
+    + exact Hwf3.
+    + exact Hty3.
+Qed.
+
 (** End of Preservation.v *)
