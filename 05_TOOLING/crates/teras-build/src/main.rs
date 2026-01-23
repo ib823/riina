@@ -14,13 +14,12 @@
 //! All builds are hermetic and reproducible.
 
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-#![warn(clippy::pedantic, clippy::nursery)]
+// Lints configured at workspace level in Cargo.toml
 
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::io::{self, Write};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -234,6 +233,7 @@ enum BuildError {
     CommandFailed { command: String, exit_code: i32 },
     CommandNotFound(String),
     IoError(io::Error),
+    #[allow(dead_code)]
     VerificationFailed(String),
     InvalidConfiguration(String),
 }
