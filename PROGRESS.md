@@ -17,7 +17,7 @@
 ```
 
 **Report Date:** 2026-01-23
-**Session:** 36
+**Session:** 37
 **Overall Grade:** A- (Strong Progress)
 
 ---
@@ -31,7 +31,7 @@
 | Coq Build | PASSING | PASSING | ✅ GREEN |
 | Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
 
-**Key Achievement:** Restructured `val_rel_n_step_up` with type-structural induction (`ty_size_induction`). FO types at n > 0 fully proven. HO types use recursive IH on result type.
+**Key Achievement:** Added `combined_step_up` definition and `store_rel_n_step_up_from_IH` helper for mutual val_rel/store_rel step-up. Structure enables proving store_rel step-up given val_rel IH from strong induction on step index.
 
 ---
 
@@ -193,9 +193,9 @@
 | ~~3~~ | ~~Restructure with ty_size_induction~~ | ~~None~~ | ✅ DONE |
 | ~~4~~ | ~~Prove `has_type_store_weakening`~~ | ~~None~~ | ✅ DONE (reused Preservation.v) |
 | ~~5~~ | ~~Fill HO typing admits~~ | ~~#4~~ | ✅ DONE (extracted from val_rel_n) |
-| 6 | Prove store_rel step-up (line 1108) | Mutual dependency | P1 |
-| 7 | Prove n=0 Fundamental Theorem case (line 1039) | Compatibility lemmas | P2 |
-| 8 | Prove FO bootstrap in store_rel_n_step_up (line 1186) | Semantic property | P2 |
+| 6 | Prove store_rel step-up (line 1179) | Mutual dependency | P1 |
+| 7 | Prove n=0 Fundamental Theorem case (line 1110) | Compatibility lemmas | P2 |
+| 8 | Prove FO bootstrap in store_rel_n_step_up (line 1257) | Semantic property | P2 |
 
 ### 6.3 Blockers
 
@@ -216,11 +216,14 @@ The `val_rel_n_step_up` proof is now properly structured:
 2. **FO types** (all n): Fully proven using `val_rel_n_step_up_fo` + downward closure
 3. **HO types at n > 0**: Uses IH on T2 (ty_size T2 < ty_size (TFn T1 T2))
 4. **HO types at n = 0**: Requires Fundamental Theorem (compatibility lemmas)
+5. **Mutual step-up**: `combined_step_up` + `store_rel_n_step_up_from_IH` enable mutual induction
 
 Remaining admits in val_rel_n_step_up_by_type:
-- Line 1039: n=0 case (Fundamental Theorem)
-- Lines 1071, 1074: HO typing preservation (needs has_type_store_weakening)
-- Line 1078: store_rel step-up
+- Line 1110: n=0 case (Fundamental Theorem)
+- Line 1179: store_rel step-up (needs store_wf preservation through multi-step)
+
+Remaining admits in store_rel_n_step_up:
+- Line 1257: FO bootstrap (semantic NI property)
 
 ---
 
@@ -228,12 +231,12 @@ Remaining admits in val_rel_n_step_up_by_type:
 
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: val_rel_n_step_up_by_type
-Last Line    : ~1109 (proof structure complete)
-Next Action  : Prove store_rel step-up or FO bootstrap
-Git Commit   : a14e7c5
+Last Function: val_rel_n_step_up_by_type, store_rel_n_step_up_from_IH
+Last Line    : ~1180 (combined step-up structure complete)
+Next Action  : Prove store_wf preservation or FO bootstrap
+Git Commit   : (pending)
 Build Status : ✅ PASSING
-Admits       : 4 in NonInterference_v2.v (n=0, store_rel, FO bootstrap)
+Admits       : 3 in NonInterference_v2.v (n=0, store_rel, FO bootstrap)
 ```
 
 ---
