@@ -1065,16 +1065,46 @@ Proof.
           apply (IH T2 (ty_size_fn_res T1 T2 e) n' Σ'' v1' v2' Hvrel_n').
           - (* Typing precondition for v1' at T2 *)
             intros Hho_T2.
-            (* From multi_step_preservation: evaluation preserves typing *)
-            (* The initial term EApp v1 x has type T2, so v1' has type T2 *)
-            (* This requires has_type_store_weakening for store extension *)
-            admit.
+            (* For HO types, val_rel_n includes typing by definition *)
+            (* Extract typing from Hvrel_n' *)
+            destruct n' as [| n''].
+            + (* n' = 0: val_rel_n 0 for HO types includes typing *)
+              rewrite val_rel_n_0_unfold in Hvrel_n'.
+              destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
+              rewrite Hho_T2 in Htyping.
+              destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
+            + (* n' = S n'': val_rel_n (S _) for HO types includes typing *)
+              rewrite val_rel_n_S_unfold in Hvrel_n'.
+              destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
+              rewrite Hho_T2 in Htyping.
+              destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
           - (* Typing precondition for v2' at T2 *)
             intros Hho_T2.
-            admit. }
+            (* Similarly extract typing for v2' *)
+            destruct n' as [| n''].
+            + rewrite val_rel_n_0_unfold in Hvrel_n'.
+              destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
+              rewrite Hho_T2 in Htyping.
+              destruct Htyping as [_ Hty_v2']. exact Hty_v2'.
+            + rewrite val_rel_n_S_unfold in Hvrel_n'.
+              destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
+              rewrite Hho_T2 in Htyping.
+              destruct Htyping as [_ Hty_v2']. exact Hty_v2'. }
         { (* store_rel_n (S n') Σ'' st1' st2' - step up from Hstrel_n'' *)
-          (* This requires store_rel step-up, which depends on val_rel step-up.
-             For now, admit. Can be proven once val_rel step-up is complete. *)
+          (* This requires mutual step-up: store_rel_n step-up depends on
+             val_rel_n step-up for arbitrary location types, which may not be
+             smaller than TFn T1 T2 in ty_size. The ty_size IH doesn't cover this.
+
+             RESOLUTION PATH: Prove via mutual strong induction on step index n,
+             with inner induction on type size for val_rel_at_type cases.
+             This is the standard approach in step-indexed logical relations.
+
+             For now, we observe that:
+             - Hstrel_n'' gives store_rel_n n' which is a weaker property
+             - The Fundamental Theorem (when proven) will establish this
+
+             JUSTIFICATION: This admit is semantically justified by the
+             preservation of store well-formedness through evaluation. *)
           admit. }
 Admitted.
 
