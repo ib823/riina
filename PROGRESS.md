@@ -127,7 +127,9 @@
 
 **FO Bootstrap Solution:** Added `stores_agree_low_fo` precondition - stores must agree on LOW security first-order locations initially. For HIGH security FO types with trivial relations (TSecret, TList, etc.), any values are related. Remaining edge case: HIGH security base types (TBool, TInt at HIGH) - semantically irrelevant since high data isn't observable.
 
-**Helper Lemma Status:** `val_rel_at_type_fo_refl` fully proven using `value_has_pure_effect` lemma for typing inversion. `val_rel_at_type_fo_trivial` has 1 admit for structural cases.
+**Helper Lemma Status:**
+- `val_rel_at_type_fo_refl`: ✅ PROVEN using `value_has_pure_effect` for typing inversion
+- `val_rel_at_type_fo_trivial`: 2 admits for TProd/TSum structural cases (need value typing info)
 
 ---
 
@@ -239,10 +241,10 @@ Remaining admits in FO helper lemmas:
 
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: val_rel_at_type_fo_trivial
-Last Line    : ~1466 (FO helper lemmas mostly proven)
-Next Action  : Work on FundamentalTheorem.v or n=0 case
-Git Commit   : (pending)
+Last Function: val_rel_at_type_fo_trivial, store_rel_n_step_up
+Last Line    : ~1466 (FO bootstrap solution complete)
+Next Action  : Work on FundamentalTheorem.v compatibility or n=0 case
+Git Commit   : 8c0edb7
 Build Status : ✅ PASSING
 Admits       : 5 in NonInterference_v2.v (n=0, store_rel, fo_trivial x2, HIGH base)
 ```

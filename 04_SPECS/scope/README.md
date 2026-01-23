@@ -22,4 +22,4 @@ These documents define:
 All files are SHA-256 verified. See `../CHECKSUMS.sha256` for hashes.
 
 ---
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

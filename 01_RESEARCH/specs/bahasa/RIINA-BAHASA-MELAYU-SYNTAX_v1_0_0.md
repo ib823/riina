@@ -10,7 +10,7 @@
 ║  ██║  ██║██║██║██║ ╚████║██║  ██║                                               ║
 ║  ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                               ║
 ║                                                                                  ║
-║  Rigorous Immutable Integrity No-attack Assured                                  ║
+║  Rigorous Immutable Invariant — Normalized Axiom                                  ║
 ║                                                                                  ║
 ║  BAHASA MELAYU SYNTAX SPECIFICATION                                             ║
 ║  Version 1.0.0                                                                   ║
@@ -45,7 +45,7 @@ RIINA combines:
 
 ```
 Technical Acronym:
-RIINA = Rigorous Immutable Integrity No-attack Assured
+RIINA = Rigorous Immutable Invariant — Normalized Axiom
 ```
 
 ### 1.3 File Extension
@@ -1270,4 +1270,4 @@ SHA-256: [To be computed after finalization]
 
 ---
 
-**RIINA: Rigorous Immutable Integrity No-attack Assured**
+**RIINA: Rigorous Immutable Invariant — Normalized Axiom**

@@ -59,4 +59,4 @@ Axiom logical_relation_assign : forall Γ Σ Δ e1 e2 T l ε1 ε2 rho1 rho2 n,
 
 ---
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

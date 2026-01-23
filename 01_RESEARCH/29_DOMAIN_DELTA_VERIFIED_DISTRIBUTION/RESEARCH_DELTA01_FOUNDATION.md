@@ -600,6 +600,6 @@ Based on IronFleet results:
 
 **"Distributed systems without proofs are distributed failures."**
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*Security proven. Mathematically verified.*
+*QED Eternum.*

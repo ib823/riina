@@ -2,11 +2,11 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║  RIINA — Rigorous Immutable Integrity No-attack Assured                          ║
+║  RIINA — Rigorous Immutable Invariant — Normalized Axiom                          ║
 ║  FORMAL PROOF DELEGATION: Reference Operations (Ref, Deref, Assign)              ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR              ║
-║  "Security proven. Mathematically verified."                                               ║
+║  "QED Eternum."                                               ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 

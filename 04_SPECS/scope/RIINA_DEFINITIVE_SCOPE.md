@@ -19,7 +19,7 @@
 ║  Date: 2026-01-19                                                                                    ║
 ║  Repository: github.com/ib823/proof                                                                  ║
 ║                                                                                                      ║
-║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
+║  RIINA: Rigorous Immutable Invariant — Normalized Axiom                                              ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -532,7 +532,7 @@ This repository contains EVERYTHING that IS RIINA:
 
 | Term | Definition |
 |------|------------|
-| **RIINA** | The programming language (Rigorous Immutable Integrity No-attack Assured) |
+| **RIINA** | The programming language (Rigorous Immutable Invariant — Normalized Axiom) |
 | **riinac** | The RIINA compiler |
 | **Effect Gate** | Hardware security mediation layer |
 | **BTP** | BENTENG Trust Policy language |
@@ -570,7 +570,7 @@ This repository contains EVERYTHING that IS RIINA:
 ║  All other documents MUST align with this scope definition.                                         ║
 ║  Any document that contradicts this scope is INCORRECT.                                             ║
 ║                                                                                                      ║
-║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
+║  RIINA: Rigorous Immutable Invariant — Normalized Axiom                                              ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

@@ -956,7 +956,7 @@ fungsi dapat_pengguna(id: UUID) -> PenggunaAwam {
 ║     are the ones who do."                                                        ║
 ║                                  — Steve Jobs                                    ║
 ║                                                                                  ║
-║    RIINA: Rigorous Immutable Integrity No-attack Assured                        ║
+║    RIINA: Rigorous Immutable Invariant — Normalized Axiom                        ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```

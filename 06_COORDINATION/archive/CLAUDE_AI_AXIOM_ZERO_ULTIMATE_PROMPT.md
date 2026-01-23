@@ -323,6 +323,6 @@ Your proofs will make RIINA the FIRST language in human history with this level 
 
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS | INFINITE TIMELINE*
 
-*"Security proven. Mathematically verified."*
+*"QED Eternum."*
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

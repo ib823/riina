@@ -20,7 +20,7 @@
 ║  Classification: ULTRA KIASU | ZERO TRUST | INFINITE TIMELINE                                       ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
-║  "Security proven. Mathematically verified."                                                                   ║
+║  "QED Eternum."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -827,7 +827,7 @@ See Appendix A for the complete 460-track enumeration.
 ║  - Brutal honesty                                                                                   ║
 ║  - Complete enumeration of gaps                                                                     ║
 ║                                                                                                      ║
-║  "Security proven. Mathematically verified."                                                                   ║
+║  "QED Eternum."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

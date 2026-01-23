@@ -761,6 +761,6 @@ fungsi nyahmampat(data: &[u8], had_output: usize)
 
 **"The network is hostile. Every packet is an attack until proven otherwise."**
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*Security proven. Mathematically verified.*
+*QED Eternum.*

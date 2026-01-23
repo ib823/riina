@@ -2,11 +2,11 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║  RIINA — Rigorous Immutable Integrity No-attack Assured                          ║
+║  RIINA — Rigorous Immutable Invariant — Normalized Axiom                          ║
 ║  FORMAL PROOF DELEGATION PROMPT FOR CLAUDE AI (WEB)                              ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
-║  "Security proven. Mathematically verified."                                               ║
+║  "QED Eternum."                                               ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 

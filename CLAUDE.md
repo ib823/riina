@@ -12,7 +12,7 @@
 ║  ██║  ██║██║██║██║ ╚████║██║  ██║                                               ║
 ║  ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                               ║
 ║                                                                                  ║
-║  Rigorous Immutable Integrity No-attack Assured                                  ║
+║  Rigorous Immutable Invariant — Normalized Axiom                                  ║
 ║                                                                                  ║
 ║  RIINA PROOF REPOSITORY — CLAUDE CODE GUIDE                                      ║
 ║                                                                                  ║
@@ -20,7 +20,7 @@
 ║  Purpose: Formal proofs and prototype for RIINA                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
 ║                                                                                  ║
-║  "Security proven. Mathematically verified."                                     ║
+║  "QED Eternum."                                     ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -32,7 +32,7 @@
 ### 0.1 Name Origin
 
 ```
-RIINA = Rigorous Immutable Integrity No-attack Assured
+RIINA = Rigorous Immutable Invariant — Normalized Axiom
 
 R  — Rigorous (formal verification)
 I  — Immutable (security guarantees)
@@ -653,9 +653,9 @@ When encountering old references, update them to the new naming.
 
 *This CLAUDE.md follows ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE principles.*
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*"Security proven. Mathematically verified."*
+*"QED Eternum."*
 
 *Last updated: 2026-01-23*
 

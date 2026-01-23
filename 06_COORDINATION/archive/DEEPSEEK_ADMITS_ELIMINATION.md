@@ -622,4 +622,4 @@ Qed.
 
 ---
 
-*"Security proven. Mathematically verified."*
+*"QED Eternum."*

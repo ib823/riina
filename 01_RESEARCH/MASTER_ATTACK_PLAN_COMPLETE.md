@@ -616,6 +616,6 @@ This attack plan represents the **COMPLETE DOMINATION** strategy for RIINA:
 
 *"Every line of code backed by mathematical proof. Every threat made obsolete. Forever."*
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*Security proven. Mathematically verified.*
+*QED Eternum.*

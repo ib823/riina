@@ -789,7 +789,7 @@ cat > 06_COORDINATION/signals/PRIVACY_ZERO_ACHIEVED.signal << 'EOF'
 ║                                                                                  ║
 ║    ALL past, present, and future privacy threats are now OBSOLETE.               ║
 ║                                                                                  ║
-║    RIINA: Rigorous Immutable Integrity No-attack Assured                         ║
+║    RIINA: Rigorous Immutable Invariant — Normalized Axiom                         ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 EOF
@@ -885,4 +885,4 @@ fungsi hantar_mesej_rahsia(penerima: IdPengguna, kandungan: Teks)
 
 *"RIINA: Where even your metadata has a right to privacy."*
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
