@@ -45,9 +45,8 @@ pub fn zeroize_slice(slice: &mut [u8]) {
         // SAFETY: We're writing to valid, initialized memory
         // The pointer comes from a valid mutable reference
         // We're writing a valid u8 value (0)
-        #[allow(clippy::ptr_cast_constness)]
         unsafe {
-            ptr::write_volatile(byte as *mut u8, 0);
+            ptr::write_volatile(ptr::from_mut(byte), 0);
         }
     }
     
@@ -84,9 +83,8 @@ macro_rules! impl_zeroize_for_primitive {
             impl Zeroize for $t {
                 fn zeroize(&mut self) {
                     // SAFETY: Writing zero to valid memory
-                    #[allow(clippy::ptr_cast_constness)]
                     unsafe {
-                        ptr::write_volatile(self as *mut $t, 0);
+                        ptr::write_volatile(ptr::from_mut(self), 0);
                     }
                     compiler_fence(Ordering::SeqCst);
                 }
