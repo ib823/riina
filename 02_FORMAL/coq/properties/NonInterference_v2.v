@@ -406,7 +406,14 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
         exists v1 v2,
           store_lookup l st1 = Some v1 /\
           store_lookup l st2 = Some v2 /\
-          val_rel_n n' Σ T v1 v2)
+          (* SECURITY-AWARE RELATION:
+             - LOW security: require full val_rel_n (structural equality for FO)
+             - HIGH security: only require well-typed values (observer can't see them) *)
+          (if is_low_dec sl
+           then val_rel_n n' Σ T v1 v2
+           else (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+                 has_type nil Σ Public v1 T EffectPure /\
+                 has_type nil Σ Public v2 T EffectPure)))
   end.
 
 (** Unfolding lemmas for val_rel_n - needed because simpl doesn't work well
@@ -444,7 +451,11 @@ Lemma store_rel_n_S_unfold : forall n Σ st1 st2,
      exists v1 v2,
        store_lookup l st1 = Some v1 /\
        store_lookup l st2 = Some v2 /\
-       val_rel_n n Σ T v1 v2)).
+       (if is_low_dec sl
+        then val_rel_n n Σ T v1 v2
+        else (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+              has_type nil Σ Public v1 T EffectPure /\
+              has_type nil Σ Public v2 T EffectPure)))).
 Proof. reflexivity. Qed.
 
 (** ========================================================================
@@ -830,7 +841,12 @@ Proof.
       * intros l T sl Hlook.
         destruct (Hlocs l T sl Hlook) as [v1 [v2 [Hl1 [Hl2 Hvrel]]]].
         exists v1, v2. repeat split; try assumption.
-        apply val_rel_n_mono with (n := n'). lia. exact Hvrel.
+        (* Handle security-aware conditional *)
+        destruct (is_low_dec sl) eqn:Hsl.
+        -- (* LOW: apply val_rel_n_mono *)
+           apply val_rel_n_mono with (n := n'). lia. exact Hvrel.
+        -- (* HIGH: typing doesn't depend on step index *)
+           exact Hvrel.
 Qed.
 
 (** ========================================================================
@@ -1211,11 +1227,23 @@ Proof.
     specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
     rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
     rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
-    (* Use IH_val to step up from n' to S n' *)
-    apply IH_val.
-    + exact Hvrel_n'.
-    + intros Hho. exact Hty1.
-    + intros Hho. exact Hty2.
+    (* Handle security-aware conditional *)
+    destruct (is_low_dec sl) eqn:Hsl.
+    + (* LOW: Use IH_val to step up from n' to S n' *)
+      apply IH_val.
+      * exact Hvrel_n'.
+      * intros Hho. exact Hty1.
+      * intros Hho. exact Hty2.
+    + (* HIGH: Just need typing, which we already have *)
+      assert (Hv1: value v1).
+      { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
+      assert (Hv2: value v2).
+      { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
+      assert (Hc1: closed_expr v1).
+      { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
+      assert (Hc2: closed_expr v2).
+      { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
+      repeat split; assumption.
 Qed.
 
 (** ========================================================================
@@ -1307,53 +1335,57 @@ Proof.
       specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
       specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
       exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
-      destruct n as [| n'].
-      * (* n = 0: Bootstrap case *)
-        rewrite val_rel_n_0_unfold.
-        assert (Hc1: closed_expr v1).
-        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
-        assert (Hc2: closed_expr v2).
-        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
-        assert (Hv1: value v1).
-        { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
-        assert (Hv2: value v2).
-        { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
-        repeat split; try assumption.
-        destruct (first_order_type T) eqn:Hfo.
-        -- (* FO type: establish val_rel_at_type_fo *)
-           (* Case analysis on security level *)
-           destruct (is_low_dec sl) eqn:Hlow_dec.
-           ++ (* LOW security: use stores_agree_low_fo *)
+      (* FIRST: case split on security level for the security-aware store_rel *)
+      destruct (is_low_dec sl) eqn:Hsl.
+      * (* LOW security: need full val_rel_n *)
+        destruct n as [| n'].
+        -- (* n = 0: Bootstrap case for LOW *)
+           rewrite val_rel_n_0_unfold.
+           assert (Hc1: closed_expr v1).
+           { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
+           assert (Hc2: closed_expr v2).
+           { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
+           assert (Hv1: value v1).
+           { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
+           assert (Hv2: value v2).
+           { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
+           repeat split; try assumption.
+           destruct (first_order_type T) eqn:Hfo.
+           ++ (* FO type: use stores_agree_low_fo for LOW *)
               assert (Hlow: is_low sl).
-              { apply is_low_dec_correct. exact Hlow_dec. }
+              { apply is_low_dec_correct. exact Hsl. }
               specialize (Hagree l T sl Hlook Hfo Hlow).
               rewrite Hlook1, Hlook2 in Hagree.
               injection Hagree as Heq. subst v2.
               apply val_rel_at_type_fo_refl with Σ; assumption.
-           ++ (* HIGH security: use trivial relation if available *)
-              destruct (fo_type_has_trivial_rel T) eqn:Htriv.
-              ** apply val_rel_at_type_fo_trivial with Σ; assumption.
-              ** (* Non-trivial HIGH FO type - semantically justified
-                    HIGH security data doesn't need structural equality *)
-                 admit.
-        -- split; assumption.
-      * (* n = S n': Use val_rel from store_rel_n (S n') and step up *)
-        rewrite store_rel_n_S_unfold in Hrel.
-        destruct Hrel as [Hrel_n' [_ Hlocs]].
-        specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
-        rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
-        rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
-        (* Use IH_strong(n') to get combined_step_up(n') *)
-        (* Then use val_rel step-up from n' to S n' = n *)
-        (* But wait: we have Hvrel_n' : val_rel_n n' and need val_rel_n (S n') = val_rel_n n
-           That's step-up from n' to n = S n', which is what combined_step_up(n') gives us *)
-        assert (Hcombined : combined_step_up n').
-        { apply IH_strong. lia. }
-        destruct Hcombined as [Hval_step _].
-        apply Hval_step.
-        -- exact Hvrel_n'.
-        -- intros Hho. exact Hty1.
-        -- intros Hho. exact Hty2.
+           ++ (* HO type at step 0: need typing *)
+              split; assumption.
+        -- (* n = S n': Use val_rel from store_rel_n (S n') and step up *)
+           rewrite store_rel_n_S_unfold in Hrel.
+           destruct Hrel as [Hrel_n' [_ Hlocs]].
+           specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
+           rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
+           rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
+           (* Hvrel_n' is security-aware; we're in LOW case so it's val_rel_n n' *)
+           rewrite Hsl in Hvrel_n'.
+           (* Use IH_strong(n') to step up from val_rel_n n' to val_rel_n (S n') *)
+           assert (Hcombined : combined_step_up n').
+           { apply IH_strong. lia. }
+           destruct Hcombined as [Hval_step _].
+           apply Hval_step.
+           ++ exact Hvrel_n'.
+           ++ intros Hho. exact Hty1.
+           ++ intros Hho. exact Hty2.
+      * (* HIGH security: only need typing, not val_rel_n *)
+        assert (Hv1: value v1).
+        { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
+        assert (Hv2: value v2).
+        { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
+        assert (Hc1: closed_expr v1).
+        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
+        assert (Hc2: closed_expr v2).
+        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
+        repeat split; assumption.
 Admitted.
 
 (** Corollary: Extract val_rel step-up from combined_step_up_all *)
