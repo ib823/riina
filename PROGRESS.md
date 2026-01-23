@@ -234,7 +234,7 @@ Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
 Last Function: val_rel_n_step_up_by_type, store_rel_n_step_up_from_IH
 Last Line    : ~1180 (combined step-up structure complete)
 Next Action  : Prove store_wf preservation or FO bootstrap
-Git Commit   : (pending)
+Git Commit   : 717475e
 Build Status : ✅ PASSING
 Admits       : 3 in NonInterference_v2.v (n=0, store_rel, FO bootstrap)
 ```
