@@ -1316,11 +1316,124 @@ Proof.
            apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
            exact Hrat.
       * (* Higher-order type case: first_order_type T = false *)
-        (* This includes TFn, TChan, TSecureChan, and recursive types containing them.
-           ADMITTED: Requires Fundamental Theorem of Logical Relations.
-           The Fundamental Theorem states that well-typed terms preserve the
-           logical relation under substitution of related values. *)
-        admit.
+        (* This includes TFn, TChan, TSecureChan, and compound types with HO components. *)
+        split.
+        { (* Typing conjunct: we have typing from Hty1, Hty2 *)
+          split; [apply Hty1; exact eq_refl | apply Hty2; exact eq_refl]. }
+        { (* val_rel_at_type at step n *)
+          (* For n = 0, this is the Fundamental Theorem territory *)
+          (* For n = S n', we can use val_rel_at_type from Hrel at step n' *)
+          destruct n as [| n'].
+          - (* n = 0: Fundamental Theorem required.
+               At step 0, val_rel_n for HO types only gives typing.
+               We need to establish val_rel_at_type from typing alone.
+               This requires compatibility lemmas for each typing rule.
+               ADMITTED: Fundamental Theorem of Logical Relations *)
+            admit.
+          - (* n = S n': Use val_rel_at_type from Hrel at step n' *)
+            simpl in Hrel.
+            destruct Hrel as [Hrel_n' [_ [_ [_ [_ [_ Hrat_n']]]]]].
+            (* Hrat_n' : val_rel_at_type at step n' with predicates val_rel_n n', store_rel_n n' *)
+            (* We need val_rel_at_type at step S n' with predicates val_rel_n (S n'), store_rel_n (S n') *)
+            (* For non-TFn types (TProd, TSum with HO components, etc.), val_rel_at_type
+               doesn't use the predicates, so we can reuse Hrat_n' directly via
+               equivalence lemmas. For TFn, we need to handle the predicate upgrade. *)
+            destruct T; try discriminate Hfo.
+            + (* TFn T1 T2 eff *)
+              simpl. simpl in Hrat_n'.
+              intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel.
+              (* Downward closure: step n → n' where n = S n' *)
+              (* Hxyrel : val_rel_n n Σ' T1 x y, Hstrel : store_rel_n n Σ' st1 st2 *)
+              (* We need val_rel_n n' and store_rel_n n' for Hrat_n' *)
+              assert (Hxyrel_n' : val_rel_n n' Σ' T1 x y).
+              { apply val_rel_n_mono with (S n'). lia. exact Hxyrel. }
+              assert (Hstrel_n' : store_rel_n n' Σ' st1 st2).
+              { apply store_rel_n_mono with (S n'). lia. exact Hstrel. }
+              (* Apply val_rel_at_type at step n' *)
+              specialize (Hrat_n' Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel_n' st1 st2 ctx Hstrel_n').
+              destruct Hrat_n' as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel_n' Hstrel_n'']]]]]]]]]].
+              exists v1', v2', st1', st2', ctx', Σ''.
+              split. { exact Hext'. }
+              split. { exact Hstep1. }
+              split. { exact Hstep2. }
+              (* Use IH_strong(n') to step up from n' to S n' *)
+              assert (Hcombined : combined_step_up n').
+              { apply IH_strong. lia. }
+              destruct Hcombined as [Hval_step Hstore_step].
+              split.
+              { (* val_rel_n (S n') Σ'' T2 v1' v2' *)
+                apply Hval_step.
+                * exact Hvrel_n'.
+                * intros Hho_T2.
+                  destruct n' as [| n''].
+                  -- rewrite val_rel_n_0_unfold in Hvrel_n'.
+                     destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
+                     rewrite Hho_T2 in Htyping.
+                     destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
+                  -- rewrite val_rel_n_S_unfold in Hvrel_n'.
+                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
+                     rewrite Hho_T2 in Htyping.
+                     destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
+                * intros Hho_T2.
+                  destruct n' as [| n''].
+                  -- rewrite val_rel_n_0_unfold in Hvrel_n'.
+                     destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
+                     rewrite Hho_T2 in Htyping.
+                     destruct Htyping as [_ Hty_v2']. exact Hty_v2'.
+                  -- rewrite val_rel_n_S_unfold in Hvrel_n'.
+                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
+                     rewrite Hho_T2 in Htyping.
+                     destruct Htyping as [_ Hty_v2']. exact Hty_v2'. }
+              { (* store_rel_n (S n') Σ'' st1' st2' *)
+                (* Use Hstore_step from combined_step_up n' *)
+                (* Preconditions are preservation properties *)
+                apply Hstore_step.
+                - exact Hstrel_n''.
+                - (* store_wf Σ'' st1' - follows from type preservation *)
+                  admit.
+                - (* store_wf Σ'' st2' - follows from type preservation *)
+                  admit.
+                - (* store_has_values st1' - evaluation produces values *)
+                  admit.
+                - (* store_has_values st2' - evaluation produces values *)
+                  admit.
+                - (* stores_agree_low_fo Σ'' st1' st2' - preserved by evaluation *)
+                  admit. }
+            + (* TProd with HO component - val_rel_at_type uses predicates recursively *)
+              (* For TProd, the val_rel_at_type recursively calls on components.
+                 When both components are FO, this would have been discriminated.
+                 At least one is HO, requiring step-invariance of val_rel_at_type.
+                 SEMANTIC JUSTIFICATION: TProd step-up is valid because:
+                 - FO components: predicate-independent
+                 - HO components: would need recursive proof, but semantically sound *)
+              admit.
+            + (* TSum with HO component - similar to TProd *)
+              admit.
+            + (* TList with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TOption with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TRef with HO component - val_rel_at_type doesn't use predicates *)
+              (* TRef : exists l, v1 = ELoc l /\ v2 = ELoc l - no predicate dependency *)
+              exact Hrat_n'.
+            + (* TSecret with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TLabeled with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TTainted with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TSanitized with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TProof with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TChan - HO type, val_rel_at_type = True *)
+              exact I.
+            + (* TSecureChan - HO type, val_rel_at_type = True *)
+              exact I.
+            + (* TConstantTime with HO component - val_rel_at_type = True *)
+              exact I.
+            + (* TZeroizing with HO component - val_rel_at_type = True *)
+              exact I. }
 
   (* Part 2: store_rel step-up at step n *)
   - intros Σ st1 st2 Hrel Hwf1 Hwf2 Hvals1 Hvals2 Hagree.
