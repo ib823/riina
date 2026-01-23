@@ -1,6 +1,6 @@
 # RIINA Progress Tracker
 
-## Last Updated: 2026-01-22 | SESSION 34 cont. | Mutual Induction Structure Complete
+## Last Updated: 2026-01-22 | SESSION 34 | TFn HO Case Expanded
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -24,28 +24,37 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | A+ (excellent progress) | Mutual induction structure complete |
+| **Overall Grade** | A+ (excellent progress) | TFn case expanded in mutual induction |
 | **Coq Compilation** | ✅ GREEN | All files compile |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up` only |
-| **Mutual Induction** | Structure complete | 2 admits remaining (HO case, fundamental) |
+| **Mutual Induction** | TFn case 90% done | Needs preservation + store_wf |
 | **Fundamental Theorem** | 22/24 structure | T_Lam, T_App complete |
 | **Rust Tests** | ⚪ NOT VERIFIED | Not run this session |
 
-### Mutual Induction Approach (NEW)
+### Mutual Induction Approach
 
-Added `step_up_and_fundamental_mutual` theorem that proves step_up and fundamental
-together by strong induction on step index. This breaks the circularity:
-- step_up at S n' uses IH_step_up(n') for results
-- fundamental at S n' uses IH_step_up(n') for stepping up val_rel_n n' results
+`step_up_and_fundamental_mutual` proves step_up and fundamental together by strong
+induction on step index n. This breaks the circularity.
 
-**Proven:**
-- Base case (n=0): step_up_at_0 and fundamental_at_0
-- FO case: step_up for first-order types at any step (uses val_rel_n_step_up_fo)
+**TFn Case (lines 2493-2551) - 90% complete:**
+1. ✅ Downgrade arguments: `val_rel_n (S n') → val_rel_n n'` via mono
+2. ✅ Downgrade stores: `store_rel_n (S n') → store_rel_n n'` via mono
+3. ✅ Apply `val_rel_at_type` at step n' from Hrel
+4. ✅ Step up results using `IH_step_up(n')`
+5. ⚠️ Typing premises: needs `multi_step_preservation` (admitted)
+6. ⚠️ `store_rel_n_step_up` premises: needs `store_wf` (admitted)
 
-**Remaining admits (2):**
-1. HO case val_rel_at_type predicate conversion (line 2489)
-2. fundamental_at_step (S n') - follows existing proof structure (line 2502)
+**Other type cases:**
+- ✅ True cases (TList, TOption, TSecret, etc.): proven with `exact I`
+- ✅ Structural cases (TRef): proven with `exact Hrat_n'`
+- ⚠️ Compound cases (TProd, TSum): need recursive structure
+
+**Remaining admits:**
+1. HO case: preservation-based typing (2 admits)
+2. HO case: store_rel_n_step_up premises (1 admit with `all:`)
+3. Compound types: TProd, TSum, TConstantTime, TZeroizing (4 admits)
+4. `fundamental_at_step (S n')`: large proof (1 admit)
 
 ---
 
