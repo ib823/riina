@@ -1264,26 +1264,35 @@ Proof.
     apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
     destruct (canonical_forms_prod nil Σ Public v T1 T2 EffectPure Hval Hty) as [v1 [v2 [Heq [Hval1 Hval2]]]].
     subst v.
+    (* Extract subcomponent typing via inversion on T_Pair *)
+    inversion Hty; subst.
+    assert (Hty1_pure: has_type nil Σ Public v1 T1 EffectPure).
+    { eapply value_has_pure_effect; eassumption. }
+    assert (Hty2_pure: has_type nil Σ Public v2 T2 EffectPure).
+    { eapply value_has_pure_effect; eassumption. }
     exists v1, v2, v1, v2.
     repeat split; try reflexivity.
-    (* TProd recursive cases: need typing for subcomponents from Hty inversion *)
-    + (* T1 case *) admit.
-    + (* T2 case *) admit.
+    + apply IHT1 with Σ; assumption.
+    + apply IHT2 with Σ; assumption.
   - (* TSum T1 T2 *)
     apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
     destruct (canonical_forms_sum nil Σ Public v T1 T2 EffectPure Hval Hty) as [[v' [Heq Hval']] | [v' [Heq Hval']]].
     + (* EInl *)
       left. subst v.
+      inversion Hty; subst.
+      assert (Hty'_pure: has_type nil Σ Public v' T1 EffectPure).
+      { eapply value_has_pure_effect; eassumption. }
       exists v', v'.
       repeat split; try reflexivity.
-      (* TSum/Inl recursive case: need typing from Hty inversion *)
-      admit.
+      apply IHT1 with Σ; assumption.
     + (* EInr *)
       right. subst v.
+      inversion Hty; subst.
+      assert (Hty'_pure: has_type nil Σ Public v' T2 EffectPure).
+      { eapply value_has_pure_effect; eassumption. }
       exists v', v'.
       repeat split; try reflexivity.
-      (* TSum/Inr recursive case: need typing from Hty inversion *)
-      admit.
+      apply IHT2 with Σ; assumption.
   - (* TList - True by definition *)
     exact I.
   - (* TOption - True by definition *)
@@ -1309,7 +1318,7 @@ Proof.
     exact I.
   - (* TZeroizing *)
     exact I.
-Admitted. (* TODO: 4 recursive admits for TProd/TSum require inversion on Hty *)
+Qed.
 
 (** Helper: check if val_rel_at_type_fo is trivially True for a FO type.
     These are types where the relation doesn't require structural equality. *)
