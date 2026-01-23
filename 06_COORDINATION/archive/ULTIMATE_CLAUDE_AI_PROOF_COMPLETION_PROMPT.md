@@ -479,4 +479,4 @@ This allows complete proofs for programs without higher-order functions.
 
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*

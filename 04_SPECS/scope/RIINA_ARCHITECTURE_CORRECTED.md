@@ -16,7 +16,6 @@
 ║              RIINA_SYNERGY_MATRIX_v1_0_0.md (DEPRECATED)                                            ║
 ║              RIINA_COMPONENT_SPECS_v1_0_0.md (DEPRECATED)                                           ║
 ║                                                                                                      ║
-║  "Security proven. Family driven."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -426,8 +425,6 @@ riina-crypto = "1.0"     # RIINA crypto primitives
 ║  The dependency flows FROM applications TO RIINA, not the reverse.                                  ║
 ║                                                                                                      ║
 ║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
-║  Named for: Reena + Isaac + Imaan                                                                   ║
-║  "Security proven. Family driven."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

@@ -15,8 +15,6 @@
 ║  BAHASA MELAYU SYNTAX SPECIFICATION                                             ║
 ║  Version 1.0.0                                                                   ║
 ║                                                                                  ║
-║  "Security proven. Family driven."                                               ║
-║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -42,18 +40,10 @@ the world's first formally verified programming language with Bahasa Melayu keyw
 RIINA combines:
 - **Mathematical rigor** — All security properties proven in Coq
 - **Cultural identity** — Bahasa Melayu syntax honoring Malaysian heritage
-- **Family legacy** — Named for Reena, Isaac, and Imaan
 
 ### 1.2 Name Origin
 
 ```
-RIINA = Reena + Isaac + Imaan + No-attack + Assured
-
-R  — Reena (foundation, the queen)
-I  — Isaac (first pillar)
-I  — Imaan (second pillar)
-NA — No-attack Assured (the guarantee)
-
 Technical Acronym:
 RIINA = Rigorous Immutable Integrity No-attack Assured
 ```
@@ -1281,7 +1271,3 @@ SHA-256: [To be computed after finalization]
 ---
 
 **RIINA: Rigorous Immutable Integrity No-attack Assured**
-
-*Reena. Isaac. Imaan. Forever in code.*
-
-*"Security proven. Family driven."*

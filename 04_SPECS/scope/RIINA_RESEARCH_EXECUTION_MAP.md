@@ -14,7 +14,6 @@
 ║  Classification: ULTRA KIASU | ZERO TRUST | INFINITE TIMELINE                                       ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
-║  "Security proven. Family driven."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -459,8 +458,6 @@
 ║  218 tracks will take 3.25 - 6.5 years to fully execute.                                            ║
 ║                                                                                                      ║
 ║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
-║  Named for: Reena + Isaac + Imaan                                                                   ║
-║  "Security proven. Family driven."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

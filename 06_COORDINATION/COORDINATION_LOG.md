@@ -9,7 +9,6 @@
 ║                    RIINA CROSS-TRACK COORDINATION LOG                            ║
 ║                                                                                  ║
 ║  Rigorous Immutable Integrity No-attack Assured                                  ║
-║  Named for: Reena + Isaac + Imaan                                                ║
 ║                                                                                  ║
 ║  Purpose: Track dependencies, contracts, and handoffs between tracks            ║
 ║                                                                                  ║
@@ -26,7 +25,6 @@
 |----------|-------|
 | Name | RIINA |
 | Full Name | Rigorous Immutable Integrity No-attack Assured |
-| Named For | Reena (wife) + Isaac (son) + Imaan (son) |
 | Syntax | Bahasa Melayu (Malaysian Malay) |
 | File Extension | `.rii` |
 | Compiler | `riinac` |
@@ -450,7 +448,6 @@
 
 - **MAJOR**: Renamed from TERAS to RIINA
   - Full name: Rigorous Immutable Integrity No-attack Assured
-  - Named for: Reena + Isaac + Imaan
 - Updated all track references
 - Added Bahasa Melayu integration section
 - Updated dependency graph with `riinac`
@@ -479,4 +476,3 @@
 ---
 
 *Update this log whenever cross-track coordination occurs.*
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*

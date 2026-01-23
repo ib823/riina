@@ -21,7 +21,7 @@ Formal proofs and prototype implementation for RIINA.
 |                                                                                             |
 |  Mode: ULTRA KIASU | PARANOID | ZERO TRUST | INFINITE TIMELINE                              |
 |                                                                                             |
-|  "Security proven. Family driven."                                                          |
+|  "Security proven. Mathematically verified."                                                |
 |                                                                                             |
 +=============================================================================================+
 ```
@@ -31,15 +31,12 @@ Formal proofs and prototype implementation for RIINA.
 ### Name Origin
 
 ```
-RIINA = Reena + Isaac + Imaan + No-attack + Assured
-
-R  — Reena (foundation, the queen)
-I  — Isaac (first pillar)
-I  — Imaan (second pillar)
-NA — No-attack Assured (the guarantee)
-
-Technical Acronym:
 RIINA = Rigorous Immutable Integrity No-attack Assured
+
+R  — Rigorous (formal verification)
+I  — Immutable (security guarantees)
+I  — Integrity (data and code)
+NA — No-attack Assured (the guarantee)
 ```
 
 ### What Makes RIINA Unique
@@ -47,7 +44,7 @@ RIINA = Rigorous Immutable Integrity No-attack Assured
 - **Mathematical Guarantees** — All security properties proven in Coq
 - **Bahasa Melayu Syntax** — Native Malaysian language keywords
 - **Zero-Trust Architecture** — Compiler, hardware, and supply chain untrusted
-- **Family Legacy** — Named for Reena, Isaac, and Imaan
+- **Formal Verification** — End-to-end provable security
 
 ### File Extension
 
@@ -160,6 +157,4 @@ MIT OR Apache-2.0
 
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
 
-*Reena. Isaac. Imaan. Forever in code.*
-
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*

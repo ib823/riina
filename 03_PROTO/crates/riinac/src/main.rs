@@ -2,7 +2,6 @@
 //!
 //! Main entry point for the RIINA compiler.
 //! RIINA = Rigorous Immutable Integrity No-attack Assured
-//! Named for: Reena + Isaac + Imaan
 //!
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 

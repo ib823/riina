@@ -121,29 +121,15 @@ Proof.
   repeat split; try apply VString; try (unfold closed_expr; intros x Hfree; inversion Hfree); try (exists s; auto); auto.
 Qed.
 
-(** Build val_rel_n 1 for TSecret (secrets are indistinguishable) *)
-(** For TSecret T, val_rel_at_type = True, so this is straightforward *)
+(** Build val_rel_n 1 for TSecret (secrets are indistinguishable)
+    TODO: needs update for typing conjunct in val_rel_n *)
 Lemma val_rel_n_1_secret : forall Σ T v1 v2,
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
   val_rel_n 1 Σ (TSecret T) v1 v2.
 Proof.
-  intros Σ T v1 v2 Hv1 Hv2 Hc1 Hc2.
-  (* Use the unfolding lemma: val_rel_n (S n) = val_rel_n n /\ value /\ closed /\ val_rel_at_type *)
-  rewrite val_rel_n_S_unfold.
-  (* For TSecret T: val_rel_at_type = True, val_rel_at_type_fo = True *)
-  split.
-  (* val_rel_n 0 Σ (TSecret T) v1 v2 *)
-  + rewrite val_rel_n_0_unfold.
-    (* value /\ value /\ closed /\ closed /\ (if first_order_type (TSecret T) then ... else True) *)
-    (* first_order_type (TSecret T) = first_order_type T *)
-    (* val_rel_at_type_fo (TSecret T) = True *)
-    repeat split; try assumption.
-    (* The last goal: if first_order_type T then True else True = True either way *)
-    simpl. destruct (first_order_type T); auto.
-  (* value /\ value /\ closed /\ closed /\ val_rel_at_type *)
-  + repeat split; try assumption; simpl; auto.
-Qed.
+  admit.
+Admitted.
 
 (** ** Store Relation at Step 1
 
@@ -270,20 +256,23 @@ Proof.
     simpl. split.
     + (* val_rel_n 0 *) exact Hrel0.
     + repeat split; try assumption.
-      (* Need: val_rel_at_type Σ''' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T2 v1 v2 *)
-      destruct (first_order_type T2) eqn:Hfo.
-      * (* First-order type: predicate-independent, use val_rel_at_type_fo_equiv *)
-        apply (val_rel_at_type_fo_equiv T2 Σ''' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo).
-        apply (val_rel_at_type_fo_equiv T2 Σ''' (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
-        exact Hrat.
-      * (* Higher-order type (TFn): val_rel_at_type contravariance issue *)
-        (* Premise has trivial preds (accept everything), goal has step-0 preds (stronger) *)
-        (* Need: val_rel_at_type Σ''' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (TFn T1 T2 eff) v1 v2 *)
-        (* This requires showing function application works with step-0 related arguments *)
-        (* ISSUE: Premise accepts any arguments, goal requires val_rel_n 0 arguments *)
-        (* The direction of implication is WRONG - trivial is WEAKER than val_rel_n 0 *)
-        (* ADMITTED: Requires redesign of premise to use val_rel_n 0 predicates *)
-        admit.
+      (* After repeat split, we have two remaining goals:
+         1. (if first_order_type T2 then True else typing)
+         2. val_rel_at_type Σ''' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T2 v1 v2 *)
+      * (* Goal 1: typing conditional *)
+        destruct (first_order_type T2) eqn:Hfo.
+        -- (* FO: True *) exact I.
+        -- (* HO: typing - ADMITTED *) admit.
+      * (* Goal 2: val_rel_at_type *)
+        destruct (first_order_type T2) eqn:Hfo.
+        -- (* First-order type: predicate-independent, use val_rel_at_type_fo_equiv *)
+           apply (val_rel_at_type_fo_equiv T2 Σ''' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo).
+           apply (val_rel_at_type_fo_equiv T2 Σ''' (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
+           exact Hrat.
+        -- (* Higher-order type (TFn): val_rel_at_type contravariance issue *)
+           (* Premise has trivial preds (accept everything), goal has step-0 preds (stronger) *)
+           (* ADMITTED: Requires redesign of premise to use val_rel_n 0 predicates *)
+           admit.
   - (* store_rel_n 1 Σ''' st1''' st2''' *)
     simpl. split.
     + (* store_rel_n 0 *) exact Hsrel0.
@@ -423,13 +412,16 @@ Proof.
     (* Need val_rel_at_type_fo T v1 v2 from val_rel_at_type (trivial preds) *)
     apply (val_rel_at_type_fo_equiv T Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
     exact Hrat.
-  - (* value /\ value /\ closed /\ closed /\ val_rel_at_type *)
+  - (* value /\ value /\ closed /\ closed /\ typing_cond /\ val_rel_at_type *)
     repeat split; try assumption.
-    (* val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2 *)
-    (* For FO types, val_rel_at_type is predicate-independent *)
-    apply (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo).
-    apply (val_rel_at_type_fo_equiv T Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
-    exact Hrat.
+    (* Two remaining goals: typing conditional and val_rel_at_type *)
+    + (* typing conditional - FO case is True *)
+      rewrite Hfo. exact I.
+    + (* val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2 *)
+      (* For FO types, val_rel_at_type is predicate-independent *)
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo).
+      apply (val_rel_at_type_fo_equiv T Σ (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
+      exact Hrat.
 Qed.
 
 (** General version for all types - requires either FO or TFn-specific handling.
@@ -452,12 +444,19 @@ Proof.
     + (* val_rel_n 0 Σ T v1 v2 *)
       rewrite val_rel_n_0_unfold.
       repeat split; try assumption.
-      rewrite Hfo. auto.
+      rewrite Hfo.
+      (* HO type at step 0 requires typing - ADMITTED *)
+      admit.
     + repeat split; try assumption.
-      (* For TFn, val_rel_at_type structure depends on function body *)
-      (* The trivial predicates (fun _ _ _ => True) are STRONGER than needed *)
-      (* because they accept any store_rel/val_rel, including step-0 ones *)
-      (* TODO: This requires TFn-specific analysis *)
+      * (* typing conditional for HO *)
+        rewrite Hfo.
+        (* HO type at step S n' requires typing - ADMITTED *)
+        admit.
+      * (* For TFn, val_rel_at_type structure depends on function body *)
+        (* The trivial predicates (fun _ _ _ => True) are STRONGER than needed *)
+        (* because they accept any store_rel/val_rel, including step-0 ones *)
+        (* ADMITTED: This requires TFn-specific analysis *)
+        admit.
 Admitted.
 
 (** Typed step 0 complete theorem
@@ -511,13 +510,15 @@ Proof.
     - (* FO type: extract from val_rel_at_type *)
       apply (val_rel_at_type_fo_equiv T2 Σ''' (fun _ _ _ => True) (fun _ _ _ _ => True) (fun _ _ _ => True) v1 v2 Hfo).
       exact Hrat.
-    - (* HO type: True *) auto. }
+    - (* HO type requires typing at step 0 - ADMITTED *)
+      (* Would need has_type derivation from typing premises Htyf1/Htyf2 + preservation *)
+      admit. }
   assert (Hsrel0 : store_rel_n 0 Σ''' st1''' st2''').
   { rewrite store_rel_n_0_unfold. exact Hmax. }
   (* Now apply tapp_step0_complete_proven *)
   apply (tapp_step0_complete_proven Σ' Σ''' T2 f1 f2 a1 a2 v1 v2 st1'' st2'' st1''' st2''' ctx'' ctx'''
            Hvf1 Hvf2 Hva1 Hva2 Hstep1 Hstep2 Hext Hrel0 Hsrel0 Hv1 Hv2 Hc1 Hc2 Hrat Hmax Hlocs).
-Qed.
+Admitted.
 
 (** ** Summary: Axiom Elimination Status
 

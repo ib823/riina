@@ -59,9 +59,8 @@
 //! - **Traced**: Effect annotations maintained for verification
 //!
 //! RIINA = Rigorous Immutable Integrity No-attack Assured
-//! Named for: Reena + Isaac + Imaan
 //!
-//! "Security proven. Family driven."
+//! "Security proven. Mathematically verified."
 
 #![forbid(unsafe_code)]
 #![warn(clippy::all)]

@@ -12,7 +12,6 @@ Translates typed RIINA AST to executable representation.
 Maintains formal correspondence with Coq specification.
 
 RIINA = Rigorous Immutable Integrity No-attack Assured
-Named for: Reena + Isaac + Imaan
 
 Architecture: Custom IR → Reference Interpreter / C Emission
 Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST

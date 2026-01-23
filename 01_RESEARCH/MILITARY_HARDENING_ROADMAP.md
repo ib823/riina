@@ -495,4 +495,4 @@ If current work conflicts with military requirements:
 
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*
 
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*

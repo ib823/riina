@@ -6,7 +6,7 @@
 ║  FORMAL PROOF DELEGATION PROMPT FOR CLAUDE AI (WEB)                              ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
-║  "Security proven. Family driven."                                               ║
+║  "Security proven. Mathematically verified."                                               ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 

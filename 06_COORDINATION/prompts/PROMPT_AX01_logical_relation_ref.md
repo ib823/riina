@@ -237,4 +237,4 @@ Provide the complete Coq file content in a code block:
 
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
 
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*

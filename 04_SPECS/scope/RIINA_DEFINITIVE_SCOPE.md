@@ -20,8 +20,6 @@
 ║  Repository: github.com/ib823/proof                                                                  ║
 ║                                                                                                      ║
 ║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
-║  Named for: Reena + Isaac + Imaan                                                                   ║
-║  "Security proven. Family driven."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -127,7 +125,6 @@
 | **Bahasa Melayu Syntax** | Native Malaysian language keywords |
 | **Zero-Trust Architecture** | Compiler, hardware, and supply chain untrusted |
 | **Compile-Time Security** | Security verified before runtime, not during |
-| **Family Legacy** | Named for Reena, Isaac, and Imaan |
 
 ## 2.2 The RIINA Codebase Components
 
@@ -574,8 +571,6 @@ This repository contains EVERYTHING that IS RIINA:
 ║  Any document that contradicts this scope is INCORRECT.                                             ║
 ║                                                                                                      ║
 ║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
-║  Named for: Reena + Isaac + Imaan                                                                   ║
-║  "Security proven. Family driven."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
