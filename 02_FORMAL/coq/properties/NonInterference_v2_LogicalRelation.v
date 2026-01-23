@@ -2443,6 +2443,42 @@ Admitted.
 
 (** Multi-step preservation - extends single-step preservation to multi-step.
     This lemma is needed for typing premises in IH_step_up applications. *)
+Lemma multi_step_preservation_aux : forall cfg1 cfg2,
+  cfg1 -->* cfg2 ->
+  forall Σ e st ctx T ε,
+    cfg1 = (e, st, ctx) ->
+    has_type nil Σ Public e T ε ->
+    store_wf Σ st ->
+    exists e' st' ctx' Σ' ε',
+      cfg2 = (e', st', ctx') /\
+      store_ty_extends Σ Σ' /\
+      store_wf Σ' st' /\
+      has_type nil Σ' Public e' T ε'.
+Proof.
+  intros cfg1 cfg2 Hmulti.
+  induction Hmulti as [cfg | cfg1' cfg2' cfg3 Hstep Hmulti' IH];
+    intros Σ e st ctx T ε Heq Hty Hwf.
+  - (* MS_Refl *)
+    subst cfg.
+    exists e, st, ctx, Σ, ε.
+    split. { reflexivity. }
+    split. { apply store_ty_extends_refl. }
+    split; assumption.
+  - (* MS_Step *)
+    subst cfg1'.
+    destruct cfg2' as [[e_mid st_mid] ctx_mid].
+    (* Single-step preservation *)
+    destruct (preservation e e_mid T ε st st_mid ctx ctx_mid Σ Hty Hwf Hstep)
+      as [Σ' [ε' [Hext [Hwf' Hty']]]].
+    (* Apply IH *)
+    destruct (IH Σ' e_mid st_mid ctx_mid T ε' eq_refl Hty' Hwf')
+      as [e'' [st'' [ctx'' [Σ'' [ε'' [Heq'' [Hext' [Hwf'' Hty'']]]]]]]].
+    exists e'', st'', ctx'', Σ'', ε''.
+    split. { exact Heq''. }
+    split. { eapply store_ty_extends_trans; eassumption. }
+    split; assumption.
+Qed.
+
 Lemma multi_step_preservation : forall e e' T ε st st' ctx ctx' Σ,
   has_type nil Σ Public e T ε ->
   store_wf Σ st ->
@@ -2452,10 +2488,12 @@ Lemma multi_step_preservation : forall e e' T ε st st' ctx ctx' Σ,
     store_wf Σ' st' /\
     has_type nil Σ' Public e' T ε'.
 Proof.
-  (* The proof follows by induction on multi-step, using preservation at each step.
-     See type_system/TypeSafety.v for similar structure. *)
-  admit.
-Admitted.
+  intros e e' T ε st st' ctx ctx' Σ Hty Hwf Hmulti.
+  destruct (multi_step_preservation_aux _ _ Hmulti Σ e st ctx T ε eq_refl Hty Hwf)
+    as [e'' [st'' [ctx'' [Σ' [ε' [Heq [Hext [Hwf' Hty']]]]]]]].
+  inversion Heq; subst.
+  exists Σ', ε'. split; [exact Hext | split; assumption].
+Qed.
 
 (** The mutual induction theorem *)
 Theorem step_up_and_fundamental_mutual : forall n,
