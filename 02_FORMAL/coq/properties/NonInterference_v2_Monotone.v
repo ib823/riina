@@ -14,6 +14,7 @@ Require Import Lia.
 Require Import RIINA.foundations.Syntax.
 Require Import RIINA.foundations.Typing.
 Require Import RIINA.foundations.Semantics.
+Require Import RIINA.type_system.Preservation.
 Require Import RIINA.properties.TypeMeasure.
 Require Import RIINA.properties.NonInterference_v2.
 
@@ -22,11 +23,11 @@ Import ListNotations.
 (** Store typing weakening for has_type.
     Standard Kripke property: if e has type T under store typing Σ,
     then e has type T under any extension Σ' of Σ.
-    TODO: Prove via induction on typing derivation. *)
-Axiom has_type_store_weakening : forall Γ Σ Σ' Δ e T ε,
+    PROVEN in Preservation.v as store_ty_extends_preserves_typing. *)
+Definition has_type_store_weakening : forall Γ Σ Σ' Δ e T ε,
   store_ty_extends Σ Σ' ->
   has_type Γ Σ Δ e T ε ->
-  has_type Γ Σ' Δ e T ε.
+  has_type Γ Σ' Δ e T ε := store_ty_extends_preserves_typing.
 
 (** Transitivity of store typing extension *)
 Lemma store_ty_extends_trans_early : forall Σ1 Σ2 Σ3,
