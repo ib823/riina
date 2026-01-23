@@ -220,20 +220,18 @@ Proof.
               ** simpl. exists b. split; reflexivity.
            ++ rewrite val_rel_n_S_unfold.
               split; [exact IH |].
-              repeat split.
+              simpl. repeat split.
               ** constructor.
               ** constructor.
               ** intros x Hfree. inversion Hfree.
               ** intros x Hfree. inversion Hfree.
-              ** exact I.
-              ** simpl. exists b. split; reflexivity.
-        -- repeat split.
+              ** exists b. split; reflexivity.
+        -- simpl. repeat split.
            ++ constructor.
            ++ constructor.
            ++ intros x Hfree. inversion Hfree.
            ++ intros x Hfree. inversion Hfree.
-           ++ exact I.
-           ++ simpl. exists b. split; reflexivity.
+           ++ exists b. split; reflexivity.
     + exact Hstrel.
 Qed.
 
@@ -274,16 +272,14 @@ Proof.
               ** simpl. exists i. split; reflexivity.
            ++ rewrite val_rel_n_S_unfold.
               split; [exact IH |].
-              repeat split; try constructor.
+              simpl. repeat split; try constructor.
               ** intros x Hfree. inversion Hfree.
               ** intros x Hfree. inversion Hfree.
-              ** exact I.
-              ** simpl. exists i. split; reflexivity.
-        -- repeat split; try constructor.
+              ** exists i. split; reflexivity.
+        -- simpl. repeat split; try constructor.
            ++ intros x Hfree. inversion Hfree.
            ++ intros x Hfree. inversion Hfree.
-           ++ exact I.
-           ++ simpl. exists i. split; reflexivity.
+           ++ exists i. split; reflexivity.
     + exact Hstrel.
 Qed.
 
@@ -321,16 +317,14 @@ Proof.
               ** simpl. exists s. split; reflexivity.
            ++ rewrite val_rel_n_S_unfold.
               split; [exact IH |].
-              repeat split; try constructor.
+              simpl. repeat split; try constructor.
               ** intros x Hfree. inversion Hfree.
               ** intros x Hfree. inversion Hfree.
-              ** exact I.
-              ** simpl. exists s. split; reflexivity.
-        -- repeat split; try constructor.
+              ** exists s. split; reflexivity.
+        -- simpl. repeat split; try constructor.
            ++ intros x Hfree. inversion Hfree.
            ++ intros x Hfree. inversion Hfree.
-           ++ exact I.
-           ++ simpl. exists s. split; reflexivity.
+           ++ exists s. split; reflexivity.
     + exact Hstrel.
 Qed.
 
