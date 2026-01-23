@@ -118,7 +118,7 @@
 
 | Priority | File | Count | Description |
 |----------|------|-------|-------------|
-| P0 | NonInterference_v2.v | 4 admits | val_rel_n_step_up_by_type (2), fo_trivial (1), store_rel (1) |
+| P0 | NonInterference_v2.v | 5 admits | val_rel_n_step_up_by_type (2), fo_trivial (2), store_rel (1) |
 | P1 | NonInterference_v2_LogicalRelation.v | ~66 admits | Logical relation infrastructure |
 | P2 | Other properties/ files | ~30 | Various |
 | **TOTAL** | | ~70 Admitted + admits | |
@@ -231,7 +231,7 @@ Remaining admits in store_rel_n_step_up:
 
 Remaining admits in FO helper lemmas:
 - val_rel_at_type_fo_refl: ✅ PROVEN (used value_has_pure_effect for typing inversion)
-- val_rel_at_type_fo_trivial: 1 admit (line 1345 - structural TProd/TSum cases)
+- val_rel_at_type_fo_trivial: 2 admits (lines 1351, 1356 - TProd/TSum need structural info)
 
 ---
 
@@ -239,12 +239,12 @@ Remaining admits in FO helper lemmas:
 
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: val_rel_at_type_fo_refl (PROVEN), store_rel_n_step_up
-Last Line    : ~1444 (store_rel_n_step_up completed with 1 edge case admit)
-Next Action  : Prove val_rel_at_type_fo_trivial or work on FundamentalTheorem.v
+Last Function: val_rel_at_type_fo_trivial
+Last Line    : ~1466 (FO helper lemmas mostly proven)
+Next Action  : Work on FundamentalTheorem.v or n=0 case
 Git Commit   : (pending)
 Build Status : ✅ PASSING
-Admits       : 4 in NonInterference_v2.v (n=0, store_rel, fo_trivial, HIGH base)
+Admits       : 5 in NonInterference_v2.v (n=0, store_rel, fo_trivial x2, HIGH base)
 ```
 
 ---
