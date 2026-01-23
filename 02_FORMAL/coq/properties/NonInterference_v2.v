@@ -1339,11 +1339,33 @@ Lemma val_rel_at_type_fo_trivial : forall T v1 v2,
   fo_type_has_trivial_rel T = true ->
   val_rel_at_type_fo T v1 v2.
 Proof.
-  (* For types where val_rel_at_type_fo is True (TSecret, TList, etc.),
-     any two values are trivially related.
-     The proof requires case analysis on T and extracting the trivial relation. *)
-  admit.
-Admitted.
+  intros T v1 v2 Hfo Htriv.
+  destruct T; simpl in *; try congruence.
+  - (* TProd T1 T2 - both must be trivial *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    apply Bool.andb_true_iff in Htriv. destruct Htriv as [Htr1 Htr2].
+    (* For val_rel_at_type_fo at TProd, we need:
+       exists x1 y1 x2 y2, v1 = EPair x1 y1 /\ v2 = EPair x2 y2 /\ ...
+       But we don't know the structure of v1 and v2.
+       For HIGH security composite trivial types, this requires structural info. *)
+    admit.
+  - (* TSum T1 T2 - both must be trivial *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    apply Bool.andb_true_iff in Htriv. destruct Htriv as [Htr1 Htr2].
+    (* Same issue as TProd - we need structural info about v1, v2 *)
+    admit.
+  - (* TList *) exact I.
+  - (* TOption *) exact I.
+  - (* TSecret *) exact I.
+  - (* TLabeled *) exact I.
+  - (* TTainted *) exact I.
+  - (* TSanitized *) exact I.
+  - (* TProof *) exact I.
+  - (* TCapability *) exact I.
+  - (* TCapabilityFull *) exact I.
+  - (* TConstantTime *) exact I.
+  - (* TZeroizing *) exact I.
+Admitted. (* 2 admits for TProd/TSum structural cases - need typing info *)
 
 (** store_rel_n_step_up - Follows from val_rel_n_step_up
     Requires store_wf to establish value relations for store locations
