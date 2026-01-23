@@ -244,12 +244,18 @@ Remaining admits in FO helper lemmas:
 
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: val_rel_at_type_fo_trivial
-Last Line    : ~1398 (Priority 3 partial - TProd proven, TSum mixed admitted)
-Next Action  : Priority 1 (n=0 Fundamental Theorem) or Priority 2 (store_rel step-up)
-Git Commit   : pending
+Last Function: store_rel_n_step_up analysis
+Last Line    : Lines 1194-1209 (store_rel step-up requires multi-step preservation)
+Next Action  : Add multi_step_preservation lemma in Preservation.v
+Git Commit   : Session 39 cleanup
 Build Status : ✅ PASSING
 Admits       : 5 in NonInterference_v2.v (n=0, store_rel, TSum-mixed x2, HIGH base)
+
+Session 39 Analysis:
+- Reverted broken uncommitted changes to NonInterference_v2.v
+- FundamentalTheorem.v needs fixes for abstract type parameters (destruct on first_order_type)
+- store_rel step-up at line 1209 requires multi_step_preservation lemma
+- Semantically justified admits: TSum mixed constructors, HIGH security base types
 ```
 
 ---
