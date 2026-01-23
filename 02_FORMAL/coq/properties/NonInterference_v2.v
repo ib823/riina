@@ -943,9 +943,80 @@ Proof.
     + apply MS_Refl.
 Qed.
 
+(** ========================================================================
+    COMBINED STEP-UP: val_rel_n and store_rel_n together
+    ========================================================================
+
+    The key insight is that val_rel_n step-up (for TFn) needs store_rel_n step-up,
+    and store_rel_n step-up needs val_rel_n step-up. This mutual dependency is
+    resolved by proving both together via strong induction on step index n.
+
+    STRUCTURE:
+    - Outer: strong induction on n
+    - Inner (for val_rel TFn case): ty_size_induction on type
+
+    The combined property at n says:
+    1. For all types T: val_rel_n n => val_rel_n (S n) (with typing preconditions)
+    2. store_rel_n n => store_rel_n (S n) (with store_wf preconditions)
+*)
+
+(** Combined step-up property *)
+Definition combined_step_up (n : nat) : Prop :=
+  (forall T Σ v1 v2,
+     val_rel_n n Σ T v1 v2 ->
+     (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
+     (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+     val_rel_n (S n) Σ T v1 v2) /\
+  (forall Σ st1 st2,
+     store_rel_n n Σ st1 st2 ->
+     store_wf Σ st1 ->
+     store_wf Σ st2 ->
+     store_has_values st1 ->
+     store_has_values st2 ->
+     store_rel_n (S n) Σ st1 st2).
+
+(** Helper: store_rel step-up for n > 0 using val_rel step-up from IH *)
+Lemma store_rel_n_step_up_from_IH : forall n' Σ st1 st2,
+  (* IH: val_rel step-up at n' for all types *)
+  (forall T Σ' v1 v2,
+     val_rel_n n' Σ' T v1 v2 ->
+     (first_order_type T = false -> has_type nil Σ' Public v1 T EffectPure) ->
+     (first_order_type T = false -> has_type nil Σ' Public v2 T EffectPure) ->
+     val_rel_n (S n') Σ' T v1 v2) ->
+  store_rel_n (S n') Σ st1 st2 ->
+  store_wf Σ st1 ->
+  store_wf Σ st2 ->
+  store_has_values st1 ->
+  store_has_values st2 ->
+  store_rel_n (S (S n')) Σ st1 st2.
+Proof.
+  intros n' Σ st1 st2 IH_val Hrel Hwf1 Hwf2 Hvals1 Hvals2.
+  rewrite store_rel_n_S_unfold. split; [| split].
+  - exact Hrel.
+  - rewrite store_rel_n_S_unfold in Hrel. destruct Hrel as [_ [Hmax _]]. exact Hmax.
+  - intros l T sl Hlook.
+    destruct Hwf1 as [HΣ_to_st1 _].
+    destruct Hwf2 as [HΣ_to_st2 _].
+    specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
+    specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
+    exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
+    (* Need val_rel_n (S n') Σ T v1 v2 *)
+    (* From store_rel_n (S n'), we get val_rel_n n' *)
+    rewrite store_rel_n_S_unfold in Hrel.
+    destruct Hrel as [_ [_ Hlocs]].
+    specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
+    rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
+    rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
+    (* Use IH_val to step up from n' to S n' *)
+    apply IH_val.
+    + exact Hvrel_n'.
+    + intros Hho. exact Hty1.
+    + intros Hho. exact Hty2.
+Qed.
+
 (** val_rel_n_step_up - The core semantic lemma (FUNDAMENTAL THEOREM)
 
-    STATUS: Axiom (TFn case requires Fundamental Theorem of Logical Relations)
+    STATUS: Axiom for n=0 case (requires Fundamental Theorem of Logical Relations)
 
     For FO types: PROVEN using val_rel_at_type_fo_equiv
 
@@ -954,10 +1025,10 @@ Qed.
     the logical relation. This is a standard result in the literature
     but requires proving compatibility lemmas for every typing rule.
 
-    JUSTIFICATION for keeping as axiom:
+    JUSTIFICATION for keeping n=0 as axiom:
     - The lemma is semantically sound (standard result in PL theory)
     - FO types (base types, products, sums) are fully proven
-    - Only TFn requires the fundamental theorem machinery
+    - Only TFn at n=0 requires the fundamental theorem machinery
     - Proving the fundamental theorem would require ~500 lines of
       compatibility lemmas (one per typing rule)
 
