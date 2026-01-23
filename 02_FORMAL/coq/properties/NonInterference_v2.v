@@ -60,6 +60,17 @@ Qed.
 (** Closed expressions *)
 Definition closed_expr (e : expr) : Prop := forall x, ~ free_in x e.
 
+(** Helper: typing in nil context implies closed.
+    Uses free_in_context from Preservation.v *)
+Lemma typing_nil_implies_closed : forall Σ Δ e T ε,
+  has_type nil Σ Δ e T ε ->
+  closed_expr e.
+Proof.
+  intros Σ Δ e T ε Hty x Hfree.
+  destruct (free_in_context x e nil Σ Δ T ε Hfree Hty) as [T' Hlook].
+  simpl in Hlook. discriminate.
+Qed.
+
 (** ========================================================================
     SECTION 1: FIRST-ORDER TYPE CLASSIFICATION
     ======================================================================== *)
@@ -1138,11 +1149,9 @@ Proof.
       * (* n = 0: Bootstrap case *)
         rewrite val_rel_n_0_unfold.
         assert (Hc1: closed_expr v1).
-        { (* Well-typed closed terms are closed. ADMITTED: need typing_nil_implies_closed lemma *)
-          admit. }
+        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
         assert (Hc2: closed_expr v2).
-        { (* Well-typed closed terms are closed. ADMITTED: need typing_nil_implies_closed lemma *)
-          admit. }
+        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
         assert (Hv1: value v1).
         { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
         assert (Hv2: value v2).
@@ -1380,17 +1389,6 @@ Lemma val_rel_n_step_up : forall n Σ T v1 v2,
 Proof.
   intros n Σ T v1 v2 Hrel Hty1 Hty2.
   apply val_rel_n_step_up_by_type; assumption.
-Qed.
-
-(** Helper: typing in nil context implies closed *)
-Lemma typing_nil_implies_closed : forall Σ Δ e T ε,
-  has_type nil Σ Δ e T ε ->
-  closed_expr e.
-Proof.
-  intros Σ Δ e T ε Hty x Hfree.
-  (* Use free_in_context from Preservation.v *)
-  destruct (free_in_context x e nil Σ Δ T ε Hfree Hty) as [T' Hlook].
-  simpl in Hlook. discriminate.
 Qed.
 
 (** ========================================================================
