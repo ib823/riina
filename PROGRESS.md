@@ -118,15 +118,16 @@
 
 | Priority | File | Count | Description |
 |----------|------|-------|-------------|
-| P0 | NonInterference_v2.v | 6 admits | n=0 case + HO typing + store_rel + FO helpers |
+| P0 | NonInterference_v2.v | 8 admits | val_rel_n_step_up_by_type (2), FO helpers (5), store_rel (1) |
 | P1 | NonInterference_v2_LogicalRelation.v | ~66 admits | Logical relation infrastructure |
-| P1 | store_rel_n_step_up | 1 admit | HIGH security base type edge case |
 | P2 | Other properties/ files | ~30 | Various |
 | **TOTAL** | | ~74 Admitted + admits | |
 
 **Key Blocker:** Fundamental Theorem n=0 case requires compatibility lemmas.
 
 **FO Bootstrap Solution:** Added `stores_agree_low_fo` precondition - stores must agree on LOW security first-order locations initially. For HIGH security FO types with trivial relations (TSecret, TList, etc.), any values are related. Remaining edge case: HIGH security base types (TBool, TInt at HIGH) - semantically irrelevant since high data isn't observable.
+
+**Helper Lemma Status:** `val_rel_at_type_fo_refl` and `val_rel_at_type_fo_trivial` added with 5 admits for recursive cases (TProd/TSum) requiring typing inversion. These are structural admits that could be resolved with careful inversion tactic work.
 
 ---
 
@@ -222,11 +223,15 @@ The `val_rel_n_step_up` proof is now properly structured:
 5. **Mutual step-up**: `combined_step_up` + `store_rel_n_step_up_from_IH` enable mutual induction
 
 Remaining admits in val_rel_n_step_up_by_type:
-- Line 1110: n=0 case (Fundamental Theorem)
-- Line 1179: store_rel step-up (needs store_wf preservation through multi-step)
+- Line 1140: n=0 case (Fundamental Theorem)
+- Line 1209: store_rel step-up (needs store_wf preservation through multi-step)
 
 Remaining admits in store_rel_n_step_up:
-- Line 1257: FO bootstrap (semantic NI property)
+- Line 1420: HIGH security base type edge case (semantically irrelevant)
+
+Remaining admits in FO helper lemmas:
+- val_rel_at_type_fo_refl: 4 admits for TProd/TSum recursive cases (lines 1270-1286)
+- val_rel_at_type_fo_trivial: 1 admit (line 1336)
 
 ---
 
@@ -234,12 +239,12 @@ Remaining admits in store_rel_n_step_up:
 
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: val_rel_n_step_up_by_type, store_rel_n_step_up_from_IH
-Last Line    : ~1180 (combined step-up structure complete)
-Next Action  : Prove store_wf preservation or FO bootstrap
-Git Commit   : 717475e
+Last Function: val_rel_at_type_fo_refl, store_rel_n_step_up
+Last Line    : ~1435 (FO bootstrap integration complete)
+Next Action  : Fix TProd/TSum inversion in FO helper lemmas
+Git Commit   : (pending)
 Build Status : ✅ PASSING
-Admits       : 3 in NonInterference_v2.v (n=0, store_rel, FO bootstrap)
+Admits       : 8 in NonInterference_v2.v (n=0, store_rel, FO helpers)
 ```
 
 ---
