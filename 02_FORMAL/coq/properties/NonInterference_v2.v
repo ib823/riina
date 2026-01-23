@@ -1236,20 +1236,80 @@ Qed.
     ======================================================================== *)
 
 (** val_rel_at_type_fo is reflexive for well-typed values.
-    This is used when v1 = v2 (from stores_agree_low_fo). *)
-Lemma val_rel_at_type_fo_refl : forall T v,
+    This is used when v1 = v2 (from stores_agree_low_fo).
+    Requires typing to ensure the value matches the type structure. *)
+Lemma val_rel_at_type_fo_refl : forall T Σ v,
   first_order_type T = true ->
   value v ->
+  has_type nil Σ Public v T EffectPure ->
   val_rel_at_type_fo T v v.
 Proof.
-  (* Proof by induction on T, eliminating non-FO types via discriminate.
-     For each FO type, use inversion on `value v` to extract canonical form,
-     then show reflexivity of val_rel_at_type_fo.
-
-     Technical issue: The value predicate structure requires careful handling
-     of generated subgoals. Using admit for now. *)
-  admit.
-Admitted.
+  intros T.
+  induction T; intros Σ v Hfo Hval Hty; simpl in Hfo; try discriminate; simpl.
+  - (* TUnit *)
+    pose proof (canonical_forms_unit nil Σ Public v EffectPure Hval Hty) as Heq.
+    subst v. split; reflexivity.
+  - (* TBool *)
+    destruct (canonical_forms_bool nil Σ Public v EffectPure Hval Hty) as [b Heq].
+    subst v. exists b. split; reflexivity.
+  - (* TInt *)
+    destruct (canonical_forms_int nil Σ Public v EffectPure Hval Hty) as [n Heq].
+    subst v. exists n. split; reflexivity.
+  - (* TString *)
+    destruct (canonical_forms_string nil Σ Public v EffectPure Hval Hty) as [s Heq].
+    subst v. exists s. split; reflexivity.
+  - (* TBytes - True in definition means reflexivity is trivial *)
+    reflexivity.
+  - (* TProd T1 T2 *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    destruct (canonical_forms_prod nil Σ Public v T1 T2 EffectPure Hval Hty) as [v1 [v2 [Heq [Hval1 Hval2]]]].
+    subst v.
+    exists v1, v2, v1, v2.
+    repeat split; try reflexivity.
+    (* TProd recursive cases: need typing for subcomponents from Hty inversion *)
+    + (* T1 case *) admit.
+    + (* T2 case *) admit.
+  - (* TSum T1 T2 *)
+    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
+    destruct (canonical_forms_sum nil Σ Public v T1 T2 EffectPure Hval Hty) as [[v' [Heq Hval']] | [v' [Heq Hval']]].
+    + (* EInl *)
+      left. subst v.
+      exists v', v'.
+      repeat split; try reflexivity.
+      (* TSum/Inl recursive case: need typing from Hty inversion *)
+      admit.
+    + (* EInr *)
+      right. subst v.
+      exists v', v'.
+      repeat split; try reflexivity.
+      (* TSum/Inr recursive case: need typing from Hty inversion *)
+      admit.
+  - (* TList - True by definition *)
+    exact I.
+  - (* TOption - True by definition *)
+    exact I.
+  - (* TRef T sl *)
+    destruct (canonical_forms_ref nil Σ Public v T s EffectPure Hval Hty) as [l Heq].
+    subst v. exists l. split; reflexivity.
+  - (* TSecret - True by definition *)
+    exact I.
+  - (* TLabeled - True by definition *)
+    exact I.
+  - (* TTainted - True by definition *)
+    exact I.
+  - (* TSanitized - True by definition *)
+    exact I.
+  - (* TProof - True by definition *)
+    exact I.
+  - (* TCapability - True by definition *)
+    exact I.
+  - (* TCapabilityFull - True by definition *)
+    exact I.
+  - (* TConstantTime *)
+    exact I.
+  - (* TZeroizing *)
+    exact I.
+Admitted. (* TODO: 4 recursive admits for TProd/TSum require inversion on Hty *)
 
 (** Helper: check if val_rel_at_type_fo is trivially True for a FO type.
     These are types where the relation doesn't require structural equality. *)
@@ -1334,7 +1394,7 @@ Proof.
            rewrite Hlook1, Hlook2 in Hagree.
            injection Hagree as Heq. subst v2.
            (* Now v1 = v2, so use reflexivity of val_rel_at_type_fo *)
-           apply val_rel_at_type_fo_refl; assumption.
+           apply val_rel_at_type_fo_refl with Σ; assumption.
         -- (* HIGH security: check if type has trivial val_rel *)
            destruct (fo_type_has_trivial_rel T) eqn:Htriv.
            ++ (* Type has trivial relation (TSecret, TList, etc.) *)
