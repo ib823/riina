@@ -4,333 +4,221 @@
 
 **Created:** 2026-01-23
 **Last Updated:** 2026-01-23
-**Total Work Packages:** 44
-**Total Theorems Required:** ~600+
+**Total Work Packages:** 36
+**Total Theorems Required:** ~632
 
 ---
 
-## QUICK REFERENCE BY CATEGORY
+## EXECUTION ORDER (Use `ls *.md | grep -v INDEX | sort`)
 
-### THREAT COVERAGE (WP001-WP016) — 355 Theorems
+Files are prefixed with execution order (01-36). Execute in numeric order.
 
-| WP | File | Threats | Theorems | Category |
-|----|------|---------|----------|----------|
-| WP-001 | `WP001_MEMORY_SAFETY_PROMPT.md` | MEM-001 to MEM-020 | 20 | Memory Corruption |
-| WP-002 | `WP002_CONTROL_FLOW_PROMPT.md` | CTL-001 to CTL-015 | 15 | Control Flow |
-| WP-003 | `WP003_INJECTION_PREVENTION_PROMPT.md` | INJ-001 to INJ-015 | 15 | Injection |
-| WP-004 | `WP004_WEB_SECURITY_PROMPT.md` | WEB-001 to WEB-025 | 25 | Web Application |
-| WP-005 | `WP005_AUTHENTICATION_PROMPT.md` | AUTH-001 to AUTH-020 | 20 | Authentication |
-| WP-006 | `WP006_CRYPTOGRAPHIC_PROMPT.md` | CRY-001 to CRY-031 | 31 | Cryptographic |
-| WP-007 | `WP007_HARDWARE_SECURITY_PROMPT.md` | HW-001 to HW-034 | 34 | Hardware/Microarch |
-| WP-008 | `WP008_NETWORK_SECURITY_PROMPT.md` | NET-001 to NET-025 | 25 | Network |
-| WP-009 | `WP009_TIMING_SECURITY_PROMPT.md` | TIME-001 to TIME-015 | 15 | Timing/Temporal |
-| WP-010 | `WP010_COVERT_CHANNEL_PROMPT.md` | COV-001 to COV-015 | 15 | Covert Channels |
-| WP-011 | `WP011_PHYSICAL_SECURITY_PROMPT.md` | PHYS-001 to PHYS-020 | 20 | Physical |
-| WP-012 | `WP012_HUMAN_FACTOR_PROMPT.md` | HUM-001 to HUM-021 | 21 | Human/Social |
-| WP-013 | `WP013_SUPPLY_CHAIN_PROMPT.md` | SUP-001 to SUP-016 | 16 | Supply Chain |
-| WP-014 | `WP014_AI_ML_SECURITY_PROMPT.md` | AI-001 to AI-018 | 18 | AI/ML |
-| WP-015 | `WP015_DISTRIBUTED_SECURITY_PROMPT.md` | DIST-001 to DIST-015 | 15 | Distributed |
-| WP-016 | `WP016_FUTURE_SECURITY_PROMPT.md` | FUT-001 to FUT-010 | 10 | Future/Theoretical |
-
-### TYPE SYSTEM (TYPE001-TYPE005) — 68 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| TYPE-001 | `TYPE001_MLTT_FOUNDATION_PROMPT.md` | 15 | MLTT Foundation |
-| TYPE-002 | `TYPE002_LINEAR_TYPES_PROMPT.md` | 12 | Linear Types |
-| TYPE-003 | `TYPE003_SESSION_TYPES_PROMPT.md` | 15 | Session Types |
-| TYPE-004 | `TYPE004_REFINEMENT_TYPES_PROMPT.md` | 12 | Refinement Types |
-| TYPE-005 | `TYPE005_DEPENDENT_TYPES_PROMPT.md` | 14 | Dependent Types |
-
-### EFFECT SYSTEM (EFF001) — 15 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| EFF-001 | `EFF001_ALGEBRAIC_EFFECTS_PROMPT.md` | 15 | Algebraic Effects |
-
-### PERFORMANCE (PERF001-PERF003) — 39 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| PERF-001 | `PERF001_WCET_BOUNDS_PROMPT.md` | 15 | WCET Analysis |
-| PERF-002 | `PERF002_BINARY_SIZE_BOUNDS_PROMPT.md` | 12 | Binary Size Bounds |
-| PERF-003 | `PERF003_SIMD_VERIFICATION_PROMPT.md` | 12 | SIMD Verification |
-
-### COMPLIANCE (COMPLY001-COMPLY003) — 50 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| COMPLY-001 | `COMPLY001_HIPAA_HEALTHCARE_PROMPT.md` | 15 | HIPAA (Healthcare) |
-| COMPLY-002 | `COMPLY002_PCIDSS_FINANCIAL_PROMPT.md` | 15 | PCI-DSS (Financial) |
-| COMPLY-003 | `COMPLY003_DO178C_AEROSPACE_PROMPT.md` | 20 | DO-178C (Aerospace) |
-
-### SECURITY (SEC001-SEC002) — 30 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| SEC-001 | `SEC001_CAPABILITY_SECURITY_PROMPT.md` | 15 | Capability Security |
-| SEC-002 | `SEC002_COVERT_CHANNELS_PROMPT.md` | 15 | Covert Channels |
-
-### CONCURRENCY (CONC001) — 15 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| CONC-001 | `CONC001_DATA_RACE_FREEDOM_PROMPT.md` | 15 | Data Race Freedom |
-
-### MEMORY (MEM001) — 15 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| MEM-001 | `MEM001_OWNERSHIP_TYPES_PROMPT.md` | 15 | Ownership Types |
-
-### SPECIAL DOMAINS (DOMAIN001-DOMAIN002) — 30 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| DOMAIN-001 | `DOMAIN001_RADIATION_HARDENING_PROMPT.md` | 15 | Radiation Hardening |
-| DOMAIN-002 | `DOMAIN002_VERIFIED_AI_ML_PROMPT.md` | 15 | Verified AI/ML |
-
-### COMPILER (COMPILE001) — 15 Theorems
-
-| ID | File | Theorems | Category |
-|----|------|----------|----------|
-| COMPILE-001 | `COMPILE001_TRANSLATION_VALIDATION_PROMPT.md` | 15 | Translation Validation |
-
-### RUST IMPLEMENTATION (RUST001) — N/A (Code)
-
-| ID | File | Output | Category |
-|----|------|--------|----------|
-| RUST-001 | `RUST001_BAHASA_MELAYU_LEXER_PROMPT.md` | keywords.rs | Bahasa Melayu Lexer |
-
----
-
-## USAGE INSTRUCTIONS
-
-### Step 1: Open Prompt File
 ```bash
-cat /workspaces/proof/06_COORDINATION/delegation_prompts/TYPE001_MLTT_FOUNDATION_PROMPT.md
+# List all prompts in execution order
+ls /workspaces/proof/06_COORDINATION/delegation_prompts/*.md | grep -v INDEX | sort
+
+# View specific prompt
+cat /workspaces/proof/06_COORDINATION/delegation_prompts/01_TYPE001_MLTT_FOUNDATION_PROMPT.md
 ```
 
-### Step 2: Copy Content After "COPY EVERYTHING BELOW THIS LINE"
-Copy the entire prompt text starting from the `═══` line.
+---
 
-### Step 3: Paste to Claude AI Web
-Open a new chat at claude.ai and paste the prompt.
+## COMPLETE EXECUTION ORDER
 
-### Step 4: Save Output
+| # | File | Category | Output Path | Theorems |
+|---|------|----------|-------------|----------|
+| 01 | `01_TYPE001_MLTT_FOUNDATION_PROMPT.md` | MLTT Foundation | `foundations/MLTTFoundation.v` | 15 |
+| 02 | `02_TYPE002_LINEAR_TYPES_PROMPT.md` | Linear Types | `foundations/LinearTypes.v` | 12 |
+| 03 | `03_EFF001_ALGEBRAIC_EFFECTS_PROMPT.md` | Algebraic Effects | `effects/AlgebraicEffects.v` | 15 |
+| 04 | `04_MEM001_OWNERSHIP_TYPES_PROMPT.md` | Ownership Types | `memory/OwnershipTypes.v` | 15 |
+| 05 | `05_SEC001_CAPABILITY_SECURITY_PROMPT.md` | Capability Security | `security/CapabilitySecurity.v` | 15 |
+| 06 | `06_SEC002_COVERT_CHANNELS_PROMPT.md` | Covert Channels | `security/CovertChannels.v` | 15 |
+| 07 | `07_CONC001_DATA_RACE_FREEDOM_PROMPT.md` | Data Race Freedom | `concurrency/DataRaceFreedom.v` | 15 |
+| 08 | `08_WP001_MEMORY_SAFETY_PROMPT.md` | Memory Corruption | `properties/MemorySafety.v` | 20 |
+| 09 | `09_WP002_CONTROL_FLOW_PROMPT.md` | Control Flow | `properties/ControlFlow.v` | 15 |
+| 10 | `10_WP003_INJECTION_PREVENTION_PROMPT.md` | Injection | `properties/InjectionPrevention.v` | 15 |
+| 11 | `11_WP004_WEB_SECURITY_PROMPT.md` | Web Application | `properties/WebSecurity.v` | 25 |
+| 12 | `12_WP005_AUTHENTICATION_PROMPT.md` | Authentication | `properties/Authentication.v` | 20 |
+| 13 | `13_WP006_CRYPTOGRAPHIC_PROMPT.md` | Cryptographic | `properties/Cryptographic.v` | 31 |
+| 14 | `14_WP007_HARDWARE_SECURITY_PROMPT.md` | Hardware/Microarch | `properties/HardwareSecurity.v` | 34 |
+| 15 | `15_WP008_NETWORK_SECURITY_PROMPT.md` | Network | `properties/NetworkSecurity.v` | 25 |
+| 16 | `16_WP009_TIMING_SECURITY_PROMPT.md` | Timing/Temporal | `properties/TimingSecurity.v` | 15 |
+| 17 | `17_WP010_COVERT_CHANNEL_PROMPT.md` | Covert Channels | `properties/CovertChannel.v` | 15 |
+| 18 | `18_WP011_PHYSICAL_SECURITY_PROMPT.md` | Physical | `properties/PhysicalSecurity.v` | 20 |
+| 19 | `19_WP012_HUMAN_FACTOR_PROMPT.md` | Human/Social | `properties/HumanFactor.v` | 21 |
+| 20 | `20_WP013_SUPPLY_CHAIN_PROMPT.md` | Supply Chain | `properties/SupplyChain.v` | 16 |
+| 21 | `21_WP014_AI_ML_SECURITY_PROMPT.md` | AI/ML | `properties/AIMLSecurity.v` | 18 |
+| 22 | `22_WP015_DISTRIBUTED_SECURITY_PROMPT.md` | Distributed | `properties/DistributedSecurity.v` | 15 |
+| 23 | `23_WP016_FUTURE_SECURITY_PROMPT.md` | Future/Theoretical | `properties/FutureSecurity.v` | 10 |
+| 24 | `24_COMPLY001_HIPAA_HEALTHCARE_PROMPT.md` | HIPAA (Healthcare) | `compliance/HIPAACompliance.v` | 15 |
+| 25 | `25_COMPLY002_PCIDSS_FINANCIAL_PROMPT.md` | PCI-DSS (Financial) | `compliance/PCIDSSCompliance.v` | 15 |
+| 26 | `26_COMPLY003_DO178C_AEROSPACE_PROMPT.md` | DO-178C (Aerospace) | `compliance/DO178CCompliance.v` | 20 |
+| 27 | `27_PERF001_WCET_BOUNDS_PROMPT.md` | WCET Analysis | `performance/WCETBounds.v` | 15 |
+| 28 | `28_PERF002_BINARY_SIZE_BOUNDS_PROMPT.md` | Binary Size Bounds | `performance/BinarySizeBounds.v` | 12 |
+| 29 | `29_PERF003_SIMD_VERIFICATION_PROMPT.md` | SIMD Verification | `performance/SIMDVerification.v` | 12 |
+| 30 | `30_TYPE003_SESSION_TYPES_PROMPT.md` | Session Types | `concurrency/SessionTypes.v` | 15 |
+| 31 | `31_TYPE004_REFINEMENT_TYPES_PROMPT.md` | Refinement Types | `foundations/RefinementTypes.v` | 12 |
+| 32 | `32_TYPE005_DEPENDENT_TYPES_PROMPT.md` | Dependent Types | `foundations/DependentTypes.v` | 14 |
+| 33 | `33_DOMAIN001_RADIATION_HARDENING_PROMPT.md` | Radiation Hardening | `domains/RadiationHardening.v` | 15 |
+| 34 | `34_DOMAIN002_VERIFIED_AI_ML_PROMPT.md` | Verified AI/ML | `domains/VerifiedAIML.v` | 15 |
+| 35 | `35_COMPILE001_TRANSLATION_VALIDATION_PROMPT.md` | Translation Validation | `compiler/TranslationValidation.v` | 15 |
+| 36 | `36_RUST001_BAHASA_MELAYU_LEXER_PROMPT.md` | Bahasa Melayu Lexer | `riina-lexer/src/keywords.rs` | N/A |
+
+---
+
+## QUICK CLI COMMANDS
+
 ```bash
-# Example for TYPE-001
+# Navigate to prompts
+cd /workspaces/proof/06_COORDINATION/delegation_prompts
+
+# List all prompts in order
+ls -1 [0-9]*.md
+
+# View prompt N (e.g., prompt 01)
+cat 01_TYPE001_MLTT_FOUNDATION_PROMPT.md
+
+# Copy prompt content to clipboard (Linux)
+cat 01_TYPE001_MLTT_FOUNDATION_PROMPT.md | xclip -selection clipboard
+
+# Save output to correct location
 cat > /workspaces/proof/02_FORMAL/coq/foundations/MLTTFoundation.v << 'EOF'
 [PASTE COQ OUTPUT HERE]
 EOF
-```
 
-### Step 5: Verify Output
-```bash
+# Verify output compiles
 cd /workspaces/proof/02_FORMAL/coq
 coqc -Q . RIINA foundations/MLTTFoundation.v
 
-# Check for admits
-grep -c "Admitted\." foundations/MLTTFoundation.v  # Must be 0
-grep -c "admit\." foundations/MLTTFoundation.v     # Must be 0
-grep -c "^Axiom" foundations/MLTTFoundation.v      # Must be 0
+# Check for forbidden patterns (ALL MUST BE 0)
+grep -c "Admitted\.\|admit\.\|^Axiom" foundations/MLTTFoundation.v
 ```
 
 ---
 
-## OUTPUT FILE MAPPING
+## PRIORITY PHASES
 
-| Prompt | Output File Path |
-|--------|------------------|
-| TYPE001 | `02_FORMAL/coq/foundations/MLTTFoundation.v` |
-| TYPE002 | `02_FORMAL/coq/foundations/LinearTypes.v` |
-| TYPE003 | `02_FORMAL/coq/concurrency/SessionTypes.v` |
-| TYPE004 | `02_FORMAL/coq/foundations/RefinementTypes.v` |
-| TYPE005 | `02_FORMAL/coq/foundations/DependentTypes.v` |
-| EFF001 | `02_FORMAL/coq/effects/AlgebraicEffects.v` |
-| PERF001 | `02_FORMAL/coq/performance/WCETBounds.v` |
-| PERF002 | `02_FORMAL/coq/performance/BinarySizeBounds.v` |
-| PERF003 | `02_FORMAL/coq/performance/SIMDVerification.v` |
-| COMPLY001 | `02_FORMAL/coq/compliance/HIPAACompliance.v` |
-| COMPLY002 | `02_FORMAL/coq/compliance/PCIDSSCompliance.v` |
-| COMPLY003 | `02_FORMAL/coq/compliance/DO178CCompliance.v` |
-| SEC001 | `02_FORMAL/coq/security/CapabilitySecurity.v` |
-| SEC002 | `02_FORMAL/coq/security/CovertChannels.v` |
-| CONC001 | `02_FORMAL/coq/concurrency/DataRaceFreedom.v` |
-| MEM001 | `02_FORMAL/coq/memory/OwnershipTypes.v` |
-| DOMAIN001 | `02_FORMAL/coq/domains/RadiationHardening.v` |
-| DOMAIN002 | `02_FORMAL/coq/domains/VerifiedAIML.v` |
-| COMPILE001 | `02_FORMAL/coq/compiler/TranslationValidation.v` |
-| RUST001 | `03_PROTO/crates/riina-lexer/src/keywords.rs` |
+### Phase 1: Foundation (01-04) — Start Here
+| # | ID | Category | Critical For |
+|---|-----|----------|--------------|
+| 01 | TYPE001 | MLTT Foundation | Everything else |
+| 02 | TYPE002 | Linear Types | Resource safety |
+| 03 | EFF001 | Algebraic Effects | Effect tracking |
+| 04 | MEM001 | Ownership Types | Memory safety |
+
+### Phase 2: Security Core (05-07)
+| # | ID | Category | Critical For |
+|---|-----|----------|--------------|
+| 05 | SEC001 | Capability Security | Access control |
+| 06 | SEC002 | Covert Channels | Information flow |
+| 07 | CONC001 | Data Race Freedom | Concurrency |
+
+### Phase 3: Threat Coverage (08-23)
+16 work packages covering 355 threat theorems.
+
+### Phase 4: Compliance (24-26)
+HIPAA, PCI-DSS, DO-178C regulatory requirements.
+
+### Phase 5: Performance (27-29)
+WCET bounds, binary size, SIMD verification.
+
+### Phase 6: Advanced (30-35)
+Session types, refinement types, radiation hardening, etc.
+
+### Phase 7: Implementation (36)
+Rust lexer for Bahasa Melayu keywords.
 
 ---
 
 ## PROGRESS TRACKING
 
-### Threat Coverage (WP001-WP016)
+Mark with [x] when complete:
 
-| WP | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| WP-001 | [ ] | [ ] | [ ] | [ ] |
-| WP-002 | [ ] | [ ] | [ ] | [ ] |
-| WP-003 | [ ] | [ ] | [ ] | [ ] |
-| WP-004 | [ ] | [ ] | [ ] | [ ] |
-| WP-005 | [ ] | [ ] | [ ] | [ ] |
-| WP-006 | [ ] | [ ] | [ ] | [ ] |
-| WP-007 | [ ] | [ ] | [ ] | [ ] |
-| WP-008 | [ ] | [ ] | [ ] | [ ] |
-| WP-009 | [ ] | [ ] | [ ] | [ ] |
-| WP-010 | [ ] | [ ] | [ ] | [ ] |
-| WP-011 | [ ] | [ ] | [ ] | [ ] |
-| WP-012 | [ ] | [ ] | [ ] | [ ] |
-| WP-013 | [ ] | [ ] | [ ] | [ ] |
-| WP-014 | [ ] | [ ] | [ ] | [ ] |
-| WP-015 | [ ] | [ ] | [ ] | [ ] |
-| WP-016 | [ ] | [ ] | [ ] | [ ] |
+### Phase 1: Foundation
+- [ ] 01_TYPE001 — Delegated | Received | Verified | Integrated
+- [ ] 02_TYPE002 — Delegated | Received | Verified | Integrated
+- [ ] 03_EFF001 — Delegated | Received | Verified | Integrated
+- [ ] 04_MEM001 — Delegated | Received | Verified | Integrated
 
-### Type System (TYPE001-TYPE005)
+### Phase 2: Security Core
+- [ ] 05_SEC001 — Delegated | Received | Verified | Integrated
+- [ ] 06_SEC002 — Delegated | Received | Verified | Integrated
+- [ ] 07_CONC001 — Delegated | Received | Verified | Integrated
 
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| TYPE-001 | [ ] | [ ] | [ ] | [ ] |
-| TYPE-002 | [ ] | [ ] | [ ] | [ ] |
-| TYPE-003 | [ ] | [ ] | [ ] | [ ] |
-| TYPE-004 | [ ] | [ ] | [ ] | [ ] |
-| TYPE-005 | [ ] | [ ] | [ ] | [ ] |
+### Phase 3: Threats (08-23)
+- [ ] 08_WP001 — Delegated | Received | Verified | Integrated
+- [ ] 09_WP002 — Delegated | Received | Verified | Integrated
+- [ ] 10_WP003 — Delegated | Received | Verified | Integrated
+- [ ] 11_WP004 — Delegated | Received | Verified | Integrated
+- [ ] 12_WP005 — Delegated | Received | Verified | Integrated
+- [ ] 13_WP006 — Delegated | Received | Verified | Integrated
+- [ ] 14_WP007 — Delegated | Received | Verified | Integrated
+- [ ] 15_WP008 — Delegated | Received | Verified | Integrated
+- [ ] 16_WP009 — Delegated | Received | Verified | Integrated
+- [ ] 17_WP010 — Delegated | Received | Verified | Integrated
+- [ ] 18_WP011 — Delegated | Received | Verified | Integrated
+- [ ] 19_WP012 — Delegated | Received | Verified | Integrated
+- [ ] 20_WP013 — Delegated | Received | Verified | Integrated
+- [ ] 21_WP014 — Delegated | Received | Verified | Integrated
+- [ ] 22_WP015 — Delegated | Received | Verified | Integrated
+- [ ] 23_WP016 — Delegated | Received | Verified | Integrated
 
-### Effect System
+### Phase 4: Compliance (24-26)
+- [ ] 24_COMPLY001 — Delegated | Received | Verified | Integrated
+- [ ] 25_COMPLY002 — Delegated | Received | Verified | Integrated
+- [ ] 26_COMPLY003 — Delegated | Received | Verified | Integrated
 
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| EFF-001 | [ ] | [ ] | [ ] | [ ] |
+### Phase 5: Performance (27-29)
+- [ ] 27_PERF001 — Delegated | Received | Verified | Integrated
+- [ ] 28_PERF002 — Delegated | Received | Verified | Integrated
+- [ ] 29_PERF003 — Delegated | Received | Verified | Integrated
 
-### Performance (PERF001-PERF003)
+### Phase 6: Advanced (30-35)
+- [ ] 30_TYPE003 — Delegated | Received | Verified | Integrated
+- [ ] 31_TYPE004 — Delegated | Received | Verified | Integrated
+- [ ] 32_TYPE005 — Delegated | Received | Verified | Integrated
+- [ ] 33_DOMAIN001 — Delegated | Received | Verified | Integrated
+- [ ] 34_DOMAIN002 — Delegated | Received | Verified | Integrated
+- [ ] 35_COMPILE001 — Delegated | Received | Verified | Integrated
 
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| PERF-001 | [ ] | [ ] | [ ] | [ ] |
-| PERF-002 | [ ] | [ ] | [ ] | [ ] |
-| PERF-003 | [ ] | [ ] | [ ] | [ ] |
-
-### Compliance (COMPLY001-COMPLY003)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| COMPLY-001 | [ ] | [ ] | [ ] | [ ] |
-| COMPLY-002 | [ ] | [ ] | [ ] | [ ] |
-| COMPLY-003 | [ ] | [ ] | [ ] | [ ] |
-
-### Security (SEC001-SEC002)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| SEC-001 | [ ] | [ ] | [ ] | [ ] |
-| SEC-002 | [ ] | [ ] | [ ] | [ ] |
-
-### Concurrency (CONC001)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| CONC-001 | [ ] | [ ] | [ ] | [ ] |
-
-### Memory (MEM001)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| MEM-001 | [ ] | [ ] | [ ] | [ ] |
-
-### Special Domains (DOMAIN001-DOMAIN002)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| DOMAIN-001 | [ ] | [ ] | [ ] | [ ] |
-| DOMAIN-002 | [ ] | [ ] | [ ] | [ ] |
-
-### Compiler (COMPILE001)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| COMPILE-001 | [ ] | [ ] | [ ] | [ ] |
-
-### Rust Implementation (RUST001)
-
-| ID | Delegated | Received | Verified | Integrated |
-|----|-----------|----------|----------|------------|
-| RUST-001 | [ ] | [ ] | [ ] | [ ] |
+### Phase 7: Implementation (36)
+- [ ] 36_RUST001 — Delegated | Received | Verified | Integrated
 
 ---
 
-## ADVERSARIAL ASSUMPTIONS
+## VERIFICATION CHECKLIST
 
-Each prompt is designed assuming Claude AI Web will:
-1. Try to use `Admitted.` or `admit.` to skip proofs
-2. Try to add `Axiom` declarations instead of proving
-3. Try to change theorem names to avoid specifications
-4. Try to output non-Coq content (markdown, explanations)
-5. Try to produce code that doesn't compile
+For EACH output file:
 
-All prompts include:
-- Explicit forbidden actions list
-- Exact theorem name requirements
-- Verification commands to run
-- Output format requirements
+```bash
+# 1. Save to correct path
+# 2. Compile test
+coqc -Q . RIINA [path/to/file.v]
 
----
+# 3. Forbidden pattern check (ALL MUST BE 0)
+grep -c "Admitted\." [file.v]   # MUST BE 0
+grep -c "admit\." [file.v]      # MUST BE 0
+grep -c "^Axiom" [file.v]       # MUST BE 0
 
-## RECOMMENDED EXECUTION ORDER
-
-**Priority 1 (Foundation):**
-1. TYPE001 - MLTT Foundation
-2. TYPE002 - Linear Types
-3. EFF001 - Algebraic Effects
-4. MEM001 - Ownership Types
-
-**Priority 2 (Security Core):**
-5. SEC001 - Capability Security
-6. SEC002 - Covert Channels
-7. CONC001 - Data Race Freedom
-
-**Priority 3 (Threats):**
-8-23. WP001-WP016 (Threat categories)
-
-**Priority 4 (Compliance):**
-24. COMPLY001 - HIPAA
-25. COMPLY002 - PCI-DSS
-26. COMPLY003 - DO-178C
-
-**Priority 5 (Performance):**
-27. PERF001 - WCET
-28. PERF002 - Binary Size
-29. PERF003 - SIMD
-
-**Priority 6 (Advanced):**
-30. TYPE003 - Session Types
-31. TYPE004 - Refinement Types
-32. TYPE005 - Dependent Types
-33. DOMAIN001 - Radiation Hardening
-34. DOMAIN002 - Verified AI/ML
-35. COMPILE001 - Translation Validation
-
-**Priority 7 (Implementation):**
-36. RUST001 - Bahasa Melayu Lexer
+# 4. If all pass, mark as Verified
+# 5. Add to _CoqProject and rebuild
+echo "[path/to/file.v]" >> _CoqProject
+make
+```
 
 ---
 
-## SUMMARY STATISTICS
+## SUMMARY
 
-| Category | Prompts | Theorems | Status |
-|----------|---------|----------|--------|
-| Threats | 16 | 355 | Ready |
-| Type System | 5 | 68 | Ready |
-| Effects | 1 | 15 | Ready |
-| Performance | 3 | 39 | Ready |
-| Compliance | 3 | 50 | Ready |
-| Security | 2 | 30 | Ready |
-| Concurrency | 1 | 15 | Ready |
-| Memory | 1 | 15 | Ready |
-| Domains | 2 | 30 | Ready |
-| Compiler | 1 | 15 | Ready |
-| Rust | 1 | N/A | Ready |
+| Phase | Prompts | Theorems | Status |
+|-------|---------|----------|--------|
+| 1. Foundation | 4 | 57 | Ready |
+| 2. Security Core | 3 | 45 | Ready |
+| 3. Threats | 16 | 355 | Ready |
+| 4. Compliance | 3 | 50 | Ready |
+| 5. Performance | 3 | 39 | Ready |
+| 6. Advanced | 6 | 86 | Ready |
+| 7. Implementation | 1 | N/A | Ready |
 | **TOTAL** | **36** | **~632** | **Ready** |
 
 ---
