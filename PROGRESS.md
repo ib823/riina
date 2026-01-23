@@ -186,16 +186,17 @@
 
 | # | Action | Blocker | Priority |
 |---|--------|---------|----------|
-| 1 | Prove `multi_step_preservation` | None | P0 |
-| 2 | Fill store_rel_n_step_up premises | #1 | P0 |
-| 3 | Handle TProd/TSum compound types | None | P1 |
-| 4 | Complete fundamental_at_step body | #3 | P1 |
+| ~~1~~ | ~~Prove `multi_step_preservation`~~ | ~~None~~ | ✅ DONE |
+| 2 | Derive arg typing from val_rel_n | None | P0 |
+| 3 | Fill store_rel_n_step_up premises | #2 | P0 |
+| 4 | Handle TProd/TSum compound types | None | P1 |
+| 5 | Complete fundamental_at_step body | #4 | P1 |
 
 ### 6.3 Blockers
 
 | Blocker | Impact | Resolution Path |
 |---------|--------|-----------------|
-| multi_step_preservation | 2 TFn admits | Induction on multi_step |
+| arg typing from val_rel_n | 2 TFn admits | Need lemma: val_rel_n → typing for HO |
 | store_wf premises | 1 TFn admit | Extract from store_rel |
 
 ---
@@ -205,9 +206,9 @@
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v
 Last Function: step_up_and_fundamental_mutual
-Last Line    : ~2550 (TFn case)
-Next Action  : Prove multi_step_preservation lemma
-Git Commit   : 56ac65f
+Last Line    : ~2565 (TFn typing admits)
+Next Action  : Derive arg typing from val_rel_n
+Git Commit   : a9dec36
 ```
 
 ---
