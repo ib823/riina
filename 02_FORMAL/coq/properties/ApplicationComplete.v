@@ -160,9 +160,26 @@ Proof.
   - split.
     + (* store_max st1 = store_max st2 *)
       exact Hmax.
-    + (* forall l T sl, store_ty_lookup -> exists v1 v2, ... /\ val_rel_n 0 *)
-      exact Hlocs.
-Qed.
+    + (* forall l T sl, store_ty_lookup -> security-aware conditional *)
+      intros l T sl Hlook.
+      destruct (Hlocs l T sl Hlook) as [v1 [v2 [Hl1 [Hl2 Hvrel]]]].
+      exists v1, v2. split; [exact Hl1 | split; [exact Hl2 |]].
+      (* Handle security-aware conditional *)
+      destruct (is_low_dec sl) eqn:Hsl.
+      * (* LOW: use val_rel_n 0 directly *)
+        exact Hvrel.
+      * (* HIGH: extract typing from val_rel_n 0 *)
+        rewrite val_rel_n_0_unfold in Hvrel.
+        destruct Hvrel as [Hv1 [Hv2 [Hc1 [Hc2 Hrest]]]].
+        destruct (first_order_type T) eqn:Hfo.
+        -- (* FO type: derive typing from canonical forms *)
+           (* Need typing for v1 and v2 - these are in stores so should be typed *)
+           (* This requires store_wf, which we don't have here. *)
+           repeat split; try assumption; admit.
+        -- (* HO type: typing is in val_rel_n 0 *)
+           destruct Hrest as [Hty1 Hty2].
+           repeat split; assumption.
+Admitted.
 
 (** ** The Main Theorem: tapp_step0_complete
 

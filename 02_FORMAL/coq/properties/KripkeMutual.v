@@ -156,11 +156,19 @@ Proof.
       destruct (Htyped l T sl Hlook') as (v1 & v2 & Hst1 & Hst2 & Hval_rel).
       exists v1, v2.
       repeat split; try assumption.
-      (* val_rel_n n' Σ' T v1 v2 -> val_rel_n n' Σ T v1 v2 *)
-      (* T is first-order by Hfo_all, so we can use val_rel_n_weaken_fo *)
-      apply val_rel_n_weaken_fo with Σ'; try assumption.
-      apply Hfo_all with l sl. exact Hlook.
-Qed.
+      (* Handle security-aware conditional *)
+      destruct (is_low_dec sl) eqn:Hsl.
+      * (* LOW: val_rel_n n' Σ' T v1 v2 -> val_rel_n n' Σ T v1 v2 *)
+        (* T is first-order by Hfo_all, so we can use val_rel_n_weaken_fo *)
+        apply val_rel_n_weaken_fo with Σ'; try assumption.
+        apply Hfo_all with l sl. exact Hlook.
+      * (* HIGH: typing needs store_ty adjustment *)
+        destruct Hval_rel as [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 Hty2]]]]].
+        repeat split; try assumption.
+        (* has_type nil Σ' T -> has_type nil Σ T for values - typing_weaken *)
+        -- admit.  (* typing_weaken for Σ -> Σ' direction is the opposite *)
+        -- admit.
+Admitted.
 
 (** Original lemma without restriction - kept for API compatibility but
     requires mutual induction for TFn types which is not structurally
@@ -199,7 +207,11 @@ Lemma store_rel_n_structure : forall n Σ st1 st2,
      exists v1 v2,
        store_lookup l st1 = Some v1 /\
        store_lookup l st2 = Some v2 /\
-       val_rel_n n Σ T v1 v2).
+       (if is_low_dec sl
+        then val_rel_n n Σ T v1 v2
+        else (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+              has_type nil Σ Public v1 T EffectPure /\
+              has_type nil Σ Public v2 T EffectPure))).
 Proof.
   intros. simpl. reflexivity.
 Qed.
