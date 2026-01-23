@@ -122,18 +122,25 @@
 
 | Priority | File | Count | Description |
 |----------|------|-------|-------------|
-| P0 | NonInterference_v2.v | 5 admits | val_rel_n_step_up_by_type (2), fo_trivial (2), store_rel (1) |
+| P0 | NonInterference_v2.v | 6 admits | val_rel_n_step_up_by_type (3), fo_trivial (2), store_rel (1) |
 | P1 | NonInterference_v2_LogicalRelation.v | ~66 admits | Logical relation infrastructure |
 | P2 | Other properties/ files | ~30 | Various |
 | **TOTAL** | | ~70 Admitted + admits | |
 
-**Admit Classification:**
-- **Provable admits (2):** n=0 case (line 1140), store_rel step-up (line 1209)
-- **Semantically justified (3):** TSum mixed constructors (2), HIGH security base types (1)
+**Admit Classification (NonInterference_v2.v):**
+- **Fundamental Theorem admits (2):**
+  - Line 1141: n=0 case for TFn val_rel step-up (requires compatibility lemmas)
+  - Line 1203: n'=0 case for store_rel step-up in TFn (requires Fundamental Theorem)
+- **Strong induction admit (1):**
+  - Line 1217: n'>0 case for store_rel step-up (requires restructuring to use strong induction on n)
+- **Semantically justified (3):**
+  - Lines 1388, 1390: TSum mixed constructors (unprovable by design, HIGH security)
+  - Line 1489: HIGH security base types (high data not observable)
 
 **Infrastructure Added (Session 39):**
 - `multi_step_preservation` theorem in Preservation.v
 - `store_ty_extends_trans` lemma in Preservation.v
+- Import for `Coq.Arith.Wf_nat` (well-founded induction)
 
 ---
 
