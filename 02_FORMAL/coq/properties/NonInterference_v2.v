@@ -178,18 +178,32 @@ Section ValRelAtN.
     end.
 End ValRelAtN.
 
-(** THE REVOLUTIONARY STEP-INDEXED RELATIONS *)
+(** THE REVOLUTIONARY STEP-INDEXED RELATIONS
+
+    CANONICAL DESIGN: val_rel_n includes typing for higher-order types.
+    This eliminates the circularity in step_up proofs by ensuring
+    related values are well-typed by definition.
+
+    For FO types: typing is derivable from canonical forms
+    For HO types: typing is explicit in the relation
+*)
 Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} : Prop :=
   match n with
   | 0 =>
-      (* REVOLUTIONARY CHANGE: Step 0 carries structure for FO types *)
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
       (if first_order_type T
        then val_rel_at_type_fo T v1 v2
-       else True)
+       else (* HO types require typing at step 0 *)
+         has_type nil Σ Public v1 T EffectPure /\
+         has_type nil Σ Public v2 T EffectPure)
   | S n' =>
       val_rel_n n' Σ T v1 v2 /\
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+      (if first_order_type T
+       then True
+       else (* HO types require typing at step S n' *)
+         has_type nil Σ Public v1 T EffectPure /\
+         has_type nil Σ Public v2 T EffectPure) /\
       val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2
   end
 with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
@@ -211,13 +225,20 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
 Lemma val_rel_n_0_unfold : forall Σ T v1 v2,
   val_rel_n 0 Σ T v1 v2 =
   (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-   (if first_order_type T then val_rel_at_type_fo T v1 v2 else True)).
+   (if first_order_type T
+    then val_rel_at_type_fo T v1 v2
+    else has_type nil Σ Public v1 T EffectPure /\
+         has_type nil Σ Public v2 T EffectPure)).
 Proof. reflexivity. Qed.
 
 Lemma val_rel_n_S_unfold : forall n Σ T v1 v2,
   val_rel_n (S n) Σ T v1 v2 =
   (val_rel_n n Σ T v1 v2 /\
    value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+   (if first_order_type T
+    then True
+    else has_type nil Σ Public v1 T EffectPure /\
+         has_type nil Σ Public v2 T EffectPure) /\
    val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T v1 v2).
 Proof. reflexivity. Qed.
 
@@ -331,16 +352,18 @@ Proof.
   - (* n = 0: trivial *)
     exact H0.
   - (* n = S n': use IH and val_rel_at_type_fo_equiv *)
-    simpl. split.
+    rewrite val_rel_n_S_unfold. split.
     + (* Need val_rel_n n' Σ T v1 v2 - use IH *)
       exact IHn.
-    + (* Need value, closed, and val_rel_at_type *)
-      simpl in H0.
+    + (* Need value, closed, typing (True for FO), and val_rel_at_type *)
+      rewrite val_rel_n_0_unfold in H0.
       destruct H0 as [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]].
       repeat split; auto.
-      (* val_rel_at_type Σ ... T v1 v2 from val_rel_at_type_fo T v1 v2 *)
-      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
-      rewrite Hfo in Hrat. exact Hrat.
+      * (* typing conjunct: True for FO types *)
+        rewrite Hfo. exact I.
+      * (* val_rel_at_type Σ ... T v1 v2 from val_rel_at_type_fo T v1 v2 *)
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+        rewrite Hfo in Hrat. exact Hrat.
 Qed.
 
 (** CRITICAL: Downward monotonicity for first-order types.
@@ -367,9 +390,9 @@ Proof.
     + (* m = 0: need val_rel_n 0 from val_rel_n (S n') *)
       rewrite val_rel_n_0_unfold.
       rewrite val_rel_n_S_unfold in Hn.
-      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
       repeat split; try assumption.
-      (* Need: if first_order_type T then val_rel_at_type_fo T v1 v2 else True *)
+      (* Need: if first_order_type T then val_rel_at_type_fo T v1 v2 else ... *)
       rewrite Hfo.
       (* Extract val_rel_at_type_fo from val_rel_at_type *)
       apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
@@ -377,17 +400,23 @@ Proof.
     + (* m = S m': need val_rel_n (S m') from val_rel_n (S n') *)
       rewrite val_rel_n_S_unfold.
       rewrite val_rel_n_S_unfold in Hn.
-      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
       split.
       * (* val_rel_n m' Σ T v1 v2: use IH *)
         apply IHn with (Σ := Σ) (T := T); [exact Hfo | lia | exact Hrec].
-      * (* Structural parts *)
-        repeat split; try assumption.
-        (* val_rel_at_type at m' from val_rel_at_type at n' *)
-        (* For FO types, both equal val_rel_at_type_fo *)
-        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
-        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
-        exact Hrat.
+      * (* Structural parts: value, closed, typing, val_rel_at_type *)
+        split. { exact Hv1. }
+        split. { exact Hv2. }
+        split. { exact Hc1. }
+        split. { exact Hc2. }
+        split.
+        { (* typing conjunct: True for FO types *)
+          rewrite Hfo. exact I. }
+        { (* val_rel_at_type at m' from val_rel_at_type at n' *)
+          (* For FO types, both equal val_rel_at_type_fo *)
+          apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
+          apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+          exact Hrat. }
 Qed.
 
 (** Corollary: For FO types, val_rel_n at any step index implies val_rel_n at any other.
@@ -471,7 +500,7 @@ Proof.
     inversion Hv1; subst. inversion Hv2; subst.
     repeat split; assumption.
   - (* n = S n': use val_rel_at_type *)
-    destruct Hrel as [_ [Hv1 [Hv2 [_ [_ Hrat]]]]].
+    destruct Hrel as [_ [Hv1 [Hv2 [_ [_ [_ Hrat]]]]]].
     simpl in Hrat.
     destruct Hrat as [a1 [b1 [a2 [b2 [Heq1 [Heq2 _]]]]]].
     exists a1, b1, a2, b2.
@@ -489,7 +518,7 @@ Proof.
   destruct n; simpl in Hrel.
   - destruct Hrel as [_ [_ [_ [_ Hfo]]]].
     simpl in Hfo. exact Hfo.
-  - destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]].
+  - destruct Hrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
     simpl in Hrat. exact Hrat.
 Qed.
 
@@ -520,7 +549,7 @@ Proof.
       inversion Hv1; subst. inversion Hv2; subst.
       repeat split; assumption.
   - (* n = S n' *)
-    destruct Hrel as [_ [Hv1 [Hv2 [_ [_ Hrat]]]]].
+    destruct Hrel as [_ [Hv1 [Hv2 [_ [_ [_ Hrat]]]]]].
     simpl in Hrat.
     destruct Hrat as [[a1 [a2 [Heq1 [Heq2 _]]]] | [b1 [b2 [Heq1 [Heq2 _]]]]].
     + left. exists a1, a2. subst.
@@ -551,12 +580,23 @@ Proof.
     + (* m = 0: extract step-0 structure from step S n' *)
       rewrite val_rel_n_0_unfold.
       rewrite val_rel_n_S_unfold in Hrel.
-      destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
-      repeat split; try assumption.
-      destruct (first_order_type T) eqn:Hfo.
-      * apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      destruct (first_order_type T) eqn:Hfo;
+        destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
+      * (* FO type *)
+        split. { exact Hv1. }
+        split. { exact Hv2. }
+        split. { exact Hc1. }
+        split. { exact Hc2. }
+        (* val_rel_at_type_fo from val_rel_at_type *)
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
         exact Hrat.
-      * exact I.
+      * (* HO type *)
+        split. { exact Hv1. }
+        split. { exact Hv2. }
+        split. { exact Hc1. }
+        split. { exact Hc2. }
+        (* Htyping gives us typing - already reduced to has_type /\ has_type *)
+        exact Htyping.
     + (* m = S m' *)
       rewrite val_rel_n_S_unfold in Hrel.
       destruct Hrel as [Hrec Hrest].
@@ -920,25 +960,31 @@ Lemma val_rel_n_step_up : forall n Σ T v1 v2,
   val_rel_n (S n) Σ T v1 v2.
 Proof.
   intros n Σ T v1 v2 Hrel Hty1 Hty2.
-  simpl. split.
+  rewrite val_rel_n_S_unfold. split.
   - exact Hrel.
   - destruct (val_rel_n_value n Σ T v1 v2 Hrel) as [Hv1 Hv2].
     destruct (val_rel_n_closed n Σ T v1 v2 Hrel) as [Hc1 Hc2].
-    repeat split; try assumption.
-    (* val_rel_at_type at step n *)
+    split. { exact Hv1. }
+    split. { exact Hv2. }
+    split. { exact Hc1. }
+    split. { exact Hc2. }
+    (* typing conjunct and val_rel_at_type at step n *)
     destruct (first_order_type T) eqn:Hfo.
-    + (* First-order: predicate-independent, can extract from val_rel_n n *)
-      (* For FO types: extract val_rel_at_type_fo from Hrel, then convert *)
+    + (* First-order: typing is True, val_rel_at_type from val_rel_at_type_fo *)
+      split. { exact I. }
       apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
       destruct n; simpl in Hrel.
       * (* n = 0: val_rel_at_type_fo is directly in Hrel *)
         destruct Hrel as [_ [_ [_ [_ Hfo_rel]]]].
         rewrite Hfo in Hfo_rel. exact Hfo_rel.
       * (* n = S n': val_rel_at_type is in Hrel, convert to val_rel_at_type_fo *)
-        destruct Hrel as [_ [_ [_ [_ [_ Hrat]]]]].
+        destruct Hrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
         apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
         exact Hrat.
     + (* Higher-order (TFn): use typing + SN_app *)
+      (* First prove the typing conjunct *)
+      split.
+      { split; [apply Hty1; exact eq_refl | apply Hty2; exact eq_refl]. }
       (* For TFn T1 T2 ε, val_rel_at_type means: forall related args, apps terminate and are related *)
       destruct T; try discriminate Hfo.
       (* T = TFn T1 T2 ε *)
@@ -1040,7 +1086,8 @@ Proof.
            values at low-observable locations must agree.
            Cannot be derived from store_wf alone. *)
         admit.
-      * (* HO type: True at step 0 for HO *) exact I.
+      * (* HO type: need has_type /\ has_type at step 0 *)
+        split; assumption.
     + (* n = S n': use existing val_rel_n from store_rel_n (S n') *)
       rewrite store_rel_n_S_unfold in Hrel.
       destruct Hrel as [Hrel_n' [_ Hlocs]].
@@ -1151,6 +1198,7 @@ Proof.
         split; [constructor |].
         split; [intros x Hfree; inversion Hfree |].
         split; [intros x Hfree; inversion Hfree |].
+        split; [exact I |]. (* typing conjunct: True for FO *)
         simpl. split; reflexivity.
     + (* n = S (S n''): use IH for S n'' *)
       rewrite val_rel_n_S_unfold. split.
@@ -1159,6 +1207,7 @@ Proof.
         split; [constructor |].
         split; [intros x Hfree; inversion Hfree |].
         split; [intros x Hfree; inversion Hfree |].
+        split; [exact I |]. (* typing conjunct: True for FO *)
         simpl. split; reflexivity.
 Qed.
 

@@ -6,7 +6,7 @@
 ║  FORMAL PROOF DELEGATION: val_rel_n_step_up (Step-Indexed Step-Up Lemma)         ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR              ║
-║  "Security proven. Family driven."                                               ║
+║  "Security proven. Mathematically verified."                                               ║
 ║                                                                                  ║
 ║  DIFFICULTY: HARD — Requires careful understanding of step-indexed relations     ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝

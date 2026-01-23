@@ -482,4 +482,4 @@ cat PROGRESS.md  # Current status
 ---
 
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*

@@ -6,7 +6,7 @@
     STATUS: COMPLETE — ZERO AXIOMS — PURE CONSTRUCTIVE PROOF
     
     Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR
-    "Security proven. Family driven."
+    "Security proven. Mathematically verified."
     
     This file proves that for first-order types, step-indexed value relations
     can be "stepped up" from n to S n without any external axioms.
@@ -429,5 +429,5 @@ Print Assumptions val_rel_n_fo_extract.
     
     ZERO AXIOMS. ZERO ADMITTED PROOFS. PURE CONSTRUCTIVE PROOF.
     
-    "Security proven. Family driven."
+    "Security proven. Mathematically verified."
     ============================================================================ *)

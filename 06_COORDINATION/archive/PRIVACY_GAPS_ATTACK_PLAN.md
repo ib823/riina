@@ -789,7 +789,7 @@ cat > 06_COORDINATION/signals/PRIVACY_ZERO_ACHIEVED.signal << 'EOF'
 ║                                                                                  ║
 ║    ALL past, present, and future privacy threats are now OBSOLETE.               ║
 ║                                                                                  ║
-║    Named for: Reena + Isaac + Imaan — The foundation of everything.              ║
+║    RIINA: Rigorous Immutable Integrity No-attack Assured                         ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 EOF
@@ -885,4 +885,4 @@ fungsi hantar_mesej_rahsia(penerima: IdPengguna, kandungan: Teks)
 
 *"RIINA: Where even your metadata has a right to privacy."*
 
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*

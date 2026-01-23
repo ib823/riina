@@ -270,5 +270,4 @@ GREP:   EMPTY   ✓
 
 ---
 
-*"Security proven. Family driven."*
-*Reena. Isaac. Imaan. Forever in code.*
+*"Security proven. Mathematically verified."*

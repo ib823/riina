@@ -1,7 +1,6 @@
 # RIINA Prototype Workspace
 # Track B: Compiler Implementation
 # RIINA = Rigorous Immutable Integrity No-attack Assured
-# Named for: Reena + Isaac + Imaan
 
 [workspace]
 resolver = "2"

@@ -600,4 +600,6 @@ Based on IronFleet results:
 
 **"Distributed systems without proofs are distributed failures."**
 
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*
+
+*Security proven. Mathematically verified.*

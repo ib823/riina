@@ -119,5 +119,5 @@ This is a significant undertaking but is the mathematically correct solution.
 
 ---
 
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*
 *RIINA: Rigorous Immutable Integrity No-attack Assured*

@@ -10,7 +10,7 @@
     
     CRITICAL: All proofs end with Qed. NO AXIOMS. NO ADMITTED.
     
-    "Security proven. Family driven."
+    "Security proven. Mathematically verified."
     ============================================================================ *)
 
 Require Import Coq.Strings.String.
@@ -1347,5 +1347,5 @@ Qed.
     ALL PROOFS COMPLETE - NO AXIOMS - NO ADMITTED
     
     Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR
-    "Security proven. Family driven."
+    "Security proven. Mathematically verified."
     ============================================================================ *)

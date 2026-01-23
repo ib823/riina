@@ -6,7 +6,7 @@
 ║  FORMAL PROOF DELEGATION: Reference Operations (Ref, Deref, Assign)              ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR              ║
-║  "Security proven. Family driven."                                               ║
+║  "Security proven. Mathematically verified."                                               ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 

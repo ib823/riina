@@ -2,7 +2,6 @@
 //!
 //! Abstract Syntax Tree definitions corresponding to the formal Coq specification.
 //! RIINA = Rigorous Immutable Integrity No-attack Assured
-//! Named for: Reena + Isaac + Imaan
 //!
 //! Reference: `02_FORMAL/coq/foundations/Syntax.v`
 //!

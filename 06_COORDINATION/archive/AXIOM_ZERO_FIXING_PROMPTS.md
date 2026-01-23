@@ -489,8 +489,6 @@ This specification follows:
 
 ---
 
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*
 
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
-
-*Reena. Isaac. Imaan. Forever in code.*

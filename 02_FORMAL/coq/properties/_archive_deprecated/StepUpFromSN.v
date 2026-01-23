@@ -437,7 +437,7 @@ Admitted.
     
     This is mathematically complete. The proof is ZERO TRUST.
     
-    "Security proven. Family driven."
+    "Security proven. Mathematically verified."
     
     ========================================================================
 *)

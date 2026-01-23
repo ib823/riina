@@ -2,7 +2,6 @@
 //!
 //! Tokenizes RIINA source code.
 //! RIINA = Rigorous Immutable Integrity No-attack Assured
-//! Named for: Reena + Isaac + Imaan
 //!
 //! Reference: RIINA-LANG-LEXER-SPEC_v1_0_0.md
 //!
