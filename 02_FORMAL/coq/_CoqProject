@@ -64,6 +64,10 @@ properties/MasterTheorem.v
 # Axiom Elimination Proofs (Session 30)
 properties/ValRelStepLimit_PROOF.v
 
+# Fundamental Theorem Infrastructure (Session 38)
+# Disabled: val_rel_at_type structure mismatch - needs proof updates
+# properties/FundamentalTheorem.v
+
 # Phase 7: Industry-Specific Proofs (DISABLED - placeholder stubs need type fixes)
 # Reference: 04_SPECS/industries/*.md
 # Industries/IndustryMilitary.v
