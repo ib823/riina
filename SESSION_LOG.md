@@ -1,5 +1,66 @@
 # Session Log
 
+## 2026-01-22 (Session 34 cont.): TFn Case Expanded in Mutual Induction
+
+**Goal:** Fill in the HO case for `val_rel_n_step_up` using mutual induction approach.
+
+**Major Accomplishments:**
+
+### TFn Case Structure Complete (90%)
+
+The `step_up_and_fundamental_mutual` theorem now has a fully expanded TFn case:
+
+```coq
+(* TFn case - higher-order function type *)
+{ intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel.
+  (* 1. Downgrade arguments: val_rel_n (S n') → val_rel_n n' via mono *)
+  assert (Hargrel_n' : val_rel_n n' Σ' T1 arg1 arg2).
+  { apply (val_rel_n_mono n' (S n') Σ' T1 arg1 arg2); [lia | exact Hargrel]. }
+  (* 2. Downgrade stores: store_rel_n (S n') → store_rel_n n' via mono *)
+  assert (Hstrel_n' : store_rel_n n' Σ' st1 st2).
+  { apply (store_rel_n_mono n' (S n') Σ' st1 st2); [lia | exact Hstrel]. }
+  (* 3. Apply val_rel_at_type at step n' from Hrel *)
+  specialize (Hrat_n' Σ' Hext arg1 arg2 ...) as [r1 [r2 [st1' [st2' ...]]]].
+  (* 4. Step up results using IH_step_up(n') *)
+  exists r1, r2, st1', st2', ctx', Σ''.
+  ... }
+```
+
+### Key Proof Structure
+
+1. **Downgrade arguments**: `val_rel_n (S n') → val_rel_n n'` via `val_rel_n_mono`
+2. **Downgrade stores**: `store_rel_n (S n') → store_rel_n n'` via `store_rel_n_mono`
+3. **Apply val_rel_at_type** at step n' from Hrel hypothesis
+4. **Step up results** using `IH_step_up(n')` from mutual induction
+
+### Type Case Handling
+
+| Type Category | Count | Method |
+|---------------|-------|--------|
+| TFn (function) | 1 | Full proof structure |
+| Structural (TRef) | 1 | `exact Hrat_n'` |
+| True cases (TList, TOption, TSecret, TProof, TCapability) | 5 | `exact I` |
+| Compound (TProd, TSum, TConstantTime, TZeroizing) | 4 | Admitted |
+
+### Remaining Admits (8 total)
+
+| Location | Admit | Reason |
+|----------|-------|--------|
+| TFn case | typing for r1 if T2 is HO | Needs `multi_step_preservation` |
+| TFn case | typing for r2 if T2 is HO | Needs `multi_step_preservation` |
+| TFn case | store_rel_n_step_up premises | Needs `store_wf`, `store_has_values` |
+| TProd/TSum/TConstantTime/TZeroizing | Full structure | 4 admits |
+| fundamental_at_step (S n') | Body | 1 admit |
+
+**Metrics:**
+| Metric | Value |
+|--------|-------|
+| Core Axioms | 1 (`val_rel_n_step_up`) |
+| Build Status | ✅ PASSING |
+| TFn Case Progress | 90% complete |
+
+---
+
 ## 2026-01-22 (Session 34 cont.): T_Var, T_Classify, T_Prove Proven
 
 **Goal:** Complete remaining fundamental theorem cases.
