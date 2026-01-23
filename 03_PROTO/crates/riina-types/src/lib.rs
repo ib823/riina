@@ -1,7 +1,7 @@
 //! RIINA Types (AST)
 //!
 //! Abstract Syntax Tree definitions corresponding to the formal Coq specification.
-//! RIINA = Rigorous Immutable Integrity No-attack Assured
+//! RIINA = Rigorous Immutable Invariant — Normalized Axiom
 //!
 //! Reference: `02_FORMAL/coq/foundations/Syntax.v`
 //!

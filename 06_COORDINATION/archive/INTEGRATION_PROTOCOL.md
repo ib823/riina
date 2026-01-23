@@ -18,7 +18,7 @@
 ║  Target: https://github.com/ib823/proof                                                             ║
 ║  Classification: ULTRA KIASU | ZERO TRUST | FORENSIC TRACEABILITY                                   ║
 ║                                                                                                      ║
-║  "Security proven. Mathematically verified."                                                                   ║
+║  "QED Eternum."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -1457,7 +1457,7 @@ git push origin main
 ║  • Complete traceability from spec to proof                                                         ║
 ║  • Cryptographic integrity for all transfers                                                        ║
 ║                                                                                                      ║
-║  "Security proven. Mathematically verified."                                                                   ║
+║  "QED Eternum."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

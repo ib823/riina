@@ -936,7 +936,7 @@ guarantee** in the history of programming language verification.
 ║                                                                                  ║
 ║    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE         ║
 ║                                                                                  ║
-║    RIINA: Rigorous Immutable Integrity No-attack Assured                         ║
+║    RIINA: Rigorous Immutable Invariant — Normalized Axiom                         ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```

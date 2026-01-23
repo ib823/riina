@@ -12,7 +12,7 @@ Formal proofs and prototype implementation for RIINA.
 |  ██║  ██║██║██║██║ ╚████║██║  ██║                                                          |
 |  ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                                          |
 |                                                                                             |
-|  Rigorous Immutable Integrity No-attack Assured                                             |
+|  Rigorous Immutable Invariant — Normalized Axiom                                             |
 |                                                                                             |
 |  RIINA PROOF REPOSITORY                                                                     |
 |                                                                                             |
@@ -21,7 +21,7 @@ Formal proofs and prototype implementation for RIINA.
 |                                                                                             |
 |  Mode: ULTRA KIASU | PARANOID | ZERO TRUST | INFINITE TIMELINE                              |
 |                                                                                             |
-|  "Security proven. Mathematically verified."                                                |
+|  "QED Eternum."                                                |
 |                                                                                             |
 +=============================================================================================+
 ```
@@ -31,7 +31,7 @@ Formal proofs and prototype implementation for RIINA.
 ### Name Origin
 
 ```
-RIINA = Rigorous Immutable Integrity No-attack Assured
+RIINA = Rigorous Immutable Invariant — Normalized Axiom
 
 R  — Rigorous (formal verification)
 I  — Immutable (security guarantees)
@@ -155,6 +155,6 @@ MIT OR Apache-2.0
 
 ---
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*"Security proven. Mathematically verified."*
+*"QED Eternum."*

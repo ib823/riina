@@ -424,7 +424,7 @@ riina-crypto = "1.0"     # RIINA crypto primitives
 ║  RIINA is a LANGUAGE. Products are PROGRAMS written in RIINA.                                       ║
 ║  The dependency flows FROM applications TO RIINA, not the reverse.                                  ║
 ║                                                                                                      ║
-║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
+║  RIINA: Rigorous Immutable Invariant — Normalized Axiom                                              ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

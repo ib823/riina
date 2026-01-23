@@ -1,6 +1,6 @@
 # RIINA Prototype Workspace
 # Track B: Compiler Implementation
-# RIINA = Rigorous Immutable Integrity No-attack Assured
+# RIINA = Rigorous Immutable Invariant — Normalized Axiom
 
 [workspace]
 resolver = "2"

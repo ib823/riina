@@ -270,4 +270,4 @@ GREP:   EMPTY   ✓
 
 ---
 
-*"Security proven. Mathematically verified."*
+*"QED Eternum."*

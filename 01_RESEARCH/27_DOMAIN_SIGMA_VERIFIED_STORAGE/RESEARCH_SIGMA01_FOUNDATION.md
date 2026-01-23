@@ -528,6 +528,6 @@ Theorem merkle_inclusion_proof : forall tree page proof,
 
 **"A database without a proof is a data breach waiting to happen."**
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*Security proven. Mathematically verified.*
+*QED Eternum.*

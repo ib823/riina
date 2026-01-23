@@ -46,7 +46,7 @@ Your output MUST be:
 
 ### 1.1 What is RIINA?
 
-RIINA (Rigorous Immutable Integrity No-attack Assured) is a formally verified programming language where ALL security properties are mathematically proven at compile time. The formal verification is done in Coq.
+RIINA (Rigorous Immutable Invariant — Normalized Axiom) is a formally verified programming language where ALL security properties are mathematically proven at compile time. The formal verification is done in Coq.
 
 ### 1.2 Current State
 

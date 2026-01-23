@@ -1,12 +1,12 @@
 (** ============================================================================
-    RIINA — Rigorous Immutable Integrity No-attack Assured
+    RIINA — Rigorous Immutable Invariant — Normalized Axiom
     
     FILE: val_rel_n_step_up_fo.v
     PURPOSE: Step-up lemma for first-order types in step-indexed logical relations
     STATUS: COMPLETE — ZERO AXIOMS — PURE CONSTRUCTIVE PROOF
     
     Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR
-    "Security proven. Mathematically verified."
+    "QED Eternum."
     
     This file proves that for first-order types, step-indexed value relations
     can be "stepped up" from n to S n without any external axioms.
@@ -429,5 +429,5 @@ Print Assumptions val_rel_n_fo_extract.
     
     ZERO AXIOMS. ZERO ADMITTED PROOFS. PURE CONSTRUCTIVE PROOF.
     
-    "Security proven. Mathematically verified."
+    "QED Eternum."
     ============================================================================ *)

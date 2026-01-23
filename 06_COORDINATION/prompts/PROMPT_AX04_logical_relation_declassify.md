@@ -65,4 +65,4 @@ Look up how `val_rel_at_type` handles `TSecret`:
 
 ---
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

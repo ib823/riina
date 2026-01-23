@@ -489,6 +489,6 @@ This specification follows:
 
 ---
 
-*"Security proven. Mathematically verified."*
+*"QED Eternum."*
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

@@ -1,7 +1,7 @@
 //! RIINA Lexer
 //!
 //! Tokenizes RIINA source code.
-//! RIINA = Rigorous Immutable Integrity No-attack Assured
+//! RIINA = Rigorous Immutable Invariant — Normalized Axiom
 //!
 //! Reference: RIINA-LANG-LEXER-SPEC_v1_0_0.md
 //!

@@ -58,9 +58,9 @@
 //! - **Secure**: Security labels preserved through translation
 //! - **Traced**: Effect annotations maintained for verification
 //!
-//! RIINA = Rigorous Immutable Integrity No-attack Assured
+//! RIINA = Rigorous Immutable Invariant — Normalized Axiom
 //!
-//! "Security proven. Mathematically verified."
+//! "QED Eternum."
 
 #![forbid(unsafe_code)]
 #![warn(clippy::all)]
