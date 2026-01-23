@@ -118,11 +118,13 @@
 
 | Priority | File | Count | Description |
 |----------|------|-------|-------------|
-| P0 | NonInterference_v2_LogicalRelation.v | 8 | Mutual induction |
+| P0 | NonInterference_v2_LogicalRelation.v | 33 admits + 3 Admitted | Mutual induction |
 | P1 | AxiomEliminationVerified.v | 15 | Step-1 termination |
 | P1 | MasterTheorem.v | 7 | Composition |
-| P2 | Other files | ~33 | Various |
-| **TOTAL** | | ~63 | |
+| P2 | Other files | ~30 | Various |
+| **TOTAL** | | ~88 | |
+
+**Key Blocker:** val_rel_at_type predicate step-up requires typing derivation from val_rel_n.
 
 ---
 
@@ -187,17 +189,27 @@
 | # | Action | Blocker | Priority |
 |---|--------|---------|----------|
 | ~~1~~ | ~~Prove `multi_step_preservation`~~ | ~~None~~ | ✅ DONE |
-| 2 | Derive arg typing from val_rel_n | None | P0 |
-| 3 | Fill store_rel_n_step_up premises | #2 | P0 |
-| 4 | Handle TProd/TSum compound types | None | P1 |
+| 2 | Add typing to val_rel_n definition | Design decision | P0 |
+| 3 | Prove val_rel_at_type predicate monotonicity | #2 | P0 |
+| 4 | Fill remaining TFn/TProd/TSum admits | #3 | P1 |
 | 5 | Complete fundamental_at_step body | #4 | P1 |
 
 ### 6.3 Blockers
 
 | Blocker | Impact | Resolution Path |
 |---------|--------|-----------------|
-| arg typing from val_rel_n | 2 TFn admits | Need lemma: val_rel_n → typing for HO |
-| store_wf premises | 1 TFn admit | Extract from store_rel |
+| val_rel_n lacks typing | 33+ admits | Modify definition to include typing |
+| Predicate step-up | TProd/TSum cases | Need monotonicity wrt predicates |
+
+### 6.4 Design Decision Required
+
+The logical relation `val_rel_n` doesn't include typing information. To complete the step-up proof, we need either:
+
+1. **Modify val_rel_n definition** to include `has_type` conjunct for HO types
+2. **Add typing premises to val_rel_at_type** for TFn arguments
+3. **Prove semantic typing lemma**: val_rel_n n Σ T v1 v2 → has_type nil Σ Public v1 T ε
+
+Option 1 is cleanest but requires re-checking all existing proofs.
 
 ---
 
@@ -206,9 +218,9 @@
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v
 Last Function: step_up_and_fundamental_mutual
-Last Line    : ~2565 (TFn typing admits)
-Next Action  : Derive arg typing from val_rel_n
-Git Commit   : a9dec36
+Last Line    : ~2565 (TFn/TProd/TSum admits)
+Next Action  : Design decision on val_rel_n typing
+Git Commit   : 769ba75
 ```
 
 ---
