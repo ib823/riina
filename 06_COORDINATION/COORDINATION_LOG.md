@@ -33,7 +33,7 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-23 Session 38)
+### Grand Totals (2026-01-23 Session 39)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
@@ -46,7 +46,17 @@
 | **Admits in Core** | 5 | NonInterference_v2.v |
 | **Threats Covered** | 1,231+ | All made obsolete |
 
-### Recent Progress (Session 38)
+### Recent Progress (Session 39)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| multi_step_preservation | ✅ ADDED | Extends single-step to -->* |
+| store_ty_extends_trans | ✅ ADDED | Transitivity lemma |
+| NonInterference_v2.v | ✅ STABILIZED | Reverted broken changes |
+| Admit classification | ✅ COMPLETE | 2 provable, 3 semantically justified |
+| FundamentalTheorem.v | ⚪ DISABLED | Needs destruct on first_order_type |
+
+### Previous Progress (Session 38)
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -56,7 +66,7 @@
 | Helper lemma integration | ✅ COMPLETE | Reduced admits from 8 to 5 |
 | FundamentalTheorem.v | ⚪ DISABLED | Needs val_rel_at_type structure update |
 
-### Previous Progress (Session 30)
+### Earlier Progress (Session 30)
 
 | Item | Status | Notes |
 |------|--------|-------|
