@@ -29,7 +29,7 @@
 | Core Axioms | 1 | 0 | 🟡 99% eliminated |
 | Fundamental Theorem | 22/24 | 24/24 | 🟡 92% complete |
 | Coq Build | PASSING | PASSING | ✅ GREEN |
-| Admits in NonInterference_v2.v | 9 | 0 | 🟡 Reduced from 11 |
+| Admits in NonInterference_v2.v | 4 | 0 | 🟡 Reduced from 9 |
 | Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
 
 **Session 40 Key Achievements:**
@@ -38,7 +38,8 @@
 - Proved `typing_nil_implies_closed` lemma (eliminated 2 admits)
 - Reorganized FO helper lemmas (`val_rel_at_type_fo_refl`, `val_rel_at_type_fo_trivial`)
 - Part 2 (store_rel step-up) n=S n' case now **FULLY PROVEN**
-- Reduced admits from 11 → 9
+- **MAJOR SIMPLIFICATION:** Replaced legacy `val_rel_n_step_up_by_type` and `store_rel_n_step_up` proofs with corollary calls (eliminated 5 admits)
+- Reduced admits from 11 → 4
 
 ---
 
@@ -125,29 +126,30 @@
 
 | Priority | File | Count | Description |
 |----------|------|-------|-------------|
-| P0 | NonInterference_v2.v | 9 admits | See detailed breakdown below |
+| P0 | NonInterference_v2.v | 4 admits | See detailed breakdown below |
 | P1 | NonInterference_v2_LogicalRelation.v | ~66 admits | Logical relation infrastructure |
 | P2 | Other properties/ files | ~30 | Various |
-| **TOTAL** | | ~75 Admitted + admits | |
+| **TOTAL** | | ~70 Admitted + admits | |
 
-**Admit Classification (NonInterference_v2.v) - Session 40:**
+**Admit Classification (NonInterference_v2.v) - Session 40 (Updated):**
 
 | Location | Line | Category | Description |
 |----------|------|----------|-------------|
 | `val_rel_at_type_fo_trivial` | 284, 286 | Justified | TSum mixed constructors (HIGH security) |
 | `combined_step_up_all` Part 1 | 1295 | Fundamental Theorem | HO type case |
 | `combined_step_up_all` Part 2 | 1338 | Justified | Non-trivial HIGH FO type |
-| `val_rel_n_step_up_by_type` | 1479, 1541, 1551, 1555 | Legacy axiom | Original axiom proof structure |
-| `store_rel_n_step_up` | 1650 | Justified | HIGH security case |
 
-**Proven in Session 40:**
+**Proven/Eliminated in Session 40:**
 - ✅ `typing_nil_implies_closed` - Well-typed nil-context terms are closed
 - ✅ FO bootstrap LOW case - Uses `stores_agree_low_fo` + `val_rel_at_type_fo_refl`
 - ✅ FO bootstrap HIGH trivial case - Uses `val_rel_at_type_fo_trivial`
 - ✅ Part 2 n=S n' case - **FULLY PROVEN** using strong induction IH
+- ✅ `val_rel_n_step_up_by_type` - **SIMPLIFIED** to use `val_rel_n_step_up_from_combined` (4 admits eliminated)
+- ✅ `store_rel_n_step_up` - **SIMPLIFIED** to use `store_rel_n_step_up_from_combined` (1 admit eliminated)
 
 **Infrastructure Added (Sessions 39-40):**
 - `combined_step_up` predicate and `combined_step_up_all` theorem
+- `val_rel_n_step_up_from_combined` and `store_rel_n_step_up_from_combined` corollaries
 - `store_rel_n_step_up_with_val_IH` helper lemma
 - `typing_nil_implies_closed` lemma (moved early in file)
 - FO helper lemmas reorganized to avoid forward references
@@ -205,7 +207,7 @@
 
 ### 6.1 Active Work
 
-**Objective:** Eliminate remaining admits in NonInterference_v2.v (9 → 0)
+**Objective:** Eliminate remaining admits in NonInterference_v2.v (4 → 0)
 
 **Approach:** Strong induction via `combined_step_up_all` + targeted lemma proofs
 
@@ -220,9 +222,10 @@
 | ~~3~~ | ~~Reorganize FO helper lemmas~~ | ✅ DONE | - |
 | ~~4~~ | ~~Prove FO bootstrap LOW case~~ | ✅ DONE | - |
 | ~~5~~ | ~~Prove FO bootstrap HIGH trivial case~~ | ✅ DONE | - |
-| 6 | Eliminate legacy admits in val_rel_n_step_up_by_type | 🟡 IN PROGRESS | P1 |
-| 7 | Review justified admits for potential proofs | Pending | P2 |
-| 8 | Prove Fundamental Theorem HO case | Requires compatibility | P3 |
+| ~~6~~ | ~~Eliminate legacy admits in val_rel_n_step_up_by_type~~ | ✅ DONE | - |
+| ~~7~~ | ~~Simplify store_rel_n_step_up to use corollary~~ | ✅ DONE | - |
+| 8 | Review justified admits for potential proofs | Pending | P2 |
+| 9 | Prove Fundamental Theorem HO case | Requires compatibility | P3 |
 
 ### 6.3 Blockers
 
@@ -248,27 +251,26 @@
    - n=0 Bootstrap FO HIGH non-trivial: Justified admit
    - n=S n' case: ✅ **FULLY PROVEN** using IH_strong
 
-**Remaining admits (9 total):**
+**Remaining admits (4 total):**
 
 | Category | Count | Eliminable? |
 |----------|-------|-------------|
 | Fundamental Theorem (HO) | 1 | Requires ~500 lines of compatibility lemmas |
 | Justified (TSum mixed) | 2 | No - semantically sound but unprovable |
-| Justified (HIGH non-trivial) | 2 | No - HIGH data doesn't need equality |
-| Legacy axiom proof | 4 | Yes - can be replaced by combined_step_up |
+| Justified (HIGH non-trivial) | 1 | No - HIGH data doesn't need equality |
 
 ---
 
 ## 7. SESSION CHECKPOINT
 
 ```
-Session      : 40
+Session      : 40 (continued)
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: combined_step_up_all (strong induction theorem)
-Next Action  : Continue eliminating admits - target remaining justified admits
-Git Commit   : 9f5d1d8
+Last Function: val_rel_n_step_up_by_type, store_rel_n_step_up (simplified)
+Next Action  : Analyze remaining 4 admits for further elimination
+Git Commit   : (pending)
 Build Status : ✅ PASSING
-Admits       : 9 in NonInterference_v2.v (down from 11)
+Admits       : 4 in NonInterference_v2.v (down from 9)
 
 Session 40 Accomplishments:
 1. STRUCTURAL BREAKTHROUGH: combined_step_up_all with strong induction
@@ -285,12 +287,15 @@ Session 40 Accomplishments:
    - Removed duplicate definitions
    - Clean separation of concerns
 
-4. REMAINING ADMITS (9 total):
+4. MAJOR SIMPLIFICATION (Session 40 continued):
+   - val_rel_n_step_up_by_type: Replaced 130+ lines with 4-line corollary call
+   - store_rel_n_step_up: Replaced 90+ lines with 4-line corollary call
+   - Total admits eliminated: 5 (from legacy ty_size_induction approach)
+
+5. REMAINING ADMITS (4 total):
    - 2 justified: TSum mixed constructors (semantically sound)
    - 1 Fundamental Theorem: HO type case in Part 1
-   - 1 justified: Non-trivial HIGH FO bootstrap
-   - 4 legacy: val_rel_n_step_up_by_type axiom proof
-   - 1 justified: store_rel_n_step_up HIGH case
+   - 1 justified: Non-trivial HIGH FO bootstrap in Part 2
 ```
 
 ---

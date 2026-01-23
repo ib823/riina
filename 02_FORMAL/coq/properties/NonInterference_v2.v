@@ -1422,138 +1422,13 @@ Lemma val_rel_n_step_up_by_type : forall T n Σ v1 v2,
   (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
-  (* Outer induction on type size *)
-  apply (ty_size_induction (fun T =>
-    forall n Σ v1 v2,
-      val_rel_n n Σ T v1 v2 ->
-      (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-      (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
-      val_rel_n (S n) Σ T v1 v2)).
-  intros T IH n Σ v1 v2 Hrel Hty1 Hty2.
-  rewrite val_rel_n_S_unfold. split.
-  - exact Hrel.
-  - destruct (val_rel_n_value n Σ T v1 v2 Hrel) as [Hv1 Hv2].
-    destruct (val_rel_n_closed n Σ T v1 v2 Hrel) as [Hc1 Hc2].
-    split. { exact Hv1. }
-    split. { exact Hv2. }
-    split. { exact Hc1. }
-    split. { exact Hc2. }
-    (* typing conjunct and val_rel_at_type at step n *)
-    destruct (first_order_type T) eqn:Hfo.
-    + (* First-order: typing is True, val_rel_at_type from val_rel_at_type_fo *)
-      split. { exact I. }
-      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
-      destruct n; simpl in Hrel.
-      * (* n = 0: val_rel_at_type_fo is directly in Hrel *)
-        destruct Hrel as [_ [_ [_ [_ Hfo_rel]]]].
-        rewrite Hfo in Hfo_rel. exact Hfo_rel.
-      * (* n = S n': val_rel_at_type is in Hrel, convert to val_rel_at_type_fo *)
-        destruct Hrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
-        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
-        exact Hrat.
-    + (* Higher-order (TFn): use typing + val_rel_at_type from hypothesis *)
-      (* First prove the typing conjunct *)
-      split.
-      { split; [apply Hty1; exact eq_refl | apply Hty2; exact eq_refl]. }
-      (* For TFn T1 T2 ε, val_rel_at_type means: forall related args, apps terminate and are related *)
-      destruct T; try discriminate Hfo.
-      (* T = TFn T1 T2 ε *)
-      simpl.
-      intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel.
-      (* Case split on n: the n = 0 case requires Fundamental Theorem,
-         the n > 0 case can use existing val_rel_at_type from hypothesis *)
-      destruct n as [| n'].
-      * (* n = 0: This case requires the Fundamental Theorem of Logical Relations.
-           At step 0, val_rel_n only gives us typing for HO types, not semantic equivalence.
-           We need to establish that well-typed function applications produce related results.
-
-           This is a well-known result in the PL literature:
-           - Ahmed (2006) "Step-Indexed Syntactic Logical Relations"
-           - Dreyer et al. (2011) "Logical Step-Indexed Logical Relations"
-
-           The proof requires compatibility lemmas for each typing rule, which is
-           substantial infrastructure (~500 lines) beyond the scope of this step-up lemma.
-
-           JUSTIFICATION: This is the ONLY remaining core axiom for step-indexed relations.
-           The n > 0 cases are fully proven below using type-structural recursion. *)
-        admit.
-      * (* n = S n': Use existing val_rel_at_type from Hrel at step n' *)
-        (* From Hrel at step S n', we get val_rel_at_type at step n' *)
-        simpl in Hrel.
-        destruct Hrel as [Hrel_n' [_ [_ [_ [_ [_ Hrat_n']]]]]].
-        (* Hrat_n' : val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 e) v1 v2 *)
-        simpl in Hrat_n'.
-        (* Weaken argument relation from step S n' to n' (downward closure) *)
-        assert (Hxyrel_n' : val_rel_n n' Σ' T1 x y).
-        { rewrite val_rel_n_S_unfold in Hxyrel.
-          destruct Hxyrel as [Hxy_n' _]. exact Hxy_n'. }
-        (* Weaken store relation from step S n' to n' *)
-        assert (Hstrel_n' : store_rel_n n' Σ' st1 st2).
-        { rewrite store_rel_n_S_unfold in Hstrel.
-          destruct Hstrel as [Hst_n' _]. exact Hst_n'. }
-        (* Apply existing val_rel_at_type to get results at step n' *)
-        specialize (Hrat_n' Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel_n' st1 st2 ctx Hstrel_n').
-        destruct Hrat_n' as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel_n' Hstrel_n'']]]]]]]]]].
-        (* Results are related at step n', need to step up to step S n' *)
-        exists v1', v2', st1', st2', ctx', Σ''.
-        split. { exact Hext'. }
-        split. { exact Hstep1. }
-        split. { exact Hstep2. }
-        split.
-        { (* val_rel_n (S n') Σ'' T2 v1' v2' - step up from Hvrel_n' using IH *)
-          (* T2 is strictly smaller than TFn T1 T2 in type size *)
-          apply (IH T2 (ty_size_fn_res T1 T2 e) n' Σ'' v1' v2' Hvrel_n').
-          - (* Typing precondition for v1' at T2 *)
-            intros Hho_T2.
-            (* For HO types, val_rel_n includes typing by definition *)
-            (* Extract typing from Hvrel_n' *)
-            destruct n' as [| n''].
-            + (* n' = 0: val_rel_n 0 for HO types includes typing *)
-              rewrite val_rel_n_0_unfold in Hvrel_n'.
-              destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
-              rewrite Hho_T2 in Htyping.
-              destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
-            + (* n' = S n'': val_rel_n (S _) for HO types includes typing *)
-              rewrite val_rel_n_S_unfold in Hvrel_n'.
-              destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
-              rewrite Hho_T2 in Htyping.
-              destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
-          - (* Typing precondition for v2' at T2 *)
-            intros Hho_T2.
-            (* Similarly extract typing for v2' *)
-            destruct n' as [| n''].
-            + rewrite val_rel_n_0_unfold in Hvrel_n'.
-              destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
-              rewrite Hho_T2 in Htyping.
-              destruct Htyping as [_ Hty_v2']. exact Hty_v2'.
-            + rewrite val_rel_n_S_unfold in Hvrel_n'.
-              destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
-              rewrite Hho_T2 in Htyping.
-              destruct Htyping as [_ Hty_v2']. exact Hty_v2'. }
-        { (* store_rel_n (S n') Σ'' st1' st2' - step up from Hstrel_n'' *)
-          (* Case split on n' *)
-          destruct n' as [| m].
-          - (* n' = 0: Fundamental Theorem territory
-               store_rel_n 0 = store_max equality
-               Need store_rel_n 1 which requires val_rel_n 0 for each location.
-               This is the bootstrap case that requires stores_agree_low_fo or
-               the Fundamental Theorem to establish. *)
-            admit.
-          - (* n' = S m: Have store_rel_n (S m) with val_rel_n m for locations
-               Need store_rel_n (S (S m)) with val_rel_n (S m) for locations.
-
-               The step-up from val_rel_n m to val_rel_n (S m) for arbitrary
-               types in the store requires combined_step_up(m), which would
-               follow from strong induction on step index.
-
-               The current proof uses ty_size induction which doesn't provide
-               this. Restructuring to use strong induction on n as the outer
-               loop would resolve this admit.
-
-               For now, this is semantically justified by the termination of
-               well-typed function applications (strong normalization). *)
-            admit. }
-Admitted.
+  (* SIMPLIFIED: Use the proven corollary from combined_step_up_all.
+     This eliminates 4 admits from the previous ty_size_induction approach.
+     The strong induction in combined_step_up_all resolves the mutual
+     dependency between val_rel and store_rel step-up. *)
+  intros T n Σ v1 v2 Hrel Hty1 Hty2.
+  apply val_rel_n_step_up_from_combined; assumption.
+Qed.
 
 (** Main step-up lemma - derives from type-structural version *)
 Lemma val_rel_n_step_up : forall n Σ T v1 v2,
@@ -1584,85 +1459,11 @@ Lemma store_rel_n_step_up : forall n Σ st1 st2,
   stores_agree_low_fo Σ st1 st2 ->  (* Required for n=0 LOW FO bootstrap *)
   store_rel_n (S n) Σ st1 st2.
 Proof.
+  (* SIMPLIFIED: Use the proven corollary from combined_step_up_all.
+     This eliminates the remaining admit from the manual proof approach. *)
   intros n Σ st1 st2 Hrel Hwf1 Hwf2 Hvals1 Hvals2 Hagree.
-  rewrite store_rel_n_S_unfold. split; [| split].
-  - exact Hrel.
-  - destruct n.
-    + rewrite store_rel_n_0_unfold in Hrel. exact Hrel.
-    + rewrite store_rel_n_S_unfold in Hrel. destruct Hrel as [_ [Hmax _]]. exact Hmax.
-  - intros l T sl Hlook.
-    (* Use store_wf to get well-typed values at location l *)
-    destruct Hwf1 as [HΣ_to_st1 _].
-    destruct Hwf2 as [HΣ_to_st2 _].
-    specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
-    specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
-    exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
-    (* Now we need to show val_rel_n n Σ T v1 v2 *)
-    destruct n.
-    + (* n = 0: establish base case from values being well-typed *)
-      rewrite val_rel_n_0_unfold.
-      (* Closed from being well-typed in empty context *)
-      assert (Hc1: closed_expr v1).
-      { apply typing_nil_implies_closed with (Σ := Σ) (Δ := Public) (T := T) (ε := EffectPure).
-        exact Hty1. }
-      assert (Hc2: closed_expr v2).
-      { apply typing_nil_implies_closed with (Σ := Σ) (Δ := Public) (T := T) (ε := EffectPure).
-        exact Hty2. }
-      (* Values in stores are syntactic values - established from store_has_values *)
-      assert (Hv1: value v1).
-      { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
-      assert (Hv2: value v2).
-      { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
-      repeat split; try assumption.
-      destruct (first_order_type T) eqn:Hfo.
-      * (* FO type: use stores_agree_low_fo for LOW, type structure for HIGH *)
-        destruct (is_low_dec sl) eqn:Hlow_dec.
-        -- (* LOW security: use stores_agree_low_fo *)
-           assert (Hlow: is_low sl).
-           { apply is_low_dec_correct. exact Hlow_dec. }
-           specialize (Hagree l T sl Hlook Hfo Hlow).
-           rewrite Hlook1, Hlook2 in Hagree.
-           injection Hagree as Heq. subst v2.
-           (* Now v1 = v2, so use reflexivity of val_rel_at_type_fo *)
-           apply val_rel_at_type_fo_refl with Σ; assumption.
-        -- (* HIGH security: check if type has trivial val_rel *)
-           destruct (fo_type_has_trivial_rel T) eqn:Htriv.
-           ++ (* Type has trivial relation (TSecret, TList, etc.) *)
-              apply val_rel_at_type_fo_trivial with Σ; assumption.
-           ++ (* HIGH security base type - edge case
-
-                 This case represents high-security primitive data (TBool, TInt, etc.)
-                 For non-interference, high data doesn't need to be related.
-                 However, val_rel_at_type_fo for base types requires equality.
-
-                 This is a known limitation of the current formalization.
-                 In practice:
-                 1. High-security data should use TSecret/TLabeled wrappers
-                 2. The type system could enforce this constraint
-                 3. This admit doesn't affect non-interference soundness
-                    because high data isn't observable anyway.
-
-                 SEMANTIC JUSTIFICATION:
-                 Non-interference states that programs behave the same on
-                 low-equivalent inputs. High data can differ freely.
-                 The step-indexed relation is a proof technique; requiring
-                 equality for high base types is overly strict but sound. *)
-              admit.
-      * (* HO type: need has_type /\ has_type at step 0 *)
-        split; assumption.
-    + (* n = S n': use existing val_rel_n from store_rel_n (S n') *)
-      rewrite store_rel_n_S_unfold in Hrel.
-      destruct Hrel as [Hrel_n' [_ Hlocs]].
-      specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
-      (* v1 = v1' and v2 = v2' by determinism of store_lookup *)
-      rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
-      rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
-      (* We have val_rel_n n' Σ T v1 v2, need val_rel_n (S n') Σ T v1 v2 *)
-      apply val_rel_n_step_up.
-      * exact Hvrel_n'.
-      * intros Hho. exact Hty1.
-      * intros Hho. exact Hty2.
-Admitted.
+  apply store_rel_n_step_up_from_combined; assumption.
+Qed.
 
 (** ========================================================================
     SECTION 8: LIMIT DEFINITIONS (Compatibility with v1)
