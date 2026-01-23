@@ -2441,6 +2441,22 @@ Proof.
         { exact Hstrel. }
 Admitted.
 
+(** Multi-step preservation - extends single-step preservation to multi-step.
+    This lemma is needed for typing premises in IH_step_up applications. *)
+Lemma multi_step_preservation : forall e e' T ε st st' ctx ctx' Σ,
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
+  (e, st, ctx) -->* (e', st', ctx') ->
+  exists Σ' ε',
+    store_ty_extends Σ Σ' /\
+    store_wf Σ' st' /\
+    has_type nil Σ' Public e' T ε'.
+Proof.
+  (* The proof follows by induction on multi-step, using preservation at each step.
+     See type_system/TypeSafety.v for similar structure. *)
+  admit.
+Admitted.
+
 (** The mutual induction theorem *)
 Theorem step_up_and_fundamental_mutual : forall n,
   step_up_and_fundamental n.
