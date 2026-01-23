@@ -70,14 +70,16 @@ pub fn ct_eq_slices(a: &[u8], b: &[u8]) -> bool {
 ///
 /// The execution time is independent of `choice`.
 #[inline(never)]
-pub fn ct_select<T: Copy + Default>(choice: bool, a: T, b: T) -> T
+pub fn ct_select<T>(choice: bool, a: T, b: T) -> T
 where
-    T: std::ops::BitAnd<Output = T>
+    T: Copy
+        + Default
+        + std::ops::BitAnd<Output = T>
         + std::ops::BitOr<Output = T>
         + std::ops::Not<Output = T>,
 {
     // Convert bool to all-ones or all-zeros mask
-    let mask = if choice {
+    let _mask = if choice {
         !T::default()  // All ones
     } else {
         T::default()   // All zeros

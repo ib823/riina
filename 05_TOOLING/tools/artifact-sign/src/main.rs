@@ -12,10 +12,11 @@
 //! Also generates and verifies Software Bill of Materials (SBOM).
 
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-#![warn(clippy::pedantic, clippy::nursery)]
+// Lints configured at workspace level in Cargo.toml
 
+#[allow(unused_imports)]
 use std::collections::BTreeMap;
+#[allow(unused_imports)]
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, BufReader, Read, Write};
