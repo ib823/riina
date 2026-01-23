@@ -252,19 +252,24 @@ The `val_rel_n_step_up` proof is now properly structured:
 
 ```
 Session      : 39
-Last File    : 02_FORMAL/coq/type_system/Preservation.v
-Last Function: multi_step_preservation (ADDED)
-Next Action  : Use multi_step_preservation to fill line 1209 admit
-Git Commit   : 8eaa1b9 [SESSION 39] Add multi_step_preservation theorem
+Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
+Last Function: val_rel_n_step_up_by_type (restructured admits)
+Next Action  : Implement Fundamental Theorem compatibility lemmas OR
+               restructure proof to use strong induction on step index
+Git Commit   : 2a346b8 [SESSION 39] Clarify admit structure
 Build Status : ✅ PASSING
-Admits       : 5 in NonInterference_v2.v
+Admits       : 6 in NonInterference_v2.v
 
 Session 39 Summary:
 - Added multi_step_preservation theorem in Preservation.v
 - Added store_ty_extends_trans transitivity lemma
 - Reverted broken uncommitted changes to NonInterference_v2.v
-- FundamentalTheorem.v disabled (needs destruct on first_order_type for abstract types)
-- Identified semantically justified admits vs provable admits
+- Added import for Coq.Arith.Wf_nat (well-founded induction infrastructure)
+- Restructured line 1209 admit into explicit cases:
+  - n'=0 case: Fundamental Theorem territory
+  - n'=S m case: Strong induction on step index needed
+- FundamentalTheorem.v disabled (needs destruct on first_order_type)
+- Documented 6 admits: 2 Fundamental Theorem, 1 strong induction, 3 justified
 ```
 
 ---
