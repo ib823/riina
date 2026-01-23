@@ -6,7 +6,7 @@
 ║  FORMAL PROOF DELEGATION: exp_rel_step1_case                                     ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR              ║
-║  "Security proven. Family driven."                                               ║
+║  "Security proven. Mathematically verified."                                               ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 

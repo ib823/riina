@@ -19,6 +19,15 @@ Require Import RIINA.properties.NonInterference_v2.
 
 Import ListNotations.
 
+(** Store typing weakening for has_type.
+    Standard Kripke property: if e has type T under store typing Σ,
+    then e has type T under any extension Σ' of Σ.
+    TODO: Prove via induction on typing derivation. *)
+Axiom has_type_store_weakening : forall Γ Σ Σ' Δ e T ε,
+  store_ty_extends Σ Σ' ->
+  has_type Γ Σ Δ e T ε ->
+  has_type Γ Σ' Δ e T ε.
+
 (** Transitivity of store typing extension *)
 Lemma store_ty_extends_trans_early : forall Σ1 Σ2 Σ3,
   store_ty_extends Σ1 Σ2 ->
@@ -97,11 +106,15 @@ Proof.
   - (* n = 0 *)
     rewrite val_rel_n_0_unfold in Hrel.
     rewrite val_rel_n_0_unfold.
+    (* Simplify the conditional using Hfo *)
+    rewrite Hfo in Hrel. rewrite Hfo.
     exact Hrel.
   - (* n = S n' *)
     rewrite val_rel_n_S_unfold in Hrel.
-    destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+    rewrite Hfo in Hrel.
+    destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
     rewrite val_rel_n_S_unfold.
+    rewrite Hfo.
     repeat split; try assumption.
     + apply IHn with Σ; assumption.
     + apply (val_rel_at_type_fo_equiv T Σ' (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
@@ -122,15 +135,25 @@ Proof.
   - (* n = 0 *)
     rewrite val_rel_n_0_unfold in Hrel.
     rewrite val_rel_n_0_unfold.
-    exact Hrel.
+    destruct (first_order_type T') eqn:Hfo.
+    + exact Hrel.
+    + (* HO type at step 0: need typing weakening *)
+      destruct Hrel as [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 Hty2]]]]].
+      repeat split; try assumption.
+      * apply has_type_store_weakening with Σ; assumption.
+      * apply has_type_store_weakening with Σ; assumption.
   - (* n = S n' *)
     destruct (first_order_decidable_local T') as [Hfo | Hho].
     + apply val_rel_n_mono_store_fo with Σ; assumption.
     + rewrite val_rel_n_S_unfold in Hrel.
-      destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]]].
+      rewrite Hho in Hrel.
+      destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [[Hty1 Hty2] Hrat]]]]]].
       rewrite val_rel_n_S_unfold.
+      rewrite Hho.
       repeat split; try assumption.
       * apply (IH_step Σ Σ' v1 v2 Hext Hrec).
+      * apply has_type_store_weakening with Σ; assumption.
+      * apply has_type_store_weakening with Σ; assumption.
       * destruct T'; simpl in *; try exact Hrat; try contradiction.
         -- (* TFn *)
            intros Σ_ext Hext' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore.

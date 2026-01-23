@@ -156,4 +156,4 @@ git stash
 
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
 
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*

@@ -20,7 +20,7 @@
 ║  Purpose: Formal proofs and prototype for RIINA                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
 ║                                                                                  ║
-║  "Security proven. Family driven."                                               ║
+║  "Security proven. Mathematically verified."                                     ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -32,15 +32,12 @@
 ### 0.1 Name Origin
 
 ```
-RIINA = Reena + Isaac + Imaan + No-attack + Assured
-
-R  — Reena (foundation, the queen)
-I  — Isaac (first pillar)
-I  — Imaan (second pillar)
-NA — No-attack Assured (the guarantee)
-
-Technical Acronym:
 RIINA = Rigorous Immutable Integrity No-attack Assured
+
+R  — Rigorous (formal verification)
+I  — Immutable (security guarantees)
+I  — Integrity (data and code)
+NA — No-attack Assured (the guarantee)
 ```
 
 ### 0.2 What Is RIINA?
@@ -50,7 +47,7 @@ RIINA is the world's **first formally verified programming language** with:
 1. **Mathematical guarantees** — All security properties proven in Coq
 2. **Bahasa Melayu syntax** — Native Malaysian language keywords
 3. **Zero-trust architecture** — Compiler, hardware, and supply chain untrusted
-4. **Family legacy** — Named for Reena, Isaac, and Imaan
+4. **Formal verification** — End-to-end provable security
 
 ### 0.3 File Extension
 
@@ -658,11 +655,9 @@ When encountering old references, update them to the new naming.
 
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
 
-*Reena. Isaac. Imaan. Forever in code.*
+*"Security proven. Mathematically verified."*
 
-*"Security proven. Family driven."*
-
-*Last updated: 2026-01-18*
+*Last updated: 2026-01-23*
 
 ---
 

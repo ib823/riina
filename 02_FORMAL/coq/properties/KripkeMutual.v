@@ -102,13 +102,16 @@ Proof.
   - (* n = 0: val_rel_n 0 doesn't depend on Σ at all *)
     rewrite val_rel_n_0_unfold in Hrel.
     rewrite val_rel_n_0_unfold.
+    rewrite Hfo in Hrel. rewrite Hfo.
     destruct Hrel as (Hv1 & Hv2 & Hc1 & Hc2 & Hrat).
-    (* For n=0, the definition doesn't involve Σ at all, so this is immediate *)
+    (* For n=0 FO types, the definition is val_rel_at_type_fo which doesn't involve Σ *)
     repeat split; assumption.
   - (* n = S n': use induction and val_rel_at_type_fo_independent *)
     rewrite val_rel_n_S_unfold in Hrel.
-    destruct Hrel as (Hrec & Hv1 & Hv2 & Hc1 & Hc2 & Hrat).
+    rewrite Hfo in Hrel.
+    destruct Hrel as (Hrec & Hv1 & Hv2 & Hc1 & Hc2 & _ & Hrat).
     rewrite val_rel_n_S_unfold.
+    rewrite Hfo.
     repeat split; try assumption.
     + (* Recursive case: val_rel_n n' Σ T v1 v2 *)
       apply IH with Σ'; assumption.
@@ -238,14 +241,18 @@ Proof.
   (* For first-order types, val_rel_n is Σ-independent.
      Both weakening and strengthening are the same: just transfer the relation. *)
   induction n as [| n' IH]; intros Σ Σ' T v1 v2 Hfo Hext Hrel.
-  - (* n = 0: val_rel_n 0 doesn't depend on Σ at all *)
+  - (* n = 0: val_rel_n 0 doesn't depend on Σ at all for FO types *)
     rewrite val_rel_n_0_unfold in Hrel.
     rewrite val_rel_n_0_unfold.
+    (* Rewrite the conditional to eliminate Σ dependency *)
+    rewrite Hfo in Hrel. rewrite Hfo.
     exact Hrel.
   - (* n = S n': use induction and val_rel_at_type_fo_independent *)
     rewrite val_rel_n_S_unfold in Hrel.
-    destruct Hrel as (Hrec & Hv1 & Hv2 & Hc1 & Hc2 & Hrat).
+    rewrite Hfo in Hrel.
+    destruct Hrel as (Hrec & Hv1 & Hv2 & Hc1 & Hc2 & _ & Hrat).
     rewrite val_rel_n_S_unfold.
+    rewrite Hfo.
     repeat split; try assumption.
     + (* Recursive case: val_rel_n n' Σ' T v1 v2 *)
       apply IH with Σ; assumption.

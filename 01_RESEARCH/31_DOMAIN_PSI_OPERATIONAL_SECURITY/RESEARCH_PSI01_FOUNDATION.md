@@ -876,4 +876,6 @@ biar kunci = KunciMasa::baru(
 
 **"The system is only as strong as its weakest human. Make sure no human is the weakest link."**
 
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*
+
+*Security proven. Mathematically verified.*

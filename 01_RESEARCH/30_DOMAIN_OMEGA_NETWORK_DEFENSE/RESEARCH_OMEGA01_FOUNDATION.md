@@ -761,4 +761,6 @@ fungsi nyahmampat(data: &[u8], had_output: usize)
 
 **"The network is hostile. Every packet is an attack until proven otherwise."**
 
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*
+
+*Security proven. Mathematically verified.*

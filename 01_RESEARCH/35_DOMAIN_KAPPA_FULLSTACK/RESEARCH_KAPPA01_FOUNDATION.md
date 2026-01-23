@@ -956,7 +956,7 @@ fungsi dapat_pengguna(id: UUID) -> PenggunaAwam {
 ║     are the ones who do."                                                        ║
 ║                                  — Steve Jobs                                    ║
 ║                                                                                  ║
-║    Named for: Reena + Isaac + Imaan — The foundation of everything.             ║
+║    RIINA: Rigorous Immutable Integrity No-attack Assured                        ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```

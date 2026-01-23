@@ -178,7 +178,7 @@ impl CEmitter {
         self.writeln(" * Corresponds to formal proofs in 02_FORMAL/coq/.");
         self.writeln(" * ");
         self.writeln(" * RIINA = Rigorous Immutable Integrity No-attack Assured");
-        self.writeln(" * \"Security proven. Family driven.\"");
+        self.writeln(" * \"Security proven. Mathematically verified.\"");
         self.writeln(" */");
         self.writeln("");
         self.writeln("/* Required C99 or later */");

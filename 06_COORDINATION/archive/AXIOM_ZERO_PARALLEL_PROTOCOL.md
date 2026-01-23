@@ -16,7 +16,7 @@
 ║    Method: Coordinated Multi-Worker Parallel Execution                                   ║
 ║    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE                 ║
 ║                                                                                          ║
-║    "Multiple minds, one goal: ZERO AXIOMS."                                              ║
+║    "Multiple minds, one goal: ZERO AXIOMS. Security proven. Mathematically verified."    ║
 ║                                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -894,7 +894,7 @@ cat > 06_COORDINATION/signals/AXIOM_ZERO_ACHIEVED.signal << 'EOF'
 ║    The first complete, axiom-free security guarantee                            ║
 ║    in the history of programming language verification.                          ║
 ║                                                                                  ║
-║    Named for: Reena + Isaac + Imaan — The foundation of everything.              ║
+║    RIINA: Rigorous Immutable Integrity No-attack Assured                         ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 EOF

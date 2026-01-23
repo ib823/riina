@@ -426,4 +426,4 @@ The file should be named: `val_rel_le_fo_step_independent_PROOF.v`
 ---
 
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR*
-*"Security proven. Family driven."*
+*"Security proven. Mathematically verified."*

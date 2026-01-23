@@ -11,7 +11,7 @@
 ║     ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                             ║
 ║                                                                                  ║
 ║     Rigorous Immutable Integrity No-attack Assured                               ║
-║     "Security proven. Family driven."                                            ║
+║     "Security proven. Mathematically verified."                                  ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -31,7 +31,7 @@
 | Coq Build | PASSING | PASSING | ✅ GREEN |
 | Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
 
-**Key Achievement:** Mutual induction approach for `val_rel_n_step_up` is 90% complete.
+**Key Achievement:** Modified `val_rel_n` to include typing conjuncts for HO types. Build passing with canonical semantic typing structure.
 
 ---
 
@@ -118,13 +118,14 @@
 
 | Priority | File | Count | Description |
 |----------|------|-------|-------------|
-| P0 | NonInterference_v2_LogicalRelation.v | 33 admits + 3 Admitted | Mutual induction |
-| P1 | AxiomEliminationVerified.v | 15 | Step-1 termination |
-| P1 | MasterTheorem.v | 7 | Composition |
-| P2 | Other files | ~30 | Various |
-| **TOTAL** | | ~88 | |
+| P0 | NonInterference_v2.v | 1 admit | Fundamental Theorem TFn case |
+| P1 | NonInterference_v2_LogicalRelation.v | ~20 admits | Typing conjunct propagation |
+| P1 | ApplicationComplete.v | ~10 admits | HO typing |
+| P1 | TypedConversion.v | ~8 admits | HO typing |
+| P2 | Other properties/ files | ~35 | Various |
+| **TOTAL** | | 61 Admitted + 74 admits | |
 
-**Key Blocker:** val_rel_at_type predicate step-up requires typing derivation from val_rel_n.
+**Key Blocker:** Fundamental Theorem compatibility lemmas for TFn application case.
 
 ---
 
@@ -189,38 +190,42 @@
 | # | Action | Blocker | Priority |
 |---|--------|---------|----------|
 | ~~1~~ | ~~Prove `multi_step_preservation`~~ | ~~None~~ | ✅ DONE |
-| 2 | Add typing to val_rel_n definition | Design decision | P0 |
-| 3 | Prove val_rel_at_type predicate monotonicity | #2 | P0 |
+| ~~2~~ | ~~Add typing to val_rel_n definition~~ | ~~Design decision~~ | ✅ DONE |
+| 3 | Prove val_rel_at_type predicate monotonicity | None | P0 |
 | 4 | Fill remaining TFn/TProd/TSum admits | #3 | P1 |
 | 5 | Complete fundamental_at_step body | #4 | P1 |
+| 6 | Prove `has_type_store_weakening` | None | P1 |
 
 ### 6.3 Blockers
 
 | Blocker | Impact | Resolution Path |
 |---------|--------|-----------------|
-| val_rel_n lacks typing | 33+ admits | Modify definition to include typing |
-| Predicate step-up | TProd/TSum cases | Need monotonicity wrt predicates |
+| ~~val_rel_n lacks typing~~ | ~~33+ admits~~ | ✅ RESOLVED - added typing conjuncts |
+| Fundamental Theorem | TFn app case | Need compatibility lemmas |
+| `has_type_store_weakening` axiom | ~20 lemmas | Standard Kripke property - provable |
 
-### 6.4 Design Decision Required
+### 6.4 Current State
 
-The logical relation `val_rel_n` doesn't include typing information. To complete the step-up proof, we need either:
+The `val_rel_n` definition now includes typing conjuncts for higher-order types:
+- For HO types at step 0: typing replaces val_rel_at_type_fo
+- For HO types at step S n': typing + val_rel_at_type
 
-1. **Modify val_rel_n definition** to include `has_type` conjunct for HO types
-2. **Add typing premises to val_rel_at_type** for TFn arguments
-3. **Prove semantic typing lemma**: val_rel_n n Σ T v1 v2 → has_type nil Σ Public v1 T ε
-
-Option 1 is cleanest but requires re-checking all existing proofs.
+The canonical semantic typing structure is in place. Remaining work:
+- Prove `val_rel_n_step_up` Fundamental Theorem case (line 1019 admit in NonInterference_v2.v)
+- Fill ~60 admits introduced by the definition change
 
 ---
 
 ## 7. SESSION CHECKPOINT
 
 ```
-Last File    : 02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v
-Last Function: step_up_and_fundamental_mutual
-Last Line    : ~2565 (TFn/TProd/TSum admits)
-Next Action  : Design decision on val_rel_n typing
-Git Commit   : 769ba75
+Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
+Last Function: val_rel_n (definition modified)
+Last Line    : ~1019 (TFn Fundamental Theorem admit)
+Next Action  : Prove compatibility lemmas for Fundamental Theorem
+Git Commit   : (pending)
+Build Status : ✅ PASSING
+Admits       : 61 Admitted + 74 admit tactics
 ```
 
 ---
@@ -252,7 +257,6 @@ Git Commit   : 769ba75
 ---
 
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
-*Named for: Reena + Isaac + Imaan*
 *"Every line of code backed by mathematical proof."*
 
 *Report Generated: 2026-01-23*

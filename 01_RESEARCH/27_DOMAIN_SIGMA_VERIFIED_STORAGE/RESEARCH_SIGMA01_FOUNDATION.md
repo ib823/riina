@@ -528,4 +528,6 @@ Theorem merkle_inclusion_proof : forall tree page proof,
 
 **"A database without a proof is a data breach waiting to happen."**
 
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*
+
+*Security proven. Mathematically verified.*

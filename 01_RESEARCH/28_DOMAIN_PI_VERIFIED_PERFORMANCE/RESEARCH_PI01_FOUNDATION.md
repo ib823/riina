@@ -600,4 +600,6 @@ Qed.
 
 **"Fast code that might be wrong is slow code that will fail."**
 
-*Named for: Reena + Isaac + Imaan — The foundation of everything.*
+*RIINA: Rigorous Immutable Integrity No-attack Assured*
+
+*Security proven. Mathematically verified.*

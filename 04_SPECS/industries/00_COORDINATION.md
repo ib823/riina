@@ -31,7 +31,7 @@
 ║  Classification: ULTRA KIASU | ZERO TRUST | INFINITE TIMELINE                                       ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
-║  "Security proven. Family driven."                                                                   ║
+║  "Security proven. Mathematically verified."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -536,7 +536,7 @@ Every track MUST pass this checklist before approval:
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║
-║  "Security proven. Family driven."                                                                   ║
+║  "Security proven. Mathematically verified."                                                                   ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
