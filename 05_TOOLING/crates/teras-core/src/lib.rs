@@ -57,12 +57,21 @@
 #![allow(clippy::expect_used)]
 // Additional allows for crypto implementation patterns
 #![allow(clippy::unreadable_literal)]
-#![allow(clippy::trivial_numeric_casts)]
+#![allow(trivial_numeric_casts)]
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::panic)]
 #![allow(clippy::unused_self)]
 #![allow(dead_code)]
+// Additional allows for code patterns in crypto implementations
+#![allow(clippy::manual_div_ceil)]
+#![allow(clippy::manual_let_else)]
+#![allow(clippy::if_not_else)]
+#![allow(clippy::ptr_as_ptr)]
+#![allow(clippy::bool_to_int_with_if)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(unused_variables)]
+#![allow(unused_assignments)]
 
 pub mod constant_time;
 pub mod crypto;

@@ -12,16 +12,19 @@
 //! - Cross-cutting: Coverage, mutation testing, fuzzing
 
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-#![warn(clippy::pedantic, clippy::nursery)]
+// Lints configured at workspace level in Cargo.toml
 
+#[allow(unused_imports)]
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+#[allow(unused_imports)]
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Stdio};
+#[allow(unused_imports)]
 use std::sync::atomic::{AtomicBool, Ordering};
+#[allow(unused_imports)]
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 

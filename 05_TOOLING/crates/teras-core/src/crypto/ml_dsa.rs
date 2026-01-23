@@ -28,6 +28,8 @@
 //! - Verification against NIST test vectors
 
 use crate::crypto::{CryptoError, CryptoResult, Signature};
+// Note: Shake128/Shake256 will be used when ML-DSA implementation is complete
+#[allow(unused_imports)]
 use crate::crypto::keccak::{Shake128, Shake256};
 use crate::zeroize::Zeroize;
 

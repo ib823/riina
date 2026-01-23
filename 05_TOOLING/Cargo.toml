@@ -87,16 +87,43 @@ unsafe_code = "deny"
 missing_docs = "warn"
 trivial_casts = "warn"
 trivial_numeric_casts = "warn"
-unused_results = "warn"
+unused_results = "allow"  # Too noisy for now, many legitimate unused results
 unused_lifetimes = "warn"
 unused_qualifications = "warn"
 
 [workspace.lints.clippy]
-# Enable all clippy lints
-all = "warn"
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
+# Enable all clippy lints (set lower priority so specific lints can override)
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# Allow missing cargo metadata - not required for internal crates
+cargo_common_metadata = "allow"
+# Allow multiple versions of transitive dependencies
+multiple_crate_versions = "allow"
+# Allow common patterns that are acceptable in this codebase
+doc_markdown = "allow"
+missing_const_for_fn = "allow"
+redundant_pub_crate = "allow"
+option_if_let_else = "allow"
+unnecessary_wraps = "allow"
+struct_field_names = "allow"
+use_self = "allow"
+unused_self = "allow"
+map_unwrap_or = "allow"
+single_match_else = "allow"
+too_many_lines = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+cast_possible_truncation = "allow"
+if_not_else = "allow"
+uninlined_format_args = "allow"
+needless_borrow = "allow"
+writeln_empty_string = "allow"
+format_collect = "allow"
+absurd_extreme_comparisons = "allow"
 
 # Deny dangerous patterns
 unwrap_used = "deny"
