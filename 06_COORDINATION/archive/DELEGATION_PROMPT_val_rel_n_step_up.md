@@ -2,11 +2,11 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║  RIINA — Rigorous Immutable Integrity No-attack Assured                          ║
+║  RIINA — Rigorous Immutable Invariant — Normalized Axiom                          ║
 ║  FORMAL PROOF DELEGATION: val_rel_n_step_up (Step-Indexed Step-Up Lemma)         ║
 ║                                                                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | EXTREME RIGOUR              ║
-║  "Security proven. Mathematically verified."                                               ║
+║  "QED Eternum."                                               ║
 ║                                                                                  ║
 ║  DIFFICULTY: HARD — Requires careful understanding of step-indexed relations     ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝

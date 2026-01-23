@@ -119,5 +119,5 @@ This is a significant undertaking but is the mathematically correct solution.
 
 ---
 
-*"Security proven. Mathematically verified."*
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*"QED Eternum."*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

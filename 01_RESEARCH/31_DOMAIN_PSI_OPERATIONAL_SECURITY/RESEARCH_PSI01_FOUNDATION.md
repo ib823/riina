@@ -876,6 +876,6 @@ biar kunci = KunciMasa::baru(
 
 **"The system is only as strong as its weakest human. Make sure no human is the weakest link."**
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*Security proven. Mathematically verified.*
+*QED Eternum.*

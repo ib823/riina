@@ -38,4 +38,4 @@ See `../CLAUDE_AI_DELEGATION_AXIOM_ELIMINATION.md` for:
 
 ---
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

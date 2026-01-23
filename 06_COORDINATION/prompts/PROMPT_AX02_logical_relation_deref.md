@@ -111,4 +111,4 @@ Lemma val_rel_n_ref_same_loc : forall n Σ T sl v1 v2,
 
 ---
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

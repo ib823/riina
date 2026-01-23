@@ -600,6 +600,6 @@ Qed.
 
 **"Fast code that might be wrong is slow code that will fail."**
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
 
-*Security proven. Mathematically verified.*
+*QED Eternum.*

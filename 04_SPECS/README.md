@@ -44,4 +44,4 @@ cd 04_SPECS && sha256sum -c CHECKSUMS.sha256
 - Research: Provides foundation decisions
 
 ---
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*

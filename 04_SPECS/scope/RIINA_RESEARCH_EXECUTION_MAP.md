@@ -457,7 +457,7 @@
 ║  Phase 1 (Axiom Elimination) is the critical path that blocks all other progress.                   ║
 ║  218 tracks will take 3.25 - 6.5 years to fully execute.                                            ║
 ║                                                                                                      ║
-║  RIINA: Rigorous Immutable Integrity No-attack Assured                                              ║
+║  RIINA: Rigorous Immutable Invariant — Normalized Axiom                                              ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```

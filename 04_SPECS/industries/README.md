@@ -40,4 +40,4 @@ This directory contains industry-specific security requirements and threat model
 All files are SHA-256 verified. See `../CHECKSUMS.sha256` for hashes.
 
 ---
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
