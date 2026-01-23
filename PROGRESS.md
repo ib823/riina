@@ -191,10 +191,11 @@
 | ~~1~~ | ~~Prove `multi_step_preservation`~~ | ~~None~~ | ✅ DONE |
 | ~~2~~ | ~~Add typing to val_rel_n definition~~ | ~~Design decision~~ | ✅ DONE |
 | ~~3~~ | ~~Restructure with ty_size_induction~~ | ~~None~~ | ✅ DONE |
-| 4 | Prove `has_type_store_weakening` | None | P0 |
-| 5 | Fill HO typing admits (lines 1071, 1074) | #4 | P1 |
-| 6 | Prove store_rel step-up (line 1078) | #5 | P1 |
+| ~~4~~ | ~~Prove `has_type_store_weakening`~~ | ~~None~~ | ✅ DONE (reused Preservation.v) |
+| ~~5~~ | ~~Fill HO typing admits~~ | ~~#4~~ | ✅ DONE (extracted from val_rel_n) |
+| 6 | Prove store_rel step-up (line 1108) | Mutual dependency | P1 |
 | 7 | Prove n=0 Fundamental Theorem case (line 1039) | Compatibility lemmas | P2 |
+| 8 | Prove FO bootstrap in store_rel_n_step_up (line 1186) | Semantic property | P2 |
 
 ### 6.3 Blockers
 
@@ -202,8 +203,10 @@
 |---------|--------|-----------------|
 | ~~val_rel_n lacks typing~~ | ~~33+ admits~~ | ✅ RESOLVED - added typing conjuncts |
 | ~~Non-recursive step-up~~ | ~~HO case stuck~~ | ✅ RESOLVED - ty_size_induction |
-| `has_type_store_weakening` | ~4 admits | Standard Kripke property - provable |
+| ~~has_type_store_weakening~~ | ~~4 admits~~ | ✅ RESOLVED - reused Preservation.v |
+| store_rel/val_rel mutual | 1 admit | Need mutual step-index induction |
 | Fundamental Theorem n=0 | 1 admit | Need compatibility lemmas (~500 LOC) |
+| FO bootstrap | 1 admit | Semantic property of non-interference |
 
 ### 6.4 Current State
 
@@ -226,11 +229,11 @@ Remaining admits in val_rel_n_step_up_by_type:
 ```
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
 Last Function: val_rel_n_step_up_by_type
-Last Line    : ~1079 (ty_size_induction proof structure)
-Next Action  : Prove has_type_store_weakening for HO typing admits
-Git Commit   : (pending)
+Last Line    : ~1109 (proof structure complete)
+Next Action  : Prove store_rel step-up or FO bootstrap
+Git Commit   : a14e7c5
 Build Status : ✅ PASSING
-Admits       : 8 in NonInterference_v2.v, ~66 in LogicalRelation
+Admits       : 4 in NonInterference_v2.v (n=0, store_rel, FO bootstrap)
 ```
 
 ---
