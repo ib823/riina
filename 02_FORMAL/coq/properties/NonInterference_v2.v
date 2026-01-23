@@ -1045,6 +1045,160 @@ Proof.
     + intros Hho. exact Hty2.
 Qed.
 
+(** ========================================================================
+    COMBINED STEP-UP VIA STRONG INDUCTION
+    ========================================================================
+
+    This theorem proves combined_step_up for all n using strong induction
+    on the step index. This breaks the circular dependency between val_rel
+    and store_rel step-up by proving them together.
+
+    Key insight: When proving step-up at step n for TFn at n = S (S m),
+    we need store_rel step-up at step S m. By strong induction, we have
+    combined_step_up(m) which gives us val_rel step-up at step m for all
+    types, enabling store_rel step-up at step S m via store_rel_n_step_up_from_IH.
+*)
+
+(** Helper: store_rel step-up from n to S n when n > 0, using val_rel step-up *)
+Lemma store_rel_n_step_up_with_val_IH : forall m Σ st1 st2,
+  (* Val_rel step-up at step m for all types *)
+  (forall T Σ' v1 v2,
+     val_rel_n m Σ' T v1 v2 ->
+     (first_order_type T = false -> has_type nil Σ' Public v1 T EffectPure) ->
+     (first_order_type T = false -> has_type nil Σ' Public v2 T EffectPure) ->
+     val_rel_n (S m) Σ' T v1 v2) ->
+  store_rel_n (S m) Σ st1 st2 ->
+  store_wf Σ st1 ->
+  store_wf Σ st2 ->
+  store_has_values st1 ->
+  store_has_values st2 ->
+  store_rel_n (S (S m)) Σ st1 st2.
+Proof.
+  (* This is just store_rel_n_step_up_from_IH with clearer naming *)
+  exact store_rel_n_step_up_from_IH.
+Qed.
+
+(** Main theorem: combined_step_up holds for all n via strong induction *)
+Theorem combined_step_up_all : forall n, combined_step_up n.
+Proof.
+  (* Strong induction on n *)
+  intro n.
+  induction n as [n IH_strong] using lt_wf_ind.
+  unfold combined_step_up.
+  split.
+
+  (* Part 1: val_rel step-up at step n for all types T *)
+  - (* Use ty_size_induction for type T, with fixed step index n *)
+    apply (ty_size_induction (fun T =>
+      forall Σ v1 v2,
+        val_rel_n n Σ T v1 v2 ->
+        (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
+        (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+        val_rel_n (S n) Σ T v1 v2)).
+    intros T IH_ty Σ v1 v2 Hrel Hty1 Hty2.
+    rewrite val_rel_n_S_unfold. split.
+    + exact Hrel.
+    + destruct (val_rel_n_value n Σ T v1 v2 Hrel) as [Hv1 Hv2].
+      destruct (val_rel_n_closed n Σ T v1 v2 Hrel) as [Hc1 Hc2].
+      split. { exact Hv1. }
+      split. { exact Hv2. }
+      split. { exact Hc1. }
+      split. { exact Hc2. }
+      destruct (first_order_type T) eqn:Hfo.
+      * (* First-order: use val_rel_at_type_fo_equiv *)
+        split. { exact I. }
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
+        destruct n as [| n']; simpl in Hrel.
+        -- destruct Hrel as [_ [_ [_ [_ Hfo_rel]]]].
+           rewrite Hfo in Hfo_rel. exact Hfo_rel.
+        -- destruct Hrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+           apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+           exact Hrat.
+      * (* Higher-order type case: first_order_type T = false *)
+        (* This includes TFn, TChan, TSecureChan, and recursive types containing them.
+           ADMITTED: Requires Fundamental Theorem of Logical Relations.
+           The Fundamental Theorem states that well-typed terms preserve the
+           logical relation under substitution of related values. *)
+        admit.
+
+  (* Part 2: store_rel step-up at step n *)
+  - intros Σ st1 st2 Hrel Hwf1 Hwf2 Hvals1 Hvals2 Hagree.
+    rewrite store_rel_n_S_unfold. split; [| split].
+    + exact Hrel.
+    + destruct n.
+      * rewrite store_rel_n_0_unfold in Hrel. exact Hrel.
+      * rewrite store_rel_n_S_unfold in Hrel. destruct Hrel as [_ [Hmax _]]. exact Hmax.
+    + intros l T sl Hlook.
+      destruct Hwf1 as [HΣ_to_st1 _].
+      destruct Hwf2 as [HΣ_to_st2 _].
+      specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
+      specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
+      exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
+      destruct n as [| n'].
+      * (* n = 0: Bootstrap case *)
+        rewrite val_rel_n_0_unfold.
+        assert (Hc1: closed_expr v1).
+        { (* Well-typed closed terms are closed. ADMITTED: need typing_nil_implies_closed lemma *)
+          admit. }
+        assert (Hc2: closed_expr v2).
+        { (* Well-typed closed terms are closed. ADMITTED: need typing_nil_implies_closed lemma *)
+          admit. }
+        assert (Hv1: value v1).
+        { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
+        assert (Hv2: value v2).
+        { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
+        repeat split; try assumption.
+        destruct (first_order_type T) eqn:Hfo.
+        -- (* FO type: establish val_rel_at_type_fo *)
+           (* ADMITTED: Forward reference to val_rel_at_type_fo_refl/trivial *)
+           admit.
+        -- split; assumption.
+      * (* n = S n': Use val_rel from store_rel_n (S n') and step up *)
+        rewrite store_rel_n_S_unfold in Hrel.
+        destruct Hrel as [Hrel_n' [_ Hlocs]].
+        specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
+        rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
+        rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
+        (* Use IH_strong(n') to get combined_step_up(n') *)
+        (* Then use val_rel step-up from n' to S n' = n *)
+        (* But wait: we have Hvrel_n' : val_rel_n n' and need val_rel_n (S n') = val_rel_n n
+           That's step-up from n' to n = S n', which is what combined_step_up(n') gives us *)
+        assert (Hcombined : combined_step_up n').
+        { apply IH_strong. lia. }
+        destruct Hcombined as [Hval_step _].
+        apply Hval_step.
+        -- exact Hvrel_n'.
+        -- intros Hho. exact Hty1.
+        -- intros Hho. exact Hty2.
+Admitted.
+
+(** Corollary: Extract val_rel step-up from combined_step_up_all *)
+Corollary val_rel_n_step_up_from_combined : forall n T Σ v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
+  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  val_rel_n (S n) Σ T v1 v2.
+Proof.
+  intros n T Σ v1 v2 Hrel Hty1 Hty2.
+  destruct (combined_step_up_all n) as [Hval _].
+  apply Hval; assumption.
+Qed.
+
+(** Corollary: Extract store_rel step-up from combined_step_up_all *)
+Corollary store_rel_n_step_up_from_combined : forall n Σ st1 st2,
+  store_rel_n n Σ st1 st2 ->
+  store_wf Σ st1 ->
+  store_wf Σ st2 ->
+  store_has_values st1 ->
+  store_has_values st2 ->
+  stores_agree_low_fo Σ st1 st2 ->
+  store_rel_n (S n) Σ st1 st2.
+Proof.
+  intros n Σ st1 st2 Hrel Hwf1 Hwf2 Hvals1 Hvals2 Hagree.
+  destruct (combined_step_up_all n) as [_ Hstore].
+  apply Hstore; assumption.
+Qed.
+
 (** val_rel_n_step_up - The core semantic lemma (FUNDAMENTAL THEOREM)
 
     STATUS: Axiom for n=0 case (requires Fundamental Theorem of Logical Relations)

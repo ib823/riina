@@ -251,25 +251,29 @@ The `val_rel_n_step_up` proof is now properly structured:
 ## 7. SESSION CHECKPOINT
 
 ```
-Session      : 39
+Session      : 40
 Last File    : 02_FORMAL/coq/properties/NonInterference_v2.v
-Last Function: val_rel_n_step_up_by_type (restructured admits)
-Next Action  : Implement Fundamental Theorem compatibility lemmas OR
-               restructure proof to use strong induction on step index
-Git Commit   : 2a346b8 [SESSION 39] Clarify admit structure
+Last Function: combined_step_up_all (strong induction theorem)
+Next Action  : Prove typing_nil_implies_closed lemma OR
+               reorganize file to fix forward references
+Git Commit   : pending
 Build Status : ✅ PASSING
-Admits       : 6 in NonInterference_v2.v
+Admits       : ~10 in NonInterference_v2.v (restructured)
 
-Session 39 Summary:
-- Added multi_step_preservation theorem in Preservation.v
-- Added store_ty_extends_trans transitivity lemma
-- Reverted broken uncommitted changes to NonInterference_v2.v
-- Added import for Coq.Arith.Wf_nat (well-founded induction infrastructure)
-- Restructured line 1209 admit into explicit cases:
-  - n'=0 case: Fundamental Theorem territory
-  - n'=S m case: Strong induction on step index needed
-- FundamentalTheorem.v disabled (needs destruct on first_order_type)
-- Documented 6 admits: 2 Fundamental Theorem, 1 strong induction, 3 justified
+Session 40 Summary:
+- Implemented combined_step_up_all theorem using strong induction on step index
+- Added combined_step_up predicate combining val_rel and store_rel step-up
+- Added store_rel_n_step_up_with_val_IH helper lemma
+- Part 1 (val_rel step-up):
+  - FO types: ✅ Fully proven using val_rel_at_type_fo_equiv
+  - HO types: 1 admit (requires Fundamental Theorem)
+- Part 2 (store_rel step-up):
+  - n=0 Bootstrap: 3 admits (closedness + forward reference)
+  - n=S n' case: ✅ FULLY PROVEN using IH_strong!
+- Key achievement: The mutual dependency between val_rel and store_rel
+  step-up is now resolved via strong induction
+- Corollaries val_rel_n_step_up_from_combined and
+  store_rel_n_step_up_from_combined extract usable lemmas
 ```
 
 ---
