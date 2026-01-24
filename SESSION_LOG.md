@@ -1,5 +1,33 @@
 # Session Log
 
+## 2026-01-24 (Session 41 Continued): Delegation Prompt & Exploration
+
+**Goal:** Create delegation prompt for Claude AI Web, continue with other work.
+
+**Activities:**
+
+### Claude AI Web Delegation Prompt Created
+- File: `06_COORDINATION/delegation_prompts/DELEGATION_SESSION41_PRESERVATION.md`
+- Covers 10 preservation-related admits (store_wf, store_has_values, stores_agree_low_fo)
+- Includes required lemma signatures and approach
+
+### Structural Analysis
+- **Root Issue:** val_rel_at_type for TFn doesn't include store_wf as precondition
+- Makes preservation unprovable in current structure
+- Solution requires either refactoring val_rel_at_type or adding preconditions
+
+### Other Files Explored
+- ReducibilityFull.v: 2 admits (require full logical relations infrastructure)
+- LogicalRelationDeclassify_v2.v: Not in _CoqProject (not compiled)
+- Rust prototype: Not available (cargo not installed)
+
+### Current State
+- NonInterference_v2.v: 13 admits (unchanged)
+- Build: PASSING
+- Awaiting Claude AI Web results
+
+---
+
 ## 2026-01-24 (Session 41): TProd/TSum HO Step-Up & Claude AI Web Delegation
 
 **Goal:** Prove TProd/TSum with TFn component step-up, delegate remaining admits to Claude AI Web.
