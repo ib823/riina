@@ -26,72 +26,28 @@ Require Import RIINA.properties.TypeMeasure.
 Require Import RIINA.properties.LexOrder.
 Require Import RIINA.properties.FirstOrderComplete.
 Require Import RIINA.properties.CumulativeRelation.
+Require Import RIINA.properties.ValRelMonotone.
 
 Import ListNotations.
 
 (** ** Full Step Monotonicity
 
-    For TFn, step monotonicity requires careful handling.
-    We state the theorem and provide a proof that handles
-    first-order types completely, with TFn admitted.
+    Step monotonicity: if values are related at step n, they remain related
+    at any m ≤ n. This follows from the cumulative structure of val_rel_le.
+
+    The proof is provided in ValRelMonotone.v via val_rel_le_monotone.
+    This theorem is an alias for compatibility with existing code.
 *)
 
-(** Full step monotonicity
-
-    For first-order types, monotonicity follows from the cumulative structure.
-    For TFn, we handle two cases:
-    1. Argument type T1 is first-order: use step-mono on args and results
-    2. Argument type T1 is higher-order: requires additional reasoning about
-       function equivalence (admitted for now, will be proven in Phase 1)
-*)
 Theorem val_rel_le_mono_step : forall n m Σ T v1 v2,
   m <= n ->
   val_rel_le n Σ T v1 v2 ->
   val_rel_le m Σ T v1 v2.
 Proof.
-  (* For first-order types, use val_rel_le_mono_step_fo from CumulativeRelation *)
-  (* For TFn, we need additional structure *)
+  (* Delegate to the proven theorem in ValRelMonotone.v *)
   intros n m Σ T v1 v2 Hle Hrel.
-  destruct (first_order_decidable T) as [Hfo | Hho].
-  - (* First-order: use proven lemma *)
-    apply val_rel_le_mono_step_fo with n; auto.
-  - (* Higher-order: general case *)
-    (* For TFn, we use strong induction on n with the cumulative structure *)
-    revert m Σ T v1 v2 Hle Hrel Hho.
-    induction n as [|n' IH]; intros m Σ T v1 v2 Hle Hrel Hho.
-    + assert (m = 0) by lia. subst. simpl. exact I.
-    + destruct m as [|m'].
-      * simpl. exact I.
-      * simpl in Hrel. simpl.
-        destruct Hrel as [Hprev Hstruct].
-        split.
-        -- (* Cumulative part *)
-           apply IH; auto. lia.
-        -- (* Structural part *)
-           unfold val_rel_struct in *.
-           destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & HT).
-           repeat split; auto.
-           (* The type T must be TFn since it's not first-order *)
-           destruct T; simpl in Hho; try discriminate; auto.
-           (* Now we're in the TFn case: TFn T1 T2 e *)
-           (* Case analysis on whether the argument type T1 is first-order *)
-           destruct (first_order_decidable T1) as [HfoT1 | HhoT1].
-           ++ (* Argument type T1 is first-order *)
-              (* For first-order argument types, we can use step independence
-                 to transfer arguments from level m' to n'. The main case where
-                 both m' > 0 and n' > 0 uses val_rel_le_fo_step_independent.
-                 Edge cases (m'=0 or n'=0) require special handling.
-                 Full proof deferred - structure validated. *)
-              admit.
-           ++ (* Argument type T1 is higher-order: complex case *)
-              (* The contravariant position with higher-order arg type
-                 requires proving that functions with same behavior at n'
-                 also have same behavior at m' < n'.
-
-                 This requires function extensionality or similar reasoning.
-                 Admitted for now - will be completed in Phase 1. *)
-              admit.
-Admitted.
+  apply val_rel_le_monotone with n; assumption.
+Qed.
 
 (** ** Store Extension Monotonicity
 
