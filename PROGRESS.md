@@ -111,23 +111,28 @@
 
 | File | Admits | Category |
 |------|--------|----------|
-| NonInterference_v2_LogicalRelation.v | 71 | Logical relation infrastructure |
-| MasterTheorem.v | 21 | Master proof composition |
-| AxiomEliminationVerified.v | 15 | Axiom replacement lemmas |
-| ApplicationComplete.v | 14 | Application completeness |
-| CumulativeRelation.v | 10 | Cumulative value relation |
-| NonInterferenceZero.v | 10 | Zero-step relations |
-| TypedConversion.v | 9 | Type conversion proofs |
-| NonInterferenceKripke.v | 7 | Kripke monotonicity |
-| ReferenceOps.v | 6 | Reference operations |
-| KripkeMutual.v | 6 | Mutual Kripke lemmas |
-| NonInterference_v2.v | 5 | Fundamental theorem |
-| KripkeProperties.v | 4 | Kripke properties (TRef fixed) |
+| FundamentalTheorem.v | 24 | Compatibility lemmas |
+| AxiomEliminationVerified.v | 15 | Step-1 reduction lemmas |
+| NonInterference_v2_LogicalRelation.v | 11 | Logical relation construction |
+| TypedConversion.v | 5 | Type conversion proofs |
+| ApplicationComplete.v | 5 | Application completeness |
+| NonInterferenceZero.v | 4 | Cumulative relation (TFn) |
+| KripkeMutual.v | 4 | Mutual Kripke lemmas |
+| RelationBridge.v | 3 | Bridge between relations |
+| ReferenceOps.v | 3 | Reference ops (eval inversion) |
+| NonInterference_v2.v | 2 | Fundamental theorem |
+| MasterTheorem.v | 2 | Master proof composition |
+| LogicalRelationDeclassify_v2.v | 2 | Declassification |
+| LogicalRelationDeclassify_PROOF_REFINED.v | 2 | Declassification refined |
+| ValRelStepLimit_PROOF.v | 1 | Semantic typing (HO case) |
+| LogicalRelationRef_PROOF.v | 1 | Reference relation |
+| LogicalRelationDeclassify_PROOF.v | 1 | Declassification proof |
+| Declassification.v | 1 | Determinism lemma |
 | ReducibilityFull.v | 1 | Substitution commute |
-| CumulativeMonotone.v | **0** | ✅ Step monotonicity PROVEN |
-| RelationBridge.v | 3 | Relation bridging |
 | domains/LinearTypes.v | 1 | Semantic (weakening) |
-| **TOTAL** | **88** | (accurate count) |
+| CumulativeRelation.v | **0** | ✅ PROVEN (ty_size_induction) |
+| CumulativeMonotone.v | **0** | ✅ PROVEN (uses ValRelMonotone) |
+| **TOTAL** | **88** | (accurate count verified) |
 
 ### 2.4 Admit Distribution
 | Directory | Count | Notes |
@@ -223,27 +228,36 @@
 ## 6. SESSION CHECKPOINT
 
 ```
-Session      : 43 (Final Update)
-Last Action  : Accurate admit count, build verified
-Git Commit   : 6660fc0
+Session      : 43 (Continued)
+Last Action  : Integrated CumulativeRelation_FIXED.v, updated accurate admit breakdown
+Git Commit   : dcb730a
 Build Status : ✅ PASSING
-Admits       : 88 (accurate count, was overcounted before)
+Admits       : 88 (verified - 86 properties, 1 termination, 1 domain)
 
-Session 43 Accomplishments:
+Session 43 Accomplishments (Continued):
 1. ELIMINATED CumulativeMonotone.v admits (3 → 0) using ValRelMonotone.v
 2. Fixed LinearTypes.v compilation (12 theorems, 1 semantic admit)
 3. Integrated 128 delegation output files into domains/
 4. Created CLAUDE_EXECUTION_PLAN_PROMPT.md for Claude AI Web
 5. Created riina_coq_for_claude_web.zip for delegation
-6. Accurate admit count: 88 total (86 properties, 1 termination, 1 domain)
+6. Integrated CumulativeRelation_FIXED.v (ty_size_induction for well-founded recursion)
+7. Accurate admit breakdown by file and category
 
-Admit Distribution:
-- properties/: 86 admits
-- termination/: 1 admit (ReducibilityFull.v)
-- domains/: 1 admit (LinearTypes.v)
+Admit Categories (88 total):
+- TFn contravariance: ~12 (step-indexed model limitation)
+- Evaluation inversion: ~10 (need multi_step decomposition)
+- Semantic typing: ~8 (extracting typing from relation)
+- n=0 base case: ~6 (need typing information)
+- Store Kripke: ~5 (weakening not provable for TFn)
+- Bridge mismatch: ~3 (val_rel_n vs val_rel_le incompatible)
+- Fundamental theorem: ~24 (compatibility lemmas)
+- Other: ~20 (misc infrastructure)
 
-Pending for Claude AI Web:
-- 28 failing files (8 compile errors, 14 RIINA imports, 6 analysis)
+Key Insight: Most admits are FUNDAMENTAL to step-indexed logical relations,
+not simple oversights. They require either:
+1. Refactoring definitions (proper fix)
+2. Adding justified axioms (documented assumptions)
+3. Significant infrastructure (evaluation inversion)
 ```
 
 ---
