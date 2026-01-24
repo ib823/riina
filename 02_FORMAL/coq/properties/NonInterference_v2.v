@@ -1163,6 +1163,53 @@ Definition stores_agree_low_fo (Σ : store_ty) (st1 st2 : store) : Prop :=
     store_lookup l st1 = store_lookup l st2.
 
 (** ========================================================================
+    PRESERVATION COROLLARIES
+    ========================================================================
+
+    Direct corollaries of the preservation theorem for use in step-up proofs.
+*)
+
+(** Extract just the store_wf part from preservation *)
+Lemma preservation_store_wf : forall e e' st st' ctx ctx' Σ T ε,
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
+  (e, st, ctx) --> (e', st', ctx') ->
+  exists Σ',
+    store_ty_extends Σ Σ' /\
+    store_wf Σ' st'.
+Proof.
+  intros e e' st st' ctx ctx' Σ T ε Hty Hwf Hstep.
+  destruct (preservation e e' T ε st st' ctx ctx' Σ Hty Hwf Hstep)
+    as [Σ' [ε' [Hext [Hwf' Hty']]]].
+  exists Σ'. split; assumption.
+Qed.
+
+(** store_wf implies store_has_values *)
+Lemma store_wf_to_has_values : forall Σ st,
+  store_wf Σ st -> store_has_values st.
+Proof.
+  intros Σ st [_ Hst_typed].
+  unfold store_has_values.
+  intros l v Hlook.
+  destruct (Hst_typed l v Hlook) as [T [sl [_ Hty]]].
+  (* Well-typed values in nil context are values by inversion on typing derivation *)
+  admit. (* Case analysis on T and inversion on has_type *)
+Admitted.
+
+(** Use preservation to show store_has_values is preserved *)
+Lemma preservation_store_has_values : forall e e' st st' ctx ctx' Σ T ε,
+  has_type nil Σ Public e T ε ->
+  store_wf Σ st ->
+  (e, st, ctx) --> (e', st', ctx') ->
+  store_has_values st'.
+Proof.
+  intros e e' st st' ctx ctx' Σ T ε Hty Hwf Hstep.
+  destruct (preservation_store_wf e e' st st' ctx ctx' Σ T ε Hty Hwf Hstep)
+    as [Σ' [_ Hwf']].
+  apply store_wf_to_has_values with Σ'. exact Hwf'.
+Qed.
+
+(** ========================================================================
     COMBINED STEP-UP: val_rel_n and store_rel_n together
     ========================================================================
 
