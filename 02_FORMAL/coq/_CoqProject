@@ -67,6 +67,9 @@ properties/ValRelStepLimit_PROOF.v
 # Closed Value Infrastructure (Session 43)
 properties/ClosedValueLemmas.v
 
+# Store Well-Formedness Lemmas (Session 43)
+properties/StoreWfLemmas.v
+
 # Fundamental Theorem Infrastructure (Session 38)
 # Disabled: Abstract type parameters require destruct on first_order_type
 # properties/FundamentalTheorem.v
