@@ -238,7 +238,17 @@ Proof.
 Qed.
 
 (** For trivial FO types, any two well-typed values are related.
-    Requires typing to use canonical forms for TProd/TSum decomposition. *)
+    Requires typing to use canonical forms for TProd/TSum decomposition.
+
+    STATUS: UNUSED LEMMA with known issues.
+    - TSum with trivial components fails when v1=EInl, v2=EInr
+    - fo_type_has_trivial_rel incorrectly returns true for TSum
+    - The admits are justified dead code until this lemma is actually needed
+
+    TODO: Fix by either:
+    1. Remove TSum from fo_type_has_trivial_rel (TSum requires matching constructors)
+    2. Weaken val_rel_at_type_fo for TSum to return True when components are trivial
+*)
 Lemma val_rel_at_type_fo_trivial : forall T Σ v1 v2,
   first_order_type T = true ->
   fo_type_has_trivial_rel T = true ->
