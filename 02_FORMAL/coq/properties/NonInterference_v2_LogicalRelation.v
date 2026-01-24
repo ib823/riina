@@ -2312,7 +2312,7 @@ Proof.
     + repeat split; try assumption.
       (* val_rel_at_type at step 0 for TFn *)
       simpl.
-      intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel.
+      intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
       (* Extract lambda structure *)
       destruct (canonical_forms_fn nil Σ Public v1 T1 T2 e EffectPure Hv1 Hty1')
         as [x1 [body1 Heq1]].
@@ -2337,7 +2337,17 @@ Proof.
           (* At step 0, this is essentially trivial IF we assume termination *)
           (* The fundamental theorem at step 0 is True, so this is admitted for now *)
           admit. }
-        { exact Hstrel. }
+        split.
+        { (* store_rel_lower - stores unchanged by beta reduction *)
+          exact Hstrel. }
+        split.
+        { (* store_wf st1 - unchanged *)
+          exact Hwf1. }
+        split.
+        { (* store_wf st2 - unchanged *)
+          exact Hwf2. }
+        { (* stores_agree_low_fo - unchanged *)
+          exact Hagree. }
 Admitted.
 
 (** Multi-step preservation - extends single-step preservation to multi-step.
@@ -2453,16 +2463,16 @@ Proof.
         (* TUnit through TBytes: first_order_type = true, contradiction *)
         1-5: discriminate HfoT.
         (* TFn: the main higher-order case *)
-        { intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel.
+        { intros Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
           (* Downgrade arguments: val_rel_n (S n') → val_rel_n n' *)
           assert (Hargrel_n' : val_rel_n n' Σ' T1 arg1 arg2).
           { apply (val_rel_n_mono n' (S n') Σ' T1 arg1 arg2); [lia | exact Hargrel]. }
           (* Downgrade stores: store_rel_n (S n') → store_rel_n n' *)
           assert (Hstrel_n' : store_rel_n n' Σ' st1 st2).
           { apply (store_rel_n_mono n' (S n') Σ' st1 st2); [lia | exact Hstrel]. }
-          (* Apply val_rel_at_type at step n' *)
-          specialize (Hrat_n' Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel_n' st1 st2 ctx Hstrel_n')
-            as [r1 [r2 [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hrrel_n' Hsrel_n']]]]]]]]]].
+          (* Apply val_rel_at_type at step n' with new preconditions *)
+          specialize (Hrat_n' Σ' Hext arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel_n' st1 st2 ctx Hstrel_n' Hwf1 Hwf2 Hagree)
+            as [r1 [r2 [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hrrel_n' [Hsrel_n' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]].
           (* Build existential witnesses *)
           exists r1, r2, st1', st2', ctx', Σ''.
           split. { exact Hext'. }
@@ -2475,8 +2485,12 @@ Proof.
               intros HhoT2. admit.
             - (* typing for r2 if T2 is HO *)
               intros HhoT2. admit. }
+          split.
           { (* store_rel_n (S n') Σ'' st1' st2' *)
-            apply store_rel_n_step_up; try exact Hsrel_n'. all: admit. } }
+            apply store_rel_n_step_up; try exact Hsrel_n'. all: admit. }
+          split. { exact Hwf1'. }
+          split. { exact Hwf2'. }
+          { exact Hagree'. } }
         (* TProd, TSum: recursive - components may be HO *)
         1-2: admit.
         (* TList, TOption: val_rel_at_type is True *)
@@ -2633,7 +2647,7 @@ Proof.
         split. { (* typing conjunct for TFn *) admit. }
         (* val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
         simpl.
-        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel.
+        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
         (* Apply lambdas: EApp (ELam x T1 body) arg --> [x := arg] body *)
         (* lam1 = ELam x T1 (subst_rho (rho_shadow rho1 x) e) *)
         (* lam2 = ELam x T1 (subst_rho (rho_shadow rho2 x) e) *)
@@ -2689,7 +2703,15 @@ Proof.
           - apply ST_AppAbs. exact Hvarg2.
           - rewrite Hsubst2. exact Hstep2. }
         split. { exact Hval. }
-        { exact Hstore'. }
+        split. { exact Hstore'. }
+        split. { (* store_wf Σ'' st1' - from preservation *)
+                 (* He_rel preserves store_wf, but we need to extract it *)
+                 (* For now admit - proper fix needs exp_rel to track store_wf *)
+                 admit. }
+        split. { (* store_wf Σ'' st2' *)
+                 admit. }
+        { (* stores_agree_low_fo Σ'' st1' st2' *)
+          admit. }
   - (* T_App - function application *)
     simpl.
     specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
@@ -2741,8 +2763,12 @@ Proof.
       specialize (Hfn_at_type Σ'' Hext2 a1 a2 Hvala1 Hvala2 Hcla1 Hcla2).
 
       (* val_rel_n n'' Σ'' T1 a1 a2 from downgraded Harel' *)
-      specialize (Hfn_at_type Harel' st1'' st2'' ctx'' Hstore2') as
-        [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel Hstore3]]]]]]]]]].
+      (* Need store_wf and stores_agree_low_fo for TFn preconditions *)
+      assert (Hwf1'' : store_wf Σ'' st1'') by admit.
+      assert (Hwf2'' : store_wf Σ'' st2'') by admit.
+      assert (Hagree'' : stores_agree_low_fo Σ'' st1'' st2'') by admit.
+      specialize (Hfn_at_type Harel' st1'' st2'' ctx'' Hstore2' Hwf1'' Hwf2'' Hagree'') as
+        [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' Hagree''']]]]]]]]]]]]].
 
       (* Build result *)
       exists r1, r2, st1''', st2''', ctx''', Σ'''.

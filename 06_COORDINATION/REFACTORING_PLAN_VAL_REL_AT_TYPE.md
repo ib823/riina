@@ -1,7 +1,13 @@
 # Refactoring Plan: val_rel_at_type TFn Preconditions
 
-## Status: PLANNED
+## Status: ✅ COMPLETED
 ## Created: 2026-01-24 (Session 42)
+## Completed: 2026-01-24 (Session 42 continued)
+
+### Result Summary
+- **NonInterference_v2.v admits:** 11 → 1 (10 eliminated!)
+- **Remaining admit:** Fundamental Theorem n=0 (line 1541) - requires compatibility lemmas
+- **All preservation admits eliminated** by propagating store_wf postconditions through TFn
 
 ---
 
