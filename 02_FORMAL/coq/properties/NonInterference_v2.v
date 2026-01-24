@@ -1210,6 +1210,163 @@ Proof.
 Qed.
 
 (** ========================================================================
+    val_rel_at_type PREDICATE-INDEPENDENCE FOR NON-TFN TYPES
+    ========================================================================
+
+    CRITICAL INSIGHT: For non-TFn types, val_rel_at_type doesn't actually
+    use the predicates (val_rel_lower, store_rel_lower, store_rel_pred).
+
+    - Base types: val_rel_at_type = True (trivially independent)
+    - TProd/TSum: structural equality + recursive val_rel_at_type
+    - TFn: USES predicates - quantifies over stores satisfying store_rel_pred
+    - Other (TList, TOption, etc.): val_rel_at_type = True
+
+    This means for NON-TFN types at the TOP LEVEL, we can switch predicates!
+    The only complication is nested TFn inside TProd/TSum, but those are
+    quantified (forall Σ' st1 st2...) so they work with any predicates.
+*)
+
+(** val_rel_at_type step-up: n' to S n'.
+
+    KEY INSIGHT: For the direction n' → S n', the predicates get STRONGER.
+    - store_rel_n (S n') ⊆ store_rel_n n' (stronger at higher index)
+    - val_rel_n (S n') ⊆ val_rel_n n' (stronger at higher index)
+
+    This means:
+    - For TFn: The universal quantification is preserved because we're
+      requiring stores/values satisfying STRONGER predicates, which is fine
+    - For TProd/TSum: Recurse on components
+    - For base types: No predicates used, trivially preserved
+
+    This lemma uses induction on type to handle nested structures. *)
+(** val_rel_at_type step-up for FIRST-ORDER types.
+
+    For FO types (first_order_type T = true), val_rel_at_type uses
+    val_rel_at_type_fo which doesn't depend on predicates at all.
+    This means step-up is trivial.
+
+    For HO types (containing TFn), we need the combined IH and handle
+    them directly in combined_step_up.
+*)
+Lemma val_rel_at_type_fo_step_invariant : forall T n' m' Σ v1 v2,
+  first_order_type T = true ->
+  @val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2 ->
+  @val_rel_at_type Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') T v1 v2.
+Proof.
+  intros T n' m' Σ v1 v2 Hfo Hrel.
+  apply val_rel_at_type_fo_equiv; [exact Hfo|].
+  apply val_rel_at_type_fo_equiv in Hrel; [exact Hrel | exact Hfo].
+Qed.
+
+(** val_rel_at_type step-up using combined IH.
+
+    This handles ALL type cases by induction on type structure:
+    - FO types: predicate-independent (use val_rel_at_type_fo_equiv)
+    - TFn: weaken preconditions to n', apply, then step-up results using IH
+    - TProd/TSum: recurse on components
+
+    Takes the val_rel step-up IH as a parameter. *)
+Lemma val_rel_at_type_step_up_with_IH : forall T n' Σ v1 v2,
+  (* IH: val_rel_n step-up for all types at level n' *)
+  (forall T' Σ' v1' v2',
+     val_rel_n n' Σ' T' v1' v2' ->
+     (first_order_type T' = false -> has_type nil Σ' Public v1' T' EffectPure) ->
+     (first_order_type T' = false -> has_type nil Σ' Public v2' T' EffectPure) ->
+     val_rel_n (S n') Σ' T' v1' v2') ->
+  (* IH: store_rel_n step-up at level n' *)
+  (forall Σ' st1 st2,
+     store_rel_n n' Σ' st1 st2 ->
+     store_wf Σ' st1 ->
+     store_wf Σ' st2 ->
+     store_has_values st1 ->
+     store_has_values st2 ->
+     stores_agree_low_fo Σ' st1 st2 ->
+     store_rel_n (S n') Σ' st1 st2) ->
+  @val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2 ->
+  @val_rel_at_type Σ (store_rel_n (S n')) (val_rel_n (S n')) (store_rel_n (S n')) T v1 v2.
+Proof.
+  intros T.
+  induction T; intros n' Σ0 v1 v2 IH_val IH_store Hrel; simpl; simpl in Hrel.
+  - (* TUnit *) exact Hrel.
+  - (* TBool *) exact Hrel.
+  - (* TInt *) exact Hrel.
+  - (* TString *) exact Hrel.
+  - (* TBytes *) exact Hrel.
+  - (* TFn - weaken preconditions, apply, step-up results *)
+    intros Σ' Hext x y Hv_x Hv_y Hc_x Hc_y Hargs st1 st2 ctx Hst.
+    (* Weaken preconditions from S n' to n' *)
+    assert (Hargs_n' : val_rel_n n' Σ' T1 x y).
+    { apply val_rel_n_mono with (S n'). lia. exact Hargs. }
+    assert (Hst_n' : store_rel_n n' Σ' st1 st2).
+    { apply store_rel_n_mono with (S n'). lia. exact Hst. }
+    (* Apply Hrel with weakened preconditions *)
+    specialize (Hrel Σ' Hext x y Hv_x Hv_y Hc_x Hc_y Hargs_n' st1 st2 ctx Hst_n').
+    destruct Hrel as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel Hstrel]]]]]]]]]].
+    exists v1', v2', st1', st2', ctx', Σ''.
+    split. { exact Hext'. }
+    split. { exact Hstep1. }
+    split. { exact Hstep2. }
+    split.
+    + (* val_rel_n (S n') Σ'' T2 v1' v2' - step-up result using IH *)
+      apply IH_val.
+      * exact Hvrel.
+      * (* typing for v1' if HO - extract from val_rel_n *)
+        intros Hho.
+        destruct n' as [| n''].
+        -- rewrite val_rel_n_0_unfold in Hvrel.
+           destruct Hvrel as [_ [_ [_ [_ Hty_r]]]].
+           rewrite Hho in Hty_r. destruct Hty_r as [Hty1 _]. exact Hty1.
+        -- rewrite val_rel_n_S_unfold in Hvrel.
+           destruct Hvrel as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+           rewrite Hho in Hty_r. destruct Hty_r as [Hty1 _]. exact Hty1.
+      * (* typing for v2' if HO - extract from val_rel_n *)
+        intros Hho.
+        destruct n' as [| n''].
+        -- rewrite val_rel_n_0_unfold in Hvrel.
+           destruct Hvrel as [_ [_ [_ [_ Hty_r]]]].
+           rewrite Hho in Hty_r. destruct Hty_r as [_ Hty2]. exact Hty2.
+        -- rewrite val_rel_n_S_unfold in Hvrel.
+           destruct Hvrel as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+           rewrite Hho in Hty_r. destruct Hty_r as [_ Hty2]. exact Hty2.
+    + (* store_rel_n (S n') Σ'' st1' st2' - step-up result using IH *)
+      (* We need store_wf and stores_agree_low_fo for Σ'' *)
+      (* These should follow from preservation, but we admit for now *)
+      admit.
+  - (* TProd - recurse on components *)
+    destruct Hrel as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+    exists x1, y1, x2, y2.
+    split. { exact Heq1. }
+    split. { exact Heq2. }
+    split.
+    + apply IHT1 with (n' := n'); [exact IH_val | exact IH_store | exact Hrel1].
+    + apply IHT2 with (n' := n'); [exact IH_val | exact IH_store | exact Hrel2].
+  - (* TSum - recurse on active branch *)
+    destruct Hrel as [[x1 [x2 [Heq1 [Heq2 Hrel1]]]] | [y1 [y2 [Heq1 [Heq2 Hrel2]]]]].
+    + left. exists x1, x2.
+      split. { exact Heq1. }
+      split. { exact Heq2. }
+      apply IHT1 with (n' := n'); [exact IH_val | exact IH_store | exact Hrel1].
+    + right. exists y1, y2.
+      split. { exact Heq1. }
+      split. { exact Heq2. }
+      apply IHT2 with (n' := n'); [exact IH_val | exact IH_store | exact Hrel2].
+  - (* TList: True *) exact I.
+  - (* TOption: True *) exact I.
+  - (* TRef *) exact Hrel.
+  - (* TSecret: True *) exact I.
+  - (* TLabeled: True *) exact I.
+  - (* TTainted: True *) exact I.
+  - (* TSanitized: True *) exact I.
+  - (* TProof: True *) exact I.
+  - (* TCapability: True *) exact I.
+  - (* TCapabilityFull: True *) exact I.
+  - (* TChan: True *) exact I.
+  - (* TSecureChan: True *) exact I.
+  - (* TConstantTime: True *) exact I.
+  - (* TZeroizing: True *) exact I.
+Admitted.  (* One admit for store_rel step-up in TFn case - needs preservation *)
+
+(** ========================================================================
     COMBINED STEP-UP: val_rel_n and store_rel_n together
     ========================================================================
 
@@ -1503,8 +1660,20 @@ Proof.
                            rewrite Hho_res in Hty_r.
                            destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
                     { (* store_rel step-up requires preservation *) admit. }
-                  + (* TProd nested *) admit.
-                  + (* TSum nested *) admit.
+                  + (* TProd nested - use helper lemma with IH *)
+                    apply val_rel_at_type_step_up_with_IH with (n' := n').
+                    * assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_tp as [Hval_step _]. exact Hval_step.
+                    * assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_tp as [_ Hstore_step]. exact Hstore_step.
+                    * exact Hrel1.
+                  + (* TSum nested - use helper lemma with IH *)
+                    apply val_rel_at_type_step_up_with_IH with (n' := n').
+                    * assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_ts as [Hval_step _]. exact Hval_step.
+                    * assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_ts as [_ Hstore_step]. exact Hstore_step.
+                    * exact Hrel1.
                   + (* TList - True *) exact I.
                   + (* TOption - True *) exact I.
                   + (* TRef - no predicates *) exact Hrel1.
@@ -1562,8 +1731,20 @@ Proof.
                            rewrite Hho_res in Hty_r.
                            destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
                     { (* store_rel step-up requires preservation *) admit. }
-                  + (* TProd nested *) admit.
-                  + (* TSum nested *) admit.
+                  + (* TProd nested - use helper lemma with IH *)
+                    apply val_rel_at_type_step_up_with_IH with (n' := n').
+                    * assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_tp as [Hval_step _]. exact Hval_step.
+                    * assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_tp as [_ Hstore_step]. exact Hstore_step.
+                    * exact Hrel2.
+                  + (* TSum nested - use helper lemma with IH *)
+                    apply val_rel_at_type_step_up_with_IH with (n' := n').
+                    * assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_ts as [Hval_step _]. exact Hval_step.
+                    * assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_ts as [_ Hstore_step]. exact Hstore_step.
+                    * exact Hrel2.
                   + (* TList - True *) exact I.
                   + (* TOption - True *) exact I.
                   + (* TRef - no predicates *) exact Hrel2.
@@ -1625,8 +1806,20 @@ Proof.
                               rewrite Hho_res in Hty_r.
                               destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
                       { (* store_rel step-up requires preservation *) admit. }
-                   ++ (* TProd nested *) admit.
-                   ++ (* TSum nested *) admit.
+                   ++ (* TProd nested - use helper lemma with IH *)
+                      apply val_rel_at_type_step_up_with_IH with (n' := n').
+                      ** assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_tp as [Hval_step _]. exact Hval_step.
+                      ** assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_tp as [_ Hstore_step]. exact Hstore_step.
+                      ** exact Hrel_x.
+                   ++ (* TSum nested - use helper lemma with IH *)
+                      apply val_rel_at_type_step_up_with_IH with (n' := n').
+                      ** assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_ts as [Hval_step _]. exact Hval_step.
+                      ** assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_ts as [_ Hstore_step]. exact Hstore_step.
+                      ** exact Hrel_x.
                    ++ (* TList - True *) exact I.
                    ++ (* TOption - True *) exact I.
                    ++ (* TRef - no predicates *) exact Hrel_x.
@@ -1685,8 +1878,20 @@ Proof.
                               rewrite Hho_res in Hty_r.
                               destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
                       { (* store_rel step-up requires preservation *) admit. }
-                   ++ (* TProd nested *) admit.
-                   ++ (* TSum nested *) admit.
+                   ++ (* TProd nested - use helper lemma with IH *)
+                      apply val_rel_at_type_step_up_with_IH with (n' := n').
+                      ** assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_tp as [Hval_step _]. exact Hval_step.
+                      ** assert (Hcombined_tp : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_tp as [_ Hstore_step]. exact Hstore_step.
+                      ** exact Hrel_y.
+                   ++ (* TSum nested - use helper lemma with IH *)
+                      apply val_rel_at_type_step_up_with_IH with (n' := n').
+                      ** assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_ts as [Hval_step _]. exact Hval_step.
+                      ** assert (Hcombined_ts : combined_step_up n') by (apply IH_strong; lia).
+                         destruct Hcombined_ts as [_ Hstore_step]. exact Hstore_step.
+                      ** exact Hrel_y.
                    ++ (* TList - True *) exact I.
                    ++ (* TOption - True *) exact I.
                    ++ (* TRef - no predicates *) exact Hrel_y.
