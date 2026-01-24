@@ -394,11 +394,15 @@ Proof.
     unfold val_rel_struct in Hstruct.
     destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
     apply val_rel_le_build_indist; auto.
-  - (* 11. TRef - use step independence (depth 0, but eauto interaction issue) *)
+  - (* 11. TRef - use step independence (depth 0) *)
     destruct m as [|m']; [simpl; exact I|].
-    (* TRef has fo_compound_depth 0, should use val_rel_le_fo_step_independent_primitive.
-       Issue: eauto/reflexivity interaction with bullet goals. Admitted for now. *)
-    admit.
+    (* TRef has fo_compound_depth 0, use val_rel_le_fo_step_independent_primitive *)
+    apply val_rel_le_fo_step_independent_primitive with (m := n).
+    + exact Hfo.  (* first_order_type (TRef t s) = true *)
+    + reflexivity.  (* fo_compound_depth (TRef t s) = 0 *)
+    + exact Hn.  (* n > 0 *)
+    + lia.  (* S m' > 0 *)
+    + exact Hrel.  (* val_rel_le n Σ (TRef t s) v1 v2 *)
   - (* 12. TSecret - indistinguishable *)
     apply val_rel_le_step_up_secret with n; auto.
   - (* 13. TLabeled - indistinguishable *)
