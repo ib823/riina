@@ -1,4 +1,4 @@
-# TERAS Architecture Decisions
+# RIINA Architecture Decisions
 
 ## Decision Log
 
@@ -57,3 +57,24 @@
 **Decision**: Run applications under a formally verified Micro-Hypervisor (Sentinel).
 **Rationale**: Physical faults (cosmic rays) bypass static proofs. The Sentinel enforces invariants at runtime.
 **Status**: RESEARCH (Foundational)
+
+### D009: Security-Aware Store Relation
+
+**Date**: 2026-01-23
+**Decision**: Make store_rel_n security-level aware - LOW locations require val_rel_n, HIGH only require typing.
+**Rationale**: HIGH security data is not observable by low-security observers, so requiring structural equality is unnecessary and creates unprovable admits.
+**Status**: IMPLEMENTED (Session 40)
+
+### D010: Strong Induction for Step-Up
+
+**Date**: 2026-01-23
+**Decision**: Use strong induction via `lt_wf_ind` for combined_step_up_all theorem.
+**Rationale**: Resolves mutual dependency between val_rel_n and store_rel_n step-up by providing IH for all m < n.
+**Status**: IMPLEMENTED (Session 40)
+
+### D011: Type Size Induction for TFn
+
+**Date**: 2026-01-23
+**Decision**: Use ty_size_induction for TFn case in val_rel step-up.
+**Rationale**: Arguments T1 in TFn T1 T2 have strictly smaller ty_size, enabling recursive IH application.
+**Status**: IMPLEMENTED (Session 41)
