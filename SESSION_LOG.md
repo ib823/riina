@@ -1,5 +1,43 @@
 # Session Log
 
+## 2026-01-24 (Session 42): TSum Trivial Relation Fix
+
+**Goal:** Process Claude AI Web output, fix admits.
+
+**Major Accomplishments:**
+
+### Fixed val_rel_at_type_fo_trivial Lemma ✅
+
+**Problem:** TSum was incorrectly in `fo_type_has_trivial_rel` even though `val_rel_at_type_fo` for TSum requires matching constructors (both EInl or both EInr).
+
+**Solution:**
+1. Removed TSum from `fo_type_has_trivial_rel` definition (now returns false for TSum)
+2. TSum case in proof now auto-solved by `try congruence` (since `false = true` is contradiction)
+3. Changed lemma from `Admitted` to `Qed`
+
+**Result:** Eliminated 2 admits (the "impossible" EInl vs EInr mixed constructor cases)
+
+### Current Admit Status
+
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| NonInterference_v2.v | 13 | 11 | -2 |
+| ReducibilityFull.v | 2 | 2 | 0 |
+| **Total** | 15 | 13 | -2 |
+
+### Remaining Admits Analysis (11 in NonInterference_v2.v)
+
+| Category | Count | Location | Root Cause |
+|----------|-------|----------|------------|
+| Fundamental Theorem n=0 | 1 | Line 1524 | Requires compatibility lemmas |
+| store_rel step-up preservation | 10 | Lines 1326, 1585-1593, 1654, 1725, 1800, 1872 | val_rel_at_type for TFn missing store_wf precondition |
+
+**Next Steps:**
+- Consider refactoring val_rel_at_type to add store_wf precondition to TFn case
+- This would eliminate all 10 preservation-related admits at once
+
+---
+
 ## 2026-01-24 (Session 41 Continued): Delegation Prompt & Exploration
 
 **Goal:** Create delegation prompt for Claude AI Web, continue with other work.
