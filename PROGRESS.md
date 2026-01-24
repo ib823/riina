@@ -29,22 +29,29 @@
 | Core Axioms | 1 | 0 | 🟡 99% eliminated |
 | Fundamental Theorem | 22/24 | 24/24 | 🟡 92% complete |
 | Coq Build | PASSING | PASSING | ✅ GREEN |
-| Admits in NonInterference_v2.v | 10 (8 meaningful) | 0 | 🟡 Well-structured admits |
+| Admits in NonInterference_v2.v | 20 (18 meaningful) | 0 | 🟡 Structured admits |
 | Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
 
-**Session 40 Key Achievements:**
+**Session 40/41 Key Achievements:**
 - Implemented `combined_step_up_all` theorem using **strong induction** on step index
 - **BREAKTHROUGH:** Resolved mutual dependency between val_rel and store_rel step-up
 - Proved `typing_nil_implies_closed` lemma (eliminated 2 admits)
 - Reorganized FO helper lemmas (`val_rel_at_type_fo_refl`, `val_rel_at_type_fo_trivial`)
 - Part 2 (store_rel step-up) n=S n' case now **FULLY PROVEN**
-- **MAJOR SIMPLIFICATION:** Replaced legacy `val_rel_n_step_up_by_type` and `store_rel_n_step_up` proofs with corollary calls (eliminated 5 admits)
+- **MAJOR SIMPLIFICATION:** Replaced legacy `val_rel_n_step_up_by_type` and `store_rel_n_step_up` proofs with corollary calls
 - **REVOLUTIONARY FIX:** Made `store_rel_n` security-aware - HIGH security locations only need typing, not structural equality
 - **FIXED:** Variable scoping errors in TFn step-up case (n → S n')
 - **FIXED:** Bullet ordering for type destructors to match ty definition
 - **STRUCTURED:** TFn store_rel step-up uses Hstore_step with specific preservation admits
 - TRef, TList, TOption HO cases now proven (predicate-independent)
-- Reduced admits from monolithic blocks to specific technical lemmas
+- **NEW (Session 41):** TProd/TSum with TFn components - step-up proofs for direct TFn components
+- **NEW (Session 41):** val_rel step-up via IH for function results (typing extraction from val_rel_n)
+
+**Remaining Admits (20 total, 18 meaningful):**
+- 2 dead code (TSum mixed constructors in unused `val_rel_at_type_fo_trivial`)
+- 1 Fundamental Theorem (n=0 case - requires compatibility lemmas)
+- 9 Preservation (store_wf, store_has_values, stores_agree_low_fo)
+- 8 Nested TProd/TSum recursion (TProd/TSum containing TProd/TSum with TFn)
 
 ---
 
