@@ -1,5 +1,88 @@
 # Session Log
 
+## 2026-01-24 (Session 43): Admit Elimination & Claude AI Web Assessment
+
+**Goal:** Continue executing CLAUDE_EXECUTION_PLAN.md to eliminate admits.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | Fixed TRef case in KripkeProperties.v | ✅ DONE |
+| 2 | Added SubstitutionCommute.v (0 admits) | ✅ DONE |
+| 3 | Assessed Claude AI Web output (files 33) | ✅ DONE |
+| 4 | Updated PROGRESS.md with accurate counts | ✅ DONE |
+
+### Task 1: Fixed TRef Case ✅
+
+**File:** `properties/KripkeProperties.v`
+**Function:** `val_rel_le_step_up_fo`
+
+Applied `val_rel_le_fo_step_independent_primitive` lemma since TRef has `fo_compound_depth = 0`.
+
+```coq
+- (* 11. TRef - use step independence (depth 0) *)
+  destruct m as [|m']; [simpl; exact I|].
+  apply val_rel_le_fo_step_independent_primitive with (m := n).
+  + exact Hfo.  (* first_order_type (TRef t s) = true *)
+  + reflexivity.  (* fo_compound_depth (TRef t s) = 0 *)
+  + exact Hn.  (* n > 0 *)
+  + lia.  (* S m' > 0 *)
+  + exact Hrel.  (* val_rel_le n Σ (TRef t s) v1 v2 *)
+```
+
+**Note:** TProd/TSum cases remain admitted (need `n > fo_compound_depth T`).
+
+### Task 2: Added SubstitutionCommute.v ✅
+
+Fixed Claude AI Web output:
+- Added `Require Import Coq.Logic.FunctionalExtensionality.`
+- Fixed proof logic in ELam binder case (use `rewrite String.eqb_refl in Heq. discriminate.`)
+- Provides infrastructure lemmas: `subst_not_free_sc`, `subst_closed_sc`, `extend_rho_sc_*`
+
+### Task 3: Claude AI Web Assessment ✅
+
+**Input:** `/workspaces/proof/files (33).zip`
+
+| File | Status | Issue |
+|------|--------|-------|
+| ValRelMonotone.v | ❌ FAILED | Missing type constructors (TBytes, TLabeled, etc.) |
+| SubstitutionCommute.v | ❌ FAILED | Missing FunctionalExtensionality import |
+
+Fixed SubstitutionCommute.v and integrated into codebase.
+
+### Admit Count (Active Files)
+
+| File | Admits |
+|------|--------|
+| NonInterference_v2_LogicalRelation.v | 71 |
+| MasterTheorem.v | 21 |
+| AxiomEliminationVerified.v | 15 |
+| ApplicationComplete.v | 14 |
+| CumulativeRelation.v | 10 |
+| NonInterferenceZero.v | 10 |
+| TypedConversion.v | 9 |
+| Other files | 43 |
+| **TOTAL** | **193** |
+
+### Key Blockers Identified
+
+1. **TFn contravariance** - Step-indexed model limitation (CumulativeMonotone.v)
+2. **TProd/TSum depth** - Need `n > fo_compound_depth T` premise (KripkeProperties.v)
+3. **Mutual induction** - FundamentalTheorem.v disabled
+4. **Evaluation inversion** - Need multi_step decomposition (ReferenceOps.v)
+
+### Git Commits
+
+```
+1e1cedb [TRACK_A] Fix TRef case in val_rel_le_step_up_fo (KripkeProperties.v)
+1389c84 [TRACK_A] Add SubstitutionCommute.v with zero admits
+```
+
+**Session Summary:** COMPLETE ✅
+
+---
+
 ## 2026-01-24 (Session 42 Part 4): Delegation Prompts Audit & Sync
 
 **Goal:** Achieve 100% alignment between research documents and delegation prompts.
