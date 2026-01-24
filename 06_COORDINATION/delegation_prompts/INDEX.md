@@ -3,9 +3,9 @@
 ## RIINA Complete Research Integration — Claude AI Web Delegation Prompts
 
 **Created:** 2026-01-23
-**Last Updated:** 2026-01-23
-**Total Work Packages:** 36
-**Total Theorems Required:** ~632
+**Last Updated:** 2026-01-24
+**Total Work Packages:** 42
+**Total Theorems Required:** ~757
 
 ---
 
@@ -63,6 +63,12 @@ cat /workspaces/proof/06_COORDINATION/delegation_prompts/01_TYPE001_MLTT_FOUNDAT
 | 34 | `34_DOMAIN002_VERIFIED_AI_ML_PROMPT.md` | Verified AI/ML | `domains/VerifiedAIML.v` | 15 |
 | 35 | `35_COMPILE001_TRANSLATION_VALIDATION_PROMPT.md` | Translation Validation | `compiler/TranslationValidation.v` | 15 |
 | 36 | `36_RUST001_BAHASA_MELAYU_LEXER_PROMPT.md` | Bahasa Melayu Lexer | `riina-lexer/src/keywords.rs` | N/A |
+| 37 | `37_OS001_VERIFIED_MICROKERNEL_PROMPT.md` | Verified Microkernel | `os/VerifiedMicrokernel.v` | 25 |
+| 38 | `38_NET001_VERIFIED_NETWORK_PROMPT.md` | Verified Network Stack | `network/VerifiedNetwork.v` | 25 |
+| 39 | `39_RUNTIME001_VERIFIED_RUNTIME_PROMPT.md` | Verified Runtime | `runtime/VerifiedRuntime.v` | 20 |
+| 40 | `40_UX001_VERIFIED_UI_PROMPT.md` | Verified UI | `ui/VerifiedUI.v` | 15 |
+| 41 | `41_PHYSICS001_PHYSICAL_SECURITY_PROMPT.md` | Physical Security | `physical/PhysicalSecurity.v` | 15 |
+| 42 | `42_INFRA001_VERIFIED_CLOUD_PROMPT.md` | Verified Infrastructure | `infra/VerifiedInfra.v` | 25 |
 
 ---
 
@@ -128,6 +134,18 @@ Session types, refinement types, radiation hardening, etc.
 ### Phase 7: Implementation (36)
 Rust lexer for Bahasa Melayu keywords.
 
+### Phase 8: RIINA Total Stack (37-42)
+Full-stack verified infrastructure from silicon to UI.
+
+| # | ID | Category | Critical For |
+|---|-----|----------|--------------|
+| 37 | OS001 | Verified Microkernel | Capability-based OS |
+| 38 | NET001 | Verified Network | TLS 1.3 + TCP/IP + DNS |
+| 39 | RUNTIME001 | Verified Runtime | GC + Allocator + Sandbox |
+| 40 | UX001 | Verified UI | Anti-clickjacking + Origin |
+| 41 | PHYSICS001 | Physical Security | PUF + Tamper Detection |
+| 42 | INFRA001 | Verified Infrastructure | LB + DB + MQ + Secrets |
+
 ---
 
 ## PROGRESS TRACKING
@@ -184,6 +202,14 @@ Mark with [x] when complete:
 ### Phase 7: Implementation (36)
 - [ ] 36_RUST001 — Delegated | Received | Verified | Integrated
 
+### Phase 8: RIINA Total Stack (37-42)
+- [ ] 37_OS001 — Delegated | Received | Verified | Integrated
+- [ ] 38_NET001 — Delegated | Received | Verified | Integrated
+- [ ] 39_RUNTIME001 — Delegated | Received | Verified | Integrated
+- [ ] 40_UX001 — Delegated | Received | Verified | Integrated
+- [ ] 41_PHYSICS001 — Delegated | Received | Verified | Integrated
+- [ ] 42_INFRA001 — Delegated | Received | Verified | Integrated
+
 ---
 
 ## VERIFICATION CHECKLIST
@@ -219,7 +245,8 @@ make
 | 5. Performance | 3 | 39 | Ready |
 | 6. Advanced | 6 | 86 | Ready |
 | 7. Implementation | 1 | N/A | Ready |
-| **TOTAL** | **36** | **~632** | **Ready** |
+| 8. RIINA Total Stack | 6 | 125 | Ready |
+| **TOTAL** | **42** | **~757** | **Ready** |
 
 ---
 
