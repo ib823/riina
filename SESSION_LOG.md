@@ -2281,3 +2281,36 @@ val_rel_n_mono (Admitted) ──► store_rel_n_mono (Admitted)
 *   Parser core operational.
 
 **Next:** Complete Parser (Case, Match, Effects) -> Type Checker.
+
+---
+
+## Session 41 Part 2: 2026-01-24 (Current)
+
+### Started
+- Continuing from SN_declassify proof attempt
+
+### Work Done
+1. **Fixed SN_declassify proofs** in ReducibilityFull.v
+   - Identified pattern: use auxiliary `_aux` form with cfg tuple
+   - Proved `SN_declassify_value_left_aux` (fully proven)
+   - Proved `SN_declassify_value_left` (wrapper)
+   - Proved `SN_declassify_aux` (fully proven)
+   - Proved `SN_declassify` (wrapper)
+   - Admits reduced from 6 to 4
+
+2. **Claude AI Web v3 Output Integration**
+   - Received and extracted files (29).zip
+   - Contents: EXACT_REPLACEMENTS.md, NonInterference_Aux.v, admit_replacements_v2.v
+   - Key insight: store_wf_to_has_values requires semantic invariant
+
+3. **Analysis of NonInterference_v2.v admits**
+   - Identified architectural issue: store_wf (typing-based) doesn't imply store_has_values (semantic)
+   - Options: strengthen store_wf, add preconditions, or accept semantic invariant
+
+### Commits
+- 180417f: Fix SN_declassify proofs, add Claude AI Web output v3
+
+### Status
+- ReducibilityFull.v: Compiles, 4 admits (down from 6)
+- NonInterference_v2.v: Compiles, 24 admits
+- Next: Architectural decision on store invariant handling
