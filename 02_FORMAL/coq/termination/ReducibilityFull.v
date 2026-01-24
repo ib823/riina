@@ -532,18 +532,23 @@ Proof.
     unfold Reducible in Hred. exact Hred.
   - (* T_Lam - lambdas are values *)
     apply value_SN. constructor.
-  - (* T_App - use SN_app with quantified IHs *)
+  - (* T_App - use SN_app_family with family premise *)
     (* IHHty1 : forall ρ, env_reducible Γ ρ -> SN_expr (subst_env ρ e1) *)
     (* IHHty2 : forall ρ, env_reducible Γ ρ -> SN_expr (subst_env ρ e2) *)
     intros st ctx.
-    apply SN_Closure.SN_app.
+    apply SN_Closure.SN_app_family.
     + intros st' ctx'. apply IHHty1. assumption.
     + intros st' ctx'. apply IHHty2. assumption.
-    + (* Beta premise: need SN of [x := v] body for any value v *)
-      (* This requires well-typed substitutions to be SN *)
-      (* Since body comes from well-typed lambda, [x := v] body is well-typed *)
-      (* and by IH on the body (via env extension), it's SN *)
-      admit.  (* Requires substitution-preserves-typing + body IH *)
+    + (* family_lambda_SN: for all e1' reachable from (subst_env ρ e1),
+         if e1' = ELam x T body, then [x:=v]body is SN for values v *)
+      (* This requires either well-founded induction on derivation size
+         or a separate lemma about lambda body SN. The key insight:
+         - If e1 is syntactically a lambda, its body's typing is SMALLER
+         - If e1 reduces to a lambda, we use preservation + IH on body
+
+         For now, we admit this - it's the core of the strong normalization
+         proof that requires either restructuring or a helper lemma *)
+      admit.
   - (* T_Pair - use SN_pair *)
     intros st ctx.
     apply SN_Closure.SN_pair.
