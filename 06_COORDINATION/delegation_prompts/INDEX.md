@@ -4,8 +4,8 @@
 
 **Created:** 2026-01-23
 **Last Updated:** 2026-01-24
-**Total Work Packages:** 42
-**Total Theorems Required:** ~757
+**Total Work Packages:** 47
+**Total Theorems Required:** ~3,647
 
 ---
 
@@ -69,6 +69,11 @@ cat /workspaces/proof/06_COORDINATION/delegation_prompts/01_TYPE001_MLTT_FOUNDAT
 | 40 | `40_UX001_VERIFIED_UI_PROMPT.md` | Verified UI | `ui/VerifiedUI.v` | 15 |
 | 41 | `41_PHYSICS001_PHYSICAL_SECURITY_PROMPT.md` | Physical Security | `physical/PhysicalSecurity.v` | 15 |
 | 42 | `42_INFRA001_VERIFIED_CLOUD_PROMPT.md` | Verified Infrastructure | `infra/VerifiedInfra.v` | 25 |
+| 43 | `43_BANK001_CORE_BANKING_PROMPT.md` | Core Banking | `banking/CoreBanking.v` | 30 |
+| 44 | `44_WALLET001_DIGITAL_WALLET_PROMPT.md` | Digital Wallet | `wallet/DigitalWallet.v` | 25 |
+| 45 | `45_REMIT001_CROSS_BORDER_PROMPT.md` | Cross-Border Remittance | `remittance/CrossBorderRemittance.v` | 25 |
+| 46 | `46_HIS001_HEALTHCARE_IS_PROMPT.md` | Healthcare IS | `healthcare/HealthcareIS.v` | 30 |
+| 47 | `47_ESG001_SUSTAINABILITY_PROMPT.md` | ESG Compliance | `esg/ESGCompliance.v` | 35 |
 
 ---
 
@@ -146,6 +151,17 @@ Full-stack verified infrastructure from silicon to UI.
 | 41 | PHYSICS001 | Physical Security | PUF + Tamper Detection |
 | 42 | INFRA001 | Verified Infrastructure | LB + DB + MQ + Secrets |
 
+### Phase 9: RIINA Domain Systems (43-47)
+Industry-specific verified systems that render all alternatives obsolete.
+
+| # | ID | Category | Critical For |
+|---|-----|----------|--------------|
+| 43 | BANK001 | Core Banking | Temenos/Finastra/TCS obsolete |
+| 44 | WALLET001 | Digital Wallet | PayPal/Alipay/GrabPay obsolete |
+| 45 | REMIT001 | Cross-Border Remittance | Wise/Airwallex obsolete |
+| 46 | HIS001 | Healthcare IS | Epic/Cerner obsolete |
+| 47 | ESG001 | ESG Compliance | All ESG tools obsolete |
+
 ---
 
 ## PROGRESS TRACKING
@@ -210,6 +226,13 @@ Mark with [x] when complete:
 - [ ] 41_PHYSICS001 — Delegated | Received | Verified | Integrated
 - [ ] 42_INFRA001 — Delegated | Received | Verified | Integrated
 
+### Phase 9: RIINA Domain Systems (43-47)
+- [ ] 43_BANK001 — Delegated | Received | Verified | Integrated
+- [ ] 44_WALLET001 — Delegated | Received | Verified | Integrated
+- [ ] 45_REMIT001 — Delegated | Received | Verified | Integrated
+- [ ] 46_HIS001 — Delegated | Received | Verified | Integrated
+- [ ] 47_ESG001 — Delegated | Received | Verified | Integrated
+
 ---
 
 ## VERIFICATION CHECKLIST
@@ -246,7 +269,21 @@ make
 | 6. Advanced | 6 | 86 | Ready |
 | 7. Implementation | 1 | N/A | Ready |
 | 8. RIINA Total Stack | 6 | 125 | Ready |
-| **TOTAL** | **42** | **~757** | **Ready** |
+| 9. RIINA Domain Systems | 5 | 145 | Ready |
+| **TOTAL** | **47** | **~902** | **Ready** |
+
+## RESEARCH FOUNDATIONS (Full Domain Coverage)
+
+| Domain | Research File | Total Theorems |
+|--------|---------------|----------------|
+| Core Banking | `RESEARCH_BANK01_FOUNDATION.md` | 760 |
+| Digital Wallet | `RESEARCH_WALLET01_FOUNDATION.md` | 515 |
+| Cross-Border Remittance | `RESEARCH_REMIT01_FOUNDATION.md` | 465 |
+| Healthcare IS | `RESEARCH_HIS01_FOUNDATION.md` | 1,150 |
+| ESG Compliance | `RESEARCH_ESG01_FOUNDATION.md` | 800 |
+| **DOMAIN TOTAL** | | **3,690** |
+
+**Grand Total (Delegation + Research):** ~4,592 theorems
 
 ---
 
