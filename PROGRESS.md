@@ -29,7 +29,7 @@
 | Core Axioms | 65 | 0 | 🟡 Infrastructure needed |
 | Compliance Axioms | 75 | 75 | ✅ KEEP (regulatory) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
-| Admits Total (Active) | **191** | 0 | 🟡 In progress (-2) |
+| Admits Total (Active) | **88** | 0 | 🟡 In progress (accurate count) |
 | Delegation Prompts | 90 | 90 | ✅ 100% ALIGNED |
 | Domain Files Integrated | 128 | 150 | ✅ 85% (28 pending) |
 | Theorems/Lemmas | 1,100+ | - | Growing |
@@ -123,12 +123,18 @@
 | KripkeMutual.v | 6 | Mutual Kripke lemmas |
 | NonInterference_v2.v | 5 | Fundamental theorem |
 | KripkeProperties.v | 4 | Kripke properties (TRef fixed) |
-| ReducibilityFull.v | 4 | Reducibility (SN) |
+| ReducibilityFull.v | 1 | Substitution commute |
 | CumulativeMonotone.v | **0** | ✅ Step monotonicity PROVEN |
 | RelationBridge.v | 3 | Relation bridging |
-| Other files | 5 | Various |
 | domains/LinearTypes.v | 1 | Semantic (weakening) |
-| **TOTAL** | **191** | (-2 from prior session) |
+| **TOTAL** | **88** | (accurate count) |
+
+### 2.4 Admit Distribution
+| Directory | Count | Notes |
+|-----------|-------|-------|
+| properties/ | 86 | Core proofs |
+| termination/ | 1 | ReducibilityFull.v |
+| domains/ | 1 | LinearTypes.v |
 
 ### 2.4 Key Blockers
 
@@ -217,22 +223,27 @@
 ## 6. SESSION CHECKPOINT
 
 ```
-Session      : 43 (Updated)
-Last Action  : Eliminated CumulativeMonotone admits, created delegation prompt
-Git Commit   : 1ec2725
+Session      : 43 (Final Update)
+Last Action  : Accurate admit count, build verified
+Git Commit   : 6660fc0
 Build Status : ✅ PASSING
-Admits       : 191 (active files) - DOWN FROM 193
+Admits       : 88 (accurate count, was overcounted before)
 
 Session 43 Accomplishments:
 1. ELIMINATED CumulativeMonotone.v admits (3 → 0) using ValRelMonotone.v
-2. Fixed LinearTypes.v compilation errors (12 theorems proven)
+2. Fixed LinearTypes.v compilation (12 theorems, 1 semantic admit)
 3. Integrated 128 delegation output files into domains/
 4. Created CLAUDE_EXECUTION_PLAN_PROMPT.md for Claude AI Web
 5. Created riina_coq_for_claude_web.zip for delegation
+6. Accurate admit count: 88 total (86 properties, 1 termination, 1 domain)
+
+Admit Distribution:
+- properties/: 86 admits
+- termination/: 1 admit (ReducibilityFull.v)
+- domains/: 1 admit (LinearTypes.v)
 
 Pending for Claude AI Web:
 - 28 failing files (8 compile errors, 14 RIINA imports, 6 analysis)
-- Comprehensive prompt ready at delegation_prompts/Output/
 ```
 
 ---
