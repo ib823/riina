@@ -65,6 +65,10 @@ properties/MasterTheorem.v
 # Axiom Elimination Proofs (Session 30)
 properties/ValRelStepLimit_PROOF.v
 
+# Logical Relation Proofs (Session 43 - proven theorems)
+properties/LogicalRelationAssign_PROOF.v
+properties/LogicalRelationDeref_PROOF_FINAL.v
+
 # Closed Value Infrastructure (Session 43)
 properties/ClosedValueLemmas.v
 
