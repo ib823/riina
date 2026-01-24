@@ -209,15 +209,17 @@ Inductive has_type : type_env -> store_ty -> security_level ->
       has_type Γ Σ Δ e T ε ->
       has_type Γ Σ Δ (EGrant eff e) T ε.
 
-(** Well-typed store: every typed location has a well-typed value in the store. *)
+(** Well-typed store: every typed location has a well-typed VALUE in the store.
+    IMPORTANT: The `value v` conjunct captures the semantic invariant that only
+    values are stored (enforced by ST_RefValue and ST_AssignLoc requiring value). *)
 Definition store_wf (Σ : store_ty) (st : store) : Prop :=
   (forall l T sl,
      store_ty_lookup l Σ = Some (T, sl) ->
-     exists v, store_lookup l st = Some v /\ has_type nil Σ Public v T EffectPure)
+     exists v, store_lookup l st = Some v /\ value v /\ has_type nil Σ Public v T EffectPure)
   /\
   (forall l v,
      store_lookup l st = Some v ->
-     exists T sl, store_ty_lookup l Σ = Some (T, sl) /\ has_type nil Σ Public v T EffectPure).
+     exists T sl, store_ty_lookup l Σ = Some (T, sl) /\ value v /\ has_type nil Σ Public v T EffectPure).
 
 (** Store typing extension *)
 Definition store_ty_extends (Σ Σ' : store_ty) : Prop :=

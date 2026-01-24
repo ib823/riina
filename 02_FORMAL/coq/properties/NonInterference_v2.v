@@ -1184,17 +1184,17 @@ Proof.
   exists Σ'. split; assumption.
 Qed.
 
-(** store_wf implies store_has_values *)
+(** store_wf implies store_has_values - NOW TRIVIAL after store_wf strengthening *)
 Lemma store_wf_to_has_values : forall Σ st,
   store_wf Σ st -> store_has_values st.
 Proof.
   intros Σ st [_ Hst_typed].
   unfold store_has_values.
   intros l v Hlook.
-  destruct (Hst_typed l v Hlook) as [T [sl [_ Hty]]].
-  (* Well-typed values in nil context are values by inversion on typing derivation *)
-  admit. (* Case analysis on T and inversion on has_type *)
-Admitted.
+  destruct (Hst_typed l v Hlook) as [T [sl [_ [Hval _]]]].
+  (* value v is now directly in store_wf - ELIMINATED ADMIT *)
+  exact Hval.
+Qed.
 
 (** Use preservation to show store_has_values is preserved *)
 Lemma preservation_store_has_values : forall e e' st st' ctx ctx' Σ T ε,
@@ -1264,8 +1264,8 @@ Proof.
   - intros l T sl Hlook.
     destruct Hwf1 as [HΣ_to_st1 _].
     destruct Hwf2 as [HΣ_to_st2 _].
-    specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
-    specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
+    specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 [Hv1_val Hty1]]].
+    specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 [Hv2_val Hty2]]].
     exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
     (* Need val_rel_n (S n') Σ T v1 v2 *)
     (* From store_rel_n (S n'), we get val_rel_n n' *)
@@ -1282,10 +1282,6 @@ Proof.
       * intros Hho. exact Hty1.
       * intros Hho. exact Hty2.
     + (* HIGH: Just need typing, which we already have *)
-      assert (Hv1: value v1).
-      { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
-      assert (Hv2: value v2).
-      { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
       assert (Hc1: closed_expr v1).
       { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
       assert (Hc2: closed_expr v2).
@@ -1739,8 +1735,8 @@ Proof.
     + intros l T sl Hlook.
       destruct Hwf1 as [HΣ_to_st1 _].
       destruct Hwf2 as [HΣ_to_st2 _].
-      specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 Hty1]].
-      specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 Hty2]].
+      specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 [Hv1 Hty1]]].
+      specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 [Hv2 Hty2]]].
       exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
       (* FIRST: case split on security level for the security-aware store_rel *)
       destruct (is_low_dec sl) eqn:Hsl.
@@ -1752,10 +1748,6 @@ Proof.
            { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
            assert (Hc2: closed_expr v2).
            { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
-           assert (Hv1: value v1).
-           { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
-           assert (Hv2: value v2).
-           { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
            repeat split; try assumption.
            destruct (first_order_type T) eqn:Hfo.
            ++ (* FO type: use stores_agree_low_fo for LOW *)
@@ -1784,10 +1776,7 @@ Proof.
            ++ intros Hho. exact Hty1.
            ++ intros Hho. exact Hty2.
       * (* HIGH security: only need typing, not val_rel_n *)
-        assert (Hv1: value v1).
-        { unfold store_has_values in Hvals1. apply Hvals1 with l. exact Hlook1. }
-        assert (Hv2: value v2).
-        { unfold store_has_values in Hvals2. apply Hvals2 with l. exact Hlook2. }
+        (* Hv1 and Hv2 already available from store_wf destruct above *)
         assert (Hc1: closed_expr v1).
         { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
         assert (Hc2: closed_expr v2).
