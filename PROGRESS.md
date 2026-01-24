@@ -65,15 +65,23 @@
 
 **Remaining Admits Analysis:**
 - NonInterference_v2.v: **1 admit**
-  - Line 1541: Fundamental Theorem n=0 (requires compatibility lemmas for each typing rule)
-  - This is the expected "hard" case - proving well-typed expressions satisfy logical relation
-- ReducibilityFull.v: 2 admits
-  - 1 substitution-preserves-typing (T_App body)
-  - 1 store typing invariant (T_Deref)
+  - Line 1541: Fundamental Theorem n=0 (requires Strong Normalization)
+  - Proves: well-typed TFn values applied to related arguments produce related results
+  - Depends on: `well_typed_SN` from ReducibilityFull.v
+- ReducibilityFull.v: 2 admits (DELEGATED to Claude AI Web)
+  - Line 546: T_App beta case - needs access to body's typing derivation
+  - Line 627: T_Deref store invariant - needs store well-formedness threading
+
+**Dependency Chain:**
+```
+ReducibilityFull.v admits (2) → well_typed_SN → NonInterference_v2.v admit (1)
+```
 
 **Next Priority:**
-- Address Fundamental Theorem n=0 case (compatibility lemmas for each typing rule)
-- This requires proving: for each typing rule T, the conclusion satisfies val_rel_at_type
+1. **DELEGATED:** Claude AI Web working on ReducibilityFull.v SN proof
+   - See: `06_COORDINATION/delegation_prompts/SN_COMPLETE_PROOF.md`
+2. Once SN proven, use `well_typed_SN` to prove NonInterference_v2.v line 1541
+3. Final goal: 0 admits in core non-interference proof
 
 ---
 
