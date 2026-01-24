@@ -270,31 +270,27 @@ Qed.
 Lemma store_wf_update_existing : forall Σ st l T sl v,
   store_wf Σ st ->
   store_ty_lookup l Σ = Some (T, sl) ->
+  value v ->
   has_type nil Σ Public v T EffectPure ->
   store_wf Σ (store_update l v st).
 Proof.
-  intros Σ st l T sl v [HΣtoSt HSttoΣ] Hlookup Hv.
+  intros Σ st l T sl v [HΣtoSt HSttoΣ] Hlookup Hval Hv.
   split.
   - intros l0 T0 sl0 Hlookup0.
     destruct (Nat.eqb l0 l) eqn:Heq.
     + apply Nat.eqb_eq in Heq. subst.
       rewrite Hlookup in Hlookup0. inversion Hlookup0; subst.
-      exists v. split.
-      * apply store_lookup_update_eq.
-      * exact Hv.
+      exists v. split; [apply store_lookup_update_eq | split; [exact Hval | exact Hv]].
     + apply Nat.eqb_neq in Heq.
-      destruct (HΣtoSt l0 T0 sl0 Hlookup0) as [v0 [Hst Hty]].
-      exists v0. split.
-      * rewrite store_lookup_update_neq; auto.
-      * exact Hty.
+      destruct (HΣtoSt l0 T0 sl0 Hlookup0) as [v0 [Hst [Hval0 Hty0]]].
+      exists v0. split; [rewrite store_lookup_update_neq; auto | split; [exact Hval0 | exact Hty0]].
   - intros l0 v0 Hst.
     destruct (Nat.eqb l0 l) eqn:Heq.
     + apply Nat.eqb_eq in Heq. subst.
-      exists T, sl. split.
-      * exact Hlookup.
-      * assert (store_lookup l (store_update l v st) = Some v) as Hst'.
-        { apply store_lookup_update_eq. }
-        rewrite Hst' in Hst. inversion Hst. subst. exact Hv.
+      exists T, sl. split; [exact Hlookup |].
+      assert (store_lookup l (store_update l v st) = Some v) as Hst'.
+      { apply store_lookup_update_eq. }
+      rewrite Hst' in Hst. inversion Hst. subst. split; [exact Hval | exact Hv].
     + apply Nat.eqb_neq in Heq.
       rewrite store_lookup_update_neq in Hst; [exact (HSttoΣ l0 v0 Hst) | exact Heq].
 Qed.
@@ -303,10 +299,11 @@ Lemma store_wf_update_fresh : forall Σ st l T sl v,
   store_wf Σ st ->
   store_lookup l st = None ->
   store_ty_lookup l Σ = None ->
+  value v ->
   has_type nil Σ Public v T EffectPure ->
   store_wf (store_ty_update l T sl Σ) (store_update l v st).
 Proof.
-  intros Σ st l T sl v [HΣtoSt HSttoΣ] Hstnone Htynone Hv.
+  intros Σ st l T sl v [HΣtoSt HSttoΣ] Hstnone Htynone Hval Hv.
   split.
   - intros l0 T0 sl0 Hlookup.
     simpl in Hlookup.
@@ -314,38 +311,36 @@ Proof.
     + apply Nat.eqb_eq in Heq. subst.
       rewrite store_ty_lookup_update_eq in Hlookup.
       inversion Hlookup; subst.
-      exists v. split.
-      * apply store_lookup_update_eq.
-      * apply store_ty_extends_preserves_typing with (Σ := Σ).
-        -- apply store_ty_extends_update_fresh. exact Htynone.
-        -- exact Hv.
+      exists v. split; [apply store_lookup_update_eq | split; [exact Hval |]].
+      apply store_ty_extends_preserves_typing with (Σ := Σ).
+      * apply store_ty_extends_update_fresh. exact Htynone.
+      * exact Hv.
     + apply Nat.eqb_neq in Heq.
       rewrite store_ty_lookup_update_neq in Hlookup; auto.
-      destruct (HΣtoSt l0 T0 sl0 Hlookup) as [v0 [Hst Hty]].
-      exists v0. split.
-      * rewrite store_lookup_update_neq; auto.
-      * apply store_ty_extends_preserves_typing with (Σ := Σ).
-        -- apply store_ty_extends_update_fresh. exact Htynone.
-        -- exact Hty.
+      destruct (HΣtoSt l0 T0 sl0 Hlookup) as [v0 [Hst [Hval0 Hty0]]].
+      exists v0. split; [rewrite store_lookup_update_neq; auto | split; [exact Hval0 |]].
+      apply store_ty_extends_preserves_typing with (Σ := Σ).
+      * apply store_ty_extends_update_fresh. exact Htynone.
+      * exact Hty0.
   - intros l0 v0 Hst.
     destruct (Nat.eqb l0 l) eqn:Heq.
     + apply Nat.eqb_eq in Heq. subst.
-      exists T, sl. split.
-      * apply store_ty_lookup_update_eq.
-      * assert (store_lookup l (store_update l v st) = Some v) as Hst'.
-        { apply store_lookup_update_eq. }
-        rewrite Hst' in Hst. inversion Hst. subst.
-        apply store_ty_extends_preserves_typing with (Σ := Σ).
-        -- apply store_ty_extends_update_fresh. exact Htynone.
-        -- exact Hv.
+      exists T, sl. split; [apply store_ty_lookup_update_eq |].
+      assert (store_lookup l (store_update l v st) = Some v) as Hst'.
+      { apply store_lookup_update_eq. }
+      rewrite Hst' in Hst. inversion Hst. subst.
+      split; [exact Hval |].
+      apply store_ty_extends_preserves_typing with (Σ := Σ).
+      * apply store_ty_extends_update_fresh. exact Htynone.
+      * exact Hv.
     + apply Nat.eqb_neq in Heq.
       rewrite store_lookup_update_neq in Hst; auto.
-      destruct (HSttoΣ l0 v0 Hst) as [T0 [sl0 [Hlookup0 Hty0]]].
-      exists T0, sl0. split.
-      * rewrite store_ty_lookup_update_neq; [exact Hlookup0 | exact Heq].
-      * apply store_ty_extends_preserves_typing with (Σ := Σ).
-        -- apply store_ty_extends_update_fresh. exact Htynone.
-        -- exact Hty0.
+      destruct (HSttoΣ l0 v0 Hst) as [T0 [sl0 [Hlookup0 [Hval0 Hty0]]]].
+      exists T0, sl0. split; [rewrite store_ty_lookup_update_neq; [exact Hlookup0 | exact Heq] |].
+      split; [exact Hval0 |].
+      apply store_ty_extends_preserves_typing with (Σ := Σ).
+      * apply store_ty_extends_update_fresh. exact Htynone.
+      * exact Hty0.
 Qed.
 
 Lemma store_ty_lookup_fresh_none : forall Σ st,
@@ -1062,7 +1057,7 @@ Proof.
   (* ST_DerefLoc *)
   - inversion Hty; subst.
     destruct Hwf as [HΣtoSt HSttoΣ].
-    destruct (HSttoΣ l e0' H) as [T1 [sl1 [Hlookup Htyv]]].
+    destruct (HSttoΣ l e0' H) as [T1 [sl1 [Hlookup [Hvalv Htyv]]]].
     exists Σ. eexists.
     split.
     + apply store_ty_extends_refl.
