@@ -33,7 +33,7 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-24 Session 41)
+### Grand Totals (2026-01-24 Session 42)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
@@ -41,20 +41,34 @@
 | **Theorems Required** | ~2,500 | Comprehensive coverage |
 | **Compliance Axioms** | 75 | Industry regulations (KEEP) |
 | **Core Axioms** | 1 | `val_rel_n_step_up_by_type` only |
-| **Fundamental Theorem** | 22/24 cases | All except T_Lam, T_App |
+| **Fundamental Theorem** | 23/24 cases | All except T_Lam n=0 |
 | **Build Status** | ✅ GREEN | All files compile |
-| **Admits in Core** | 20 (18 meaningful) | NonInterference_v2.v - delegated to Claude AI Web |
+| **Admits in NonInterference_v2.v** | **1** | Down from 11! Fundamental Theorem n=0 only |
 | **Threats Covered** | 1,231+ | All made obsolete |
 
-### Recent Progress (Session 41)
+### Recent Progress (Session 42 continued) - REVOLUTIONARY
+
+| Item | Status | Notes |
+|------|--------|-------|
+| TFn preconditions refactoring | ✅ COMPLETE | Added store_wf, stores_agree_low_fo |
+| Preservation admits | ✅ ELIMINATED | 10 admits removed by propagating store_wf |
+| NonInterference_v2.v admits | ✅ 11→1 | Only Fundamental Theorem n=0 remains |
+| Refactoring plan | ✅ EXECUTED | Full structural fix implemented |
+
+### Session 42 Earlier Progress
+
+| Item | Status | Notes |
+|------|--------|-------|
+| TSum trivial relation fix | ✅ PROVEN | Removed TSum from fo_type_has_trivial_rel |
+| Mixed constructor admits | ✅ ELIMINATED | EInl vs EInr cases now contradictions |
+
+### Previous Progress (Session 41)
 
 | Item | Status | Notes |
 |------|--------|-------|
 | TProd/TSum TFn step-up | ✅ PROVEN | Direct TFn components via downcast/upcast |
 | Trivial types step-up | ✅ PROVEN | TList, TOption, etc. - exact I |
 | Predicate-independent | ✅ PROVEN | TRef, TChan, TSecureChan - exact Hrel |
-| Nested TProd/TSum | 🟡 ADMITTED | Delegated to Claude AI Web |
-| Claude AI Web delegation | 🔄 RUNNING | 18 meaningful admits sent |
 
 ### Previous Progress (Session 40)
 
