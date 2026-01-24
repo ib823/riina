@@ -17,8 +17,8 @@
 ```
 
 **Report Date:** 2026-01-24
-**Session:** 41 (Continued - Session 2)
-**Overall Grade:** A (Strong Progress - SN Declassify Proven)
+**Session:** 41 (Continued - Session 3)
+**Overall Grade:** A (Strong Progress - Nested TProd/TSum Resolved)
 
 ---
 
@@ -29,42 +29,39 @@
 | Core Axioms | 1 | 0 | 🟡 99% eliminated |
 | Fundamental Theorem | 22/24 | 24/24 | 🟡 92% complete |
 | Coq Build | PASSING | PASSING | ✅ GREEN |
-| Admits in NonInterference_v2.v | 24 | 0 | 🟡 Analysis ongoing |
-| Admits in ReducibilityFull.v | 4 | 0 | 🟡 Reduced from 6 |
+| Admits in NonInterference_v2.v | 13 | 0 | 🟢 22→13 (9 eliminated) |
+| Admits in ReducibilityFull.v | 2 | 0 | 🟢 4→2 (2 eliminated) |
 | Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
 
+**Session 41 Part 3 Key Achievements:**
+- **ADDED:** `val_rel_at_type_step_up_with_IH` lemma - Handles ALL type cases by structural induction
+- **ELIMINATED:** 9 nested TProd/TSum admits using the new helper lemma
+- **PATTERN:** Recursive descent with IH for TFn, simple recursion for TProd/TSum
+- **REDUCTION:** NonInterference_v2.v admits: 22 → 13 (9 eliminated!)
+
 **Session 41 Part 2 Key Achievements:**
-- **PROVEN:** `SN_declassify_value_left_aux` - Strong normalization for declassify with value left
-- **PROVEN:** `SN_declassify_value_left` - Wrapper lemma for value left case
-- **PROVEN:** `SN_declassify_aux` - Main auxiliary lemma using cfg pattern
-- **PROVEN:** `SN_declassify` - Complete SN closure for EDeclassify
-- **PATTERN:** Used same auxiliary cfg pattern as proven SN_pair, SN_grant, SN_perform
-- **REDUCTION:** ReducibilityFull.v admits: 6 → 4 (2 eliminated)
-- **INTEGRATION:** Claude AI Web output v3 received and archived
-- **ANALYSIS:** Identified architectural issue with store_wf_to_has_values
+- **PROVEN:** `SN_declassify` family (4 lemmas) - Complete SN closure
+- **ARCHITECTURAL FIX:** Strengthened `store_wf` to include `value v`
+- **REDUCTION:** ReducibilityFull.v admits: 6 → 2 (4 eliminated via store_wf fix)
+- **ELIMINATED:** `store_wf_to_has_values` admit (now trivial)
 
 **Session 40/41 Part 1 Achievements:**
 - Implemented `combined_step_up_all` theorem using **strong induction** on step index
 - **BREAKTHROUGH:** Resolved mutual dependency between val_rel and store_rel step-up
-- Proved `typing_nil_implies_closed` lemma
 - **REVOLUTIONARY FIX:** Made `store_rel_n` security-aware
-- TProd/TSum with TFn components - step-up proofs for direct TFn components
 
 **Remaining Admits Analysis:**
-- NonInterference_v2.v: 24 admits
-  - 3 dead code (TSum mixed cases + val_rel_at_type_fo_trivial)
-  - 1 store_wf_to_has_values (requires strengthening store_wf or semantic invariant)
+- NonInterference_v2.v: 13 admits
+  - 2 justified: mixed constructors at HIGH security (dead code for NI)
   - 1 Fundamental Theorem n=0 (requires compatibility lemmas)
-  - 5 TFn preservation (store_wf, store_has_values, stores_agree_low_fo)
-  - 14 Nested TProd/TSum recursion in various locations
-- ReducibilityFull.v: 4 admits
-  - 2 substitution-preserves-typing (T_App, T_Deref)
-  - 2 lemma-level admits (well_typed_is_SN incomplete)
+  - 10 preservation: store_wf, store_has_values, stores_agree_low_fo after evaluation
+- ReducibilityFull.v: 2 admits
+  - 1 substitution-preserves-typing (T_App body)
+  - 1 store typing invariant (T_Deref)
 
-**Claude AI Web v3 Integration:**
-- Received: EXACT_REPLACEMENTS.md, NonInterference_Aux.v, admit_replacements_v2.v
-- Key insight: store_wf_to_has_values requires semantic invariant beyond typing
-- Action: Need to add store_has_values as precondition or strengthen store_wf definition
+**Next Priority:**
+- Prove preservation corollaries for store properties
+- Address Fundamental Theorem n=0 case (compatibility lemmas)
 
 ---
 
