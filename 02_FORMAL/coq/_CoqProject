@@ -70,6 +70,9 @@ properties/ClosedValueLemmas.v
 # Store Well-Formedness Lemmas (Session 43)
 properties/StoreWfLemmas.v
 
+# Substitution Environment Lemmas (Session 43)
+properties/SubstitutionCommute.v
+
 # Fundamental Theorem Infrastructure (Session 38)
 # Disabled: Abstract type parameters require destruct on first_order_type
 # properties/FundamentalTheorem.v
