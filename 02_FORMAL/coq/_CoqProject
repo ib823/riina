@@ -24,6 +24,7 @@ properties/FirstOrderComplete.v
 
 # Properties - Phase 2 Cumulative Relation (WORKER_α)
 properties/CumulativeRelation.v
+properties/ValRelMonotone.v
 properties/CumulativeMonotone.v
 properties/KripkeProperties.v
 
