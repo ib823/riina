@@ -1400,15 +1400,262 @@ Proof.
                 - (* stores_agree_low_fo Σ'' st1' st2' - preserved by evaluation *)
                   admit. }
             + (* TProd with HO component - val_rel_at_type uses predicates recursively *)
-              (* For TProd, the val_rel_at_type recursively calls on components.
-                 When both components are FO, this would have been discriminated.
-                 At least one is HO, requiring step-invariance of val_rel_at_type.
-                 SEMANTIC JUSTIFICATION: TProd step-up is valid because:
-                 - FO components: predicate-independent
-                 - HO components: would need recursive proof, but semantically sound *)
-              admit.
+              (* For TProd, val_rel_at_type = exists ... /\ val_rel_at_type T1 /\ val_rel_at_type T2
+                 We prove step-invariance using:
+                 - FO components: predicate-independent (val_rel_at_type_fo_equiv)
+                 - HO components: for TFn, use downcast/upcast via monotonicity and IH *)
+              simpl. simpl in Hrat_n'.
+              destruct Hrat_n' as [comp_x1 [comp_y1 [comp_x2 [comp_y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+              exists comp_x1, comp_y1, comp_x2, comp_y2.
+              split. { exact Heq1. }
+              split. { exact Heq2. }
+              (* For each component, prove val_rel_at_type step-invariance *)
+              split.
+              { (* val_rel_at_type ... (S n') ... T1 comp_x1 comp_x2 from Hrel1 at n' *)
+                destruct (first_order_type T1) eqn:Hfo_T1.
+                - (* T1 is FO: val_rel_at_type is predicate-independent *)
+                  apply val_rel_at_type_fo_equiv; [exact Hfo_T1|].
+                  apply val_rel_at_type_fo_equiv in Hrel1; [exact Hrel1 | exact Hfo_T1].
+                - (* T1 is HO: step-up for function-like types.
+                     For TFn: use downcast/upcast via monotonicity and IH.
+                     For other HO (nested TProd/TSum with TFn): admit for now. *)
+                  destruct T1; try discriminate Hfo_T1.
+                  + (* TFn T1_1 T1_2 e0 *)
+                    simpl. simpl in Hrel1.
+                    intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn'.
+                    assert (Hargs_n' : val_rel_n n' Σ'_f T1_1 arg_x arg_y).
+                    { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
+                    assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
+                    { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                    specialize (Hrel1 Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n').
+                    destruct Hrel1 as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r Hstrel_r]]]]]]]]]].
+                    exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
+                    split. { exact Hext_r. }
+                    split. { exact Hstep1_r. }
+                    split. { exact Hstep2_r. }
+                    assert (Hcombined : combined_step_up n').
+                    { apply IH_strong. lia. }
+                    destruct Hcombined as [Hval_step_n' _].
+                    split.
+                    { apply Hval_step_n'.
+                      - exact Hvrel_r.
+                      - intros Hho_res.
+                        destruct n' as [| n''].
+                        ++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                        ++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                      - intros Hho_res.
+                        destruct n' as [| n''].
+                        ++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                        ++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                    { (* store_rel step-up requires preservation *) admit. }
+                  + (* TProd nested *) admit.
+                  + (* TSum nested *) admit.
+                  + (* TList - True *) exact I.
+                  + (* TOption - True *) exact I.
+                  + (* TRef - no predicates *) exact Hrel1.
+                  + (* TSecret - True *) exact I.
+                  + (* TLabeled - True *) exact I.
+                  + (* TTainted - True *) exact I.
+                  + (* TSanitized - True *) exact I.
+                  + (* TProof - True *) exact I.
+                  + (* TChan - True *) exact I.
+                  + (* TSecureChan - True *) exact I.
+                  + (* TConstantTime - True *) exact I.
+                  + (* TZeroizing - True *) exact I. }
+              { (* val_rel_at_type ... (S n') ... T2 comp_y1 comp_y2 from Hrel2 at n' *)
+                destruct (first_order_type T2) eqn:Hfo_T2.
+                - apply val_rel_at_type_fo_equiv; [exact Hfo_T2|].
+                  apply val_rel_at_type_fo_equiv in Hrel2; [exact Hrel2 | exact Hfo_T2].
+                - destruct T2; try discriminate Hfo_T2.
+                  + (* TFn *)
+                    simpl. simpl in Hrel2.
+                    intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn'.
+                    assert (Hargs_n' : val_rel_n n' Σ'_f T2_1 arg_x arg_y).
+                    { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
+                    assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
+                    { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                    specialize (Hrel2 Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n').
+                    destruct Hrel2 as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r Hstrel_r]]]]]]]]]].
+                    exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
+                    split. { exact Hext_r. }
+                    split. { exact Hstep1_r. }
+                    split. { exact Hstep2_r. }
+                    assert (Hcombined : combined_step_up n').
+                    { apply IH_strong. lia. }
+                    destruct Hcombined as [Hval_step_n' _].
+                    split.
+                    { apply Hval_step_n'.
+                      - exact Hvrel_r.
+                      - intros Hho_res.
+                        destruct n' as [| n''].
+                        ++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                        ++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                      - intros Hho_res.
+                        destruct n' as [| n''].
+                        ++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                        ++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                           rewrite Hho_res in Hty_r.
+                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                    { (* store_rel step-up requires preservation *) admit. }
+                  + (* TProd nested *) admit.
+                  + (* TSum nested *) admit.
+                  + (* TList - True *) exact I.
+                  + (* TOption - True *) exact I.
+                  + (* TRef - no predicates *) exact Hrel2.
+                  + (* TSecret - True *) exact I.
+                  + (* TLabeled - True *) exact I.
+                  + (* TTainted - True *) exact I.
+                  + (* TSanitized - True *) exact I.
+                  + (* TProof - True *) exact I.
+                  + (* TChan - True *) exact I.
+                  + (* TSecureChan - True *) exact I.
+                  + (* TConstantTime - True *) exact I.
+                  + (* TZeroizing - True *) exact I. }
             + (* TSum with HO component - similar to TProd *)
-              admit.
+              simpl. simpl in Hrat_n'.
+              destruct Hrat_n' as [[comp_x1 [comp_x2 [Heq1 [Heq2 Hrel_x]]]] | [comp_y1 [comp_y2 [Heq1 [Heq2 Hrel_y]]]]].
+              * (* EInl case *)
+                left. exists comp_x1, comp_x2. split. { exact Heq1. } split. { exact Heq2. }
+                destruct (first_order_type T1) eqn:Hfo_T1.
+                -- apply val_rel_at_type_fo_equiv; [exact Hfo_T1|].
+                   apply val_rel_at_type_fo_equiv in Hrel_x; [exact Hrel_x | exact Hfo_T1].
+                -- destruct T1; try discriminate Hfo_T1.
+                   ++ (* TFn *)
+                      simpl. simpl in Hrel_x.
+                      intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn'.
+                      assert (Hargs_n' : val_rel_n n' Σ'_f T1_1 arg_x arg_y).
+                      { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
+                      assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
+                      { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                      specialize (Hrel_x Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n').
+                      destruct Hrel_x as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r Hstrel_r]]]]]]]]]].
+                      exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
+                      split. { exact Hext_r. }
+                      split. { exact Hstep1_r. }
+                      split. { exact Hstep2_r. }
+                      assert (Hcombined : combined_step_up n').
+                      { apply IH_strong. lia. }
+                      destruct Hcombined as [Hval_step_n' _].
+                      split.
+                      { apply Hval_step_n'.
+                        - exact Hvrel_r.
+                        - intros Hho_res.
+                          destruct n' as [| n''].
+                          +++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                          +++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                        - intros Hho_res.
+                          destruct n' as [| n''].
+                          +++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                          +++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                      { (* store_rel step-up requires preservation *) admit. }
+                   ++ (* TProd nested *) admit.
+                   ++ (* TSum nested *) admit.
+                   ++ (* TList - True *) exact I.
+                   ++ (* TOption - True *) exact I.
+                   ++ (* TRef - no predicates *) exact Hrel_x.
+                   ++ (* TSecret - True *) exact I.
+                   ++ (* TLabeled - True *) exact I.
+                   ++ (* TTainted - True *) exact I.
+                   ++ (* TSanitized - True *) exact I.
+                   ++ (* TProof - True *) exact I.
+                   ++ (* TChan - True *) exact I.
+                   ++ (* TSecureChan - True *) exact I.
+                   ++ (* TConstantTime - True *) exact I.
+                   ++ (* TZeroizing - True *) exact I.
+              * (* EInr case *)
+                right. exists comp_y1, comp_y2. split. { exact Heq1. } split. { exact Heq2. }
+                destruct (first_order_type T2) eqn:Hfo_T2.
+                -- apply val_rel_at_type_fo_equiv; [exact Hfo_T2|].
+                   apply val_rel_at_type_fo_equiv in Hrel_y; [exact Hrel_y | exact Hfo_T2].
+                -- destruct T2; try discriminate Hfo_T2.
+                   ++ (* TFn *)
+                      simpl. simpl in Hrel_y.
+                      intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn'.
+                      assert (Hargs_n' : val_rel_n n' Σ'_f T2_1 arg_x arg_y).
+                      { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
+                      assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
+                      { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                      specialize (Hrel_y Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n').
+                      destruct Hrel_y as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r Hstrel_r]]]]]]]]]].
+                      exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
+                      split. { exact Hext_r. }
+                      split. { exact Hstep1_r. }
+                      split. { exact Hstep2_r. }
+                      assert (Hcombined : combined_step_up n').
+                      { apply IH_strong. lia. }
+                      destruct Hcombined as [Hval_step_n' _].
+                      split.
+                      { apply Hval_step_n'.
+                        - exact Hvrel_r.
+                        - intros Hho_res.
+                          destruct n' as [| n''].
+                          +++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                          +++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                        - intros Hho_res.
+                          destruct n' as [| n''].
+                          +++ rewrite val_rel_n_0_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                          +++ rewrite val_rel_n_S_unfold in Hvrel_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
+                              rewrite Hho_res in Hty_r.
+                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                      { (* store_rel step-up requires preservation *) admit. }
+                   ++ (* TProd nested *) admit.
+                   ++ (* TSum nested *) admit.
+                   ++ (* TList - True *) exact I.
+                   ++ (* TOption - True *) exact I.
+                   ++ (* TRef - no predicates *) exact Hrel_y.
+                   ++ (* TSecret - True *) exact I.
+                   ++ (* TLabeled - True *) exact I.
+                   ++ (* TTainted - True *) exact I.
+                   ++ (* TSanitized - True *) exact I.
+                   ++ (* TProof - True *) exact I.
+                   ++ (* TChan - True *) exact I.
+                   ++ (* TSecureChan - True *) exact I.
+                   ++ (* TConstantTime - True *) exact I.
+                   ++ (* TZeroizing - True *) exact I.
             + (* TList with HO component - val_rel_at_type = True *)
               exact I.
             + (* TOption with HO component - val_rel_at_type = True *)
