@@ -235,96 +235,12 @@ Proof.
   exact (SN_app_value_left_direct_aux f (e2, st, ctx) Hv Hsn2 Hbeta).
 Qed.
 
-(** Main auxiliary lemma - the key insight is that Hbeta is about e1,
-    and when e1 steps, the IH takes a NEW Hbeta about e1'. *)
-Lemma SN_app_direct_aux : forall cfg e2,
-  SN cfg ->
-  (forall st ctx, SN (e2, st, ctx)) ->
-  direct_lambda_SN (fst (fst cfg)) ->
-  SN (EApp (fst (fst cfg)) e2, snd (fst cfg), snd cfg).
-Proof.
-  intros cfg e2 Hsn1 Hsn2 Hbeta.
-  induction Hsn1 as [[[e1 st] ctx] Hacc1 IH1].
-  simpl in *. constructor.
-  intros [[e' st'] ctx'] Hstep.
-  unfold step_inv in Hstep. simpl in Hstep.
-  inversion Hstep; subst.
-  - (* ST_AppAbs: e1 = ELam x T body, beta reduction *)
-    unfold direct_lambda_SN in Hbeta.
-    eapply Hbeta; [reflexivity | assumption].
-  - (* ST_App1: e1 --> e1' *)
-    (* Here's the key: IH1 takes a NEW Hbeta about e1' *)
-    (* In fundamental_reducibility, we prove this from typing of e1' *)
-    (* For now, we need to show that IF we had direct_lambda_SN e1',
-       then SN (EApp e1' e2, ...). The IH1 provides this! *)
-    (* But wait - IH1 uses the SAME Hbeta, which is about e1, not e1' *)
+(** NOTE: The direct_lambda_SN approach (SN_app_direct_aux, SN_app_direct_aux2)
+    was insufficient because the IH requires direct_lambda_SN for intermediate
+    expressions, which cannot be derived from the original hypothesis.
 
-    (* CRITICAL INSIGHT: e1 stepped, so e1 is NOT a value *)
-    (* Therefore e1 is NOT a lambda *)
-    (* Therefore direct_lambda_SN e1 is vacuously true (premise false) *)
-    (* But for e1', we need a direct_lambda_SN e1' *)
-
-    (* The solution: revert Hbeta and include it in the induction predicate *)
-    (* Let me restructure... *)
-    admit. (* Need different approach *)
-  - (* ST_App2: value e1, e2 --> e2' *)
-    assert (Hsn2': SN (e2', st', ctx')).
-    { eapply SN_step; [apply Hsn2 | exact H7]. }
-    apply SN_app_value_left_direct; [exact H1 | exact Hsn2' | exact Hbeta].
-Admitted. (* Needs restructuring *)
-
-(**
-   The issue above is that the IH uses the SAME Hbeta (about e1), but we
-   need Hbeta for e1'. The solution is to NOT fix Hbeta before induction,
-   but instead let the IH take Hbeta as a hypothesis for each e1'.
-
-   This is done by reverting Hbeta before induction.
-*)
-
-(** Correctly structured auxiliary lemma *)
-Lemma SN_app_direct_aux2 : forall cfg e2,
-  SN cfg ->
-  (forall st ctx, SN (e2, st, ctx)) ->
-  forall Hbeta : direct_lambda_SN (fst (fst cfg)),
-  SN (EApp (fst (fst cfg)) e2, snd (fst cfg), snd cfg).
-Proof.
-  intros cfg e2 Hsn1 Hsn2.
-  induction Hsn1 as [[[e1 st] ctx] Hacc1 IH1].
-  intros Hbeta. simpl in *. constructor.
-  intros [[e' st'] ctx'] Hstep.
-  unfold step_inv in Hstep. simpl in Hstep.
-  inversion Hstep; subst.
-  - (* ST_AppAbs: e1 = ELam x T body *)
-    eapply Hbeta; [reflexivity | assumption].
-  - (* ST_App1: e1 --> e1' *)
-    (* Use IH1 with cfg' = (e1', st', ctx') *)
-    (* IH1 takes direct_lambda_SN e1' as hypothesis *)
-    apply (IH1 (e1', st', ctx')).
-    + unfold step_inv. simpl. exact H0.
-    + (* Need: direct_lambda_SN e1' *)
-      (* This is PROVIDED BY THE CALLER when using this lemma *)
-      (* In fundamental_reducibility, this is proven from typing of e1' *)
-
-      (* For now, we need to derive it somehow... but we can't from Hbeta! *)
-      (* Hbeta : direct_lambda_SN e1, which says: e1 = ELam -> ... *)
-      (* But e1 stepped, so e1 is NOT a lambda (values don't step) *)
-      (* So Hbeta tells us nothing about e1' *)
-
-      (* The trick: in THIS lemma, we don't need to prove it - *)
-      (* we take it as a hypothesis. The caller provides it. *)
-
-      (* But the IH needs it NOW, not later. How? *)
-      (* Answer: we need to change the statement to take a "family" of Hbetas *)
-      admit.
-  - (* ST_App2: value e1, e2 --> e2' *)
-    assert (Hsn2': SN (e2', st', ctx')).
-    { eapply SN_step; [apply Hsn2 | exact H7]. }
-    apply SN_app_value_left_direct; [exact H1 | exact Hsn2' | exact Hbeta].
-Admitted.
-
-(**
-   The real solution is to take a "family" of Hbetas indexed by reachable e1.
-   Define: for all e1' reachable from e1, direct_lambda_SN e1'.
+    The correct solution is the family_lambda_SN approach below, which provides
+    direct_lambda_SN for ALL reachable expressions. See SN_app_family.
 *)
 
 (** Family of SN properties for all reachable expressions
