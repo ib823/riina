@@ -156,235 +156,73 @@ Create the following NEW files. Each file must:
 
 ---
 
-### TASK 1: Create `properties/ClosedValueLemmas.v`
+### TASK 1: ClosedValueLemmas.v - ALREADY COMPLETED
 
-**Purpose**: Prove that values typed in empty context are closed expressions.
+**Status**: This file has already been created and is in the codebase.
 
-**File Content** (create exactly this):
+**Location**: `02_FORMAL/coq/properties/ClosedValueLemmas.v`
+
+**IMPORTANT NOTE**:
+- The definition uses `closed_expr_cv` (not `closed_expr`) to avoid conflicts with existing definitions
+- The `subst_closed_noop` lemma DOES NOT WORK for lambda binders - do NOT attempt to prove it
+- The working approach uses simpler decomposition lemmas
+
+**What's already proven**:
+```coq
+Definition closed_expr_cv (e : expr) : Prop := forall x, ~ free_in x e.
+
+Lemma value_typed_closed : forall Σ Δ v T ε,
+  value v -> has_type nil Σ Δ v T ε -> closed_expr_cv v.
+
+Lemma closed_pair_cv : forall e1 e2,
+  closed_expr_cv (EPair e1 e2) <-> closed_expr_cv e1 /\ closed_expr_cv e2.
+
+Lemma closed_inl_cv, closed_inr_cv, closed_app_cv : (* similar *)
+
+Lemma closed_unit_cv, closed_bool_cv, closed_int_cv, closed_string_cv, closed_loc_cv : (* base types *)
+
+Lemma closed_lam_body_cv : forall x T body y,
+  closed_expr_cv (ELam x T body) -> free_in y body -> y = x.
+```
+
+### TASK 2: Create `properties/SubstitutionCommute.v` - COMPLEX
+
+**Status**: This is a complex lemma that requires careful handling.
+
+**CRITICAL INFO - Read the actual definitions**:
 
 ```coq
-(** * ClosedValueLemmas.v
+(* In ReducibilityFull.v - subst_rho is a FUNCTION, not a list! *)
+Definition subst_rho := ident -> expr.  (* FUNCTION type *)
 
-    Lemmas about closed expressions and values.
+Definition id_rho : subst_rho := fun x => EVar x.
 
-    Key theorem: Values typed in empty context have no free variables.
+Definition extend_rho (ρ : subst_rho) (x : ident) (v : expr) : subst_rho :=
+  fun y => if String.eqb y x then v else ρ y.
 
-    Mode: ULTRA KIASU | ZERO ADMITS
-*)
-
-Require Import String.
-Require Import List.
-Require Import RIINA.foundations.Syntax.
-Require Import RIINA.foundations.Typing.
-Require Import RIINA.type_system.Preservation.
-Import ListNotations.
-
-(** Closed expression: no free variables *)
-Definition closed_expr (e : expr) : Prop := forall x, ~ free_in x e.
-
-(** Values are closed under empty context typing *)
-Lemma value_typed_closed : forall Σ Δ v T ε,
-  value v ->
-  has_type nil Σ Δ v T ε ->
-  closed_expr v.
-Proof.
-  intros Σ Δ v T ε Hval Hty.
-  unfold closed_expr. intros x Hfree.
-  (* Use free_in_context from Preservation.v: if x is free in v, x must be in context *)
-  (* But context is nil, so this is impossible *)
-  destruct (free_in_context x v nil Σ Δ T ε Hfree Hty) as [T' Hlook].
-  simpl in Hlook. discriminate.
-Qed.
-
-(** Substitution has no effect on closed expressions *)
-Lemma subst_closed_noop : forall x v e,
-  closed_expr e ->
-  [x := v] e = e.
-Proof.
-  intros x v e Hclosed.
-  induction e; simpl; try reflexivity.
-  - (* EVar *)
-    destruct (String.eqb x i) eqn:Heq.
-    + apply String.eqb_eq in Heq. subst.
-      exfalso. apply (Hclosed i). simpl. reflexivity.
-    + reflexivity.
-  - (* ELam *)
-    destruct (String.eqb x i) eqn:Heq.
-    + reflexivity.
-    + f_equal. apply IHe.
-      unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. split.
-      * intro Heq'. subst. apply String.eqb_neq in Heq. contradiction.
-      * exact Hy.
-  - (* EApp *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. exact Hy.
-  - (* EPair *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. exact Hy.
-  - (* EFst *) f_equal. apply IHe. unfold closed_expr in *. exact Hclosed.
-  - (* ESnd *) f_equal. apply IHe. unfold closed_expr in *. exact Hclosed.
-  - (* EInl *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* EInr *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* ECase *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + destruct (String.eqb x i) eqn:Heq1; [reflexivity|].
-      apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. left.
-      split; [|exact Hy].
-      intro Heq'. subst. apply String.eqb_neq in Heq1. contradiction.
-    + destruct (String.eqb x i0) eqn:Heq2; [reflexivity|].
-      apply IHe3. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. right.
-      split; [|exact Hy].
-      intro Heq'. subst. apply String.eqb_neq in Heq2. contradiction.
-  - (* EIf *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. left. exact Hy.
-    + apply IHe3. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. right. exact Hy.
-  - (* ELet *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + destruct (String.eqb x i) eqn:Heq; [reflexivity|].
-      apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right.
-      split; [|exact Hy].
-      intro Heq'. subst. apply String.eqb_neq in Heq. contradiction.
-  - (* EPerform *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* EHandle *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + destruct (String.eqb x i) eqn:Heq; [reflexivity|].
-      apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right.
-      split; [|exact Hy].
-      intro Heq'. subst. apply String.eqb_neq in Heq. contradiction.
-  - (* ERef *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* EDeref *) f_equal. apply IHe. unfold closed_expr in *. exact Hclosed.
-  - (* EAssign *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. exact Hy.
-  - (* EClassify *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* EDeclassify *)
-    f_equal.
-    + apply IHe1. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. left. exact Hy.
-    + apply IHe2. unfold closed_expr in *. intros y Hy.
-      apply (Hclosed y). simpl. right. exact Hy.
-  - (* EProve *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* ERequire *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-  - (* EGrant *) f_equal. apply IHe. unfold closed_expr in *. intros y Hy.
-    apply (Hclosed y). simpl. exact Hy.
-Qed.
-
-(** Closed expressions for compound types *)
-Lemma closed_pair : forall e1 e2,
-  closed_expr (EPair e1 e2) <-> closed_expr e1 /\ closed_expr e2.
-Proof.
-  intros e1 e2. split.
-  - intros Hc. split; unfold closed_expr in *; intros x Hfree;
-    apply (Hc x); simpl; [left | right]; exact Hfree.
-  - intros [Hc1 Hc2]. unfold closed_expr in *. intros x Hfree.
-    simpl in Hfree. destruct Hfree as [H | H]; [apply (Hc1 x H) | apply (Hc2 x H)].
-Qed.
-
-Lemma closed_inl : forall e T,
-  closed_expr (EInl e T) <-> closed_expr e.
-Proof.
-  intros e T. split.
-  - intros Hc. unfold closed_expr in *. intros x Hfree.
-    apply (Hc x). simpl. exact Hfree.
-  - intros Hc. unfold closed_expr in *. intros x Hfree.
-    simpl in Hfree. apply (Hc x). exact Hfree.
-Qed.
-
-Lemma closed_inr : forall e T,
-  closed_expr (EInr e T) <-> closed_expr e.
-Proof.
-  intros e T. split.
-  - intros Hc. unfold closed_expr in *. intros x Hfree.
-    apply (Hc x). simpl. exact Hfree.
-  - intros Hc. unfold closed_expr in *. intros x Hfree.
-    simpl in Hfree. apply (Hc x). exact Hfree.
-Qed.
-
-(** Values: specific closed lemmas *)
-Lemma closed_unit : closed_expr EUnit.
-Proof. unfold closed_expr. intros x Hfree. simpl in Hfree. exact Hfree. Qed.
-
-Lemma closed_bool : forall b, closed_expr (EBool b).
-Proof. intros b. unfold closed_expr. intros x Hfree. simpl in Hfree. exact Hfree. Qed.
-
-Lemma closed_int : forall n, closed_expr (EInt n).
-Proof. intros n. unfold closed_expr. intros x Hfree. simpl in Hfree. exact Hfree. Qed.
-
-Lemma closed_string : forall s, closed_expr (EString s).
-Proof. intros s. unfold closed_expr. intros x Hfree. simpl in Hfree. exact Hfree. Qed.
-
-Lemma closed_loc : forall l, closed_expr (ELoc l).
-Proof. intros l. unfold closed_expr. intros x Hfree. simpl in Hfree. exact Hfree. Qed.
-
-(** End of file - ZERO ADMITS *)
+(* Apply substitution to expression *)
+Fixpoint subst_env (ρ : subst_rho) (e : expr) : expr :=
+  match e with
+  | EVar x => ρ x  (* NOT lookup - just apply the function *)
+  | ELam x T body => ELam x T (subst_env (extend_rho ρ x (EVar x)) body)
+  (* ... *)
+  | ERef e sl => ERef (subst_env ρ e) sl  (* NOTE: ERef takes 2 args! *)
+  end.
 ```
 
-**Validation**: After creating, run:
-```bash
-cd /workspaces/proof/02_FORMAL/coq
-coqc -Q . RIINA properties/ClosedValueLemmas.v
-grep "Admitted" properties/ClosedValueLemmas.v  # Should return nothing
-```
+**Known Issue**: The `subst_subst_env_commute` lemma is admitted in ReducibilityFull.v because the binder cases (ELam, ECase, ELet, EHandle) require careful reasoning about capture-avoiding substitution. DO NOT attempt unless you have a complete proof.
 
 ---
 
-### TASK 2: Create `properties/SubstitutionCommute.v`
+### TASK 3: ValRelMonotone.v - Use Existing Lemmas
 
-**Purpose**: Prove the substitution-environment commutation lemma.
+**Status**: The monotonicity properties are already partially proven in:
+- `CumulativeRelation.v`: defines `val_rel_le`
+- `CumulativeMonotone.v`: has `val_rel_le_mono` (1 admit for TFn case)
 
-**Key Insight**: The lemma `[x := v] (subst_env (extend_rho ρ x (EVar x)) e) = subst_env (extend_rho ρ x v) e` requires that ρ's range is closed.
+**CRITICAL**: The lemma name is `val_rel_le_mono`, NOT `cumulative_val_rel_le`.
 
-**File Content**: Create a file that:
-1. Defines `subst_rho` (substitution environment)
-2. Defines `extend_rho` (environment extension)
-3. Defines `subst_env` (apply environment to expression)
-4. Defines `closed_rho` (all bindings are closed)
-5. Proves `subst_subst_env_commute` with `closed_rho` premise
-
-Use the definitions from `termination/ReducibilityFull.v` lines 302-343 as reference.
-
----
-
-### TASK 3: Create `properties/ValRelMonotone.v`
-
-**Purpose**: Prove step monotonicity for the cumulative relation.
-
-The cumulative relation `val_rel_le n Σ T v1 v2` is defined in `CumulativeRelation.v`.
-Step monotonicity means: if related at n, related at any m ≤ n.
-
-**Key Insight**: With cumulative definition, this is trivial - just project out.
+**Known Issue**: TFn (function types) have a contravariance problem that makes monotonicity require axioms in step-indexed models. The first-order cases work fine.
 
 ---
 
@@ -430,6 +268,28 @@ Before submitting any file:
 5. **Self-Contained**: Each file must compile independently
 
 ---
+
+## CRITICAL CODEBASE DETAILS - READ CAREFULLY
+
+**Expression constructors with multiple arguments**:
+```coq
+| ERef : expr -> security_level -> expr     (* 2 args: expression AND security level *)
+| EInl : expr -> ty -> expr                 (* 2 args: expression AND type annotation *)
+| EInr : expr -> ty -> expr                 (* 2 args: expression AND type annotation *)
+| EClassify : security_level -> expr -> expr (* DIFFERENT ORDER than you might expect *)
+```
+
+**Type aliases that exist**:
+- `closed_expr` is ALREADY DEFINED in `CumulativeRelation.v` - use `closed_expr_cv` suffix for new definitions
+- `subst_rho` is a FUNCTION `ident -> expr`, NOT a list
+
+**Tactics that work**:
+- `discriminate` for empty list lookup impossibility (use after `simpl in Hlook`)
+- `String.eqb_eq` and `String.eqb_neq` for string equality reasoning
+- `destruct (String.eqb x y) eqn:Heq` for case analysis on string comparison
+
+**Tactics that DON'T work as expected**:
+- `contradiction` sometimes fails even with apparent contradictions - use explicit `exfalso; apply Hneq; exact Heq` pattern instead
 
 ## IMPORTANT NOTES
 
