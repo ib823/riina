@@ -251,9 +251,7 @@ Proof.
   inversion Hstep; subst.
   - (* ST_AppAbs: e1 = ELam x T body, beta reduction *)
     unfold direct_lambda_SN in Hbeta.
-    eapply Hbeta; [reflexivity |].
-    + reflexivity.
-    + exact H0.
+    eapply Hbeta; [reflexivity | assumption].
   - (* ST_App1: e1 --> e1' *)
     (* Here's the key: IH1 takes a NEW Hbeta about e1' *)
     (* In fundamental_reducibility, we prove this from typing of e1' *)
@@ -329,11 +327,19 @@ Admitted.
    Define: for all e1' reachable from e1, direct_lambda_SN e1'.
 *)
 
-(** Family of SN properties for all reachable expressions *)
+(** Family of SN properties for all reachable expressions
+    We define this using expression-level multi-step to avoid store tracking issues *)
+
+(** Expression-level reachability: e1 can step to e1' *)
+Inductive expr_reaches : expr -> expr -> Prop :=
+  | ER_Refl : forall e, expr_reaches e e
+  | ER_Step : forall e1 e1' e2 st ctx st' ctx',
+      (e1, st, ctx) --> (e1', st', ctx') ->
+      expr_reaches e1' e2 ->
+      expr_reaches e1 e2.
+
 Definition family_lambda_SN (e1 : expr) : Prop :=
-  forall e1' st ctx st' ctx',
-    multi_step (e1, st, ctx) (e1', st', ctx') ->
-    direct_lambda_SN e1'.
+  forall e1', expr_reaches e1 e1' -> direct_lambda_SN e1'.
 
 (** Key: family_lambda_SN is preserved by stepping *)
 Lemma family_lambda_SN_step : forall e1 e1' st ctx st' ctx',
@@ -343,9 +349,9 @@ Lemma family_lambda_SN_step : forall e1 e1' st ctx st' ctx',
 Proof.
   intros e1 e1' st ctx st' ctx' Hstep Hfam.
   unfold family_lambda_SN in *.
-  intros e1'' st0 ctx0 st1 ctx1 Hmulti.
+  intros e1'' Hreach.
   apply Hfam.
-  eapply MS_Step; [exact Hstep | exact Hmulti].
+  eapply ER_Step; [exact Hstep | exact Hreach].
 Qed.
 
 (** Helper for value case with family *)
@@ -382,11 +388,10 @@ Proof.
   simpl in *. constructor.
   intros [[e' st'] ctx'] Hstep.
   unfold step_inv in Hstep. simpl in Hstep.
+  (* Get direct_lambda_SN for e1 BEFORE inversion *)
+  assert (Hbeta : direct_lambda_SN e1) by (apply Hfam; apply ER_Refl).
   inversion Hstep; subst.
   - (* ST_AppAbs: e1 = ELam x T body *)
-    (* e1 is reachable from itself in 0 steps *)
-    assert (Hbeta : direct_lambda_SN e1).
-    { apply Hfam. apply MS_Refl. }
     eapply Hbeta; [reflexivity | assumption].
   - (* ST_App1: e1 --> e1' *)
     apply (IH1 (e1', st', ctx')).
@@ -396,9 +401,7 @@ Proof.
   - (* ST_App2: value e1, e2 --> e2' *)
     assert (Hsn2': SN (e2', st', ctx')).
     { eapply SN_step; [apply Hsn2 | exact H7]. }
-    assert (Hbeta : direct_lambda_SN e1).
-    { apply Hfam. apply MS_Refl. }
-    apply SN_app_value_left_family_aux; [exact H1 | exact Hsn2' | exact Hbeta].
+    exact (SN_app_value_left_family_aux e1 (e2', st', ctx') H1 Hsn2' Hbeta).
 Qed.
 
 (** Main theorem: SN_app with family premise *)
