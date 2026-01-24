@@ -32,9 +32,27 @@
 | Fundamental Theorem n=0 | 1 | Line 1524 | Requires compatibility lemmas |
 | store_rel step-up preservation | 10 | Lines 1326, 1585-1593, 1654, 1725, 1800, 1872 | val_rel_at_type for TFn missing store_wf precondition |
 
-**Next Steps:**
-- Consider refactoring val_rel_at_type to add store_wf precondition to TFn case
-- This would eliminate all 10 preservation-related admits at once
+### Refactoring Plan Created ✅
+
+Created `06_COORDINATION/REFACTORING_PLAN_VAL_REL_AT_TYPE.md` documenting:
+- Exact changes needed to TFn case of val_rel_at_type
+- Impact analysis (files affected, proof obligations)
+- Implementation phases
+- Estimated effort: 8-14 hours
+
+**Key Insight:** Adding store_wf and stores_agree_low_fo as preconditions to TFn,
+and adding them as postconditions, allows using preservation theorems to establish
+these properties for output stores.
+
+### Session Summary
+
+| Metric | Value |
+|--------|-------|
+| Commits | 4 |
+| Admits eliminated | 2 (13→11) |
+| Lemmas upgraded (Admitted→Qed) | 1 (val_rel_at_type_fo_trivial) |
+| Documentation created | 1 (refactoring plan) |
+| Build status | PASSING |
 
 ---
 
