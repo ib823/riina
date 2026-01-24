@@ -2357,7 +2357,98 @@ Qed.
     REMAINING WORK FOR TFn (Higher-Order Types):
     - Need strong normalization to prove applications terminate
     - This unlocks TFn step-up and predicate monotonicity
-    - See SN_Core_v3.v for strong normalization infrastructure
+    - See ReducibilityFull.v for strong normalization infrastructure
 
     ========================================================================
+*)
+
+(** ========================================================================
+    SECTION 10: BRIDGE TO STRONG NORMALIZATION
+    ========================================================================
+
+    The remaining admit at line 1541 (val_rel_at_type for TFn at step 0)
+    depends on strong normalization from ReducibilityFull.v.
+
+    DEPENDENCY CHAIN:
+    - ReducibilityFull.v: fundamental_reducibility (2 admits remaining)
+    - ReducibilityFull.v: well_typed_SN (proven from fundamental_reducibility)
+    - NonInterference_v2.v: TFn step 0 case (this file, line 1541)
+
+    Once fundamental_reducibility is fully proven, the bridge lemma below
+    can be completed to eliminate the admit at line 1541.
+
+    ========================================================================
+*)
+
+(** Bridge lemma: well_typed TFn applications at step 0 produce related results.
+    This captures what we need from the fundamental theorem for the TFn case.
+
+    STATUS: Depends on well_typed_SN from ReducibilityFull.v
+    PROOF APPROACH:
+    1. Extract lambda structure via canonical_forms_fn
+    2. Beta reduction: EApp (ELam x T body) arg --> [x := arg] body
+    3. Apply well_typed_SN to show applications terminate in values
+    4. Apply preservation to get typing for result values
+    5. Build val_rel_n 0 from typing (HO) or structure (FO)
+*)
+Lemma val_rel_at_type_TFn_step_0_bridge : forall Σ T1 T2 eff v1 v2,
+  has_type nil Σ Public v1 (TFn T1 T2 eff) EffectPure ->
+  has_type nil Σ Public v2 (TFn T1 T2 eff) EffectPure ->
+  value v1 -> value v2 ->
+  closed_expr v1 -> closed_expr v2 ->
+  forall Σ', store_ty_extends Σ Σ' ->
+    forall x y,
+      value x -> value y -> closed_expr x -> closed_expr y ->
+      val_rel_n 0 Σ' T1 x y ->
+      forall st1 st2 ctx,
+        store_rel_n 0 Σ' st1 st2 ->
+        store_wf Σ' st1 ->
+        store_wf Σ' st2 ->
+        stores_agree_low_fo Σ' st1 st2 ->
+        exists v1' v2' st1' st2' ctx' Σ'',
+          store_ty_extends Σ' Σ'' /\
+          (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
+          (EApp v2 y, st2, ctx) -->* (v2', st2', ctx') /\
+          val_rel_n 0 Σ'' T2 v1' v2' /\
+          store_rel_n 0 Σ'' st1' st2' /\
+          store_wf Σ'' st1' /\
+          store_wf Σ'' st2' /\
+          stores_agree_low_fo Σ'' st1' st2'.
+Proof.
+  intros Σ T1 T2 eff v1 v2 Hty1 Hty2 Hv1 Hv2 Hc1 Hc2.
+  intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel.
+  intros st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
+
+  (* Extract lambda structure via canonical forms *)
+  destruct (canonical_forms_fn nil Σ Public v1 T1 T2 eff EffectPure Hv1 Hty1)
+    as [x1 [body1 Heq1]].
+  destruct (canonical_forms_fn nil Σ Public v2 T1 T2 eff EffectPure Hv2 Hty2)
+    as [x2 [body2 Heq2]].
+  subst v1 v2.
+
+  (* Beta reduction: EApp (ELam x T body) arg --> [x := arg] body *)
+  (* The substituted bodies [x1 := x] body1 and [x2 := y] body2 are well-typed
+     by substitution_preserves_typing. By well_typed_SN, they are SN and thus
+     evaluate to values. The rest follows from preservation and val_rel_n 0. *)
+
+  (* DEPENDS ON: well_typed_SN from ReducibilityFull.v (2 admits remaining) *)
+  (* Once those admits are fixed, this proof can be completed. *)
+  admit.
+Admitted.
+
+(** Usage note: Once val_rel_at_type_TFn_step_0_bridge is proven,
+    the admit at line 1541 in combined_step_up_all can be replaced with:
+
+    destruct T; try discriminate Hfo.
+    + (* TFn T1 T2 eff *)
+      simpl.
+      apply val_rel_at_type_TFn_step_0_bridge with (eff := eff).
+      * apply Hty1; exact eq_refl.
+      * apply Hty2; exact eq_refl.
+      * exact Hv1.
+      * exact Hv2.
+      * exact Hc1.
+      * exact Hc2.
+
+    Additional cases (TProd, TSum with HO components) follow similar patterns.
 *)

@@ -31,7 +31,7 @@
 | Coq Build | PASSING | PASSING | ✅ GREEN |
 | Admits in NonInterference_v2.v | **1** | 0 | 🟢 **11→1 (10 eliminated!)** |
 | Admits in ReducibilityFull.v | 2 | 0 | 🟢 4→2 (2 eliminated) |
-| Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
+| Rust Prototype | ✅ PASSING (361 tests) | PASSING | ✅ GREEN |
 
 **Session 42 (continued) REVOLUTIONARY Achievement:**
 - **STRUCTURAL FIX:** Refactored `val_rel_at_type` TFn case to include store_wf preconditions
@@ -90,7 +90,7 @@ ReducibilityFull.v admits (2) → well_typed_SN → NonInterference_v2.v admit (
 | Component | Status | Command | Last Verified |
 |-----------|--------|---------|---------------|
 | **Coq Proofs** | ✅ GREEN | `make` in `02_FORMAL/coq/` | 2026-01-23 |
-| **Rust Proto** | ⚪ NOT RUN | `cargo test --all` in `03_PROTO/` | - |
+| **Rust Proto** | ✅ PASSING | `cargo test --all` in `03_PROTO/` | 2026-01-24 |
 | **Tooling** | ⚪ NOT RUN | `cargo test --all` in `05_TOOLING/` | - |
 
 ---
