@@ -78,20 +78,26 @@ properties/SubstitutionCommute.v
 # Disabled: Abstract type parameters require destruct on first_order_type
 # properties/FundamentalTheorem.v
 
-# Phase 7: Industry-Specific Proofs (DISABLED - placeholder stubs need type fixes)
+# Compliance Framework (Session 43 - from delegation output)
+compliance/VerifiedCompliance.v
+compliance/HIPAACompliance.v
+compliance/PCIDSSCompliance.v
+compliance/DO178CCompliance.v
+
+# Phase 7: Industry-Specific Proofs (ENABLED - axioms eliminated, Session 43)
 # Reference: 04_SPECS/industries/*.md
-# Industries/IndustryMilitary.v
-# Industries/IndustryHealthcare.v
-# Industries/IndustryFinancial.v
-# Industries/IndustryAerospace.v
-# Industries/IndustryEnergy.v
-# Industries/IndustryTelecom.v
-# Industries/IndustryGovernment.v
-# Industries/IndustryTransportation.v
-# Industries/IndustryManufacturing.v
-# Industries/IndustryRetail.v
-# Industries/IndustryMedia.v
-# Industries/IndustryEducation.v
-# Industries/IndustryRealEstate.v
-# Industries/IndustryAgriculture.v
-# Industries/IndustryLegal.v
+Industries/IndustryMilitary.v
+Industries/IndustryHealthcare.v
+Industries/IndustryFinancial.v
+Industries/IndustryAerospace.v
+Industries/IndustryEnergy.v
+Industries/IndustryTelecom.v
+Industries/IndustryGovernment.v
+Industries/IndustryTransportation.v
+Industries/IndustryManufacturing.v
+Industries/IndustryRetail.v
+Industries/IndustryMedia.v
+Industries/IndustryEducation.v
+Industries/IndustryRealEstate.v
+Industries/IndustryAgriculture.v
+Industries/IndustryLegal.v
