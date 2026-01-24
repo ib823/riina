@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
-## Version: 3.2.0
-## Last Updated: 2026-01-23
+## Version: 3.3.0
+## Last Updated: 2026-01-24
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -33,7 +33,7 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-23 Session 39)
+### Grand Totals (2026-01-24 Session 41)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
@@ -43,10 +43,29 @@
 | **Core Axioms** | 1 | `val_rel_n_step_up_by_type` only |
 | **Fundamental Theorem** | 22/24 cases | All except T_Lam, T_App |
 | **Build Status** | ✅ GREEN | All files compile |
-| **Admits in Core** | 5 | NonInterference_v2.v |
+| **Admits in Core** | 20 (18 meaningful) | NonInterference_v2.v - delegated to Claude AI Web |
 | **Threats Covered** | 1,231+ | All made obsolete |
 
-### Recent Progress (Session 39)
+### Recent Progress (Session 41)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| TProd/TSum TFn step-up | ✅ PROVEN | Direct TFn components via downcast/upcast |
+| Trivial types step-up | ✅ PROVEN | TList, TOption, etc. - exact I |
+| Predicate-independent | ✅ PROVEN | TRef, TChan, TSecureChan - exact Hrel |
+| Nested TProd/TSum | 🟡 ADMITTED | Delegated to Claude AI Web |
+| Claude AI Web delegation | 🔄 RUNNING | 18 meaningful admits sent |
+
+### Previous Progress (Session 40)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| combined_step_up_all | ✅ COMPLETE | Strong induction via lt_wf_ind |
+| Security-aware store_rel_n | ✅ REVOLUTIONARY | LOW=val_rel, HIGH=typing only |
+| Corollary simplification | ✅ COMPLETE | 220+ lines eliminated |
+| Part 2 n=S n' | ✅ PROVEN | store_rel step-up fully proven |
+
+### Previous Progress (Session 39)
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -413,6 +432,26 @@
 ---
 
 ## CHANGE LOG
+
+### 2026-01-24 (SESSION 41 — TProd/TSum HO & Delegation)
+
+- **MAJOR**: TProd/TSum with TFn components proved via downcast/upcast strategy
+- **MAJOR**: Remaining 18 admits delegated to Claude AI Web with comprehensive prompt
+- **Proofs completed**:
+  - Direct TFn component cases in TProd/TSum
+  - Trivial type cases (TList, TOption, TSecret, etc.)
+  - Predicate-independent cases (TRef, TChan, TSecureChan)
+- **Admits remaining**: 20 total (2 dead code, 18 meaningful)
+- **Categories**: 1 Fundamental Theorem, 9 Preservation, 8 Type Recursion
+- Version bumped to 3.3.0
+
+### 2026-01-23 (SESSION 40 — Combined Step-Up All)
+
+- **MAJOR**: combined_step_up_all with strong induction resolves mutual dependency
+- **REVOLUTIONARY**: Security-aware store_rel_n (LOW=val_rel, HIGH=typing only)
+- **SIMPLIFICATION**: Corollary calls replace 220+ lines of proof
+- **Admits reduced**: From 11 to structured categories
+- Version bumped to 3.2.0
 
 ### 2026-01-18 (COMPLETE GAP ANALYSIS — Session 14)
 
