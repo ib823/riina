@@ -17,8 +17,8 @@
 ```
 
 **Report Date:** 2026-01-24
-**Session:** 41 (Continued - Session 3)
-**Overall Grade:** A (Strong Progress - Nested TProd/TSum Resolved)
+**Session:** 42
+**Overall Grade:** A (Strong Progress - TSum Trivial Relation Fixed)
 
 ---
 
@@ -29,9 +29,15 @@
 | Core Axioms | 1 | 0 | 🟡 99% eliminated |
 | Fundamental Theorem | 22/24 | 24/24 | 🟡 92% complete |
 | Coq Build | PASSING | PASSING | ✅ GREEN |
-| Admits in NonInterference_v2.v | 13 | 0 | 🟢 22→13 (9 eliminated) |
+| Admits in NonInterference_v2.v | 11 | 0 | 🟢 22→11 (11 eliminated) |
 | Admits in ReducibilityFull.v | 2 | 0 | 🟢 4→2 (2 eliminated) |
 | Rust Prototype | NOT VERIFIED | PASSING | ⚪ Pending |
+
+**Session 42 Key Achievements:**
+- **FIXED:** `val_rel_at_type_fo_trivial` lemma - TSum removed from fo_type_has_trivial_rel
+- **ELIMINATED:** 2 "impossible" admits (TSum mixed constructor cases EInl vs EInr)
+- **UPGRADED:** Changed lemma from `Admitted` to `Qed` - fully proven!
+- **REDUCTION:** NonInterference_v2.v admits: 13 → 11 (2 eliminated)
 
 **Session 41 Part 3 Key Achievements:**
 - **ADDED:** `val_rel_at_type_step_up_with_IH` lemma - Handles ALL type cases by structural induction
@@ -51,10 +57,10 @@
 - **REVOLUTIONARY FIX:** Made `store_rel_n` security-aware
 
 **Remaining Admits Analysis:**
-- NonInterference_v2.v: 13 admits
-  - 2 justified: mixed constructors at HIGH security (dead code for NI)
+- NonInterference_v2.v: 11 admits
   - 1 Fundamental Theorem n=0 (requires compatibility lemmas)
   - 10 preservation: store_wf, store_has_values, stores_agree_low_fo after evaluation
+  - Root cause: val_rel_at_type for TFn doesn't include store_wf as precondition
 - ReducibilityFull.v: 2 admits
   - 1 substitution-preserves-typing (T_App body)
   - 1 store typing invariant (T_Deref)
