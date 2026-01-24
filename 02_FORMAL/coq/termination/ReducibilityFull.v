@@ -214,18 +214,67 @@ Proof.
   exact (SN_grant_aux (e, st, ctx) eff Hsn).
 Qed.
 
-(** SN for EDeclassify - complex case, admit for now *)
+(** Helper: When e1 is a value, SN follows from SN(e2) - auxiliary form *)
+Lemma SN_declassify_value_left_aux : forall cfg v,
+  value v ->
+  SN cfg ->
+  SN (EDeclassify v (fst (fst cfg)), snd (fst cfg), snd cfg).
+Proof.
+  intros cfg v Hv Hsn2.
+  induction Hsn2 as [[[e2 st] ctx] Hacc2 IH2].
+  simpl. constructor.
+  intros [[e_next st_next] ctx_next] Hstep.
+  unfold step_inv in Hstep. simpl in Hstep.
+  inversion Hstep; subst.
+  - (* ST_Declassify1: v steps - contradiction since v is a value *)
+    exfalso. eapply value_not_step; eauto.
+  - (* ST_Declassify2: e2 steps to e2' *)
+    apply (IH2 (e2', st_next, ctx_next)).
+    unfold step_inv. simpl. assumption.
+  - (* ST_DeclassifyValue: v = EClassify v0, result is v0 *)
+    apply value_SN. assumption.
+Qed.
+
+Lemma SN_declassify_value_left : forall v e2 st ctx,
+  value v ->
+  SN (e2, st, ctx) ->
+  SN (EDeclassify v e2, st, ctx).
+Proof.
+  intros v e2 st ctx Hv Hsn2.
+  exact (SN_declassify_value_left_aux (e2, st, ctx) v Hv Hsn2).
+Qed.
+
+(** SN for EDeclassify - follows pattern of SN_pair *)
+Lemma SN_declassify_aux : forall cfg e2,
+  SN cfg ->
+  (forall st ctx, SN (e2, st, ctx)) ->
+  SN (EDeclassify (fst (fst cfg)) e2, snd (fst cfg), snd cfg).
+Proof.
+  intros cfg e2 Hsn1 Hsn2.
+  induction Hsn1 as [[[e1 st] ctx] Hacc1 IH1].
+  simpl. constructor.
+  intros [[e' st'] ctx'] Hstep.
+  unfold step_inv in Hstep. simpl in Hstep.
+  inversion Hstep; subst.
+  - (* ST_Declassify1: e1 steps to e1' *)
+    apply (IH1 (e1', st', ctx')).
+    unfold step_inv. simpl. assumption.
+  - (* ST_Declassify2: e1 is value, e2 steps *)
+    assert (Hsn2': SN (e2', st', ctx')).
+    { eapply SN_step; [apply Hsn2 | exact H7]. }
+    apply SN_declassify_value_left; [exact H1 | exact Hsn2'].
+  - (* ST_DeclassifyValue: e1 = EClassify v, result is v *)
+    apply value_SN. assumption.
+Qed.
+
 Lemma SN_declassify : forall e1 e2 st ctx,
   SN (e1, st, ctx) ->
   (forall st' ctx', SN (e2, st', ctx')) ->
   SN (EDeclassify e1 e2, st, ctx).
 Proof.
-  (* EDeclassify has complex stepping behavior with proof terms.
-     Full proof requires tracking both subexpressions.
-     For reducibility purposes, we observe that well-typed
-     declassify expressions always terminate. *)
-  admit.
-Admitted.
+  intros e1 e2 st ctx Hsn1 Hsn2.
+  exact (SN_declassify_aux (e1, st, ctx) e2 Hsn1 Hsn2).
+Qed.
 
 (** ========================================================================
     SECTION 3: NEUTRAL TERMS
