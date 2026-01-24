@@ -64,6 +64,9 @@ properties/MasterTheorem.v
 # Axiom Elimination Proofs (Session 30)
 properties/ValRelStepLimit_PROOF.v
 
+# Closed Value Infrastructure (Session 43)
+properties/ClosedValueLemmas.v
+
 # Fundamental Theorem Infrastructure (Session 38)
 # Disabled: Abstract type parameters require destruct on first_order_type
 # properties/FundamentalTheorem.v
