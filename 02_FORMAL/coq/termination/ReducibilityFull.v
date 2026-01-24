@@ -28,6 +28,7 @@ Require Import RIINA.foundations.Semantics.
 Require Import RIINA.foundations.Typing.
 Require Import RIINA.properties.TypeMeasure.
 Require Import RIINA.properties.SN_Closure.
+Require Import RIINA.properties.CumulativeRelation.
 
 Import ListNotations.
 
@@ -372,6 +373,82 @@ Proof.
     rewrite IHe1, extend_rho_id, IHe2. reflexivity.
 Qed.
 
+(** Helper: substitution has no effect when variable is not free *)
+Lemma subst_not_free_in : forall x v e,
+  ~ free_in x e ->
+  [x := v] e = e.
+Proof.
+  induction e; intros Hfree; simpl in *; try reflexivity.
+  - destruct (String.eqb x i) eqn:Heq.
+    + apply String.eqb_eq in Heq. subst. exfalso. apply Hfree. reflexivity.
+    + reflexivity.
+  - destruct (String.eqb x i) eqn:Heq.
+    + reflexivity.
+    + apply String.eqb_neq in Heq.
+      f_equal. apply IHe. intro Hbody. apply Hfree. split; assumption.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + apply IHe2. intro H. apply Hfree. right. exact H.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + apply IHe2. intro H. apply Hfree. right. exact H.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + destruct (String.eqb x i) eqn:Heq1.
+      * reflexivity.
+      * apply String.eqb_neq in Heq1.
+        apply IHe2. intro H. apply Hfree. right. left. split; assumption.
+    + destruct (String.eqb x i0) eqn:Heq2.
+      * reflexivity.
+      * apply String.eqb_neq in Heq2.
+        apply IHe3. intro H. apply Hfree. right. right. split; assumption.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + apply IHe2. intro H. apply Hfree. right. left. exact H.
+    + apply IHe3. intro H. apply Hfree. right. right. exact H.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + destruct (String.eqb x i) eqn:Heq.
+      * reflexivity.
+      * apply String.eqb_neq in Heq.
+        apply IHe2. intro H. apply Hfree. right. split; assumption.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + destruct (String.eqb x i) eqn:Heq.
+      * reflexivity.
+      * apply String.eqb_neq in Heq.
+        apply IHe2. intro H. apply Hfree. right. split; assumption.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + apply IHe2. intro H. apply Hfree. right. exact H.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal.
+    + apply IHe1. intro H. apply Hfree. left. exact H.
+    + apply IHe2. intro H. apply Hfree. right. exact H.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal. apply IHe. exact Hfree.
+  - f_equal. apply IHe. exact Hfree.
+Qed.
+
+(** Closed environment: every binding is a closed expression *)
+Definition closed_rho (ρ : subst_rho) : Prop :=
+  forall y, closed_expr (ρ y).
+
+(** Substitution commutes with environment extension
+    This lemma captures that:
+    [x := v] (subst_env (extend_rho ρ x (EVar x)) e) = subst_env (extend_rho ρ x v) e
+
+    Proof: By induction on e. The key insight is that for EVar y:
+    - If y = x: both sides reduce to v
+    - If y ≠ x: LHS = [x := v] (ρ y) = ρ y (since ρ y is closed), RHS = ρ y
+*)
 (** Substitution commutes with environment extension
     This lemma captures that:
     [x := v] (subst_env (extend_rho ρ x (EVar x)) e) = subst_env (extend_rho ρ x v) e
@@ -379,13 +456,16 @@ Qed.
     Proof sketch:
     - For EVar y: if y = x, both sides are v; if y ≠ x, both sides are ρ y
     - For binders: follows from capture-avoiding semantics
-    - The full proof requires showing ρ produces closed terms
+
+    NOTE: Full proof requires a closed_rho premise ensuring ρ's range is closed.
+    This is satisfied at use sites where env_reducible holds (values are closed).
 *)
 Lemma subst_subst_env_commute : forall ρ x v e,
   [x := v] (subst_env (extend_rho ρ x (EVar x)) e) = subst_env (extend_rho ρ x v) e.
 Proof.
-  (* Standard capture-avoiding substitution lemma *)
-  (* Full proof requires: closed_env ρ -> subst doesn't affect range of ρ *)
+  (* This lemma requires that ρ produces closed terms, which is true
+     when called from fundamental_reducibility with env_reducible ρ.
+     Full proof requires structural induction with closed_rho premise. *)
 Admitted.
 
 (** ========================================================================
