@@ -141,7 +141,11 @@ Fixpoint val_rel_at_type_fo (T : ty) (v1 v2 : expr) {struct T} : Prop :=
   end.
 
 (** Helper: check if val_rel_at_type_fo is trivially True for a FO type.
-    These are types where the relation doesn't require structural equality. *)
+    These are types where the relation doesn't require structural equality.
+
+    NOTE: TSum is NOT trivial even if both components are trivial, because
+    val_rel_at_type_fo for TSum requires matching constructors (EInl vs EInr).
+    TProd IS trivial if both components are trivial (no constructor choice). *)
 Fixpoint fo_type_has_trivial_rel (T : ty) : bool :=
   match T with
   | TSecret _ | TLabeled _ _ | TTainted _ _ | TSanitized _ _ => true
@@ -149,7 +153,7 @@ Fixpoint fo_type_has_trivial_rel (T : ty) : bool :=
   | TProof _ | TCapability _ | TCapabilityFull _ => true
   | TConstantTime _ | TZeroizing _ => true
   | TProd T1 T2 => fo_type_has_trivial_rel T1 && fo_type_has_trivial_rel T2
-  | TSum T1 T2 => fo_type_has_trivial_rel T1 && fo_type_has_trivial_rel T2
+  (* TSum requires matching constructors, so never trivially true *)
   | _ => false
   end.
 
@@ -276,29 +280,7 @@ Proof.
     + apply IHT2 with Σ; try assumption.
       eapply value_has_pure_effect; eassumption.
       eapply value_has_pure_effect; eassumption.
-  - (* TSum T1 T2 - both must be trivial, but mixed constructors can fail *)
-    apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
-    apply Bool.andb_true_iff in Htriv. destruct Htriv as [Htr1 Htr2].
-    destruct (canonical_forms_sum nil Σ Public v1 T1 T2 EffectPure Hval1 Hty1)
-      as [[x1 [Heq1 Hvx1]] | [y1 [Heq1 Hvy1]]];
-    destruct (canonical_forms_sum nil Σ Public v2 T1 T2 EffectPure Hval2 Hty2)
-      as [[x2 [Heq2 Hvx2]] | [y2 [Heq2 Hvy2]]]; subst.
-    + (* Both EInl *)
-      left. inversion Hty1; subst. inversion Hty2; subst.
-      exists x1, x2. repeat split; try reflexivity.
-      apply IHT1 with Σ; try assumption;
-        try (eapply value_has_pure_effect; eassumption).
-    + (* v1 = EInl, v2 = EInr - cannot relate, but these are HIGH security
-         so semantically this case is unreachable for non-interference.
-         ADMITTED: This is a justified admit for mixed constructors at HIGH. *)
-      admit.
-    + (* v1 = EInr, v2 = EInl - symmetric to above *)
-      admit.
-    + (* Both EInr *)
-      right. inversion Hty1; subst. inversion Hty2; subst.
-      exists y1, y2. repeat split; try reflexivity.
-      apply IHT2 with Σ; try assumption;
-        try (eapply value_has_pure_effect; eassumption).
+  (* TSum case removed - now solved by try congruence since fo_type_has_trivial_rel (TSum ...) = false *)
   - exact I.  (* TList *)
   - exact I.  (* TOption *)
   - exact I.  (* TSecret *)
@@ -310,7 +292,7 @@ Proof.
   - exact I.  (* TCapabilityFull *)
   - exact I.  (* TConstantTime *)
   - exact I.  (* TZeroizing *)
-Admitted.
+Qed.
 
 (** ========================================================================
     SECTION 3: THE REVOLUTIONARY VAL_REL_N DEFINITION
