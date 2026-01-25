@@ -2651,3 +2651,14 @@ val_rel_n_mono (Admitted) ──► store_rel_n_mono (Admitted)
 - ReducibilityFull.v: Compiles, 4 admits (down from 6)
 - NonInterference_v2.v: Compiles, 24 admits
 - Next: Architectural decision on store invariant handling
+
+---
+
+## 2026-01-25: Coordination Sync
+
+### Work Done
+1. Updated Track C status to in progress across coordination and README.
+2. Clarified Track F tooling location (external TERAS paths are historical; repo uses 05_TOOLING).
+
+### Status
+- Coordination and status docs aligned; no build impact.
