@@ -161,6 +161,19 @@ Definition store_rel_le (n : nat) (Σ : store_ty) (st1 st2 : store) : Prop :=
     | _, _ => False
     end.
 
+(** ** Unfold Lemmas for val_rel_le *)
+
+(** Unfold val_rel_le at 0: trivially True *)
+Lemma val_rel_le_0_unfold : forall Σ T v1 v2,
+  val_rel_le 0 Σ T v1 v2 = True.
+Proof. reflexivity. Qed.
+
+(** Unfold val_rel_le at S n: cumulative plus structural *)
+Lemma val_rel_le_S_unfold : forall n Σ T v1 v2,
+  val_rel_le (S n) Σ T v1 v2 =
+  (val_rel_le n Σ T v1 v2 /\ val_rel_struct (val_rel_le n) Σ T v1 v2).
+Proof. reflexivity. Qed.
+
 (** ** Basic Properties of Cumulative Relation *)
 
 (** At step 0, everything is related *)
