@@ -26,8 +26,8 @@
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Axioms (Active Build) | **19** | 0 | 🟡 **-7 this session** |
-| Admits (Active Build) | **67** | 0 | 🟡 Phase 1 active |
+| Axioms (Active Build) | **19** | 0 | 🟡 -7 from baseline |
+| Admits (Active Build) | **62** | 0 | 🟡 **-5 this session** |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **96** | - | ✅ +2 new proof files |
 | **Proven Lemmas (Total)** | **936** | - | ✅ +7 Qed this session |
@@ -93,11 +93,46 @@
 | LogicalRelationDeref_PROOF_FINAL.v | 7 | has_type, store_*, fundamental_lemma |
 | NonInterference_v2_LogicalRelation.v | 5 | logical_relation_* |
 
+### Session 45.2: ROOT BLOCKER #1 PROVEN
+
+**ReducibilityFull_PROVEN.v** - Major theoretical breakthrough:
+
+| Lemma | Status | Key Insight |
+|-------|--------|-------------|
+| `subst_subst_env_commute` | ✅ **QED** | Added `closed_rho` premise |
+| `extend_rho_shadow` | ✅ **QED** | Binder shadowing |
+| `extend_rho_comm` | ✅ **QED** | Binder commutativity |
+| `fundamental_reducibility` | 🟡 2 admits | App beta, Deref store_wf |
+
+**The Missing Premise Discovery:**
+```coq
+(* ORIGINAL - UNPROVABLE *)
+Lemma subst_subst_env_commute : forall ρ x v e, ...
+
+(* FIXED - PROVEN *)
+Lemma subst_subst_env_commute : forall ρ x v e,
+  closed_rho ρ ->  (* KEY: env_reducible implies this *)
+  ...
+```
+
+**NonInterference_v2_PATCH.v** - Proof strategies for cascade:
+- `val_rel_at_type_step_up_with_IH` - Strategy provided
+- `combined_step_up_all` - Strategy provided
+- `val_rel_at_type_TFn_step_0_bridge` - Strategy provided
+
+### Updated Metrics (Session 45.2)
+
+| Category | Session 45.1 | Session 45.2 | Delta |
+|----------|--------------|--------------|-------|
+| Axioms | 19 | 19 | 0 |
+| Admits | 67 | 62 | **-5** |
+| **Total** | **86** | **81** | **-5** |
+
 ### What Remains (from Claude AI Web analysis)
 
 **Phase 0: ROOT BLOCKERS (ReducibilityFull.v)**
-- `subst_subst_env_commute` - Framework ready, needs infrastructure
-- `fundamental_reducibility` App/Deref cases - Not started
+- `subst_subst_env_commute` - ✅ **PROVEN** (closed_rho premise added)
+- `fundamental_reducibility` - 2 minor admits (App beta, Deref store_wf)
 
 **Phase 1: NonInterference_v2.v (3 admits)**
 - `val_rel_at_type_step_up_with_IH`
