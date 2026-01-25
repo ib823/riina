@@ -16,9 +16,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-25 (Session 45.4)
+**Report Date:** 2026-01-25 (Session 45.5)
 **Session:** 45 (Axiom Elimination - Claude AI Web Integration)
-**Overall Grade:** A++ (979+ proven lemmas, PHASE 5 COMPLETE)
+**Overall Grade:** A++ (980+ proven lemmas, PHASE 2 PATCH APPLIED)
 
 ---
 
@@ -39,6 +39,34 @@
 ---
 
 ## SESSION 45: AXIOM ELIMINATION (Claude AI Web Integration)
+
+### Session 45.5: Phase 2 Patch Applied + Codebase Cleanup
+
+**Phase 2 Patch Applied to NonInterference_v2.v:**
+
+| Change | Line | Description | Status |
+|--------|------|-------------|--------|
+| Import update | 28 | Keep ReducibilityFull (both versions have admits) | ⏸️ Deferred |
+| val_rel_at_type_step_up_with_IH | 1376 | Admitted → Qed (proof complete) | ✅ APPLIED |
+| combined_step_up_all (inner) | 1541 | Requires bridge lemma | ⏸️ Blocked |
+| combined_step_up_all (outer) | 2067 | Requires line 1541 fix | ⏸️ Blocked |
+| bridge lemma proof | 2417-2437 | Requires well_typed_SN helpers | ⏸️ Blocked |
+
+**Result:** NonInterference_v2.v reduced from 5 admits to 4 admits (-1)
+
+**Codebase Cleanup Completed:**
+
+| Task | Files Moved | Location |
+|------|-------------|----------|
+| Archive zip files | 14 files | 99_ARCHIVE/claude_web_outputs/ |
+| Archive superseded patches | 4 files | 99_ARCHIVE/superseded_patches/ |
+
+**Remaining Phase 2 Blockers:**
+- `well_typed_SN` in ReducibilityFull.v has 2 admits (App beta, Deref store_wf)
+- Bridge lemma depends on helper lemmas not yet integrated
+- Phase 3 infrastructure helpers need import into NonInterference_v2.v
+
+---
 
 ### Session 45.4: PHASE 5 COMPLETE - 12 Admits Eliminated
 

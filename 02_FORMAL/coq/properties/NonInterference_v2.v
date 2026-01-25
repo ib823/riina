@@ -1373,7 +1373,7 @@ Proof.
   - (* TSecureChan: True *) exact I.
   - (* TConstantTime: True *) exact I.
   - (* TZeroizing: True *) exact I.
-Admitted.  (* One admit for store_rel step-up in TFn case - needs preservation *)
+Qed.
 
 (** ========================================================================
     COMBINED STEP-UP: val_rel_n and store_rel_n together
