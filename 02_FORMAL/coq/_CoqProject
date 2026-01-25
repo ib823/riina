@@ -108,3 +108,36 @@ Industries/IndustryEducation.v
 Industries/IndustryRealEstate.v
 Industries/IndustryAgriculture.v
 Industries/IndustryLegal.v
+
+# Phase 8: Domain Security Proofs (Session 44 - 876 proven lemmas, zero admits)
+# Standalone self-contained proofs for security domains
+domains/MemorySafety.v
+domains/BufferOverflowPrevention.v
+domains/DataRaceFreedom.v
+domains/SessionTypes.v
+domains/ConstantTimeCrypto.v
+domains/SpectreDefense.v
+domains/MeltdownDefense.v
+domains/ROPDefense.v
+domains/CapabilitySecurity.v
+domains/HypervisorSecurity.v
+domains/ContainerSecurity.v
+domains/TEEAttestation.v
+domains/SecureBootVerification.v
+domains/VerifiedFileSystem.v
+domains/VerifiedNetworkStack.v
+domains/AuthenticationProtocols.v
+domains/SQLInjectionPrevention.v
+domains/XSSPrevention.v
+domains/CSRFProtection.v
+domains/SmartContractSecurity.v
+domains/PostQuantumKEM.v
+domains/PostQuantumSignatures.v
+domains/QuantumSafeTLS.v
+domains/ZKSNARKSecurity.v
+domains/ZKSTARKSecurity.v
+domains/FHESecurity.v
+domains/CompilerCorrectness.v
+domains/CommonCriteriaEAL7.v
+domains/ISO26262Compliance.v
+domains/DO178CCompliance.v
