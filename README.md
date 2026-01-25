@@ -132,6 +132,7 @@ See `07_EXAMPLES/` for more comprehensive examples.
 | Research | Complete | 175+ sessions, 31 domains |
 | Track A (Formal) | In Progress | Type safety proofs ongoing |
 | Track B (Prototype) | In Progress | Lexer/parser/typechecker |
+| Track C (Specs) | In Progress | Specs populated, integration pending |
 | Track F (Tooling) | Partial | Build system complete |
 
 ## Bahasa Melayu Keywords (Sample)
