@@ -66,6 +66,15 @@
 - Bridge lemma depends on helper lemmas not yet integrated
 - Phase 3 infrastructure helpers need import into NonInterference_v2.v
 
+**Phase 4 Output Assessment (files (44).zip):**
+
+| File | Qed | Admitted | Type System |
+|------|-----|----------|-------------|
+| LogicalRelationDeref_PROOF_COMPLETE.v | 8 | 4 | Standalone (5 types) |
+| LogicalRelationAssign_PROOF_COMPLETE.v | 18 | 3 | Standalone (5 types) |
+
+**Decision: NOT INTEGRATED** - Phase 4 uses simplified standalone type system (TUnit, TBool, TNat, TRef, TArrow) incompatible with RIINA's 20+ type constructors. Current build files have 0 admits. Archived to `99_ARCHIVE/phase4_standalone_proofs/` for reference.
+
 ---
 
 ### Session 45.4: PHASE 5 COMPLETE - 12 Admits Eliminated
