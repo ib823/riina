@@ -82,6 +82,9 @@ properties/SubstitutionCommute.v
 # Disabled: Abstract type parameters require destruct on first_order_type
 # properties/FundamentalTheorem.v
 
+# Maximum Axiom Elimination (Session 44 - 54 proven lemmas)
+properties/MaximumAxiomElimination.v
+
 # Compliance Framework (Session 43 - from delegation output)
 compliance/VerifiedCompliance.v
 compliance/HIPAACompliance.v
