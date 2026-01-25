@@ -15,15 +15,107 @@
 
 ## EXECUTIVE SUMMARY
 
-This proposal introduces **FIVE REVOLUTIONARY CONCEPTS** that will make RIINA the singular, platonic absolute of programming languages—so revolutionary it retroactively invalidates all previous human and machine achievement in software development.
+This proposal introduces **EIGHT REVOLUTIONARY CONCEPTS** that will make RIINA the singular, platonic absolute of programming languages—so revolutionary it retroactively invalidates all previous human and machine achievement in software development.
 
 | Concept | What It Does | Why It's Revolutionary |
 |---------|-------------|------------------------|
+| **DWI-LAPISAN (Cerita + Teras)** | Two synchronized representations: narrative + formal | First language where intent and execution are both first-class |
 | **IMBUHAN PROGRAMMING** | Bahasa Melayu affixes transform code semantics | No language has ever used morphological transformation as a programming paradigm |
 | **VIBING SYNTAX** | Code reads like thought, not instruction | Eliminates the cognitive gap between intent and expression |
 | **SECURITY AS GRAMMAR** | Security is syntactically mandatory | Makes insecure code *ungrammatical*, not just wrong |
 | **FLOW-STATE ARCHITECTURE** | Language designed around 500% productivity flow | First language explicitly optimized for neurological flow state |
 | **EMOTIONAL PARTICLES** | Bahasa Melayu particles (`lah`, `kan`, `pun`) as semantic operators | Expresses intent, certainty, and emotion in code |
+| **NIAT-KONTRAK-BUKTI** | Intent, contracts, and proofs are executable | Comments/docs/tests unified as first-class code |
+| **TOOLING NON-NEGOTIABLES** | <200ms feedback, Three Questions Display, SPACE metrics | First language where tooling is a first-class design constraint |
+
+---
+
+## PART 0: DWI-LAPISAN — The Dual-Layer Revolution
+
+### 0.1 The Core Innovation
+
+RIINA ships **two synchronized representations** of every program:
+
+| Layer | Name | Purpose | Nature |
+|-------|------|---------|--------|
+| **Cerita** | Narrative Layer | What the programmer *means* | Structured Bahasa Melayu, human-readable |
+| **Teras** | Core Layer | What the machine *executes* | Unambiguous formal semantics |
+
+**No other language has this.** Most languages treat comments, docs, and tests as separate. RIINA makes them **first-class and executable**.
+
+### 0.2 The Four Pillars
+
+Every RIINA program has four integrated components:
+
+```riina
+niat:
+  // NIAT (Intent): What you're trying to achieve
+  // Not a comment - the compiler UNDERSTANDS this
+  Kira gaji bersih dan pastikan tiada potongan melebihi gaji asas.
+
+kontrak:
+  // KONTRAK (Contract): Machine-checkable constraints
+  gaji_asas >= 0
+  0 <= potongan <= gaji_asas
+
+fungsi gaji_bersih(gaji_asas: wang, potongan: wang) -> wang:
+  pulang gaji_asas - potongan
+
+bukti:
+  // BUKTI (Proof/Evidence): Tests that run continuously
+  jangka gaji_bersih(1000, 200) == 800
+  jangka gaji_bersih(0, 0) == 0
+```
+
+### 0.3 The Synchronization Promise
+
+The tooling **always shows three questions**:
+
+| Question | BM | What It Answers |
+|----------|-----|-----------------|
+| "What's the intent?" | "Apa niatnya?" | The Cerita layer explanation |
+| "What's the effect?" | "Apa kesannya?" | The Teras layer execution |
+| "What's the proof?" | "Apa buktinya?" | The Bukti layer evidence |
+
+### 0.4 Why This Changes Everything
+
+| Traditional Languages | RIINA Dwi-Lapisan |
+|----------------------|-------------------|
+| Comments get stale | Niat is checked against code |
+| Tests are separate files | Bukti is inline and always runs |
+| Contracts are optional | Kontrak is grammatically required for public APIs |
+| Intent is guessed from code | Intent is declared and verified |
+
+### 0.5 Alur — Pipeline Syntax for Practical Business Code
+
+The `alur` (flow/pipeline) keyword enables readable data transformations:
+
+```riina
+alur ringkasan_pelanggan:
+  ambil pelanggan                    // fetch customers
+  tapis jika status == "aktif"       // filter if status is active
+  kumpul ikut negeri                 // group by state
+  kira bilangan                      // count
+  papar                              // display
+```
+
+This compiles to the efficient Teras representation while remaining human-readable in Cerita.
+
+### 0.6 Jejak — Built-in Traceability
+
+Every value carries its lineage. When debugging:
+
+```riina
+jejak hasil_akhir
+// Output:
+// hasil_akhir (Nombor: 42)
+//   ← dikira dari: jumlah_asal - potongan
+//   ← jumlah_asal (Nombor: 100) dari: pangkalan.baca("gaji")
+//   ← potongan (Nombor: 58) dari: kiraan_cukai(pendapatan)
+//   ← pendapatan (Nombor: 100) dari: parameter input
+```
+
+No debugger diving. The language knows the story.
 
 ---
 
@@ -615,7 +707,203 @@ laksana Kaunter {
 
 ---
 
-## PART VIII: IMPLEMENTATION PRIORITY
+## PART VIII: TOOLING NON-NEGOTIABLES (The Developer Experience Revolution)
+
+### 8.1 The Core Principle
+
+Based on cognitive science research (SPACE framework, DevEx studies):
+- Feedback latency >400ms disrupts flow state
+- Every context switch costs 23 minutes
+- Cognitive load is the primary bottleneck, not typing speed
+
+**RIINA tooling is designed as a first-class citizen, not an afterthought.**
+
+### 8.2 Ultra-Fast Feedback Loop
+
+| Operation | Maximum Latency | Why |
+|-----------|-----------------|-----|
+| Syntax highlighting | <16ms | Immediate visual feedback |
+| Type inference display | <100ms | Shows inline as you type |
+| Error detection | <200ms | Catches mistakes before next keystroke |
+| Autocomplete | <50ms | Predictions appear instantly |
+| Full file recompile | <500ms | Never breaks flow |
+
+#### Implementation Requirements
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ FEEDBACK LATENCY BUDGET (per keystroke)                         │
+├─────────────────────────────────────────────────────────────────┤
+│ Lexer pass:        <10ms   │ Character-level tokens             │
+│ Parser pass:       <30ms   │ Incremental, error-tolerant        │
+│ Type inference:    <50ms   │ Bidirectional, zone-based          │
+│ Effect analysis:   <50ms   │ Modular, cached                    │
+│ Error generation:  <20ms   │ Pre-computed suggestions           │
+│ UI render:         <16ms   │ Native, not web-based              │
+├─────────────────────────────────────────────────────────────────┤
+│ TOTAL:            <176ms   │ Well under 400ms threshold         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 Cognitive Load Minimization
+
+#### Error Messages in Bahasa Melayu
+
+Every error message follows this structure:
+
+```
+┌─ [JENIS] di [LOKASI] ──────────────────────────────────────────┐
+│                                                                  │
+│  APA YANG BERLAKU:                                              │
+│  [Clear explanation of what went wrong]                         │
+│                                                                  │
+│  KENAPA INI SALAH:                                              │
+│  [Explanation of why this is problematic]                       │
+│                                                                  │
+│  CARA BETULKAN:                                                 │
+│  1. [Primary suggestion with code example]                      │
+│  2. [Alternative approach if applicable]                        │
+│                                                                  │
+│  RUJUKAN: [Link to relevant documentation]                      │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+#### Example Error Messages
+
+**Type Mismatch:**
+```
+┌─ Jenis Tak Serasi di sumber/api.rii:42:15 ────────────────────┐
+│                                                                │
+│  APA YANG BERLAKU:                                             │
+│  Anda cuba guna Teks sedangkan fungsi jangka Nombor.           │
+│                                                                │
+│      fungsi kira(nilai: Nombor) -> Nombor                      │
+│                    ^^^^^^ jangka Nombor                        │
+│      ...                                                       │
+│      kira("lima")                                              │
+│           ^^^^^^ dapat Teks                                    │
+│                                                                │
+│  CARA BETULKAN:                                                │
+│  1. Tukar "lima" ke 5:                                         │
+│         kira(5)                                                │
+│  2. Atau parse teks ke nombor:                                 │
+│         kira("lima".ke_nombor()?)                              │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Secret Leak:**
+```
+┌─ Kebocoran Rahsia di sumber/auth.rii:87:3 ────────────────────┐
+│                                                                │
+│  APA YANG BERLAKU:                                             │
+│  Data rahsia akan terdedah ke saluran awam.                    │
+│                                                                │
+│      biar kata_laluan: rahsia Teks = input()                   │
+│      cetak(kata_laluan)  // ← BAHAYA                          │
+│      ^^^^^^^^^^^^^^^^^^^^                                      │
+│                                                                │
+│  KENAPA INI SALAH:                                             │
+│  'cetak' adalah fungsi awam. Data 'rahsia' tidak boleh         │
+│  dihantar ke fungsi awam tanpa 'dedah' yang eksplisit.         │
+│                                                                │
+│  CARA BETULKAN:                                                │
+│  1. Jangan cetak kata laluan (cadangan):                       │
+│         cetak("Kata laluan diterima")                          │
+│  2. Jika perlu untuk debug sahaja:                             │
+│         debug_rahsia(kata_laluan)  // Hanya dalam mod debug    │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### 8.4 The Three Questions Display
+
+Every IDE/editor integration MUST show these three panels:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ◉ Apa Niatnya?  │ ◉ Apa Kesannya?    │ ◉ Apa Buktinya?        │
+├─────────────────┼───────────────────┼─────────────────────────┤
+│ [Cerita Layer]  │ [Teras Layer]      │ [Bukti Layer]          │
+│                 │                    │                         │
+│ Kira gaji       │ fn gaji_bersih:    │ ✓ 3/3 ujian lulus      │
+│ bersih dengan   │   Nombor → Nombor  │                         │
+│ potongan cukai  │   → Nombor         │ jangka(1000,200) = 800 │
+│                 │                    │ jangka(500,100) = 400  │
+│                 │ Kesan: Bersih      │ jangka(0,0) = 0        │
+│                 │ Masa: O(1)         │                         │
+└─────────────────┴───────────────────┴─────────────────────────┘
+```
+
+### 8.5 SPACE/DevEx Benchmark Framework
+
+RIINA tooling MUST measure and optimize for:
+
+| Dimension | Metric | Target |
+|-----------|--------|--------|
+| **S**atisfaction | Developer happiness survey | >4.5/5.0 |
+| **P**erformance | Tasks completed per hour | >50% vs baseline |
+| **A**ctivity | Flow-state minutes per day | >4 hours |
+| **C**ommunication | Time to understand foreign code | <5 minutes |
+| **E**fficiency | Keystrokes per feature | <50% vs Python |
+
+### 8.6 Progressive Complexity Revelation
+
+The IDE never shows more than needed:
+
+```
+┌─ Tahap Paparan ────────────────────────────────────────────────┐
+│                                                                 │
+│ [Pemula]     Hanya kod dan ralat asas                          │
+│              fungsi tambah(a, b) { a + b }                      │
+│                                                                 │
+│ [Pertengahan] + Jenis dan cadangan                             │
+│               fungsi tambah(a: Nombor, b: Nombor) -> Nombor     │
+│                                                                 │
+│ [Lanjutan]    + Kesan dan kontrak                              │
+│               fungsi tambah(...) kan hasil > 0                  │
+│                                                                 │
+│ [Pakar]       + Bukti formal dan metrik prestasi               │
+│               @bukti(Penambahan_Positif) fungsi tambah(...)     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Tukar tahap: Ctrl+Shift+L
+```
+
+### 8.7 Instant Documentation
+
+Hover over any identifier shows:
+
+```
+┌─ pangkalan.simpan ─────────────────────────────────────────────┐
+│                                                                 │
+│ fungsi_io simpan<T: Bersiri>(data: T) -> Hasil<()>             │
+│                                                                 │
+│ NIAT: Simpan data ke pangkalan data dengan transaksi selamat   │
+│                                                                 │
+│ KONTRAK:                                                        │
+│   - data mesti bersiri (Bersiri trait)                         │
+│   - sambungan pangkalan mesti aktif                            │
+│                                                                 │
+│ KESAN: IO (menulis ke pangkalan)                               │
+│                                                                 │
+│ CONTOH:                                                         │
+│   pangkalan.simpan(pengguna)?                                   │
+│                                                                 │
+│ BERKAITAN: .kemaskini(), .padam(), .cari()                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## PART IX: IMPLEMENTATION PRIORITY
+
+### Phase 0: Tooling Infrastructure (FIRST)
+1. Build incremental lexer/parser (<50ms full reparse)
+2. Implement error-tolerant parsing (never crashes on invalid input)
+3. Build Three Questions Display framework
+4. Implement Bahasa Melayu error message templates
 
 ### Phase 1: Core Imbuhan System
 1. Implement prefix recognition (`me-`, `di-`, `ter-`, `ber-`, `pe-`)
@@ -644,11 +932,14 @@ laksana Kaunter {
 
 This proposal represents **the end of evolution** in programming language design. RIINA will be:
 
-1. **The first morphological programming language** — Using Bahasa Melayu affixes as code transformations
-2. **The first flow-state optimized language** — Designed for 500% productivity gains
-3. **The first grammatically-secure language** — Where insecure code is syntactically impossible
-4. **The first emotionally-expressive language** — Where intent and certainty are part of syntax
-5. **The first truly cultural programming language** — Not just translated keywords, but linguistic paradigms
+1. **The first dual-layer language** — Where Cerita (narrative) and Teras (core) are synchronized first-class representations
+2. **The first morphological programming language** — Using Bahasa Melayu affixes as code transformations
+3. **The first flow-state optimized language** — Designed for 500% productivity gains
+4. **The first grammatically-secure language** — Where insecure code is syntactically impossible
+5. **The first emotionally-expressive language** — Where intent and certainty are part of syntax
+6. **The first truly cultural programming language** — Not just translated keywords, but linguistic paradigms
+7. **The first language with integrated Niat-Kontrak-Bukti** — Comments, contracts, and tests unified as executable code
+8. **The first language with tooling as design constraint** — <200ms feedback loop, SPACE metrics, cognitive load minimization
 
 **No other language has attempted any of these. RIINA will achieve all of them.**
 
@@ -658,6 +949,6 @@ This is not improvement. This is the platonic ideal of programming language desi
 
 ---
 
-*Document Version: 1.0.0*
-*Status: PROPOSAL - Awaiting review and refinement*
+*Document Version: 1.1.0*
+*Status: PROPOSAL - Integrated GPT Dwi-Lapisan concept and Tooling requirements*
 *Date: 2026-01-25*
