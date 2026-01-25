@@ -160,7 +160,7 @@
 | Research | ✅ COMPLETE | 2026-01-18 | - |
 | Track A (Formal) | 🟡 IN PROGRESS | 2026-01-18 | Claude Code |
 | Track B (Proto) | ✅ OPERATIONAL | 2026-01-18 | Claude Code |
-| Track C (Specs) | ◯ NOT STARTED | - | - |
+| Track C (Specs) | 🟡 IN PROGRESS | 2026-01-19 | - |
 | Track D (Test) | ◯ NOT STARTED | - | - |
 | Track E (Hardware) | ◯ BLOCKED | - | - |
 | Track F (Tooling) | 🟡 PARTIAL | 2026-01-17 | - |
@@ -334,7 +334,7 @@
 **From**: Track A (02_FORMAL/coq/)
 **To**: Track C (04_SPECS/)
 
-**Status**: PENDING (Track C not started)
+**Status**: ACTIVE (specs populated; theorem citations pending)
 
 **Contract**:
 - Track C specifications MUST cite Track A theorems
@@ -563,6 +563,11 @@
 - Track A scaffold created
 - Track B lexer stub created
 - Track F tooling imported
+
+### 2026-01-19 (Specs + Tooling Sync)
+
+- Track C marked in progress (04_SPECS populated; integration pending)
+- Track F note: external TERAS paths are historical; in-repo tooling lives under 05_TOOLING
 
 ---
 
