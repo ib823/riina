@@ -165,25 +165,18 @@ Proof.
   - (* Higher-order case: extract typing from relation structure *)
     (* First, get closed_expr from the relation *)
     destruct (val_rel_n_closed (S n0) Σ T v1 v2 Hrel) as [Hc1 Hc2].
-    
+
     (* Extract typing from val_rel_n (S n0) structure *)
     assert (Htyping : has_type nil Σ Public v1 T EffectPure /\
                       has_type nil Σ Public v2 T EffectPure).
     {
+      (* Hho : first_order_type T = false is already in context *)
       apply val_rel_n_composite_typing with (n := n0); auto.
-      (* Hho : first_order_type T = false *)
-      destruct (first_order_type T) eqn:Hfo_eq.
-      + (* Contradiction: Hho says ¬ first_order, but Hfo_eq says first_order *)
-        exfalso. apply Hho. reflexivity.
-      + reflexivity.
     }
     destruct Htyping as [Hty1 Hty2].
-    
+
     (* Now use the with-typing version *)
-    apply val_rel_n_to_val_rel_with_typing with (n := n0); auto.
-    + exists n0. exact Hrel.
-    + intros _. exact Hty1.
-    + intros _. exact Hty2.
+    apply val_rel_n_to_val_rel_with_typing; eauto.
 Qed.
 
 (** ============================================================ *)

@@ -16,9 +16,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-25 (Session 45.5)
-**Session:** 45 (Axiom Elimination - Claude AI Web Integration)
-**Overall Grade:** A++ (980+ proven lemmas, PHASE 2 PATCH APPLIED)
+**Report Date:** 2026-01-25 (Session 45.6)
+**Session:** 45 (Axiom Elimination - Build Stabilization)
+**Overall Grade:** B+ (BUILD PASSING, admits identified and isolated)
 
 ---
 
@@ -26,19 +26,50 @@
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Axioms (Active Build) | **19** | 0 | 🟡 -7 from baseline |
-| Admits (Active Build) | **50** | 0 | 🟢 **-17 this session** |
+| Admits (Active Build) | **131** | 0 | 🟡 Build now compiles |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
-| Files in Build | **96** | - | ✅ +7 proof files |
-| **Proven Lemmas (Total)** | **979** | - | ✅ +43 Qed this session |
+| Files in Build | **96** | - | ✅ All compile |
 | **Domain Security Proofs** | **30 files** | - | ✅ Complete |
-| Delegation Prompts | 90 | 90 | ✅ 100% ALIGNED |
 | Rust Prototype | ✅ PASSING (361 tests) | PASSING | ✅ GREEN |
 | Specs (Track C) | In Progress | - | 🟡 Populated, integration pending |
+
+**CRITICAL NOTE:** Previous sessions committed proofs that appeared complete (ending in `Qed.`) but actually failed to compile. Session 45.6 identified and fixed these by replacing broken proofs with explicit `Admitted.` markers, increasing the visible admit count but making the build honest and compilable.
 
 ---
 
 ## SESSION 45: AXIOM ELIMINATION (Claude AI Web Integration)
+
+### Session 45.6: Build Stabilization - Broken Proofs Identified
+
+**CRITICAL DISCOVERY:** Multiple proof files had been committed with `Qed.` endings but contained proofs that could not compile. The build was silently failing on incremental compiles.
+
+**Files Fixed (broken proofs → explicit admits):**
+
+| File | Issue | Fix Applied |
+|------|-------|-------------|
+| KripkeMutual.v | Missing `typing_strengthen_store`, `val_rel_at_type_kripke_mono` | 4 proofs → admits |
+| RelationBridge.v | Missing `val_rel_le_0_unfold`, `val_rel_le_S_unfold`, etc. | 5 proofs → admits |
+| ReferenceOps.v | `value` is Inductive (not Fixpoint), `discriminate` fails | 6 proofs → admits |
+| Declassification.v | Missing `multi_step_deterministic`, `pure_expr` | 3 proofs → admits |
+| ValRelStepLimit_PROOF.v | Proof structure error in assert block | Fixed proof logic |
+
+**Admit Count by File (top 10):**
+```
+24 properties/FundamentalTheorem.v
+15 properties/AxiomEliminationVerified.v
+12 properties/NonInterference_v2_LogicalRelation.v
+10 properties/NonInterference_v2_DEFINITIVE_PATCH.v
+ 7 properties/MasterTheorem.v
+ 6 properties/ReferenceOps.v
+ 5 properties/TypedConversion.v
+ 5 properties/RelationBridge.v
+ 5 properties/NonInterferenceZero.v
+ 5 properties/ApplicationComplete.v
+```
+
+**Build Status:** ✅ PASSING (all 96 files compile)
+
+---
 
 ### Session 45.5: Phase 2 Patch Applied + Codebase Cleanup
 
@@ -54,18 +85,6 @@
 
 **Result:** NonInterference_v2.v reduced from 5 admits to 4 admits (-1)
 
-**Codebase Cleanup Completed:**
-
-| Task | Files Moved | Location |
-|------|-------------|----------|
-| Archive zip files | 14 files | 99_ARCHIVE/claude_web_outputs/ |
-| Archive superseded patches | 4 files | 99_ARCHIVE/superseded_patches/ |
-
-**Remaining Phase 2 Blockers:**
-- `well_typed_SN` in ReducibilityFull.v has 2 admits (App beta, Deref store_wf)
-- Bridge lemma depends on helper lemmas not yet integrated
-- Phase 3 infrastructure helpers need import into NonInterference_v2.v
-
 **Phase 4 Output Assessment (files (44).zip):**
 
 | File | Qed | Admitted | Type System |
@@ -73,35 +92,26 @@
 | LogicalRelationDeref_PROOF_COMPLETE.v | 8 | 4 | Standalone (5 types) |
 | LogicalRelationAssign_PROOF_COMPLETE.v | 18 | 3 | Standalone (5 types) |
 
-**Decision: NOT INTEGRATED** - Phase 4 uses simplified standalone type system (TUnit, TBool, TNat, TRef, TArrow) incompatible with RIINA's 20+ type constructors. Current build files have 0 admits. Archived to `99_ARCHIVE/phase4_standalone_proofs/` for reference.
+**Decision: NOT INTEGRATED** - Phase 4 uses simplified standalone type system (TUnit, TBool, TNat, TRef, TArrow) incompatible with RIINA's 20+ type constructors. Archived to `99_ARCHIVE/phase4_standalone_proofs/` for reference.
 
 ---
 
-### Session 45.4: PHASE 5 COMPLETE - 12 Admits Eliminated
+### Session 45.4: PHASE 5 - Proofs Attempted but Dependencies Missing
 
-**5 Files Updated with Complete Qed Proofs:**
+**Note:** These proofs were attempted but contained references to undefined lemmas. Session 45.6 discovered that they never compiled successfully.
 
-| File | Original Admits | Remaining | Status |
-|------|-----------------|-----------|--------|
-| Declassification.v | 1 | 0 | ✅ COMPLETE |
-| ValRelStepLimit_PROOF.v | 1 | 0 | ✅ COMPLETE |
-| ReferenceOps.v | 3 | 0 | ✅ COMPLETE |
-| KripkeMutual.v | 4 | 0 | ✅ COMPLETE |
-| RelationBridge.v | 3 | 0 | ✅ COMPLETE |
-| **TOTAL** | **12** | **0** | ✅ **COMPLETE** |
-
-**Key Proofs Added:**
-- `exp_rel_le_declassify`: Declassification preserves expression relation
-- `val_rel_n_to_val_rel_proven`: Step limit elimination for value relation
-- `exp_rel_le_ref/deref/assign`: Reference operation expression relations
-- `val_rel_n_weaken_proof`: Kripke weakening for value relations
-- `val_rel_n_mono_store_proof`: Kripke monotonicity for store extensions
-- `val_rel_le_to_n_attempt`: Bridge from val_rel_le to val_rel_n
+| File | Attempted Proofs | Actual Status |
+|------|------------------|---------------|
+| Declassification.v | 3 lemmas | ❌ Missing `multi_step_deterministic` |
+| ValRelStepLimit_PROOF.v | 1 theorem | ✅ Fixed in 45.6 |
+| ReferenceOps.v | 6 lemmas | ❌ `value` induction issue |
+| KripkeMutual.v | 4 lemmas | ❌ Missing Kripke helpers |
+| RelationBridge.v | 5 lemmas | ❌ Missing unfold lemmas |
 
 **Phase 5 Key Insights:**
-1. Declassification: Same expression + pure operation → identical results
-2. Reference ops: Evaluation inversion + core lemmas complete the proof
-3. Kripke properties: FO types are Σ-independent; HO types have built-in Kripke
+1. Declassification: Requires determinism lemmas not yet defined
+2. Reference ops: `value` is Inductive, needs `inversion` not `discriminate`
+3. Kripke properties: Missing `val_rel_le_0_unfold`, `typing_strengthen_store`, etc.
 
 ---
 
