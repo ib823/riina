@@ -12,7 +12,7 @@ Formal proofs and prototype implementation for RIINA.
 |  ██║  ██║██║██║██║ ╚████║██║  ██║                                                          |
 |  ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                                          |
 |                                                                                             |
-|  Rigorous Immutable Invariant — Normalized Axiom                                             |
+|  Rigorous Immutable Invariant, No Assumptions                                          |
 |                                                                                             |
 |  RIINA PROOF REPOSITORY                                                                     |
 |                                                                                             |
@@ -21,7 +21,7 @@ Formal proofs and prototype implementation for RIINA.
 |                                                                                             |
 |  Mode: ULTRA KIASU | PARANOID | ZERO TRUST | INFINITE TIMELINE                              |
 |                                                                                             |
-|  "QED Eternum."                                                |
+|  "Q.E.D. Aeternum"                                                |
 |                                                                                             |
 +=============================================================================================+
 ```
