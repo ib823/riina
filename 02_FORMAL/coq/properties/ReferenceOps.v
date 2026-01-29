@@ -41,6 +41,25 @@ Require Import RIINA.properties.StoreRelation.
 
 Import ListNotations.
 
+(** ** Context Preservation Infrastructure *)
+
+Lemma step_preserves_ctx_snd : forall cfg1 cfg2,
+  cfg1 --> cfg2 -> snd cfg1 = snd cfg2.
+Proof. intros cfg1 cfg2 H. induction H; simpl; auto. Qed.
+
+Lemma step_preserves_ctx : forall e st ctx e' st' ctx',
+  (e, st, ctx) --> (e', st', ctx') -> ctx' = ctx.
+Proof.
+  intros. pose proof (step_preserves_ctx_snd _ _ H). simpl in H0. auto.
+Qed.
+
+Lemma value_multi_step_refl : forall v st ctx cfg,
+  value v -> multi_step (v, st, ctx) cfg -> cfg = (v, st, ctx).
+Proof.
+  intros. inversion H0; subst; auto.
+  exfalso. eapply value_not_step; eauto.
+Qed.
+
 (** ** Evaluation Inversion Infrastructure
 
     These lemmas decompose multi_step evaluations for compound expressions.
@@ -58,22 +77,29 @@ Lemma multi_step_ref_inversion : forall e sl st v st' ctx,
     st' = store_update l v_inner st_mid /\
     l = fresh_loc st_mid.
 Proof.
-  intros e sl st v st' ctx Hms.
+  intros e sl st v st' ctx Hms Hval.
   remember (ERef e sl, st, ctx) as cfg_start.
   remember (v, st', ctx) as cfg_end.
-  revert e sl st v st' Heqcfg_start Heqcfg_end.
+  revert e sl st v st' ctx Heqcfg_start Heqcfg_end Hval.
   induction Hms as [cfg | cfg1 cfg2 cfg3 Hstep Hmulti IH];
-    intros e sl st v st' Heq1 Heq2 Hval.
-  - (* MS_Refl: cfg_start = cfg_end, so ERef e sl = v — contradiction *)
-    subst. inversion Heq2; subst.
-    exfalso. inversion Hval.
-  - (* MS_Step: cfg1 --> cfg2 -->* cfg3 *)
-    subst.
+    intros e0 sl0 st0 v0 st0' ctx0 Heq1 Heq2 Hval0.
+  - rewrite Heq1 in Heq2. injection Heq2. intros; subst.
+    exfalso. inversion Hval0.
+  - subst.
+    destruct cfg2 as [[e2 st2] ctx2].
+    assert (Hctx : ctx2 = ctx0) by (eapply step_preserves_ctx; exact Hstep).
+    subst ctx2.
     inversion Hstep; subst.
-    + (* ST_RefStep: ctx/ctx' mismatch — eq_refl fails in Rocq 9.1 *)
-      admit.
-    + (* ST_RefValue *) admit.
-Admitted. (* TODO Item 5: Fix multi_step_ref_inversion for ctx-changing steps *)
+    + (* ST_RefStep *)
+      specialize (IH _ _ _ _ _ _ eq_refl eq_refl Hval0).
+      destruct IH as [vi [sm [l [Hm [Hvi [Hv [Hs Hl]]]]]]].
+      exists vi, sm, l. repeat split; auto.
+      eapply MS_Step; eauto.
+    + (* ST_RefValue *)
+      pose proof (value_multi_step_refl _ _ _ _ (VLoc _) Hmulti) as Heq.
+      inversion Heq; subst.
+      eexists _, _, _. repeat split; eauto. apply MS_Refl.
+Qed.
 
 (** Evaluation of EDeref proceeds by first evaluating to a location.
     Requires store_has_values: all store entries are values.
@@ -87,18 +113,38 @@ Lemma multi_step_deref_inversion : forall e st v st' ctx,
     st' = st_mid /\
     store_lookup l st_mid = Some v.
 Proof.
-  intros e st v st' ctx Hms.
+  intros e st v st' ctx Hms Hval Hshv.
   remember (EDeref e, st, ctx) as cfg_start.
   remember (v, st', ctx) as cfg_end.
-  revert e st v st' Heqcfg_start Heqcfg_end.
+  revert e st v st' ctx Heqcfg_start Heqcfg_end Hval Hshv.
   induction Hms as [cfg | cfg1 cfg2 cfg3 Hstep Hmulti IH];
-    intros e st v st' Heq1 Heq2 Hval Hshv.
-  - subst. inversion Heq2; subst. exfalso. inversion Hval.
-  - subst. inversion Hstep; subst.
-    + (* ST_DerefStep: ctx/ctx' mismatch — eq_refl fails in Rocq 9.1 *)
-      admit.
-    + (* ST_DerefLoc *) admit.
-Admitted. (* TODO Item 5: Fix multi_step_deref_inversion for ctx-changing steps *)
+    intros e0 st0 v0 st0' ctx0 Heq1 Heq2 Hval0 Hshv0.
+  - rewrite Heq1 in Heq2. injection Heq2. intros; subst.
+    exfalso. inversion Hval0.
+  - subst.
+    destruct cfg2 as [[e2 st2] ctx2].
+    assert (Hctx : ctx2 = ctx0) by (eapply step_preserves_ctx; exact Hstep).
+    subst ctx2.
+    inversion Hstep; subst.
+    + (* ST_DerefStep *)
+      assert (Hshv' : store_has_values st2).
+      { eapply step_preserves_store_values; eauto. }
+      specialize (IH _ _ _ _ _ eq_refl eq_refl Hval0 Hshv').
+      destruct IH as [l [st_mid [Hms_e' [Heq_st Hlook]]]].
+      exists l, st_mid. repeat split; auto.
+      eapply MS_Step; eauto.
+    + (* ST_DerefLoc *)
+      (* After inversion, Hmulti : multi_step (v_looked_up, st0, ctx0) (v0, st0', ctx0) *)
+      (* v_looked_up is a value by store_has_values, so multi_step is MS_Refl *)
+      match goal with
+      | [ Hshv: store_has_values ?s, Hlook: store_lookup ?l ?s = Some ?v_looked,
+          Hms: multi_step (?v_looked, ?s, ?c) _ |- _ ] =>
+        assert (Hval_looked : value v_looked) by (eapply Hshv; eauto);
+        pose proof (value_multi_step_refl _ _ _ _ Hval_looked Hms) as Heq_ms;
+        inversion Heq_ms; subst;
+        exists l, s; repeat split; auto; apply MS_Refl
+      end.
+Qed.
 
 (** Evaluation of EAssign proceeds by evaluating both subexpressions.
     Requires store_has_values for the ST_AssignLoc case (location must exist). *)
@@ -113,20 +159,44 @@ Lemma multi_step_assign_inversion : forall e1 e2 st v st' ctx,
     v = EUnit /\
     st' = store_update l v_val st_mid2.
 Proof.
-  intros e1 e2 st v st' ctx Hms.
+  intros e1 e2 st v st' ctx Hms Hval Hshv.
   remember (EAssign e1 e2, st, ctx) as cfg_start.
   remember (v, st', ctx) as cfg_end.
-  revert e1 e2 st v st' Heqcfg_start Heqcfg_end.
+  revert e1 e2 st v st' ctx Heqcfg_start Heqcfg_end Hval Hshv.
   induction Hms as [cfg | cfg1 cfg2 cfg3 Hstep Hmulti IH];
-    intros e1 e2 st v st' Heq1 Heq2 Hval Hshv.
-  - (* MS_Refl: EAssign e1 e2 = v — contradiction, EAssign is not a value *)
-    subst. inversion Heq2; subst. exfalso. inversion Hval.
-  - subst. inversion Hstep; subst.
-    + (* ST_Assign1: ctx/ctx' mismatch — eq_refl fails in Rocq 9.1 *)
-      admit.
-    + (* ST_Assign2 *) admit.
-    + (* ST_AssignLoc *) admit.
-Admitted. (* TODO Item 5: Fix multi_step_assign_inversion for ctx-changing steps *)
+    intros e1' e2' st0 v0 st0' ctx0 Heq1 Heq2 Hval0 Hshv0.
+  - rewrite Heq1 in Heq2. injection Heq2. intros; subst.
+    exfalso. inversion Hval0.
+  - subst.
+    destruct cfg2 as [[e2x st2] ctx2].
+    assert (Hctx : ctx2 = ctx0) by (eapply step_preserves_ctx; exact Hstep).
+    subst ctx2.
+    inversion Hstep; subst.
+    + (* ST_Assign1: e1 steps *)
+      assert (Hshv' : store_has_values st2)
+        by (eapply step_preserves_store_values; eauto).
+      specialize (IH _ _ _ _ _ _ eq_refl eq_refl Hval0 Hshv').
+      destruct IH as [l [v_val [st_mid1 [st_mid2 [Hms1 [Hms2 [Hvv [Heqv Heqst]]]]]]]].
+      exists l, v_val, st_mid1, st_mid2. repeat split; auto.
+      eapply MS_Step; eauto.
+    + (* ST_Assign2: e1 is value v1, e2 steps *)
+      assert (Hshv' : store_has_values st2)
+        by (eapply step_preserves_store_values; eauto).
+      specialize (IH _ _ _ _ _ _ eq_refl eq_refl Hval0 Hshv').
+      destruct IH as [l [v_val [st_mid1 [st_mid2 [Hms1 [Hms2 [Hvv [Heqv Heqst]]]]]]]].
+      match goal with
+      | [ Hv1: value ?v1, Hms1: multi_step (?v1, _, _) _ |- _ ] =>
+        pose proof (value_multi_step_refl _ _ _ _ Hv1 Hms1) as Heq_ms;
+        inversion Heq_ms; subst
+      end.
+      eexists _, _, _, _. repeat split; eauto.
+      * apply MS_Refl.
+      * eapply MS_Step; eauto.
+    + (* ST_AssignLoc: both values, store updated *)
+      pose proof (value_multi_step_refl _ _ _ _ VUnit Hmulti) as Heq.
+      inversion Heq; subst.
+      eexists _, _, _, _. repeat split; eauto; try apply MS_Refl.
+Qed.
 
 (** ** Axiom 16: Reference Creation (ERef)
 
