@@ -170,16 +170,23 @@ Proof.
   generalize dependent b1. generalize dependent v1.
   induction Hnd; intros.
   - inversion Hev1; inversion Hev2; subst. auto.
-  - inversion Hev1; inversion Hev2; subst.
+  - inversion Hev1; subst. inversion Hev2; subst.
     destruct Hle as [Hlen Hlow].
     specialize (Hall i).
     match goal with
-    | [ H1: nth_error e1 i = Some _, H2: nth_error e2 i = Some _ |- _ ] =>
+    | [ H1: nth_error e1 i = Some ?va, H2: nth_error e2 i = Some ?vb |- _ ] =>
       rewrite H1 in Hall; rewrite H2 in Hall;
       destruct Hall as [Hl1 Hl2];
-      eapply Hlow; eauto
+      apply (Hlow i va vb H1 H2 Hl1 Hl2)
     end.
-  - inversion Hev1; inversion Hev2; subst.
+  - inversion Hev1; subst. inversion Hev2; subst.
+    match goal with
+    | [ He1a: eval e1 ?ea b ?va1 ?ba1, He2a: eval e2 ?ea b ?va2 ?ba2,
+        He1b: eval e1 ?eb ?ba1 ?vb1 ?bb1, He2b: eval e2 ?eb ?ba2 ?vb2 ?bb2 |- _ ] =>
+      assert (ba1 = b) by (eapply no_declass_budget_preserved; eauto);
+      assert (ba2 = b) by (eapply no_declass_budget_preserved; eauto);
+      subst
+    end.
     f_equal.
     + eapply IHHnd1; eauto.
     + eapply IHHnd2; eauto.
