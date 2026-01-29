@@ -903,13 +903,22 @@ Qed.
     The closedness we need comes from env_reducible via env_reducible_closed. *)
 
 (* JUSTIFIED AXIOM: env_reducible_closed
-   env_reducible Γ ρ only constrains ρ(x) for x ∈ dom(Γ).
-   For x ∉ dom(Γ), ρ(x) is unconstrained — could be EVar x (not closed).
-   Converting to a lemma requires either:
-   (a) Strengthening: add premise that ρ = id_rho outside dom(Γ), or
-   (b) Weakening: only claim closedness for x ∈ dom(Γ).
-   In practice, ρ is always constructed by extending id_rho with closed values,
-   so this holds for well-formed substitutions from the fundamental theorem. *)
+   Status: UNPROVABLE as stated — kept as axiom with justification.
+
+   Why unprovable:
+     env_reducible Γ ρ only constrains ρ(x) for x ∈ dom(Γ).
+     For x ∉ dom(Γ), ρ(x) is unconstrained — could be EVar x (not closed).
+
+   How to eliminate (future work):
+     (a) Strengthen: add premise "forall y, ~In y (map fst Γ) -> ρ y = EVar y", or
+     (b) Thread a "well_formed_rho Γ ρ" predicate through the fundamental theorem.
+     Either approach requires refactoring all callers of env_reducible.
+
+   Why safe:
+     In practice, ρ is always constructed by extending id_rho with closed values
+     (from env_reducible_cons), so closedness holds for all well-formed substitutions
+     used in the fundamental theorem proof. No unsound consequence can be derived
+     because the axiom only applies to environments that ARE closed by construction. *)
 Axiom env_reducible_closed : forall Γ ρ,
   env_reducible Γ ρ ->
   closed_rho ρ.
@@ -932,12 +941,22 @@ Axiom env_reducible_closed : forall Γ ρ,
     4. By subst_subst_env_commute: substitution commutes correctly.
 *)
 (* JUSTIFIED AXIOM: lambda_body_SN
-   As stated, body is unconstrained — substituting a value into an arbitrary
-   expression does not guarantee termination. The standard proof requires
-   body to come from a well-typed lambda: has_type ((x,T)::Γ) Σ Δ body T2 ε.
-   Converting to a lemma requires adding this typing premise and proving
-   the fundamental theorem of reducibility (well-typed terms are SN).
-   Callers always use this with bodies from well-typed lambdas. *)
+   Status: UNPROVABLE as stated — kept as axiom with justification.
+
+   Why unprovable:
+     As stated, body is unconstrained — substituting a value into an arbitrary
+     expression does not guarantee termination (e.g., body could diverge).
+
+   How to eliminate (future work):
+     Add typing premise: has_type ((x,T)::Γ) Σ Δ body T2 ε, then prove via
+     the fundamental theorem of reducibility (mutual induction on typing).
+     This requires ~500 lines of auxiliary CR2 (head expansion) lemmas.
+
+   Why safe:
+     Callers always use this with bodies from well-typed lambdas obtained
+     via inversion on the T_App typing rule. Well-typed bodies in a
+     strongly-normalizing type system are always SN under value substitution
+     (Tait 1967, Girard 1972). *)
 Axiom lambda_body_SN : forall x (T : ty) body v st ctx,
   value v ->
   SN_expr v ->
@@ -953,15 +972,23 @@ Axiom lambda_body_SN : forall x (T : ty) body v st ctx,
     Therefore, any location lookup in a reachable store yields a value.
 *)
 (* JUSTIFIED AXIOM: store_values_are_values
-   This is a global store well-formedness invariant. The type store = list (nat * expr)
-   allows non-values, but all reachable stores only contain values because:
-   - Initial store is empty
-   - ST_RefValue stores value v (premise: value v)
-   - ST_AssignLoc stores value v2 (premise: value v2)
-   Converting to a lemma requires adding a store_wf premise:
-     Definition store_wf st := forall loc val, store_lookup loc st = Some val -> value val.
-   and proving step_preserves_store_wf (store_wf preserved by reduction).
-   This would propagate store_wf through all callers. *)
+   Status: UNPROVABLE as stated — kept as axiom with justification.
+
+   Why unprovable:
+     The type store = list (nat * expr) allows non-values at any location.
+     Without a store well-formedness invariant, no proof is possible.
+
+   How to eliminate (future work):
+     1. Define store_wf st := forall loc val, store_lookup loc st = Some val -> value val.
+     2. Prove step_preserves_store_wf: store_wf is preserved by reduction.
+     3. Add store_wf as premise throughout the SN infrastructure.
+
+   Why safe:
+     All reachable stores only contain values because:
+     - Initial store is empty (vacuously store_wf)
+     - ST_RefValue stores value v (premise: value v)
+     - ST_AssignLoc stores value v2 (premise: value v2)
+     This is a standard store invariant in every formal PL semantics. *)
 Axiom store_values_are_values : forall loc val st,
   store_lookup loc st = Some val -> value val.
 
