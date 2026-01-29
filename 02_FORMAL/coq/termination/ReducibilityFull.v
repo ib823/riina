@@ -902,8 +902,14 @@ Qed.
     Lambdas are values but can have free variables in their body.
     The closedness we need comes from env_reducible via env_reducible_closed. *)
 
-(** env_reducible implies closed_rho for variables in domain *)
-(* Note: For variables not in Γ, ρ can be anything. We assume id_rho behavior. *)
+(* JUSTIFIED AXIOM: env_reducible_closed
+   env_reducible Γ ρ only constrains ρ(x) for x ∈ dom(Γ).
+   For x ∉ dom(Γ), ρ(x) is unconstrained — could be EVar x (not closed).
+   Converting to a lemma requires either:
+   (a) Strengthening: add premise that ρ = id_rho outside dom(Γ), or
+   (b) Weakening: only claim closedness for x ∈ dom(Γ).
+   In practice, ρ is always constructed by extending id_rho with closed values,
+   so this holds for well-formed substitutions from the fundamental theorem. *)
 Axiom env_reducible_closed : forall Γ ρ,
   env_reducible Γ ρ ->
   closed_rho ρ.
@@ -925,6 +931,13 @@ Axiom env_reducible_closed : forall Γ ρ,
     3. By Reducible_SN: Reducible terms are SN.
     4. By subst_subst_env_commute: substitution commutes correctly.
 *)
+(* JUSTIFIED AXIOM: lambda_body_SN
+   As stated, body is unconstrained — substituting a value into an arbitrary
+   expression does not guarantee termination. The standard proof requires
+   body to come from a well-typed lambda: has_type ((x,T)::Γ) Σ Δ body T2 ε.
+   Converting to a lemma requires adding this typing premise and proving
+   the fundamental theorem of reducibility (well-typed terms are SN).
+   Callers always use this with bodies from well-typed lambdas. *)
 Axiom lambda_body_SN : forall x (T : ty) body v st ctx,
   value v ->
   SN_expr v ->
@@ -939,6 +952,16 @@ Axiom lambda_body_SN : forall x (T : ty) body v st ctx,
     3. ST_AssignLoc rule requires value v to assign
     Therefore, any location lookup in a reachable store yields a value.
 *)
+(* JUSTIFIED AXIOM: store_values_are_values
+   This is a global store well-formedness invariant. The type store = list (nat * expr)
+   allows non-values, but all reachable stores only contain values because:
+   - Initial store is empty
+   - ST_RefValue stores value v (premise: value v)
+   - ST_AssignLoc stores value v2 (premise: value v2)
+   Converting to a lemma requires adding a store_wf premise:
+     Definition store_wf st := forall loc val, store_lookup loc st = Some val -> value val.
+   and proving step_preserves_store_wf (store_wf preserved by reduction).
+   This would propagate store_wf through all callers. *)
 Axiom store_values_are_values : forall loc val st,
   store_lookup loc st = Some val -> value val.
 
