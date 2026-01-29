@@ -148,3 +148,13 @@ domains/MLSafetyTypes.v
 domains/CertificationEvidence.v
 domains/ProbabilisticVerification.v
 domains/IrisSeparationLogic.v
+
+# Phase 10: Strategic Domain Proofs (Session 49 - remaining 8 strategic items, zero admits)
+domains/DualModeVerification.v
+domains/LLMProofPipeline.v
+domains/CrossLayerSecurity.v
+domains/SpeculativeExecution.v
+domains/QuantumTypes.v
+domains/DistributedConsensus.v
+domains/MultiProverValidation.v
+domains/ASEANCompliance.v
