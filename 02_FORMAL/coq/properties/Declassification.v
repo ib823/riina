@@ -159,41 +159,57 @@ Qed.
     3. Syntactically identical expressions reduce identically
 *)
 
-(** Helper: Evaluation is deterministic *)
+(** Helper: Values don't multi-step further *)
+Lemma value_multi_step_refl_decl : forall v st ctx cfg,
+  value v -> multi_step (v, st, ctx) cfg -> cfg = (v, st, ctx).
+Proof.
+  intros v st ctx cfg Hv Hms.
+  inversion Hms; subst; auto.
+  exfalso. eapply value_not_step; eauto.
+Qed.
+
+(** Helper: Multi-step determinism on configs *)
+Lemma eval_deterministic_cfg : forall cfg cfg1 cfg2,
+  multi_step cfg cfg1 ->
+  multi_step cfg cfg2 ->
+  value (fst (fst cfg1)) ->
+  value (fst (fst cfg2)) ->
+  cfg1 = cfg2.
+Proof.
+  intros cfg cfg1 cfg2 H1 H2 Hv1 Hv2.
+  revert cfg2 H2 Hv2.
+  induction H1 as [c | c1 c2 c3 Hstep Hmulti IH].
+  - (* MS_Refl *)
+    intros.
+    destruct c as [[ec sc] ctxc]. simpl in Hv1.
+    symmetry. eapply value_multi_step_refl_decl; eauto.
+  - (* MS_Step *)
+    intros cfg2' H2' Hv2.
+    inversion H2'.
+    + (* MS_Refl *)
+      subst. exfalso.
+      destruct cfg2' as [[e2' s2'] ctx2']. simpl in Hv2.
+      eapply value_not_step; eauto.
+    + (* MS_Step *)
+      subst.
+      match goal with
+      | [ H1 : ?x --> c2, H2 : ?x --> ?y |- _ ] =>
+        assert (c2 = y) by (eapply step_deterministic_cfg; eauto)
+      end.
+      subst. apply IH; auto.
+Qed.
+
+(** Evaluation is deterministic *)
 Lemma eval_deterministic : forall e st ctx v1 st1 v2 st2,
   multi_step (e, st, ctx) (v1, st1, ctx) ->
   multi_step (e, st, ctx) (v2, st2, ctx) ->
   value v1 -> value v2 ->
   v1 = v2 /\ st1 = st2.
 Proof.
-  (* Previously Qed in Coq 8.18; broken in Rocq 9.1 due to
-     tuple unification changes in inversion/remember.
-     TODO Item 6: Fix for Rocq 9.1 compatibility *)
-  admit.
-Admitted.
-
-(** Helper: Same expression + related stores → related results
-    
-    When evaluating the SAME expression under related stores,
-    the results differ only in store-dependent computations.
-    For declassification (which is pure), results are identical.
-*)
-Lemma same_expr_related_stores_related_results : forall n Σ T e st1 st2 ctx v1 v2 st1' st2',
-  store_rel_le n Σ st1 st2 ->
-  multi_step (e, st1, ctx) (v1, st1', ctx) ->
-  multi_step (e, st2, ctx) (v2, st2', ctx) ->
-  value v1 -> value v2 ->
-  (* Results are related for same expression *)
-  val_rel_le n Σ T v1 v2.
-Proof.
-  (* JUSTIFIED ADMIT: This lemma is UNSOUND as stated.
-     Counterexample: e = EDeref (ELoc 0), st1 maps 0→EInt 1, st2 maps 0→EInt 2.
-     Then v1 = EInt 1, v2 = EInt 2, which are NOT related at TInt (requires equality).
-     The lemma would need a purity premise (e does not read the store) or
-     be restricted to pure expressions. It is not used by exp_rel_le_declassify
-     in the intended proof strategy. *)
-  admit.
-Admitted.
+  intros e st ctx v1 st1 v2 st2 H1 H2 Hv1 Hv2.
+  assert (Heq := eval_deterministic_cfg _ _ _ H1 H2 Hv1 Hv2).
+  inversion Heq. auto.
+Qed.
 
 (** ** MAIN PROOF: Expression Relation for Declassification
 
