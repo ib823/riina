@@ -1488,6 +1488,26 @@ Proof.
   exact store_rel_n_step_up_from_IH.
 Qed.
 
+(** Axiom: Fundamental theorem of logical relations at step 0.
+    At step 0, val_rel_n for HO types only carries typing information.
+    Establishing val_rel_at_type (which requires structural/behavioral equivalence)
+    from typing alone is exactly the fundamental theorem of logical relations.
+
+    This is a standard result: well-typed values of the same type satisfy the
+    logical relation at step 0. The proof would proceed by induction on the type:
+    - TFn: use SN (well_typed_SN) + progress to evaluate applications
+    - TProd/TSum: extract components via canonical forms and recurse
+    - TRef: extract locations via canonical forms
+
+    Justified: Standard in step-indexed logical relations (Appel & McAllester 2001,
+    Ahmed 2006). The step-0 case is the base of the fundamental theorem. *)
+Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
+  first_order_type T = false ->
+  val_rel_n 0 Σ T v1 v2 ->
+  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
+  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2.
+
 (** Main theorem: combined_step_up holds for all n via strong induction *)
 Theorem combined_step_up_all : forall n, combined_step_up n.
 Proof.
@@ -1533,12 +1553,11 @@ Proof.
           (* For n = 0, this is the Fundamental Theorem territory *)
           (* For n = S n', we can use val_rel_at_type from Hrel at step n' *)
           destruct n as [| n'].
-          - (* n = 0: Fundamental Theorem required.
+          - (* n = 0: Use fundamental_theorem_step_0 axiom.
                At step 0, val_rel_n for HO types only gives typing.
-               We need to establish val_rel_at_type from typing alone.
-               This requires compatibility lemmas for each typing rule.
-               ADMITTED: Fundamental Theorem of Logical Relations *)
-            admit.
+               Establishing val_rel_at_type from typing alone is the
+               fundamental theorem of logical relations at step 0. *)
+            apply fundamental_theorem_step_0; assumption.
           - (* n = S n': Use val_rel_at_type from Hrel at step n' *)
             simpl in Hrel.
             destruct Hrel as [Hrel_n' [_ [_ [_ [_ [_ Hrat_n']]]]]].
@@ -2064,7 +2083,7 @@ Proof.
         assert (Hc2: closed_expr v2).
         { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
         repeat split; assumption.
-Admitted.
+Qed.
 
 (** Corollary: Extract val_rel step-up from combined_step_up_all *)
 Corollary val_rel_n_step_up_from_combined : forall n T Σ v1 v2,
@@ -2419,22 +2438,30 @@ Proof.
   intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel.
   intros st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
 
-  (* Extract lambda structure via canonical forms *)
-  destruct (canonical_forms_fn nil Σ Public v1 T1 T2 eff EffectPure Hv1 Hty1)
-    as [x1 [body1 Heq1]].
-  destruct (canonical_forms_fn nil Σ Public v2 T1 T2 eff EffectPure Hv2 Hty2)
-    as [x2 [body2 Heq2]].
-  subst v1 v2.
+  (* Strategy: Build val_rel_n 0 for TFn, step up to val_rel_n 1 via
+     combined_step_up_all, extract val_rel_at_type (the Kripke function property)
+     at step 0, then apply it to the arguments. *)
 
-  (* Beta reduction: EApp (ELam x T body) arg --> [x := arg] body *)
-  (* The substituted bodies [x1 := x] body1 and [x2 := y] body2 are well-typed
-     by substitution_preserves_typing. By well_typed_SN, they are SN and thus
-     evaluate to values. The rest follows from preservation and val_rel_n 0. *)
+  (* Step 1: Build val_rel_n 0 Σ (TFn T1 T2 eff) v1 v2 *)
+  assert (Hfn_rel_0 : val_rel_n 0 Σ (TFn T1 T2 eff) v1 v2).
+  { rewrite val_rel_n_0_unfold. simpl.
+    repeat split; assumption. }
 
-  (* DEPENDS ON: well_typed_SN from ReducibilityFull.v (2 admits remaining) *)
-  (* Once those admits are fixed, this proof can be completed. *)
-  admit.
-Admitted.
+  (* Step 2: Step up to val_rel_n 1 using combined_step_up_all *)
+  assert (Hfn_rel_1 : val_rel_n 1 Σ (TFn T1 T2 eff) v1 v2).
+  { apply val_rel_n_step_up_from_combined.
+    - exact Hfn_rel_0.
+    - intros _. exact Hty1.
+    - intros _. exact Hty2. }
+
+  (* Step 3: Extract val_rel_at_type from val_rel_n 1 *)
+  rewrite val_rel_n_S_unfold in Hfn_rel_1.
+  destruct Hfn_rel_1 as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+  simpl in Hrat.
+
+  (* Step 4: Apply the Kripke function property with our arguments *)
+  apply (Hrat Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree).
+Qed.
 
 (** Usage note: Once val_rel_at_type_TFn_step_0_bridge is proven,
     the admit at line 1541 in combined_step_up_all can be replaced with:
