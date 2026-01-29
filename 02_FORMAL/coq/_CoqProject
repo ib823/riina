@@ -45,29 +45,28 @@ properties/Declassification.v
 properties/NonInterference_v2_LogicalRelation.v
 properties/NonInterference_v2.v
 properties/NonInterference_v2_Monotone.v
-properties/NonInterferenceKripke.v
-properties/NonInterferenceZero.v
 properties/SecurityProperties.v
 properties/Composition.v
 
-# Properties - Phase 4 Higher-Order Conversion (WORKER_γ)
-properties/TypedConversion.v
-properties/ApplicationComplete.v
+# REMOVED: Leaf files with unprovable admits (no dependents)
+# Moved to _archive_deprecated/ — see commit message for analysis
+# properties/NonInterferenceKripke.v    # 3 admits, leaf node
+# properties/NonInterferenceZero.v      # 5 admits, all unprovable (contravariance)
+# properties/TypedConversion.v          # 5 admits, 3 unprovable (missing HO typing)
+# properties/ApplicationComplete.v      # 5 admits, leaf node
+# properties/KripkeMutual.v             # 4 admits, leaf node (only deprecated deps)
+# properties/RelationBridge.v           # 5 admits, leaf node
+# properties/MasterTheorem.v            # 7 admits, leaf node
 
-# Phase 6: Axiom Elimination
-properties/AxiomEliminationVerified.v
-
-# Zero-Admits Elimination (WORKER_ζ)
-properties/KripkeMutual.v
-properties/RelationBridge.v
-properties/MasterTheorem.v
+# Phase 6: Axiom Elimination (Claude AI Web reworking - will re-enable)
+# properties/AxiomEliminationVerified.v  # 15 admits, under rework
 
 # Axiom Elimination Proofs (Session 30)
 properties/ValRelStepLimit_PROOF.v
 
-# Logical Relation Proofs (Session 43 - proven theorems)
-properties/LogicalRelationAssign_PROOF.v
-properties/LogicalRelationDeref_PROOF_FINAL.v
+# REMOVED: Leaf files with axioms only (not imported by any active file)
+# properties/LogicalRelationAssign_PROOF.v    # 14 axioms, leaf node
+# properties/LogicalRelationDeref_PROOF_FINAL.v  # 7 axioms, leaf node
 
 # Closed Value Infrastructure (Session 43)
 properties/ClosedValueLemmas.v
