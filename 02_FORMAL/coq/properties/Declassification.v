@@ -165,9 +165,25 @@ Lemma eval_deterministic : forall e st ctx v1 st1 v2 st2,
   value v1 -> value v2 ->
   v1 = v2 /\ st1 = st2.
 Proof.
-  (* TODO: Fix proof - multi_step_deterministic not defined *)
-  admit.
-Admitted.
+  intros e st ctx v1 st1 v2 st2 H1.
+  generalize dependent st2. generalize dependent v2.
+  induction H1 as [cfg1 | cfg1 cfg2 cfg3 Hstep1 Hmulti1 IH].
+  - (* MS_Refl *)
+    intros v2 st2 H2 Hv1 Hv2.
+    remember (v1, st1, ctx) as start.
+    induction H2 as [| cfga cfgb cfgc Hstep Hmulti IH2].
+    + inversion Heqstart; subst. split; reflexivity.
+    + subst. exfalso. eapply value_not_step; [exact Hv1 | exact Hstep].
+  - (* MS_Step *)
+    intros v2 st2 H2 Hv1 Hv2.
+    inversion H2 as [cfg1' Heq | cfg1' cfgM cfgF HstepM HmultiM].
+    + (* MS_Refl — v2 steps, contradiction *)
+      subst. exfalso. eapply value_not_step; [exact Hv2 | exact Hstep1].
+    + (* MS_Step — both step, use determinism *)
+      subst.
+      pose proof (step_deterministic_cfg _ _ _ Hstep1 HstepM) as Heq.
+      subst. apply IH; assumption.
+Qed.
 
 (** Helper: Same expression + related stores → related results
     

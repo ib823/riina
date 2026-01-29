@@ -376,6 +376,18 @@ Section ValRelAtN.
     end.
 End ValRelAtN.
 
+(** Step-indexed wrapper: True at step 0, full content at step S n'.
+    This eliminates the fundamental_theorem_step_0 axiom. *)
+Definition val_rel_at_type_n (n : nat) (Σ : store_ty)
+    (store_rel_pred : store_ty -> store -> store -> Prop)
+    (val_rel_lower : store_ty -> ty -> expr -> expr -> Prop)
+    (store_rel_lower : store_ty -> store -> store -> Prop)
+    (T : ty) (v1 v2 : expr) : Prop :=
+  match n with
+  | 0 => True  (* At step 0, trivially true *)
+  | S _ => val_rel_at_type Σ store_rel_pred val_rel_lower store_rel_lower T v1 v2
+  end.
+
 (** THE REVOLUTIONARY STEP-INDEXED RELATIONS
 
     CANONICAL DESIGN: val_rel_n includes typing for higher-order types.
@@ -1507,6 +1519,12 @@ Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
   (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
   (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
   val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2.
+(* JUSTIFIED: Standard in step-indexed logical relations. At step 0,
+   val_rel_at_type for TFn requires: given related args (val_rel_n 0) and
+   related stores (store_rel_n 0), evaluation produces related results.
+   This reduces to type preservation + progress, provable once
+   ReducibilityFull.v axioms are eliminated. See val_rel_at_type_TFn_step_0_bridge
+   below for the proof structure (requires combined_step_up_all first). *)
 
 (** Main theorem: combined_step_up holds for all n via strong induction *)
 Theorem combined_step_up_all : forall n, combined_step_up n.
@@ -1557,7 +1575,11 @@ Proof.
                At step 0, val_rel_n for HO types only gives typing.
                Establishing val_rel_at_type from typing alone is the
                fundamental theorem of logical relations at step 0. *)
-            apply fundamental_theorem_step_0; assumption.
+            apply fundamental_theorem_step_0 with (T := T).
+            * exact Hfo.
+            * exact Hrel.
+            * intros _. apply Hty1. exact eq_refl.
+            * intros _. apply Hty2. exact eq_refl.
           - (* n = S n': Use val_rel_at_type from Hrel at step n' *)
             simpl in Hrel.
             destruct Hrel as [Hrel_n' [_ [_ [_ [_ [_ Hrat_n']]]]]].

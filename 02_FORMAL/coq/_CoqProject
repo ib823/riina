@@ -140,3 +140,11 @@ domains/CompilerCorrectness.v
 domains/CommonCriteriaEAL7.v
 domains/ISO26262Compliance.v
 domains/DO178CCompliance.v
+
+# Phase 9: Strategic Domain Proofs (Session 48 - 60 proven theorems/lemmas, zero admits)
+domains/QuantitativeDeclassification.v
+domains/WCETTypes.v
+domains/MLSafetyTypes.v
+domains/CertificationEvidence.v
+domains/ProbabilisticVerification.v
+domains/IrisSeparationLogic.v
