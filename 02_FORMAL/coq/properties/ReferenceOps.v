@@ -102,10 +102,13 @@ Proof.
            exfalso. eapply value_not_step; [constructor | exact H].
 Qed.
 
-(** Evaluation of EDeref proceeds by first evaluating to a location *)
+(** Evaluation of EDeref proceeds by first evaluating to a location.
+    Requires store_has_values: all store entries are values.
+    This holds for all reachable stores (preserved by step). *)
 Lemma multi_step_deref_inversion : forall e st v st' ctx,
   multi_step (EDeref e, st, ctx) (v, st', ctx) ->
   value v ->
+  store_has_values st ->
   exists l st_mid,
     multi_step (e, st, ctx) (ELoc l, st_mid, ctx) /\
     st' = st_mid /\
@@ -116,29 +119,37 @@ Proof.
   remember (v, st', ctx) as cfg_end.
   revert e st v st' Heqcfg_start Heqcfg_end.
   induction Hms as [cfg | cfg1 cfg2 cfg3 Hstep Hmulti IH];
-    intros e st v st' Heq1 Heq2 Hval.
+    intros e st v st' Heq1 Heq2 Hval Hshv.
   - subst. inversion Heq2; subst. exfalso. inversion Hval.
   - subst. inversion Hstep; subst.
     + (* ST_DerefStep: e steps to e' *)
-      specialize (IH e' st'0 v st' eq_refl eq_refl Hval).
+      assert (Hshv' : store_has_values st'0).
+      { eapply step_preserves_store_values; eauto. exact H4. }
+      specialize (IH e' st'0 v st' eq_refl eq_refl Hval Hshv').
       destruct IH as [l [st_mid [Hms_e' [Heq_st Hlook]]]].
       exists l, st_mid.
       repeat split; auto.
       eapply MS_Step; [exact H4 | exact Hms_e'].
     + (* ST_DerefLoc: e = ELoc l, store_lookup l st = Some v0 *)
-      (* Hmulti : (v0, st, ctx) -->* (v, st', ctx) where value v.
-         The looked-up value v0 must reach v. Since stores only contain
-         values (operational invariant), v0 is a value, so v0 = v and st' = st.
-         JUSTIFIED ADMIT: Requires store_wf invariant — stores only contain values.
-         This holds for all reachable stores because ST_RefValue and ST_AssignLoc
-         only store values. A full proof would thread store_wf through multi_step. *)
-      admit.
-Admitted.
+      (* v0 is a value by store_has_values *)
+      assert (Hval0 : value v0) by (eapply Hshv; eauto).
+      (* Hmulti : (v0, st, ctx) -->* (v, st', ctx), v0 is a value *)
+      exists l, st.
+      remember (v0, st, ctx) as cfg_v0.
+      remember (v, st', ctx) as cfg_final.
+      destruct Hmulti.
+      * inversion Heqcfg_v0; inversion Heqcfg_final; subst.
+        repeat split; auto. apply MS_Refl.
+      * inversion Heqcfg_v0; subst.
+        exfalso. eapply value_not_step; [exact Hval0 | exact H].
+Qed.
 
-(** Evaluation of EAssign proceeds by evaluating both subexpressions *)
+(** Evaluation of EAssign proceeds by evaluating both subexpressions.
+    Requires store_has_values for the ST_AssignLoc case (location must exist). *)
 Lemma multi_step_assign_inversion : forall e1 e2 st v st' ctx,
   multi_step (EAssign e1 e2, st, ctx) (v, st', ctx) ->
   value v ->
+  store_has_values st ->
   exists l v_val st_mid1 st_mid2,
     multi_step (e1, st, ctx) (ELoc l, st_mid1, ctx) /\
     multi_step (e2, st_mid1, ctx) (v_val, st_mid2, ctx) /\
@@ -146,14 +157,53 @@ Lemma multi_step_assign_inversion : forall e1 e2 st v st' ctx,
     v = EUnit /\
     st' = store_update l v_val st_mid2.
 Proof.
-  (* JUSTIFIED ADMIT: This inversion lemma decomposes multi_step for EAssign.
-     The proof requires inducting on multi_step with remember, inverting
-     the first step into ST_Assign1 / ST_Assign2 / ST_AssignLoc cases.
-     The ST_AssignLoc case requires store_wf (looked-up value is a value)
-     to conclude that the resulting EUnit is the final value.
-     Same store_wf dependency as multi_step_deref_inversion. *)
-  admit.
-Admitted.
+  intros e1 e2 st v st' ctx Hms.
+  remember (EAssign e1 e2, st, ctx) as cfg_start.
+  remember (v, st', ctx) as cfg_end.
+  revert e1 e2 st v st' Heqcfg_start Heqcfg_end.
+  induction Hms as [cfg | cfg1 cfg2 cfg3 Hstep Hmulti IH];
+    intros e1 e2 st v st' Heq1 Heq2 Hval Hshv.
+  - (* MS_Refl: EAssign e1 e2 = v — contradiction, EAssign is not a value *)
+    subst. inversion Heq2; subst. exfalso. inversion Hval.
+  - subst. inversion Hstep; subst.
+    + (* ST_Assign1: e1 steps to e1' *)
+      assert (Hshv' : store_has_values st'0).
+      { eapply step_preserves_store_values; eauto. exact H4. }
+      specialize (IH e1' e2 st'0 v st' eq_refl eq_refl Hval Hshv').
+      destruct IH as [l [v_val [st_mid1 [st_mid2 [Hms1 [Hms2 [Hvv [Heqv Heqst]]]]]]]].
+      exists l, v_val, st_mid1, st_mid2.
+      repeat split; auto.
+      eapply MS_Step; [exact H4 | exact Hms1].
+    + (* ST_Assign2: e1 is a value v1, e2 steps to e2' *)
+      assert (Hshv' : store_has_values st'0).
+      { eapply step_preserves_store_values; eauto. exact H5. }
+      specialize (IH v1 e2' st'0 v st' eq_refl eq_refl Hval Hshv').
+      destruct IH as [l [v_val [st_mid1 [st_mid2 [Hms1 [Hms2 [Hvv [Heqv Heqst]]]]]]]].
+      (* IH gives: multi_step (v1, st'0, ctx) (ELoc l, st_mid1, ctx)
+         Since v1 is a value (H4), this is MS_Refl: v1 = ELoc l, st_mid1 = st'0 *)
+      assert (Hv1_loc : v1 = ELoc l /\ st'0 = st_mid1).
+      { remember (v1, st'0, ctx) as cfg_v1.
+        remember (ELoc l, st_mid1, ctx) as cfg_loc.
+        destruct Hms1.
+        - inversion Heqcfg_v1; inversion Heqcfg_loc; subst. auto.
+        - inversion Heqcfg_v1; subst.
+          exfalso. eapply value_not_step; [exact H4 | exact H]. }
+      destruct Hv1_loc as [Hv1eq Hsteq]. subst.
+      exists l, v_val, st, st_mid2.
+      repeat split; auto.
+      * apply MS_Refl.
+      * eapply MS_Step; [exact H5 | exact Hms2].
+    + (* ST_AssignLoc: both are values, store is updated *)
+      (* Hmulti : (EUnit, store_update l v2 st, ctx) -->* (v, st', ctx) *)
+      exists l, v2, st, (store_update l v2 st).
+      remember (EUnit, store_update l v2 st, ctx) as cfg_unit.
+      remember (v, st', ctx) as cfg_final.
+      destruct Hmulti.
+      * inversion Heqcfg_unit; inversion Heqcfg_final; subst.
+        repeat split; auto; apply MS_Refl.
+      * inversion Heqcfg_unit; subst.
+        exfalso. eapply value_not_step; [constructor | exact H].
+Qed.
 
 (** ** Axiom 16: Reference Creation (ERef)
 
