@@ -355,109 +355,16 @@ Qed.
 Lemma val_rel_le_step_up_fo : forall n m Σ T v1 v2,
   first_order_type T = true ->
   val_rel_le n Σ T v1 v2 ->
-  n > 0 ->
+  n > fo_compound_depth T ->
   val_rel_le m Σ T v1 v2.
 Proof.
-  intros n m Σ T v1 v2 Hfo Hrel Hn.
-  (* Case analysis on type - base types proven, compound types admitted
-     Order follows ty constructors: TUnit, TBool, TInt, TString, TBytes,
-     TFn, TProd, TSum, TList, TOption, TRef, TSecret, TLabeled, TTainted,
-     TSanitized, TProof, TCapability, TCapabilityFull, TChan, TSecureChan,
-     TConstantTime, TZeroizing *)
-  destruct T.
-  - (* 1. TUnit *) apply val_rel_le_step_up_unit with n; auto.
-  - (* 2. TBool *) apply val_rel_le_step_up_bool with n; auto.
-  - (* 3. TInt *) apply val_rel_le_step_up_int with n; auto.
-  - (* 4. TString *) apply val_rel_le_step_up_string with n; auto.
-  - (* 5. TBytes *)
-    apply val_rel_le_step_up_bytes with n; auto.
-  - (* 6. TFn - not first-order, contradiction *)
-    simpl in Hfo. discriminate.
-  - (* 7. TProd - step-independence requires n > fo_compound_depth T, but we only have n > 0.
-       For compound types, this requires a stronger premise. Admitted. *)
-    destruct m as [|m']; [simpl; exact I|].
-    (* Cannot apply val_rel_le_fo_step_independent here: requires n > fo_compound_depth (TProd ...) >= 1,
-       but we only have n > 0. The premise in val_rel_le_step_up_fo would need strengthening. *)
-    admit.
-  - (* 8. TSum - same issue as TProd *)
-    destruct m as [|m']; [simpl; exact I|].
-    admit.
-  - (* 9. TList - requires recursion *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 10. TOption - requires recursion *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 11. TRef - use step independence (depth 0) *)
-    destruct m as [|m']; [simpl; exact I|].
-    (* TRef has fo_compound_depth 0, use val_rel_le_fo_step_independent_primitive *)
-    apply val_rel_le_fo_step_independent_primitive with (m := n).
-    + exact Hfo.  (* first_order_type (TRef t s) = true *)
-    + reflexivity.  (* fo_compound_depth (TRef t s) = 0 *)
-    + exact Hn.  (* n > 0 *)
-    + lia.  (* S m' > 0 *)
-    + exact Hrel.  (* val_rel_le n Σ (TRef t s) v1 v2 *)
-  - (* 12. TSecret - indistinguishable *)
-    apply val_rel_le_step_up_secret with n; auto.
-  - (* 13. TLabeled - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 14. TTainted - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 15. TSanitized - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 16. TProof - requires recursion *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 17. TCapability - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 18. TCapabilityFull - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 19. TChan - not first-order, contradiction *)
-    simpl in Hfo. discriminate.
-  - (* 20. TSecureChan - not first-order, contradiction *)
-    simpl in Hfo. discriminate.
-  - (* 21. TConstantTime - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-  - (* 22. TZeroizing - indistinguishable *)
-    destruct n as [|n']; [lia|].
-    simpl in Hrel. destruct Hrel as [_ Hstruct].
-    unfold val_rel_struct in Hstruct.
-    destruct Hstruct as (Hv1 & Hv2 & Hc1 & Hc2 & _).
-    apply val_rel_le_build_indist; auto.
-Admitted.  (* 2 admits for TProd/TSum - need stronger premise n > fo_compound_depth T *)
+  intros n m Σ T v1 v2 Hfo Hrel Hdepth.
+  destruct m as [|m'].
+  - (* m = 0 *) simpl. exact I.
+  - (* m = S m' *)
+    apply val_rel_le_fo_step_independent with (m := n); auto.
+    lia.
+Qed.
 
 (** ** Equivalence Lemmas
 
