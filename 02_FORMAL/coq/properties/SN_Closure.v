@@ -569,6 +569,59 @@ Proof. intros. exact (SN_ref_aux (e, st, ctx) sl H). Qed.
 Definition store_wf (st : store) : Prop :=
   forall l v, store_lookup l st = Some v -> value v.
 
+(** Alias for clarity in ReducibilityFull.v documentation *)
+Definition store_values_wf := store_wf.
+
+(** Empty store is trivially well-formed *)
+Lemma store_wf_nil : store_wf nil.
+Proof.
+  unfold store_wf. intros l v Hlook. simpl in Hlook. discriminate.
+Qed.
+
+(** store_update preserves store_wf when storing a value *)
+Lemma store_update_preserves_wf : forall st l v,
+  store_wf st ->
+  value v ->
+  store_wf (store_update l v st).
+Proof.
+  unfold store_wf.
+  induction st as [| [l' v'] st' IH]; intros l v Hwf Hval l0 v0 Hlook.
+  - (* nil *)
+    simpl in Hlook.
+    destruct (Nat.eqb l0 l) eqn:Heq; [inversion Hlook; subst; exact Hval | discriminate].
+  - (* cons *)
+    simpl in Hlook.
+    destruct (Nat.eqb l l') eqn:Hll'.
+    + (* l = l': replaced entry *)
+      simpl in Hlook.
+      destruct (Nat.eqb l0 l) eqn:Hl0l.
+      * inversion Hlook. subst. exact Hval.
+      * (* l0 <> l, so lookup goes into original st' *)
+        apply Nat.eqb_eq in Hll'. subst l'.
+        eapply Hwf. simpl. rewrite Hl0l. exact Hlook.
+    + (* l <> l': entry is (l', v') :: store_update l v st' *)
+      simpl in Hlook.
+      destruct (Nat.eqb l0 l') eqn:Hl0l'.
+      * inversion Hlook. subst. eapply Hwf. simpl. rewrite Hl0l'. reflexivity.
+      * eapply IH; [| exact Hval | exact Hlook].
+        intros l1 v1 Hlook1. eapply Hwf. simpl.
+        destruct (Nat.eqb l1 l'); assumption.
+Qed.
+
+(** step preserves store well-formedness *)
+Lemma step_preserves_store_wf : forall e st ctx e' st' ctx',
+  store_wf st ->
+  (e, st, ctx) --> (e', st', ctx') ->
+  store_wf st'.
+Proof.
+  intros e st ctx e' st' ctx' Hwf Hstep.
+  induction Hstep; try exact Hwf; try (apply IHHstep; exact Hwf).
+  - (* ST_RefValue: store_update l v st *)
+    apply store_update_preserves_wf; assumption.
+  - (* ST_AssignLoc: store_update l v2 st *)
+    apply store_update_preserves_wf; assumption.
+Qed.
+
 Lemma SN_deref_aux : forall cfg,
   SN cfg ->
   (forall l v st', store_lookup l st' = Some v -> value v) ->
