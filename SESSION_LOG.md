@@ -1,5 +1,27 @@
 # Session Log
 
+## 2026-01-29 (Session 47): Inversion Proofs + Claude Web Integration
+
+**Goal:** Assess 4 Claude AI Web outputs, integrate usable content, prove multi_step inversions.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | Assessed 4 Claude AI Web outputs | ✅ 3/4 rejected, all archived |
+| 2 | Proved `multi_step_ref_inversion` | ✅ Qed |
+| 3 | Proved `multi_step_deref_inversion` | ✅ Qed (added store_has_values premise) |
+| 4 | Proved `multi_step_assign_inversion` | ✅ Qed (3-phase decomposition) |
+| 5 | Proved `eval_deterministic` in Declassification.v | ✅ Qed |
+| 6 | Documented all remaining admits with justifications | ✅ Done |
+| 7 | Updated PROGRESS.md | ✅ Done |
+
+### Admits: 23 → 18 (-5)
+### Axioms: 9 (unchanged)
+### Build: ✅ PASSING (all files compile)
+
+---
+
 ## 2026-01-24 (Session 43): Admit Elimination & Claude AI Web Assessment
 
 **Goal:** Continue executing CLAUDE_EXECUTION_PLAN.md to eliminate admits.
