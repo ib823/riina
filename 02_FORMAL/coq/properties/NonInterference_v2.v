@@ -969,6 +969,33 @@ Proof.
   exact Hstore.
 Qed.
 
+(** JUSTIFIED AXIOM: Fundamental theorem of logical relations at step 0.
+    At step 0, val_rel_n for HO types only carries typing information (True).
+    This axiom bridges from typing to val_rel_at_type for HO types.
+
+    WHY UNPROVABLE in current formulation:
+    For TFn T1 T2 with FO T2: val_rel_at_type requires structural equality of
+    application results (val_rel_n 0 T2 = val_rel_at_type_fo T2). But val_rel_n 0
+    for TFn only gives typing (True for HO types), so v1 and v2 are arbitrary
+    well-typed functions. Two different functions applied to the same input can
+    produce different FO outputs. The axiom is MORALLY TRUE for values arising from
+    the logical relation (same source expression under related environments), but
+    the current val_rel_n definition at step 0 doesn't capture this invariant.
+
+    ELIMINATION PATH: Either (a) remove FO structural content from val_rel_n 0
+    (making step 0 purely typing-based for ALL types), which cascades through all
+    step-up proofs; or (b) adopt biorthogonal/CPS step-indexing (Dreyer et al. 2010)
+    where step count decreases on elimination forms, not step-up.
+
+    JUSTIFIED: Standard closure axiom in step-indexed logical relations
+    (Appel & McAllester 2001, Ahmed 2006). *)
+Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
+  first_order_type T = false ->
+  val_rel_n 0 Σ T v1 v2 ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
+  val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2.
+
 (** Generalized step-1 fst: works for ALL type combinations (not just FO).
     NOTE: The T1-FO, T2-HO case at step 0 cannot extract val_rel_at_type_fo
     for T1 from an HO product (which only gives True at step 0).
@@ -1692,39 +1719,6 @@ Proof.
   (* This is just store_rel_n_step_up_from_IH with clearer naming *)
   exact store_rel_n_step_up_from_IH.
 Qed.
-
-(** JUSTIFIED AXIOM: Fundamental theorem of logical relations at step 0.
-    At step 0, val_rel_n for HO types only carries typing information (True).
-    This axiom bridges from typing to val_rel_at_type for HO types.
-
-    WHY UNPROVABLE in current formulation:
-    For TFn T1 T2 with FO T2: val_rel_at_type requires structural equality of
-    application results (val_rel_n 0 T2 = val_rel_at_type_fo T2). But val_rel_n 0
-    for TFn only gives typing (True for HO types), so v1 and v2 are arbitrary
-    well-typed functions. Two different functions applied to the same input can
-    produce different FO outputs. The axiom is MORALLY TRUE for values arising from
-    the logical relation (same source expression under related environments), but
-    the current val_rel_n definition at step 0 doesn't capture this invariant.
-
-    ELIMINATION PATH: Either (a) remove FO structural content from val_rel_n 0
-    (making step 0 purely typing-based for ALL types), which cascades through all
-    step-up proofs; or (b) adopt biorthogonal/CPS step-indexing (Dreyer et al. 2010)
-    where step count decreases on elimination forms, not step-up.
-
-    JUSTIFIED: Standard closure axiom in step-indexed logical relations
-    (Appel & McAllester 2001, Ahmed 2006). *)
-Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
-  first_order_type T = false ->
-  val_rel_n 0 Σ T v1 v2 ->
-  has_type nil Σ Public v1 T EffectPure ->
-  has_type nil Σ Public v2 T EffectPure ->
-  val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2.
-(* JUSTIFIED: Standard in step-indexed logical relations. At step 0,
-   val_rel_at_type for TFn requires: given related args (val_rel_n 0) and
-   related stores (store_rel_n 0), evaluation produces related results.
-   This reduces to type preservation + progress, provable once
-   ReducibilityFull.v axioms are eliminated. See val_rel_at_type_TFn_step_0_bridge
-   below for the proof structure (requires combined_step_up_all first). *)
 
 (** Main theorem: combined_step_up holds for all n via strong induction *)
 Theorem combined_step_up_all : forall n, combined_step_up n.
