@@ -60,7 +60,8 @@ use crate::ir::{
     Instruction, Program, Terminator, VarId,
 };
 use crate::{Error, Result};
-use riina_types::{Effect, Expr, Ident, SecurityLevel, Ty};
+use crate::ir::BinOp as IrBinOp;
+use riina_types::{BinOp, Effect, Expr, Ident, SecurityLevel, Ty};
 use std::collections::HashMap;
 
 /// Variable environment during lowering
@@ -245,6 +246,11 @@ impl Lower {
             Expr::Require(eff, _) => Ty::Capability(eff.to_capability_kind()),
             Expr::Grant(_, e) => self.infer_type(e),
             Expr::Var(_) => Ty::Unit, // Would need type environment
+            Expr::BinOp(op, _, _) => match op {
+                BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => Ty::Int,
+                BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge
+                | BinOp::And | BinOp::Or => Ty::Bool,
+            },
         }
     }
 
@@ -289,6 +295,7 @@ impl Lower {
             Expr::Classify(e) | Expr::Declassify(e, _) | Expr::Prove(e) => self.infer_effect(e),
             Expr::Require(eff, e) => self.infer_effect(e).join(*eff),
             Expr::Grant(_, e) => self.infer_effect(e),
+            Expr::BinOp(_, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
         }
     }
 
@@ -934,6 +941,34 @@ impl Lower {
                     Effect::Pure,
                 );
                 self.lower_expr(body)
+            }
+
+            Expr::BinOp(op, lhs, rhs) => {
+                let l = self.lower_expr(lhs)?;
+                let r = self.lower_expr(rhs)?;
+                let ir_op = match op {
+                    BinOp::Add => IrBinOp::Add,
+                    BinOp::Sub => IrBinOp::Sub,
+                    BinOp::Mul => IrBinOp::Mul,
+                    BinOp::Div => IrBinOp::Div,
+                    BinOp::Mod => IrBinOp::Mod,
+                    BinOp::Eq => IrBinOp::Eq,
+                    BinOp::Ne => IrBinOp::Ne,
+                    BinOp::Lt => IrBinOp::Lt,
+                    BinOp::Le => IrBinOp::Le,
+                    BinOp::Gt => IrBinOp::Gt,
+                    BinOp::Ge => IrBinOp::Ge,
+                    BinOp::And => IrBinOp::And,
+                    BinOp::Or => IrBinOp::Or,
+                };
+                let result_ty = self.infer_type(expr);
+                let effect = self.infer_effect(expr);
+                Ok(self.emit(
+                    Instruction::BinOp(ir_op, l, r),
+                    result_ty,
+                    SecurityLevel::Public,
+                    effect,
+                ))
             }
         }
     }

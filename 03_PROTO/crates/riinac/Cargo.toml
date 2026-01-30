@@ -15,3 +15,4 @@ riina-lexer.workspace = true
 riina-parser.workspace = true
 riina-types.workspace = true
 riina-typechecker.workspace = true
+riina-codegen.workspace = true

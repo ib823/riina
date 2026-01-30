@@ -70,6 +70,7 @@ pub mod value;
 pub mod lower;
 pub mod interp;
 pub mod emit;
+pub mod builtins;
 
 // Re-export primary interface
 pub use ir::{Instruction, BasicBlock, Function, Program};
@@ -165,6 +166,12 @@ impl std::error::Error for Error {}
 pub fn eval(expr: &riina_types::Expr) -> Result<Value> {
     let mut interp = Interpreter::new();
     interp.eval(expr)
+}
+
+/// Evaluate with built-in functions (cetak, panjang, etc.) pre-registered.
+pub fn eval_with_builtins(expr: &riina_types::Expr) -> Result<Value> {
+    let mut interp = Interpreter::new();
+    interp.eval_with_builtins(expr)
 }
 
 /// Compile an expression to IR
