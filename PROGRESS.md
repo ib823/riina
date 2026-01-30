@@ -28,7 +28,7 @@
 |--------|---------|--------|--------|
 | `admit.` (Active Build) | **0** | 0 | ✅ **ZERO** |
 | `Admitted.` (Active Build) | **0** | 0 | ✅ **ZERO** |
-| Axioms (Active Build) | **7** | 0 | 🟡 (6 in core + 1 justified in Declassification.v) |
+| Axioms (Active Build) | **6** | 0 | 🟡 (5 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **98** | - | ✅ All compile |
 | Qed Proofs (Build) | **4971** | - | ✅ |
@@ -69,11 +69,11 @@ All admits and Admitted proofs eliminated from the active build.
 |------|----------|-------------|--------|
 | NonInterference_v2_LogicalRelation.v | 0 | 0 | 5 |
 | NonInterference_v2.v | 0 | 0 | 1 |
-| Declassification.v | 0 | 0 | 1 |
+| Declassification.v | 0 | 0 | 0 |
 | ReferenceOps.v | 0 | 0 | 0 |
 | SN_Closure.v | 0 | 0 | 0 |
 | MaximumAxiomElimination.v | 0 | 0 | 0 |
-| **TOTAL** | **0** | **0** | **7** |
+| **TOTAL** | **0** | **0** | **6** |
 
 ### 7 Remaining Axioms
 
@@ -85,7 +85,7 @@ All admits and Admitted proofs eliminated from the active build.
 | 4 | `logical_relation_declassify` | NI_v2_LR:782 | Declassification — needs purity analysis |
 | 5 | `val_rel_store_weaken_back` | NI_v2_LR:795 | Store anti-monotonicity — justified |
 | 6 | `fundamental_theorem_step_0` | NI_v2:1669 | Step-0 val_rel_at_type — needs preservation |
-| 7 | `exp_rel_le_declassify` | Declassification:246 | Declassify exp_rel — needs purity analysis |
+| ~~7~~ | ~~`exp_rel_le_declassify`~~ | ~~Declassification:246~~ | **ELIMINATED** — dead code, removed |
 
 ### Key Technical Insights
 

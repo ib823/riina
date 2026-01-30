@@ -223,33 +223,9 @@ Qed.
     and val_rel_le_classify_extract (extracts T relation from TSecret T relation
     on EClassify values). These are not yet proven in the codebase.
 *)
-(** JUSTIFIED AXIOM: exp_rel_le_declassify
-
-    This lemma requires extracting val_rel_le at type T from val_rel_le at
-    type (TSecret T) on EClassify values. However, val_rel_le for TSecret
-    is trivially True (this IS the information hiding guarantee), so the
-    extraction cannot be done from val_rel_le alone.
-
-    The correct proof requires EITHER:
-    (a) A purity analysis showing that same-expression evaluation under
-        stores that agree on Public locations produces identical values
-        (i.e., non-interference for the sub-expression), OR
-    (b) Strengthening the hypothesis to include has_type at Public level,
-        then using the fundamental theorem of non-interference.
-
-    Both approaches require infrastructure beyond this file's scope.
-    The lemma is not used by any other compiled .v file in the active build.
-
-    Spec: 04_SPECS/scope/RIINA_DEFINITIVE_SCOPE.md §6 (declassification)
-    Reference: Sabelfeld & Myers 2003, §4.3 (robust declassification)
-*)
-Axiom exp_rel_le_declassify : forall n Σ T e1 e2 p st1 st2 ctx,
-  exp_rel_le n Σ (TSecret T) e1 e2 st1 st2 ctx ->
-  store_rel_le n Σ st1 st2 ->
-  e1 = e2 ->
-  exp_rel_le n Σ T (EDeclassify e1 p) (EDeclassify e2 p) st1 st2 ctx.
-
-(* Original proof removed - required missing helper definitions. *)
+(* exp_rel_le_declassify REMOVED — dead code, unused by any compiled .v file.
+   See git history for the original axiom statement.
+   Reference: Sabelfeld & Myers 2003, §4.3 (robust declassification) *)
 
 (** ** Policy-Based Declassification
 
@@ -273,7 +249,7 @@ Qed.
 (** ** Verification: Axiom Count
 
     This file provides proven lemmas that replace:
-    - Axiom 19: logical_relation_declassify -> exp_rel_le_declassify
+    - Axiom 19: logical_relation_declassify -> REMOVED (dead code)
 
     SECURITY JUSTIFICATION:
     The soundness of declassification relies on:
