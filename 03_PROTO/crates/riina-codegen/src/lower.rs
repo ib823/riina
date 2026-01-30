@@ -246,6 +246,7 @@ impl Lower {
             Expr::Require(eff, _) => Ty::Capability(eff.to_capability_kind()),
             Expr::Grant(_, e) => self.infer_type(e),
             Expr::Var(_) => Ty::Unit, // Would need type environment
+            Expr::Loc(_) => Ty::Unit, // Runtime-only; actual type from store
             Expr::BinOp(op, _, _) => match op {
                 BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => Ty::Int,
                 BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge
@@ -296,6 +297,7 @@ impl Lower {
             Expr::Require(eff, e) => self.infer_effect(e).join(*eff),
             Expr::Grant(_, e) => self.infer_effect(e),
             Expr::BinOp(_, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
+            Expr::Loc(_) => Effect::Pure,
         }
     }
 
@@ -941,6 +943,18 @@ impl Lower {
                     Effect::Pure,
                 );
                 self.lower_expr(body)
+            }
+
+            Expr::Loc(l) => {
+                // ELoc is a runtime-only value (store location).
+                // Encode as integer constant; the runtime interprets it as a location.
+                let result_ty = Ty::Unit;
+                Ok(self.emit(
+                    Instruction::Const(Constant::Int(*l)),
+                    result_ty,
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                ))
             }
 
             Expr::BinOp(op, lhs, rhs) => {
