@@ -786,6 +786,36 @@ Axiom logical_relation_declassify : forall Γ Σ Δ e T ε p rho1 rho2 n,
   rho_no_free_all rho2 ->
   exp_rel_n n Σ T (subst_rho rho1 (EDeclassify e p)) (subst_rho rho2 (EDeclassify e p)).
 
+(** AXIOM: Store anti-monotonicity for value relations.
+    Values produced by evaluating terms typed at store Σ cannot reference
+    locations allocated after Σ (by preservation + canonical forms).
+    Standard in step-indexed Kripke logical relations; requires full
+    preservation proof to eliminate.
+    Spec: 04_SPECS/scope/RIINA_DEFINITIVE_SCOPE.md §5 (store typing) *)
+Axiom val_rel_store_weaken_back : forall Σ Σ' T v1 v2,
+  store_ty_extends Σ Σ' ->
+  val_rel Σ' T v1 v2 ->
+  val_rel Σ T v1 v2.
+
+(** Helper: convert val_rel_n at ANY step (including 0) to val_rel.
+    For step 0, we step up once using typing from val_rel_n_typing,
+    then apply val_rel_n_to_val_rel. *)
+Lemma val_rel_n_to_val_rel_any : forall Σ T v1 v2 n,
+  value v1 -> value v2 ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 n Hv1 Hv2 Hrel.
+  destruct n as [| k].
+  - (* n = 0: step up to get val_rel_n 1, then use val_rel_n_to_val_rel *)
+    destruct (val_rel_n_typing 0 Σ T v1 v2 Hrel) as [Hty1 Hty2].
+    apply val_rel_n_to_val_rel; try assumption.
+    exists 0. apply val_rel_n_step_up; assumption.
+  - (* n = S k: direct *)
+    apply val_rel_n_to_val_rel; try assumption.
+    exists k. exact Hrel.
+Qed.
+
 (** Lemma: env_rel implies closed expressions for mapped variables.
     Environment substitutions map free variables to closed values.
     This follows from env_rel requiring val_rel for each mapping,
@@ -1769,11 +1799,25 @@ Proof.
   apply (val_rel_n_mono 0 (S n) Σ T v1 v2); [lia | exact Hrel].
 Qed.
 
-(** NOTE: Higher-order step-to-limit conversion remains axiomatic. *)
-Axiom val_rel_n_to_val_rel : forall Σ T v1 v2,
+(** LEMMA: Higher-order step-to-limit conversion — PROVEN.
+    Strategy: from val_rel_n (S n), extract typing via val_rel_n_typing,
+    then for any target step m, either step down (val_rel_n_mono) or
+    step up (val_rel_n_step_up) to reach m. *)
+Lemma val_rel_n_to_val_rel : forall Σ T v1 v2,
   value v1 -> value v2 ->
   (exists n, val_rel_n (S n) Σ T v1 v2) ->
   val_rel Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hv1 Hv2 [n Hrel].
+  destruct (val_rel_n_typing (S n) Σ T v1 v2 Hrel) as [Hty1 Hty2].
+  unfold val_rel. intro m.
+  (* We prove val_rel_n m Σ T v1 v2 by induction on m *)
+  induction m as [| m' IHm].
+  - (* m = 0 *)
+    apply (val_rel_n_mono 0 (S n) Σ T v1 v2). lia. exact Hrel.
+  - (* m = S m' *)
+    apply val_rel_n_step_up; assumption.
+Qed.
 
 (** For first-order types, convert val_rel_at_type to val_rel.
 
@@ -2932,10 +2976,9 @@ Proof.
            For FO T1: both are proven/provable
            For HO T1: both require additional axioms/lemmas *)
         assert (Hargrel_at_Σ : val_rel Σ T1 arg1 arg2).
-        { (* Convert val_rel_n n' Σ' to val_rel Σ
-             Requires store weakening + step generalization
-             Admitted pending completion of val_rel_n_weaken and step_up *)
-          admit. }
+        { apply (val_rel_store_weaken_back Σ Σ' T1 arg1 arg2 Hext_Σ').
+          apply (val_rel_n_to_val_rel_any Σ' T1 arg1 arg2 n');
+            assumption. }
 
         assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x arg1) (rho_extend rho2 x arg2)).
         { apply env_rel_extend.
@@ -3391,7 +3434,8 @@ Proof.
         (* This needs: (1) val_rel_n_weaken (Σ' → Σ) and (2) val_rel_n_to_val_rel *)
         (* Both depend on the step_up axiom for HO types *)
         assert (Hval_a_at_Σ : val_rel Σ T1 a1 a2).
-        { admit. }
+        { apply (val_rel_store_weaken_back Σ Σ' T1 a1 a2 Hext_for_e1).
+          apply (val_rel_n_to_val_rel_any Σ' T1 a1 a2 (S n'') Hvala1 Hvala2 Hval_a). }
 
         assert (Henv' : env_rel Σ ((x1, T1) :: Γ) (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2)).
         { apply env_rel_extend.
@@ -3454,7 +3498,8 @@ Proof.
         (* Build extended environment at ORIGINAL Σ *)
         (* Same as EInl case: requires val_rel_n_weaken + val_rel_n_to_val_rel *)
         assert (Hval_b_at_Σ : val_rel Σ T2 b1 b2).
-        { admit. }
+        { apply (val_rel_store_weaken_back Σ Σ' T2 b1 b2 Hext_for_e2).
+          apply (val_rel_n_to_val_rel_any Σ' T2 b1 b2 (S n'') Hvalb1 Hvalb2 Hval_b). }
 
         assert (Henv' : env_rel Σ ((x2, T2) :: Γ) (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2)).
         { apply env_rel_extend.
@@ -3647,7 +3692,8 @@ Proof.
       (* Build extended environment at ORIGINAL Σ *)
       (* Requires: val_rel Σ T1 v v' from val_rel_n (S n'') Σ' T1 v v' *)
       assert (Hval_at_Σ : val_rel Σ T1 v v').
-      { admit. }
+      { apply (val_rel_store_weaken_back Σ Σ' T1 v v' Hext_for_e2).
+        apply (val_rel_n_to_val_rel_any Σ' T1 v v' (S n'') Hvalv Hvalv' Hval). }
 
       assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
       { apply env_rel_extend.
@@ -3757,7 +3803,8 @@ Proof.
 
       (* Build extended environment at ORIGINAL Σ *)
       assert (Hval_at_Σ : val_rel Σ T1 v v').
-      { admit. }
+      { apply (val_rel_store_weaken_back Σ Σ' T1 v v' Hext_for_h).
+        apply (val_rel_n_to_val_rel_any Σ' T1 v v' (S n'') Hvalv Hvalv' Hval). }
 
       assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
       { apply env_rel_extend.
