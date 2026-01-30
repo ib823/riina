@@ -351,6 +351,9 @@ pub enum Ty {
     ConstantTime(Box<Ty>),
     /// Zeroizing[T] - cleared on drop
     Zeroizing(Box<Ty>),
+    /// Any type — matches any type during typechecking (for polymorphic builtins).
+    /// Rust-only extension, not in Coq.
+    Any,
 }
 
 /// Binary operators

@@ -32,7 +32,7 @@
 //! # Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
 
 use riina_types::{Effect, Expr, Ident, SecurityLevel, Ty};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 
 /// Reference location
@@ -243,6 +243,20 @@ pub enum Value {
     ///
     /// Corresponds to Coq `VCap eff`.
     Capability(Effect),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // COLLECTION VALUES (Rust-only extensions, not in Coq)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// List value (ordered collection)
+    ///
+    /// Not in Coq — Rust-only extension for stdlib.
+    List(Vec<Value>),
+
+    /// Map value (string-keyed, deterministic ordering)
+    ///
+    /// Not in Coq — Rust-only extension for stdlib.
+    Map(BTreeMap<String, Value>),
 }
 
 impl Value {
@@ -308,6 +322,18 @@ impl Value {
     #[must_use]
     pub const fn capability(eff: Effect) -> Self {
         Self::Capability(eff)
+    }
+
+    /// Create an empty list value
+    #[must_use]
+    pub fn list(items: Vec<Value>) -> Self {
+        Self::List(items)
+    }
+
+    /// Create an empty map value
+    #[must_use]
+    pub fn map(entries: BTreeMap<String, Value>) -> Self {
+        Self::Map(entries)
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -390,6 +416,18 @@ impl Value {
     #[must_use]
     pub const fn is_capability(&self) -> bool {
         matches!(self, Self::Capability(_))
+    }
+
+    /// Check if this is a list
+    #[must_use]
+    pub const fn is_list(&self) -> bool {
+        matches!(self, Self::List(_))
+    }
+
+    /// Check if this is a map
+    #[must_use]
+    pub const fn is_map(&self) -> bool {
+        matches!(self, Self::Map(_))
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -536,6 +574,26 @@ impl Value {
         }
     }
 
+    /// Extract list items
+    #[must_use]
+    pub fn as_list(&self) -> Option<&Vec<Value>> {
+        if let Self::List(items) = self {
+            Some(items)
+        } else {
+            None
+        }
+    }
+
+    /// Extract map entries
+    #[must_use]
+    pub fn as_map(&self) -> Option<&BTreeMap<String, Value>> {
+        if let Self::Map(entries) = self {
+            Some(entries)
+        } else {
+            None
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     // SECURITY ANALYSIS
     // ═══════════════════════════════════════════════════════════════════
@@ -563,6 +621,20 @@ impl Value {
             Self::Sum(s) => match s {
                 Sum::Left(v) | Sum::Right(v) => v.security_level(),
             },
+            Self::List(items) => {
+                if items.iter().any(|v| v.security_level() == SecurityLevel::Secret) {
+                    SecurityLevel::Secret
+                } else {
+                    SecurityLevel::Public
+                }
+            }
+            Self::Map(entries) => {
+                if entries.values().any(|v| v.security_level() == SecurityLevel::Secret) {
+                    SecurityLevel::Secret
+                } else {
+                    SecurityLevel::Public
+                }
+            }
             _ => SecurityLevel::Public,
         }
     }
@@ -592,6 +664,26 @@ impl std::fmt::Display for Value {
             Self::Secret(v) => write!(f, "secret({v})"),
             Self::Proof(v) => write!(f, "proof({v})"),
             Self::Capability(eff) => write!(f, "<cap({eff:?})>"),
+            Self::List(items) => {
+                write!(f, "[")?;
+                for (i, item) in items.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{item}")?;
+                }
+                write!(f, "]")
+            }
+            Self::Map(entries) => {
+                write!(f, "{{")?;
+                for (i, (k, v)) in entries.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "\"{k}\": {v}")?;
+                }
+                write!(f, "}}")
+            }
         }
     }
 }
