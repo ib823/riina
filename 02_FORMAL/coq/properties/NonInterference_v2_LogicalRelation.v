@@ -313,6 +313,29 @@ Definition env_rel_n (n : nat) (Σ : store_ty) (G : type_env) (rho1 rho2 : ident
 Definition env_rel (Σ : store_ty) (G : type_env) (rho1 rho2 : ident -> expr) : Prop :=
   forall n, env_rel_n n Σ G rho1 rho2.
 
+(** Store monotonicity for env_rel_n: forward-weakening from Σ to Σ'. *)
+Lemma env_rel_n_mono_store : forall n Σ Σ' G rho1 rho2,
+  store_ty_extends Σ Σ' ->
+  env_rel_n n Σ G rho1 rho2 ->
+  env_rel_n n Σ' G rho1 rho2.
+Proof.
+  intros n Σ Σ' G rho1 rho2 Hext Henv.
+  unfold env_rel_n in *.
+  intros x T Hlook.
+  apply val_rel_n_mono_store with Σ; auto.
+Qed.
+
+(** Store monotonicity for env_rel: forward-weakening from Σ to Σ'. *)
+Lemma env_rel_mono_store : forall Σ Σ' G rho1 rho2,
+  store_ty_extends Σ Σ' ->
+  env_rel Σ G rho1 rho2 ->
+  env_rel Σ' G rho1 rho2.
+Proof.
+  intros Σ Σ' G rho1 rho2 Hext Henv.
+  unfold env_rel in *. intro n.
+  apply env_rel_n_mono_store with Σ; auto.
+Qed.
+
 Definition rho_closed_on (G : type_env) (rho : ident -> expr) : Prop :=
   forall x T, lookup x G = Some T -> closed_expr (rho x).
 
@@ -506,7 +529,7 @@ Proof.
       destruct (String.eqb y x) eqn:Heq.
       * reflexivity.
       * apply Hid.
-        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+        simpl in Hlook'. rewrite ?Heq in Hlook'. exact Hlook'.
     + (* Suffix condition *)
       intros y Ty Hlook'.
       simpl in Hlook'. simpl.
@@ -541,7 +564,7 @@ Proof.
       * intros y Hlook'. unfold rho_shadow.
         destruct (String.eqb y x1) eqn:Heq; [reflexivity | ].
         apply Hid.
-        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+        simpl in Hlook'. rewrite ?Heq in Hlook'. exact Hlook'.
       * intros y Ty Hlook'. simpl in Hlook'. simpl.
         destruct (String.eqb y x1) eqn:Heq; [inversion Hlook'; reflexivity | ].
         apply Hsuffix. exact Hlook'.
@@ -558,7 +581,7 @@ Proof.
       * intros y Hlook'. unfold rho_shadow.
         destruct (String.eqb y x2) eqn:Heq; [reflexivity | ].
         apply Hid.
-        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+        simpl in Hlook'. rewrite ?Heq in Hlook'. exact Hlook'.
       * intros y Ty Hlook'. simpl in Hlook'. simpl.
         destruct (String.eqb y x2) eqn:Heq; [inversion Hlook'; reflexivity | ].
         apply Hsuffix. exact Hlook'.
@@ -579,7 +602,7 @@ Proof.
       * intros y Hlook'. unfold rho_shadow.
         destruct (String.eqb y x) eqn:Heq; [reflexivity | ].
         apply Hid.
-        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+        simpl in Hlook'. rewrite ?Heq in Hlook'. exact Hlook'.
       * intros y Ty Hlook'. simpl in Hlook'. simpl.
         destruct (String.eqb y x) eqn:Heq; [inversion Hlook'; reflexivity | ].
         apply Hsuffix. exact Hlook'.
@@ -600,7 +623,7 @@ Proof.
       * intros y Hlook'. unfold rho_shadow.
         destruct (String.eqb y x) eqn:Heq; [reflexivity | ].
         apply Hid.
-        simpl in Hlook'. rewrite Heq in Hlook'. exact Hlook'.
+        simpl in Hlook'. rewrite ?Heq in Hlook'. exact Hlook'.
       * intros y Ty Hlook'. simpl in Hlook'. simpl.
         destruct (String.eqb y x) eqn:Heq; [inversion Hlook'; reflexivity | ].
         apply Hsuffix. exact Hlook'.
@@ -650,13 +673,13 @@ Proof.
     specialize (Henv 0). unfold env_rel_n in Henv.
     specialize (Henv x T Hlook).
     split.
-    + apply (val_rel_value_left_n 0 Σ T (rho1 x) (rho2 x)). exact Henv.
+    + exact (proj1 (val_rel_n_value 0 Σ T (rho1 x) (rho2 x) Henv)).
     + destruct (val_rel_n_typing 0 Σ T (rho1 x) (rho2 x) Henv) as [Ht _]. exact Ht.
   - (* rho2 *)
     specialize (Henv 0). unfold env_rel_n in Henv.
     specialize (Henv x T Hlook).
     split.
-    + apply (val_rel_value_right_n 0 Σ T (rho1 x) (rho2 x)). exact Henv.
+    + exact (proj2 (val_rel_n_value 0 Σ T (rho1 x) (rho2 x) Henv)).
     + destruct (val_rel_n_typing 0 Σ T (rho1 x) (rho2 x) Henv) as [_ Ht]. exact Ht.
 Qed.
 
@@ -676,10 +699,10 @@ Proof.
   assert (Hbody1 : has_type ((x, T1) :: nil) Σ Public (subst_rho (rho_shadow rho1 x) e) T2 ε).
   { apply (subst_rho_typing_general ((x, T1) :: Γ) ((x, T1) :: nil) Σ Public e T2 ε (rho_shadow rho1 x) Hty).
     - intros y Ty Hlook Hlook'.
-      simpl in Hlook. simpl in Hlook'.
+      simpl in Hlook.
       destruct (String.eqb y x) eqn:Heq.
       + (* y = x: but then Hlook' would find it in (x,T1)::nil *)
-        simpl in Hlook'. rewrite Heq in Hlook'. discriminate.
+        simpl in Hlook'. rewrite ?Heq in Hlook'. discriminate.
       + (* y ≠ x: rho_shadow rho1 x y = rho1 y, use env_typed *)
         unfold rho_shadow. rewrite Heq.
         apply Henv_ty1. exact Hlook.
@@ -697,7 +720,7 @@ Proof.
     - intros y Ty Hlook Hlook'.
       simpl in Hlook. simpl in Hlook'.
       destruct (String.eqb y x) eqn:Heq.
-      + simpl in Hlook'. rewrite Heq in Hlook'. discriminate.
+      + simpl in Hlook'. rewrite ?Heq in Hlook'. discriminate.
       + unfold rho_shadow. rewrite Heq.
         apply Henv_ty2. exact Hlook.
     - intros y Hlook'.
@@ -746,56 +769,69 @@ Qed.
 (** T_Ref: Creating a reference preserves relatedness.
     Semantically: new locations are added to store typing consistently.
 *)
-Axiom logical_relation_ref : forall Γ Σ Δ e T l ε rho1 rho2 n,
+Axiom logical_relation_ref : forall Γ Σ Δ e T l ε rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e T ε ->
-  env_rel Σ Γ rho1 rho2 ->
+  store_ty_extends Σ Σ_base ->
+  env_rel Σ_base Γ rho1 rho2 ->
   rho_no_free_all rho1 ->
   rho_no_free_all rho2 ->
-  exp_rel_n n Σ (TRef T l) (subst_rho rho1 (ERef e l)) (subst_rho rho2 (ERef e l)).
+  exp_rel_n n Σ_base (TRef T l) (subst_rho rho1 (ERef e l)) (subst_rho rho2 (ERef e l)).
 
 (** T_Deref: Dereferencing preserves relatedness.
     Semantically: related locations contain related values.
 *)
-Axiom logical_relation_deref : forall Γ Σ Δ e T l ε rho1 rho2 n,
+Axiom logical_relation_deref : forall Γ Σ Δ e T l ε rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e (TRef T l) ε ->
-  env_rel Σ Γ rho1 rho2 ->
+  store_ty_extends Σ Σ_base ->
+  env_rel Σ_base Γ rho1 rho2 ->
   rho_no_free_all rho1 ->
   rho_no_free_all rho2 ->
-  exp_rel_n n Σ T (subst_rho rho1 (EDeref e)) (subst_rho rho2 (EDeref e)).
+  exp_rel_n n Σ_base T (subst_rho rho1 (EDeref e)) (subst_rho rho2 (EDeref e)).
 
 (** T_Assign: Assignment preserves relatedness.
     Semantically: store updates maintain location relatedness.
 *)
-Axiom logical_relation_assign : forall Γ Σ Δ e1 e2 T l ε1 ε2 rho1 rho2 n,
+Axiom logical_relation_assign : forall Γ Σ Δ e1 e2 T l ε1 ε2 rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e1 (TRef T l) ε1 ->
   has_type Γ Σ Δ e2 T ε2 ->
-  env_rel Σ Γ rho1 rho2 ->
+  store_ty_extends Σ Σ_base ->
+  env_rel Σ_base Γ rho1 rho2 ->
   rho_no_free_all rho1 ->
   rho_no_free_all rho2 ->
-  exp_rel_n n Σ TUnit (subst_rho rho1 (EAssign e1 e2)) (subst_rho rho2 (EAssign e1 e2)).
+  exp_rel_n n Σ_base TUnit (subst_rho rho1 (EAssign e1 e2)) (subst_rho rho2 (EAssign e1 e2)).
 
-(** T_Declassify: Declassification preserves relatedness.
+(** JUSTIFIED POLICY AXIOM: Declassification preserves relatedness.
     Semantically: declassification unwraps secret values to their underlying type.
-    This is safe because val_rel_at_type for TSecret is True,
-    so any secret values are trivially related.
+    This axiom is UNPROVABLE BY DESIGN: declassification intentionally breaks
+    noninterference. e : TSecret T evaluates to EClassify w1, EClassify w2 where
+    w1 ≠ w2 in general (secret values differ between runs). val_rel at T for w1, w2
+    is not guaranteed. This axiom encodes the programmer's declassification responsibility.
+    It will be KEPT as a justified policy axiom (not eliminated).
 *)
-Axiom logical_relation_declassify : forall Γ Σ Δ e T ε p rho1 rho2 n,
+Axiom logical_relation_declassify : forall Γ Σ Δ e T ε p rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e (TSecret T) ε ->
-  env_rel Σ Γ rho1 rho2 ->
+  store_ty_extends Σ Σ_base ->
+  env_rel Σ_base Γ rho1 rho2 ->
   rho_no_free_all rho1 ->
   rho_no_free_all rho2 ->
-  exp_rel_n n Σ T (subst_rho rho1 (EDeclassify e p)) (subst_rho rho2 (EDeclassify e p)).
+  exp_rel_n n Σ_base T (subst_rho rho1 (EDeclassify e p)) (subst_rho rho2 (EDeclassify e p)).
 
-(** AXIOM: Store anti-monotonicity for value relations.
-    Values produced by evaluating terms typed at store Σ cannot reference
-    locations allocated after Σ (by preservation + canonical forms).
-    Standard in step-indexed Kripke logical relations; requires full
-    preservation proof to eliminate.
-    Spec: 04_SPECS/scope/RIINA_DEFINITIVE_SCOPE.md §5 (store typing) *)
-Axiom val_rel_store_weaken_back : forall Σ Σ' T v1 v2,
-  store_ty_extends Σ Σ' ->
-  val_rel Σ' T v1 v2 ->
+(** LEMMA: Higher-order step-to-limit conversion — PROVEN.
+    Strategy: from val_rel_n (S n), extract typing via val_rel_n_typing,
+    then for any target step m, either step down (val_rel_n_mono) or
+    step up (val_rel_n_step_up) to reach m. *)
+Lemma val_rel_n_to_val_rel : forall Σ T v1 v2,
+  value v1 -> value v2 ->
+  (exists n, val_rel_n (S n) Σ T v1 v2) ->
   val_rel Σ T v1 v2.
+Proof.
+  intros Σ T v1 v2 Hv1 Hv2 [n Hrel].
+  destruct (val_rel_n_typing (S n) Σ T v1 v2 Hrel) as [Hty1 Hty2].
+  unfold val_rel. intro m.
+  induction m as [| m' IHm].
+  - apply (val_rel_n_mono 0 (S n) Σ T v1 v2). lia. exact Hrel.
+  - apply val_rel_n_step_up; assumption.
+Qed.
 
 (** Helper: convert val_rel_n at ANY step (including 0) to val_rel.
     For step 0, we step up once using typing from val_rel_n_typing,
@@ -1361,18 +1397,6 @@ Proof.
   - apply Hv.
 Qed.
 
-(** Store typing monotonicity for env_rel (Kripke monotonicity) *)
-Lemma env_rel_mono_store : forall Σ Σ' G rho1 rho2,
-  store_ty_extends Σ Σ' ->
-  env_rel Σ G rho1 rho2 ->
-  env_rel Σ' G rho1 rho2.
-Proof.
-  intros Σ Σ' G rho1 rho2 Hext Henv n x T Hlook.
-  apply val_rel_n_mono_store with (Σ := Σ).
-  - exact Hext.
-  - apply Henv. exact Hlook.
-Qed.
-
 (** ** Multi-step Lemmas *)
 
 Lemma multi_step_trans : forall cfg1 cfg2 cfg3,
@@ -1743,8 +1767,8 @@ Lemma val_rel_n_prod_decompose : forall n Σ T1 T2 v1 v2,
 Proof.
   intros n Σ T1 T2 v1 v2 Hn Hrel.
   destruct n as [| n']; [lia |].
-  simpl in Hrel.
-  destruct Hrel as [Hrec [Hval1 [Hval2 [Hclosed1 [Hclosed2 [Htyping Hrat]]]]]].
+  rewrite val_rel_n_S_unfold in Hrel.
+  destruct Hrel as [Hrec [Hval1 [Hval2 [Hclosed1 [Hclosed2 [Hty1 [Hty2 Hrat]]]]]]].
   simpl in Hrat.
   destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
   exists x1, y1, x2, y2.
@@ -1770,21 +1794,22 @@ Lemma val_rel_n_of_first_order : forall n Σ T v1 v2,
   first_order_type T = true ->
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   (forall sp vl sl, val_rel_at_type Σ sp vl sl T v1 v2) ->
   val_rel_n n Σ T v1 v2.
 Proof.
-  induction n as [| n' IHn]; intros Σ T v1 v2 Hfo Hval1 Hval2 Hcl1 Hcl2 Hrat.
-  - rewrite val_rel_n_0_unfold.
-    destruct (NonInterference_v2.first_order_type T) eqn:Hfo'.
-    + simpl. repeat split; try assumption.
-      apply (proj1 (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo')).
-      apply Hrat.
-    + change (NonInterference_v2.first_order_type T) with (first_order_type T) in Hfo'.
-      rewrite Hfo in Hfo'. discriminate.
-  - rewrite val_rel_n_S_unfold.
-    (* Handle the qualified name *)
-    change (NonInterference_v2.first_order_type T) with (first_order_type T).
+  induction n as [| n' IHn]; intros Σ T v1 v2 Hfo Hval1 Hval2 Hcl1 Hcl2 Hty1 Hty2 Hrat.
+  - change (val_rel_n 0 Σ T v1 v2) with
+      (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+       has_type nil Σ Public v1 T EffectPure /\
+       has_type nil Σ Public v2 T EffectPure /\
+       (if first_order_type T then val_rel_at_type_fo T v1 v2 else True)).
+    repeat split; try assumption.
     rewrite Hfo.
+    apply (proj1 (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo)).
+    apply Hrat.
+  - rewrite val_rel_n_S_unfold.
     split.
     + apply IHn; assumption.
     + repeat split; try assumption.
@@ -1805,26 +1830,6 @@ Proof.
   apply (val_rel_n_mono 0 (S n) Σ T v1 v2); [lia | exact Hrel].
 Qed.
 
-(** LEMMA: Higher-order step-to-limit conversion — PROVEN.
-    Strategy: from val_rel_n (S n), extract typing via val_rel_n_typing,
-    then for any target step m, either step down (val_rel_n_mono) or
-    step up (val_rel_n_step_up) to reach m. *)
-Lemma val_rel_n_to_val_rel : forall Σ T v1 v2,
-  value v1 -> value v2 ->
-  (exists n, val_rel_n (S n) Σ T v1 v2) ->
-  val_rel Σ T v1 v2.
-Proof.
-  intros Σ T v1 v2 Hv1 Hv2 [n Hrel].
-  destruct (val_rel_n_typing (S n) Σ T v1 v2 Hrel) as [Hty1 Hty2].
-  unfold val_rel. intro m.
-  (* We prove val_rel_n m Σ T v1 v2 by induction on m *)
-  induction m as [| m' IHm].
-  - (* m = 0 *)
-    apply (val_rel_n_mono 0 (S n) Σ T v1 v2). lia. exact Hrel.
-  - (* m = S m' *)
-    apply val_rel_n_step_up; assumption.
-Qed.
-
 (** For first-order types, convert val_rel_at_type to val_rel.
 
     REVOLUTIONARY CHANGE: Instead of axiomatizing value/closed extraction
@@ -1843,10 +1848,11 @@ Lemma val_rel_at_type_to_val_rel_fo : forall Σ sp vl sl T v1 v2,
   val_rel_at_type Σ sp vl sl T v1 v2 ->
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   val_rel Σ T v1 v2.
 Proof.
-  intros Σ sp vl sl T v1 v2 Hfo Hrat Hval1 Hval2 Hcl1 Hcl2.
-  (* value and closed now come as premises - no axioms needed! *)
+  intros Σ sp vl sl T v1 v2 Hfo Hrat Hval1 Hval2 Hcl1 Hcl2 Hty1 Hty2.
   apply val_rel_n_to_val_rel_fo; try assumption.
   exists 0.
   apply val_rel_n_of_first_order; try assumption.
@@ -1855,6 +1861,18 @@ Proof.
   intros sp' vl' sl'.
   apply (proj2 (val_rel_at_type_fo_equiv T Σ sp' vl' sl' v1 v2 Hfo)).
   exact Hfo_rel.
+Qed.
+
+Lemma has_type_pair_inv : forall Σ e1 e2 T1 T2 ε,
+  has_type nil Σ Public (EPair e1 e2) (TProd T1 T2) ε ->
+  exists ε1 ε2,
+    has_type nil Σ Public e1 T1 ε1 /\
+    has_type nil Σ Public e2 T2 ε2 /\
+    ε = effect_join ε1 ε2.
+Proof.
+  intros Σ e1 e2 T1 T2 ε Hty.
+  inversion Hty; subst.
+  exists ε1, ε2. repeat split; assumption.
 Qed.
 
 Lemma val_rel_n_prod_fst : forall n Σ T1 T2 v1 v2,
@@ -1872,6 +1890,19 @@ Proof.
   exists a1, b1, a2, b2.
   split; [exact Heq1 |].
   split; [exact Heq2 |].
+  (* Extract typing from parent val_rel_n *)
+  destruct (val_rel_n_typing n Σ (TProd T1 T2) v1 v2 Hrel) as [Hty_p1 Hty_p2].
+  rewrite Heq1 in Hty_p1. rewrite Heq2 in Hty_p2.
+  apply has_type_pair_inv in Hty_p1 as [ε1a [ε1b [Hty_a1 [Hty_b1 Hεeq1]]]].
+  apply has_type_pair_inv in Hty_p2 as [ε2a [ε2b [Hty_a2 [Hty_b2 Hεeq2]]]].
+  (* effect_join ε1 ε2 = EffectPure → both are EffPure *)
+  assert (Hε1a : ε1a = EffectPure).
+  { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+    destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+  assert (Hε2a : ε2a = EffectPure).
+  { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+    destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+  subst ε1a ε2a.
   apply val_rel_n_of_first_order; try assumption.
   intros sp vl sl.
   apply (proj2 (val_rel_at_type_fo_equiv T1 Σ sp vl sl a1 a2 Hfo)).
@@ -1894,6 +1925,18 @@ Proof.
   exists a1, b1, a2, b2.
   split; [exact Heq1 |].
   split; [exact Heq2 |].
+  (* Extract typing from parent val_rel_n *)
+  destruct (val_rel_n_typing n Σ (TProd T1 T2) v1 v2 Hrel) as [Hty_p1 Hty_p2].
+  rewrite Heq1 in Hty_p1. rewrite Heq2 in Hty_p2.
+  apply has_type_pair_inv in Hty_p1 as [ε1a [ε1b [Hty_a1 [Hty_b1 Hεeq1]]]].
+  apply has_type_pair_inv in Hty_p2 as [ε2a [ε2b [Hty_a2 [Hty_b2 Hεeq2]]]].
+  assert (Hε1b : ε1b = EffectPure).
+  { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+    destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+  assert (Hε2b : ε2b = EffectPure).
+  { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+    destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+  subst ε1b ε2b.
   apply val_rel_n_of_first_order; try assumption.
   intros sp vl sl.
   apply (proj2 (val_rel_at_type_fo_equiv T2 Σ sp vl sl b1 b2 Hfo)).
@@ -1911,28 +1954,14 @@ Proof.
   intros n Σ T v1 v2 Hho Hrel.
   destruct n as [| n'].
   - rewrite val_rel_n_0_unfold in Hrel.
-    destruct Hrel as [_ [_ [_ [_ Hif]]]].
-    change (NonInterference_v2.first_order_type T) with (first_order_type T) in Hif.
-    rewrite Hho in Hif. exact Hif.
+    destruct Hrel as [_ [_ [_ [_ [Hty1 [Hty2 _]]]]]].
+    split; assumption.
   - rewrite val_rel_n_S_unfold in Hrel.
-    destruct Hrel as [_ [_ [_ [_ [_ [Htyping _]]]]]].
-    change (NonInterference_v2.first_order_type T) with (first_order_type T) in Htyping.
-    rewrite Hho in Htyping. exact Htyping.
+    destruct Hrel as [_ [_ [_ [_ [_ [Hty1 [Hty2 _]]]]]]].
+    split; assumption.
 Qed.
 
 (** Typing inversion for pairs: extract component typing from pair typing *)
-Lemma has_type_pair_inv : forall Σ e1 e2 T1 T2 ε,
-  has_type nil Σ Public (EPair e1 e2) (TProd T1 T2) ε ->
-  exists ε1 ε2,
-    has_type nil Σ Public e1 T1 ε1 /\
-    has_type nil Σ Public e2 T2 ε2 /\
-    ε = effect_join ε1 ε2.
-Proof.
-  intros Σ e1 e2 T1 T2 ε Hty.
-  inversion Hty; subst.
-  exists ε1, ε2. repeat split; assumption.
-Qed.
-
 (** Typing inversion for inl *)
 Lemma has_type_inl_inv : forall Σ e T1 T2 ε,
   has_type nil Σ Public (EInl e T2) (TSum T1 T2) ε ->
@@ -1999,66 +2028,61 @@ Proof.
         change (NonInterference_v2.first_order_type (TProd T1 T2))
           with (first_order_type (TProd T1 T2)).
         destruct (first_order_type (TProd T1 T2)) eqn:Hfo_prod.
-        { simpl.
-          pose proof Hfo_prod as Hfo_prod_orig.
+        { pose proof Hfo_prod as Hfo_prod_orig.
           cbn [first_order_type] in Hfo_prod.
           apply andb_true_iff in Hfo_prod as [Hfo1 Hfo2].
           assert (Hfo_rel1 : val_rel_at_type_fo T1 v1 v1').
           { change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Hif1.
             destruct (first_order_type T1) eqn:Hfo1'.
-            - simpl in Hif1. exact Hif1.
+            - simpl in Hif1. destruct Hif1 as [_ [_ Hif1]]. exact Hif1.
             - rewrite Hfo1 in Hfo1'. discriminate. }
           assert (Hfo_rel2 : val_rel_at_type_fo T2 v2 v2').
           { change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Hif2.
             destruct (first_order_type T2) eqn:Hfo2'.
-            - simpl in Hif2. exact Hif2.
+            - simpl in Hif2. destruct Hif2 as [_ [_ Hif2]]. exact Hif2.
             - rewrite Hfo2 in Hfo2'. discriminate. }
-          cbn.
+          split.
+          { change EffectPure with (effect_join EffectPure EffectPure).
+            apply T_Pair; assumption. }
+          split.
+          { change EffectPure with (effect_join EffectPure EffectPure).
+            apply T_Pair; assumption. }
+          unfold val_rel_at_type_fo; fold val_rel_at_type_fo.
           exists v1, v2, v1', v2'.
-          split; [reflexivity |].
-          split; [reflexivity |].
-          split; assumption. }
+          repeat split; assumption. }
         { (* HO case: construct pair typing from component typing *)
           split.
           - change EffectPure with (effect_join EffectPure EffectPure).
             apply T_Pair; assumption.
-          - change EffectPure with (effect_join EffectPure EffectPure).
-            apply T_Pair; assumption. }
-  - simpl. simpl in Hrel1, Hrel2.
-    destruct Hrel1 as [Hrel1_cum [Hvalv1 [Hvalv1' [Hcl1 [Hcl1' [Htyping1 Hrat1]]]]]].
-    destruct Hrel2 as [Hrel2_cum [Hvalv2 [Hvalv2' [Hcl2 [Hcl2' [Htyping2 Hrat2]]]]]].
+          - split.
+            + change EffectPure with (effect_join EffectPure EffectPure).
+              apply T_Pair; assumption.
+            + exact I. }
+  - rewrite val_rel_n_S_unfold. rewrite val_rel_n_S_unfold in Hrel1. rewrite val_rel_n_S_unfold in Hrel2.
+    destruct Hrel1 as [Hrel1_cum [Hvalv1 [Hvalv1' [Hcl1 [Hcl1' [Htyping1 [Htyping1' Hrat1]]]]]]].
+    destruct Hrel2 as [Hrel2_cum [Hvalv2 [Hvalv2' [Hcl2 [Hcl2' [Htyping2 [Htyping2' Hrat2]]]]]]].
     split.
-    { (* Cumulative: use IH *)
-      apply IHn; assumption. }
+    { apply IHn; assumption. }
     split.
-    { (* value (EPair v1 v2) *) constructor; assumption. }
+    { constructor; assumption. }
     split.
-    { (* value (EPair v1' v2') *) constructor; assumption. }
+    { constructor; assumption. }
     split.
-    { (* closed_expr (EPair v1 v2) *)
-      intros y Hfree. simpl in Hfree.
+    { intros y Hfree. simpl in Hfree.
       destruct Hfree as [Hfree | Hfree].
       - apply (Hcl1 y). exact Hfree.
       - apply (Hcl2 y). exact Hfree. }
     split.
-    { (* closed_expr (EPair v1' v2') *)
-      intros y Hfree. simpl in Hfree.
+    { intros y Hfree. simpl in Hfree.
       destruct Hfree as [Hfree | Hfree].
       - apply (Hcl1' y). exact Hfree.
       - apply (Hcl2' y). exact Hfree. }
     split.
-    { (* typing conjunct for TProd *)
-      change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-      change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-      simpl.
-      destruct (first_order_type T1 && first_order_type T2) eqn:Hfo_prod.
-      - exact I.
-      - (* HO case: construct pair typing from component typing *)
-        split.
-        + change EffectPure with (effect_join EffectPure EffectPure).
-          apply T_Pair; assumption.
-        + change EffectPure with (effect_join EffectPure EffectPure).
-          apply T_Pair; assumption. }
+    { change EffectPure with (effect_join EffectPure EffectPure).
+      apply T_Pair; assumption. }
+    split.
+    { change EffectPure with (effect_join EffectPure EffectPure).
+      apply T_Pair; assumption. }
     (* val_rel_at_type for TProd *)
     simpl. exists v1, v2, v1', v2'.
     repeat split; try reflexivity; assumption.
@@ -2076,55 +2100,8 @@ Proof.
   - lia.
   - destruct n' as [| n''].
     + (* n = 1 *)
-      simpl in Hrel.
-      destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [Htyping Hrat]]]]]].
-      simpl in Hrat.
-      destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
-      inversion Heq1; subst. inversion Heq2; subst.
-      apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
-      apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
-      apply closed_expr_pair_inv in Hcl. destruct Hcl as [Hcl1 Hcl2].
-      apply closed_expr_pair_inv in Hcl'. destruct Hcl' as [Hcl1' Hcl2'].
-      rewrite val_rel_n_S_unfold. split.
-      * rewrite val_rel_n_0_unfold.
-        repeat split; try assumption.
-        destruct (first_order_type T1) eqn:Hfo1.
-        { change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-          rewrite Hfo1.
-          apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) x1 x2 Hfo1)).
-          exact Hrat1. }
-        { change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-          rewrite Hfo1.
-          (* T1 is HO, so TProd T1 T2 is HO *)
-          change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Htyping.
-          change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Htyping.
-          simpl in Htyping. rewrite Hfo1 in Htyping. simpl in Htyping.
-          destruct Htyping as [Hty_pair1 Hty_pair2].
-          (* Invert pair typing to get component typing *)
-          inversion Hty_pair1; subst.
-          inversion Hty_pair2; subst.
-          split; assumption. }
-      * split; [assumption |].
-        split; [assumption |].
-        split; [assumption |].
-        split; [assumption |].
-        split.
-        { change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-          destruct (first_order_type T1) eqn:Hfo1.
-          - exact I.
-          - (* T1 HO, so TProd is HO *)
-            change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Htyping.
-            change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Htyping.
-            simpl in Htyping. rewrite Hfo1 in Htyping. simpl in Htyping.
-            destruct Htyping as [Hty_pair1 Hty_pair2].
-            inversion Hty_pair1; subst.
-            inversion Hty_pair2; subst.
-            split; assumption. }
-        exact Hrat1.
-    + (* n = S (S n'') *)
-      (* Extract val_rel_n (S (S n'')) from hypothesis and build val_rel_n (S (S n'')) for T1 *)
       rewrite val_rel_n_S_unfold in Hrel.
-      destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping Hrat]]]]]].
+      destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [Htyping1 [Htyping2 Hrat]]]]]]].
       simpl in Hrat.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
       inversion Heq1; subst. inversion Heq2; subst.
@@ -2132,9 +2109,57 @@ Proof.
       apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
       apply closed_expr_pair_inv in Hcl. destruct Hcl as [Hcl1 Hcl2].
       apply closed_expr_pair_inv in Hcl'. destruct Hcl' as [Hcl1' Hcl2'].
-      (* Use IH to get val_rel_n (S n'') for T1 from val_rel_n_cum *)
-      assert (Hgt : S n'' > 0) by lia.
-      apply (IHn Σ T1 T2 x1 y1 x2 y2 Hgt Hrel_cum).
+      (* Extract component typing *)
+      apply has_type_pair_inv in Htyping1 as [ε1a [ε1b [Hty_a1 [Hty_b1 Hεeq1]]]].
+      apply has_type_pair_inv in Htyping2 as [ε2a [ε2b [Hty_a2 [Hty_b2 Hεeq2]]]].
+      assert (Hε1a : ε1a = EffectPure).
+      { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+        destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+      assert (Hε1b : ε1b = EffectPure).
+      { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+        destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+      assert (Hε2a : ε2a = EffectPure).
+      { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+        destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+      assert (Hε2b : ε2b = EffectPure).
+      { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+        destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+      subst.
+      rewrite val_rel_n_S_unfold. split.
+      * (* val_rel_n 0 for T1 *)
+        rewrite val_rel_n_0_unfold.
+        refine (conj Hv1 (conj Hv1' (conj Hcl1 (conj Hcl1' (conj Hty_a1 (conj Hty_a2 _)))))).
+        change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
+        change (NonInterference_v2.val_rel_at_type_fo T1 x1 x2) with (val_rel_at_type_fo T1 x1 x2).
+        destruct (first_order_type T1) eqn:Hfo1.
+        { apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) x1 x2 Hfo1)).
+          exact Hrat1. }
+        { exact I. }
+      * repeat split; try assumption.
+    + (* n = S (S n'') *)
+      rewrite val_rel_n_S_unfold in Hrel.
+      destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping1 [Htyping2 Hrat]]]]]]].
+      simpl in Hrat.
+      destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
+      inversion Heq1; subst. inversion Heq2; subst.
+      apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
+      apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
+      apply closed_expr_pair_inv in Hcl. destruct Hcl as [Hcl1 Hcl2].
+      apply closed_expr_pair_inv in Hcl'. destruct Hcl' as [Hcl1' Hcl2'].
+      apply has_type_pair_inv in Htyping1 as [ε1a [ε1b [Hty_a1 [Hty_b1 Hεeq1]]]].
+      apply has_type_pair_inv in Htyping2 as [ε2a [ε2b [Hty_a2 [Hty_b2 Hεeq2]]]].
+      assert (Hε1a : ε1a = EffectPure).
+      { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+        destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+      assert (Hε2a : ε2a = EffectPure).
+      { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+        destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+      subst.
+      rewrite val_rel_n_S_unfold. split.
+      * (* cumulative: use IH *)
+        assert (Hgt : S n'' > 0) by lia.
+        apply (IHn Σ T1 T2 x1 y1 x2 y2 Hgt Hrel_cum).
+      * repeat split; try assumption.
 Qed.
 
 (** Extract val_rel_n for second projection from product (general version). *)
@@ -2147,8 +2172,8 @@ Proof.
   - lia.
   - destruct n' as [| n''].
     + (* n = 1 *)
-      simpl in Hrel.
-      destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [_ Hrat]]]]]].
+      rewrite val_rel_n_S_unfold in Hrel.
+      destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [Htyping1 [Htyping2 Hrat]]]]]]].
       simpl in Hrat.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
       inversion Heq1; subst. inversion Heq2; subst.
@@ -2156,54 +2181,29 @@ Proof.
       apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
       apply closed_expr_pair_inv in Hcl. destruct Hcl as [Hcl1 Hcl2].
       apply closed_expr_pair_inv in Hcl'. destruct Hcl' as [Hcl1' Hcl2'].
-      rewrite val_rel_n_S_unfold.
-      refine (conj _ _).
-      { rewrite val_rel_n_0_unfold.
-        repeat split; try assumption.
+      apply has_type_pair_inv in Htyping1 as [ε1a [ε1b [Hty_a1 [Hty_b1 Hεeq1]]]].
+      apply has_type_pair_inv in Htyping2 as [ε2a [ε2b [Hty_a2 [Hty_b2 Hεeq2]]]].
+      assert (Hε1b : ε1b = EffectPure).
+      { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+        destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+      assert (Hε2b : ε2b = EffectPure).
+      { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+        destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+      subst.
+      rewrite val_rel_n_S_unfold. split.
+      * (* val_rel_n 0 for T2 *)
+        rewrite val_rel_n_0_unfold.
+        refine (conj Hv2 (conj Hv2' (conj Hcl2 (conj Hcl2' (conj Hty_b1 (conj Hty_b2 _)))))).
+        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
+        change (NonInterference_v2.val_rel_at_type_fo T2) with (val_rel_at_type_fo T2).
         destruct (first_order_type T2) eqn:Hfo2.
-        { change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-          rewrite Hfo2.
-          apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) y1 y2 Hfo2)).
+        { apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) y1 y2 Hfo2)).
           exact Hrat2. }
-        { change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-          rewrite Hfo2.
-          (* T2 is HO, so TProd T1 T2 is HO — extract typing from Hcum *)
-          (* Hcum is val_rel_n 0 for TProd T1 T2 *)
-          rewrite val_rel_n_0_unfold in Hcum.
-          destruct Hcum as [_ [_ [_ [_ Hcum_if]]]].
-          change (NonInterference_v2.first_order_type (TProd T1 T2)) with (first_order_type (TProd T1 T2)) in Hcum_if.
-          simpl in Hcum_if.
-          change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Hcum_if.
-          change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Hcum_if.
-          rewrite Hfo2 in Hcum_if. rewrite Bool.andb_false_r in Hcum_if.
-          destruct Hcum_if as [Hty_pair1 Hty_pair2].
-          apply has_type_pair_inv in Hty_pair1 as [ε1 [ε2 [Ht_y1 [Ht_y2 _]]]].
-          apply has_type_pair_inv in Hty_pair2 as [ε1' [ε2' [Ht_y1' [Ht_y2' _]]]].
-          split; assumption. } }
-      { split; [assumption |].
-        split; [assumption |].
-        split; [assumption |].
-        split; [assumption |].
-        split.
-        { change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-          destruct (first_order_type T2) eqn:Hfo2.
-          - exact I.
-          - (* T2 HO — same extraction from Hcum *)
-            rewrite val_rel_n_0_unfold in Hcum.
-            destruct Hcum as [_ [_ [_ [_ Hcum_if]]]].
-            change (NonInterference_v2.first_order_type (TProd T1 T2)) with (first_order_type (TProd T1 T2)) in Hcum_if.
-            simpl in Hcum_if.
-            change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Hcum_if.
-            change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Hcum_if.
-            rewrite Hfo2 in Hcum_if. rewrite Bool.andb_false_r in Hcum_if.
-            destruct Hcum_if as [Hty_pair1 Hty_pair2].
-            apply has_type_pair_inv in Hty_pair1 as [ε1 [ε2 [Ht_y1 [Ht_y2 _]]]].
-            apply has_type_pair_inv in Hty_pair2 as [ε1' [ε2' [Ht_y1' [Ht_y2' _]]]].
-            split; assumption. }
-        exact Hrat2. }
+        { exact I. }
+      * repeat split; try assumption.
     + (* n = S (S n'') *)
       rewrite val_rel_n_S_unfold in Hrel.
-      destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping Hrat]]]]]].
+      destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping1 [Htyping2 Hrat]]]]]]].
       simpl in Hrat.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrat1 Hrat2]]]]]]].
       inversion Heq1; subst. inversion Heq2; subst.
@@ -2211,8 +2211,19 @@ Proof.
       apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
       apply closed_expr_pair_inv in Hcl. destruct Hcl as [Hcl1 Hcl2].
       apply closed_expr_pair_inv in Hcl'. destruct Hcl' as [Hcl1' Hcl2'].
-      assert (Hgt : S n'' > 0) by lia.
-      apply (IHn Σ T1 T2 x1 y1 x2 y2 Hgt Hrel_cum).
+      apply has_type_pair_inv in Htyping1 as [ε1a [ε1b [Hty_a1 [Hty_b1 Hεeq1]]]].
+      apply has_type_pair_inv in Htyping2 as [ε2a [ε2b [Hty_a2 [Hty_b2 Hεeq2]]]].
+      assert (Hε1b : ε1b = EffectPure).
+      { unfold EffectPure in Hεeq1. unfold effect_join in Hεeq1.
+        destruct ε1a; destruct ε1b; simpl in Hεeq1; try discriminate; reflexivity. }
+      assert (Hε2b : ε2b = EffectPure).
+      { unfold EffectPure in Hεeq2. unfold effect_join in Hεeq2.
+        destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
+      subst.
+      rewrite val_rel_n_S_unfold. split.
+      * assert (Hgt : S n'' > 0) by lia.
+        apply (IHn Σ T1 T2 x1 y1 x2 y2 Hgt Hrel_cum).
+      * repeat split; try assumption.
 Qed.
 
 (** Construct val_rel_n for sum types from components *)
@@ -2224,29 +2235,32 @@ Lemma val_rel_n_sum_inl : forall n Σ T1 T2 v1 v2,
 Proof.
   induction n as [| n' IHn]; intros Σ T1 T2 v1 v2 Hrel Htv1 Htv2.
   - rewrite val_rel_n_0_unfold in Hrel.
-    destruct Hrel as [Hv1 [Hv2 [Hcl1 [Hcl2 Hfo]]]].
-    rewrite val_rel_n_0_unfold.
-    repeat split.
-    + constructor; assumption.
-    + constructor; assumption.
-    + apply closed_expr_inl; assumption.
-    + apply closed_expr_inl; assumption.
-    + destruct (first_order_type (TSum T1 T2)) eqn:HfoSum; simpl.
-      * simpl in HfoSum.
-        apply andb_true_iff in HfoSum.
-        destruct HfoSum as [Hfo1 Hfo2].
-        change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Hfo.
-        rewrite Hfo1 in Hfo. simpl in Hfo.
-        change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-        rewrite Hfo1, Hfo2. simpl.
-        unfold val_rel_at_type_fo; simpl.
-        left. exists v1, v2. repeat split; try reflexivity; assumption.
-      * change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-        simpl in HfoSum. rewrite HfoSum.
-        (* HO case: construct typing for EInl from component typing *)
-        split; apply T_Inl; assumption.
+    destruct Hrel as [Hv1 [Hv2 [Hcl1 [Hcl2 [Hty1 [Hty2 Hfo]]]]]].
+    change (val_rel_n 0 Σ (TSum T1 T2) (EInl v1 T2) (EInl v2 T2)) with
+      (value (EInl v1 T2) /\ value (EInl v2 T2) /\
+       closed_expr (EInl v1 T2) /\ closed_expr (EInl v2 T2) /\
+       has_type nil Σ Public (EInl v1 T2) (TSum T1 T2) EffectPure /\
+       has_type nil Σ Public (EInl v2 T2) (TSum T1 T2) EffectPure /\
+       (if first_order_type (TSum T1 T2)
+        then val_rel_at_type_fo (TSum T1 T2) (EInl v1 T2) (EInl v2 T2)
+        else True)).
+    repeat split; try (constructor; assumption); try (apply closed_expr_inl; assumption);
+      try (apply T_Inl; assumption).
+    simpl.
+    change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
+    change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
+    destruct (first_order_type T1 && first_order_type T2) eqn:HfoSum.
+    + (* FO case *)
+      apply andb_true_iff in HfoSum as [Hfo1 Hfo2].
+      change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Hfo.
+      rewrite Hfo1 in Hfo. simpl in Hfo.
+      unfold val_rel_at_type_fo. simpl.
+      change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
+      change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
+      rewrite Hfo1, Hfo2. simpl.
+      left. exists v1, v2. repeat split; try reflexivity; try assumption.
+    + (* HO case *)
+      exact I.
   - simpl in Hrel.
     destruct Hrel as [Hcum [Hvalv1 [Hvalv2 [Hclv1 [Hclv2 [_ Hrat]]]]]].
     simpl. split.
@@ -2277,29 +2291,32 @@ Lemma val_rel_n_sum_inr : forall n Σ T1 T2 v1 v2,
 Proof.
   induction n as [| n' IHn]; intros Σ T1 T2 v1 v2 Hrel Htv1 Htv2.
   - rewrite val_rel_n_0_unfold in Hrel.
-    destruct Hrel as [Hv1 [Hv2 [Hcl1 [Hcl2 Hfo]]]].
-    rewrite val_rel_n_0_unfold.
-    repeat split.
-    + constructor; assumption.
-    + constructor; assumption.
-    + apply closed_expr_inr; assumption.
-    + apply closed_expr_inr; assumption.
-    + destruct (first_order_type (TSum T1 T2)) eqn:HfoSum; simpl.
-      * simpl in HfoSum.
-        apply andb_true_iff in HfoSum.
-        destruct HfoSum as [Hfo1 Hfo2].
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Hfo.
-        rewrite Hfo2 in Hfo. simpl in Hfo.
-        change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-        rewrite Hfo1, Hfo2. simpl.
-        unfold val_rel_at_type_fo; simpl.
-        right. exists v1, v2. repeat split; try reflexivity; assumption.
-      * change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-        simpl in HfoSum. rewrite HfoSum.
-        (* HO case: construct typing for EInr from component typing *)
-        split; apply T_Inr; assumption.
+    destruct Hrel as [Hv1 [Hv2 [Hcl1 [Hcl2 [Hty1 [Hty2 Hfo]]]]]].
+    change (val_rel_n 0 Σ (TSum T1 T2) (EInr v1 T1) (EInr v2 T1)) with
+      (value (EInr v1 T1) /\ value (EInr v2 T1) /\
+       closed_expr (EInr v1 T1) /\ closed_expr (EInr v2 T1) /\
+       has_type nil Σ Public (EInr v1 T1) (TSum T1 T2) EffectPure /\
+       has_type nil Σ Public (EInr v2 T1) (TSum T1 T2) EffectPure /\
+       (if first_order_type (TSum T1 T2)
+        then val_rel_at_type_fo (TSum T1 T2) (EInr v1 T1) (EInr v2 T1)
+        else True)).
+    repeat split; try (constructor; assumption); try (apply closed_expr_inr; assumption);
+      try (apply T_Inr; assumption).
+    simpl.
+    change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
+    change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
+    destruct (first_order_type T1 && first_order_type T2) eqn:HfoSum.
+    + (* FO case *)
+      apply andb_true_iff in HfoSum as [Hfo1 Hfo2].
+      change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Hfo.
+      rewrite Hfo2 in Hfo. simpl in Hfo.
+      unfold val_rel_at_type_fo. simpl.
+      change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
+      change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
+      rewrite Hfo1, Hfo2. simpl.
+      right. exists v1, v2. repeat split; try reflexivity; try assumption.
+    + (* HO case *)
+      exact I.
   - simpl in Hrel.
     destruct Hrel as [Hcum [Hvalv1 [Hvalv2 [Hclv1 [Hclv2 [_ Hrat]]]]]].
     simpl. split.
@@ -2867,17 +2884,22 @@ Proof.
   exact Hf.
 Qed.
 
-(* The fundamental theorem - proof by induction on typing derivation *)
-Theorem logical_relation : forall G Σ e T eps rho1 rho2,
+(* The fundamental theorem - proof by induction on typing derivation.
+   GENERALIZED: env_rel is at Σ_base (an extension of Σ), and exp_rel
+   is also at Σ_base. This eliminates the need for val_rel_store_weaken_back:
+   at binding sites, we forward-monotone env_rel from Σ_base to Σ' instead
+   of backward-weakening val_rel from Σ' to Σ. *)
+Theorem logical_relation : forall G Σ e T eps,
   has_type G Σ Public e T eps ->
-  env_rel Σ G rho1 rho2 ->
+  forall Σ_base, store_ty_extends Σ Σ_base ->
+  forall rho1 rho2,
+  env_rel Σ_base G rho1 rho2 ->
   rho_no_free_all rho1 ->
   rho_no_free_all rho2 ->
-  exp_rel Σ T (subst_rho rho1 e) (subst_rho rho2 e).
+  exp_rel Σ_base T (subst_rho rho1 e) (subst_rho rho2 e).
 Proof.
-  intros G Σ e T eps rho1 rho2 Hty.
-  generalize dependent rho2. generalize dependent rho1.
-  induction Hty; intros rho1 rho2 Henv Hno1 Hno2.
+  intros G Σ e T eps Hty.
+  induction Hty; intros Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2.
 
   - (* T_Unit *)
     simpl. apply exp_rel_of_val_rel. apply val_rel_unit.
@@ -2893,6 +2915,8 @@ Proof.
 
   - (* T_Loc - locations are related to themselves *)
     simpl. apply exp_rel_of_val_rel.
+    assert (H_base : store_ty_lookup l Σ_base = Some (T, sl)).
+    { apply Hext_base. exact H. }
     intros n. induction n as [| n' IHn].
     + (* n = 0 *)
       rewrite val_rel_n_0_unfold. simpl.
@@ -2903,7 +2927,7 @@ Proof.
       destruct (NonInterference_v2.first_order_type T) eqn:Hfo.
       * simpl. exists l. split; reflexivity.
       * (* HO type: need typing for TRef — use T_Loc with store lookup *)
-        split; apply T_Loc; exact H.
+        split; apply T_Loc; exact H_base.
     + (* n = S n' *)
       rewrite val_rel_n_S_unfold. split; [exact IHn |].
       split. { constructor. }
@@ -2918,7 +2942,7 @@ Proof.
         destruct (first_order_type T) eqn:Hfo.
         - exact I.
         - (* HO type: use T_Loc *)
-          split; apply T_Loc; exact H. }
+          split; apply T_Loc; exact H_base. }
       simpl. exists l. split; reflexivity.
 
   - (* T_Var *)
@@ -2939,15 +2963,17 @@ Proof.
        for all related args, applying the lambdas produces related results. *)
     simpl.
     (* Note: IHHty is for the body under extended context *)
-    (* Obtain typing for both substituted lambdas from env_rel *)
-    assert (Hlam_ty : has_type nil Σ Public (ELam x T1 (subst_rho (rho_shadow rho1 x) e)) (TFn T1 T2 ε) EffectPure /\
-                      has_type nil Σ Public (ELam x T1 (subst_rho (rho_shadow rho2 x) e)) (TFn T1 T2 ε) EffectPure).
-    { apply (lam_typing_from_env_rel G Σ x T1 T2 e ε rho1 rho2 Hty Henv). }
+    (* Obtain typing for both substituted lambdas from env_rel at Σ_base *)
+    assert (Hty_base : has_type ((x, T1) :: Γ) Σ_base Public e T2 ε).
+    { apply (store_ty_extends_preserves_typing ((x, T1) :: Γ) Σ Σ_base Public e T2 ε Hext_base Hty). }
+    assert (Hlam_ty : has_type nil Σ_base Public (ELam x T1 (subst_rho (rho_shadow rho1 x) e)) (TFn T1 T2 ε) EffectPure /\
+                      has_type nil Σ_base Public (ELam x T1 (subst_rho (rho_shadow rho2 x) e)) (TFn T1 T2 ε) EffectPure).
+    { apply (lam_typing_from_env_rel Γ Σ_base x T1 T2 e ε rho1 rho2 Hty_base Henv). }
     destruct Hlam_ty as [Hlam_ty1 Hlam_ty2].
     assert (Hcl1 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho1 x) e))).
-    { apply (typing_nil_closed Σ Public). exact Hlam_ty1. }
+    { apply (typing_nil_closed Σ_base Public). exact Hlam_ty1. }
     assert (Hcl2 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho2 x) e))).
-    { apply (typing_nil_closed Σ Public). exact Hlam_ty2. }
+    { apply (typing_nil_closed Σ_base Public). exact Hlam_ty2. }
     (* We prove exp_rel from val_rel *)
     apply exp_rel_of_val_rel.
     unfold val_rel. intro n.
@@ -2975,37 +3001,34 @@ Proof.
         split. { (* typing conjunct for TFn *)
           change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
           simpl. split; assumption. }
-        (* val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
+        (* val_rel_at_type Σ_base (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
         simpl.
         intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
         (* Apply lambdas: EApp (ELam x T1 body) arg --> [x := arg] body *)
         (* lam1 = ELam x T1 (subst_rho (rho_shadow rho1 x) e) *)
         (* lam2 = ELam x T1 (subst_rho (rho_shadow rho2 x) e) *)
 
-        (* Build extended environment for IHHty at ORIGINAL Σ (not Σ') *)
-        (* Need val_rel Σ T1 arg1 arg2 from val_rel_n n' Σ' T1 arg1 arg2 *)
-        (* This requires:
-           1. Store weakening: Σ' → Σ (needs val_rel_n_weaken)
-           2. Step generalization: n' → forall m (needs val_rel_n_step_up)
-           For FO T1: both are proven/provable
-           For HO T1: both require additional axioms/lemmas *)
-        assert (Hargrel_at_Σ : val_rel Σ T1 arg1 arg2).
-        { apply (val_rel_store_weaken_back Σ Σ' T1 arg1 arg2 Hext_Σ').
-          apply (val_rel_n_to_val_rel_any Σ' T1 arg1 arg2 n');
+        (* GENERALIZED: Build extended environment at Σ' (not original Σ).
+           Forward-monotone env_rel from Σ_base to Σ', then extend with arg val_rel.
+           This eliminates the need for val_rel_store_weaken_back. *)
+        assert (Hargrel_at_Σ' : val_rel Σ' T1 arg1 arg2).
+        { apply (val_rel_n_to_val_rel_any Σ' T1 arg1 arg2 n');
             assumption. }
 
-        assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x arg1) (rho_extend rho2 x arg2)).
+        assert (Henv' : env_rel Σ' ((x, T1) :: Γ) (rho_extend rho1 x arg1) (rho_extend rho2 x arg2)).
         { apply env_rel_extend.
-          - exact Henv.
-          - exact Hargrel_at_Σ. }
+          - apply env_rel_mono_store with Σ_base; assumption.
+          - exact Hargrel_at_Σ'. }
 
         assert (Hno1' : rho_no_free_all (rho_extend rho1 x arg1)).
         { apply rho_no_free_extend; assumption. }
         assert (Hno2' : rho_no_free_all (rho_extend rho2 x arg2)).
         { apply rho_no_free_extend; assumption. }
 
-        (* Apply IHHty to get exp_rel at Σ *)
-        specialize (IHHty (rho_extend rho1 x arg1) (rho_extend rho2 x arg2) Henv' Hno1' Hno2') as He_rel.
+        (* Apply IHHty with Σ_base := Σ', forwarding store extension *)
+        assert (Hext_Σ_Σ' : store_ty_extends Σ Σ').
+        { eapply store_ty_extends_trans_early; eassumption. }
+        specialize (IHHty Σ' Hext_Σ_Σ' (rho_extend rho1 x arg1) (rho_extend rho2 x arg2) Henv' Hno1' Hno2') as He_rel.
         unfold exp_rel in He_rel.
 
         (* Connect substitutions: [x := arg](subst_rho (rho_shadow rho x) e) = subst_rho (rho_extend rho x arg) e *)
@@ -3014,8 +3037,8 @@ Proof.
         assert (Hsubst2 : [x := arg2] (subst_rho (rho_shadow rho2 x) e) = subst_rho (rho_extend rho2 x arg2) e).
         { apply subst_rho_extend. exact Hno2. }
 
-        (* Apply exp_rel at step S n' with Σ_cur = Σ' (since Σ ⊆ Σ') *)
-        specialize (He_rel (S n') Σ' st1 st2 ctx Hext_Σ' Hstrel Hwf1 Hwf2 Hagree) as
+        (* Apply exp_rel at step S n' with Σ_cur = Σ' (reflexive extension) *)
+        specialize (He_rel (S n') Σ' st1 st2 ctx (store_ty_extends_refl Σ') Hstrel Hwf1 Hwf2 Hagree) as
           [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
 
         (* Result *)
@@ -3038,8 +3061,8 @@ Proof.
         { exact Hagree'. }
   - (* T_App - function application *)
     simpl.
-    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
-    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as Ha_rel.  (* argument *)
+    specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
+    specialize (IHHty2 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as Ha_rel.  (* argument *)
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + simpl. trivial.
@@ -3051,8 +3074,8 @@ Proof.
         [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep_f1 [Hstep_f2 [Hvalf1 [Hvalf2 [Hfrel [Hstore1 [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
 
       (* Step 2: Evaluate argument *)
-      assert (Hext_arg : store_ty_extends Σ Σ').
-      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext1). }
+      assert (Hext_arg : store_ty_extends Σ_base Σ').
+      { apply (store_ty_extends_trans_early Σ_base Σ_cur Σ' Hext_cur Hext1). }
       specialize (Ha_rel (S n') Σ' st1' st2' ctx' Hext_arg Hstore1 Hwf1' Hwf2' Hagree') as
         [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_a1 [Hstep_a2 [Hvala1 [Hvala2 [Harel [Hstore2 [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]].
 
@@ -3171,8 +3194,8 @@ Proof.
     (* IH for e1 and e2 accept any current store typing extending Σ.
        We chain: Σ_cur → Σ' (after e1) → Σ'' (after e2). *)
     simpl.
-    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.
-    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as He2_rel.
+    specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He1_rel.
+    specialize (IHHty2 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He2_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: exp_rel_n 0 is trivially True *)
@@ -3237,7 +3260,7 @@ Proof.
         { exact Hagree''. }
   - (* T_Fst - First projection *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: exp_rel_n 0 is trivially True *)
@@ -3310,7 +3333,7 @@ Proof.
       { exact Hagree'. }
   - (* T_Snd - Second projection *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: exp_rel_n 0 is trivially True *)
@@ -3383,7 +3406,7 @@ Proof.
       { exact Hagree'. }
   - (* T_Inl - Left injection *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + simpl. trivial.
@@ -3405,7 +3428,7 @@ Proof.
       { exact Hagree'. }
   - (* T_Inr - Right injection *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + simpl. trivial.
@@ -3427,7 +3450,7 @@ Proof.
       { exact Hagree'. }
   - (* T_Case - Pattern matching on sums *)
     simpl.
-    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He_rel.  (* scrutinee *)
+    specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.  (* scrutinee *)
     (* Note: IHHty2 and IHHty3 have extended environments, handled below *)
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
@@ -3442,17 +3465,17 @@ Proof.
       destruct n' as [| n''].
       { (* n' = 0: Step-1 case — compose IHs directly *)
         assert (HextΣ : store_ty_extends Σ Σ').
-        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        { eapply store_ty_extends_trans_early. exact Hext_base.
+          eapply store_ty_extends_trans_early; eassumption. }
 
-        (* Get val_rel at Σ to decompose the sum *)
-        assert (Hval_full : val_rel Σ (TSum T1 T2) v v').
-        { apply (val_rel_store_weaken_back Σ Σ' (TSum T1 T2) v v' HextΣ).
-          apply (val_rel_n_to_val_rel_any Σ' (TSum T1 T2) v v' 0 Hvalv Hvalv' Hval). }
+        (* Get val_rel at Σ' to decompose the sum — no backward weakening needed *)
+        assert (Hval_full : val_rel Σ' (TSum T1 T2) v v').
+        { apply (val_rel_n_to_val_rel_any Σ' (TSum T1 T2) v v' 0 Hvalv Hvalv' Hval). }
 
         (* Decompose at step 2 (need n > 0 for sum_decompose) *)
-        assert (Hval2 : val_rel_n 2 Σ (TSum T1 T2) v v').
+        assert (Hval2 : val_rel_n 2 Σ' (TSum T1 T2) v v').
         { apply Hval_full. }
-        destruct (val_rel_n_sum_decompose 2 Σ T1 T2 v v') as
+        destruct (val_rel_n_sum_decompose 2 Σ' T1 T2 v v') as
           [[a1 [a2 [Heqv [Heqv' [Hvala1 [Hvala2 [Hcla1 [Hcla2 _]]]]]]]] |
            [b1 [b2 [Heqv [Heqv' [Hvalb1 [Hvalb2 [Hclb1 [Hclb2 _]]]]]]]]].
         { lia. }
@@ -3460,19 +3483,22 @@ Proof.
 
         * (* EInl case *)
           subst v v'.
-          assert (Hval_a_at_Σ : val_rel Σ T1 a1 a2).
-          { unfold val_rel. intro m. apply (val_rel_n_from_sum_inl m Σ T1 T2 a1 a2).
+          assert (Hval_a_at_Σ' : val_rel Σ' T1 a1 a2).
+          { unfold val_rel. intro m. apply (val_rel_n_from_sum_inl m Σ' T1 T2 a1 a2).
             destruct m; [lia | lia]. apply Hval_full. }
 
-          assert (Henv' : env_rel Σ ((x1, T1) :: Γ) (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2)).
-          { apply env_rel_extend. exact Henv. exact Hval_a_at_Σ. }
+          assert (Henv' : env_rel Σ' ((x1, T1) :: Γ) (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2)).
+          { apply env_rel_extend.
+            - apply env_rel_mono_store with Σ_base; [|exact Henv].
+              eapply store_ty_extends_trans_early; eassumption.
+            - exact Hval_a_at_Σ'. }
 
           assert (Hno1' : rho_no_free_all (rho_extend rho1 x1 a1)).
           { apply rho_no_free_extend; assumption. }
           assert (Hno2' : rho_no_free_all (rho_extend rho2 x1 a2)).
           { apply rho_no_free_extend; assumption. }
 
-          specialize (IHHty2 (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2) Henv' Hno1' Hno2') as He1_rel.
+          specialize (IHHty2 Σ' HextΣ (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2) Henv' Hno1' Hno2') as He1_rel.
           unfold exp_rel in He1_rel.
 
           assert (Hsubst1 : [x1 := a1] (subst_rho (rho_shadow rho1 x1) e1) =
@@ -3482,7 +3508,7 @@ Proof.
                             subst_rho (rho_extend rho2 x1 a2) e1).
           { apply subst_rho_extend. exact Hno2. }
 
-          specialize (He1_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree') as
+          specialize (He1_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
             [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
           exists v1, v2, st1'', st2'', ctx'', Σ''.
@@ -3509,19 +3535,22 @@ Proof.
 
         * (* EInr case *)
           subst v v'.
-          assert (Hval_b_at_Σ : val_rel Σ T2 b1 b2).
-          { unfold val_rel. intro m. apply (val_rel_n_from_sum_inr m Σ T1 T2 b1 b2).
+          assert (Hval_b_at_Σ' : val_rel Σ' T2 b1 b2).
+          { unfold val_rel. intro m. apply (val_rel_n_from_sum_inr m Σ' T1 T2 b1 b2).
             destruct m; [lia | lia]. apply Hval_full. }
 
-          assert (Henv' : env_rel Σ ((x2, T2) :: Γ) (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2)).
-          { apply env_rel_extend. exact Henv. exact Hval_b_at_Σ. }
+          assert (Henv' : env_rel Σ' ((x2, T2) :: Γ) (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2)).
+          { apply env_rel_extend.
+            - apply env_rel_mono_store with Σ_base; [|exact Henv].
+              eapply store_ty_extends_trans_early; eassumption.
+            - exact Hval_b_at_Σ'. }
 
           assert (Hno1' : rho_no_free_all (rho_extend rho1 x2 b1)).
           { apply rho_no_free_extend; assumption. }
           assert (Hno2' : rho_no_free_all (rho_extend rho2 x2 b2)).
           { apply rho_no_free_extend; assumption. }
 
-          specialize (IHHty3 (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2) Henv' Hno1' Hno2') as He2_rel.
+          specialize (IHHty3 Σ' HextΣ (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2) Henv' Hno1' Hno2') as He2_rel.
           unfold exp_rel in He2_rel.
 
           assert (Hsubst1 : [x2 := b1] (subst_rho (rho_shadow rho1 x2) e2) =
@@ -3531,7 +3560,7 @@ Proof.
                             subst_rho (rho_extend rho2 x2 b2) e2).
           { apply subst_rho_extend. exact Hno2. }
 
-          specialize (He2_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree') as
+          specialize (He2_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
             [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval_e2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
           exists v1, v2, st1'', st2'', ctx'', Σ''.
@@ -3569,28 +3598,26 @@ Proof.
         { apply (val_rel_n_from_sum_inl (S n'') Σ' T1 T2 a1 a2). lia. exact Hval. }
 
         assert (Hext_for_e1 : store_ty_extends Σ Σ').
-        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        { eapply store_ty_extends_trans_early. exact Hext_base.
+          eapply store_ty_extends_trans_early; eassumption. }
 
-        (* Build extended environment at ORIGINAL Σ *)
-        (* Requires: val_rel Σ T1 a1 a2 from val_rel_n (S n'') Σ' T1 a1 a2 *)
-        (* This needs: (1) val_rel_n_weaken (Σ' → Σ) and (2) val_rel_n_to_val_rel *)
-        (* Both depend on the step_up axiom for HO types *)
-        assert (Hval_a_at_Σ : val_rel Σ T1 a1 a2).
-        { apply (val_rel_store_weaken_back Σ Σ' T1 a1 a2 Hext_for_e1).
-          apply (val_rel_n_to_val_rel_any Σ' T1 a1 a2 (S n'') Hvala1 Hvala2 Hval_a). }
+        (* GENERALIZED: Build extended environment at Σ' (not original Σ) *)
+        assert (Hval_a_at_Σ' : val_rel Σ' T1 a1 a2).
+        { apply (val_rel_n_to_val_rel_any Σ' T1 a1 a2 (S n'') Hvala1 Hvala2 Hval_a). }
 
-        assert (Henv' : env_rel Σ ((x1, T1) :: Γ) (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2)).
+        assert (Henv' : env_rel Σ' ((x1, T1) :: Γ) (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2)).
         { apply env_rel_extend.
-          - exact Henv.
-          - exact Hval_a_at_Σ. }
+          - apply env_rel_mono_store with Σ_base; [|exact Henv].
+            eapply store_ty_extends_trans_early; eassumption.
+          - exact Hval_a_at_Σ'. }
 
         assert (Hno1' : rho_no_free_all (rho_extend rho1 x1 a1)).
         { apply rho_no_free_extend; assumption. }
         assert (Hno2' : rho_no_free_all (rho_extend rho2 x1 a2)).
         { apply rho_no_free_extend; assumption. }
 
-        (* Apply IH for e1 with extended environment *)
-        specialize (IHHty2 (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2) Henv' Hno1' Hno2') as He1_rel.
+        (* Apply IH for e1 with Σ_base := Σ' *)
+        specialize (IHHty2 Σ' Hext_for_e1 (rho_extend rho1 x1 a1) (rho_extend rho2 x1 a2) Henv' Hno1' Hno2') as He1_rel.
         unfold exp_rel in He1_rel.
 
         (* Connect substitutions: [x1 := a1](subst_rho (rho_shadow rho1 x1) e1) = subst_rho (rho_extend rho1 x1 a1) e1 *)
@@ -3601,8 +3628,8 @@ Proof.
                           subst_rho (rho_extend rho2 x1 a2) e1).
         { apply subst_rho_extend. exact Hno2. }
 
-        (* Apply IH at step (S (S n'')) with store Σ' *)
-        specialize (He1_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e1 Hstore' Hwf1' Hwf2' Hagree') as
+        (* Apply IH at step (S (S n'')) with Σ_cur = Σ' (reflexive) *)
+        specialize (He1_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
           [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
         exists v1, v2, st1'', st2'', ctx'', Σ''.
@@ -3638,26 +3665,26 @@ Proof.
         { apply (val_rel_n_from_sum_inr (S n'') Σ' T1 T2 b1 b2). lia. exact Hval. }
 
         assert (Hext_for_e2 : store_ty_extends Σ Σ').
-        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        { eapply store_ty_extends_trans_early. exact Hext_base.
+          eapply store_ty_extends_trans_early; eassumption. }
 
-        (* Build extended environment at ORIGINAL Σ *)
-        (* Same as EInl case: requires val_rel_n_weaken + val_rel_n_to_val_rel *)
-        assert (Hval_b_at_Σ : val_rel Σ T2 b1 b2).
-        { apply (val_rel_store_weaken_back Σ Σ' T2 b1 b2 Hext_for_e2).
-          apply (val_rel_n_to_val_rel_any Σ' T2 b1 b2 (S n'') Hvalb1 Hvalb2 Hval_b). }
+        (* GENERALIZED: Build extended environment at Σ' (not original Σ) *)
+        assert (Hval_b_at_Σ' : val_rel Σ' T2 b1 b2).
+        { apply (val_rel_n_to_val_rel_any Σ' T2 b1 b2 (S n'') Hvalb1 Hvalb2 Hval_b). }
 
-        assert (Henv' : env_rel Σ ((x2, T2) :: Γ) (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2)).
+        assert (Henv' : env_rel Σ' ((x2, T2) :: Γ) (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2)).
         { apply env_rel_extend.
-          - exact Henv.
-          - exact Hval_b_at_Σ. }
+          - apply env_rel_mono_store with Σ_base; [|exact Henv].
+            eapply store_ty_extends_trans_early; eassumption.
+          - exact Hval_b_at_Σ'. }
 
         assert (Hno1' : rho_no_free_all (rho_extend rho1 x2 b1)).
         { apply rho_no_free_extend; assumption. }
         assert (Hno2' : rho_no_free_all (rho_extend rho2 x2 b2)).
         { apply rho_no_free_extend; assumption. }
 
-        (* Apply IH for e2 with extended environment *)
-        specialize (IHHty3 (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2) Henv' Hno1' Hno2') as He2_rel.
+        (* Apply IH for e2 with Σ_base := Σ' *)
+        specialize (IHHty3 Σ' Hext_for_e2 (rho_extend rho1 x2 b1) (rho_extend rho2 x2 b2) Henv' Hno1' Hno2') as He2_rel.
         unfold exp_rel in He2_rel.
 
         (* Connect substitutions *)
@@ -3668,8 +3695,8 @@ Proof.
                           subst_rho (rho_extend rho2 x2 b2) e2).
         { apply subst_rho_extend. exact Hno2. }
 
-        (* Apply IH at step (S (S n'')) with store Σ' *)
-        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e2 Hstore' Hwf1' Hwf2' Hagree') as
+        (* Apply IH at step (S (S n'')) with Σ_cur = Σ' (reflexive) *)
+        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
           [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
         exists v1, v2, st1'', st2'', ctx'', Σ''.
@@ -3699,9 +3726,9 @@ Proof.
         { exact Hagree''. }
   - (* T_If - Conditional with same boolean evaluates same branch *)
     simpl.
-    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* condition *)
-    specialize (IHHty2 rho1 rho2 Henv Hno1 Hno2) as He2_rel.  (* then branch *)
-    specialize (IHHty3 rho1 rho2 Henv Hno1 Hno2) as He3_rel.  (* else branch *)
+    specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* condition *)
+    specialize (IHHty2 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He2_rel.  (* then branch *)
+    specialize (IHHty3 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He3_rel.  (* else branch *)
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: exp_rel_n 0 is trivially True *)
@@ -3833,7 +3860,7 @@ Proof.
         { exact Hagree''. }
   - (* T_Let - Variable binding *)
     simpl.
-    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* bound expression *)
+    specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* bound expression *)
     (* IHHty2 has extended environment, handled below *)
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
@@ -3848,15 +3875,18 @@ Proof.
       destruct n' as [| n''].
       { (* n' = 0: Step-1 case — compose IHs directly *)
         assert (HextΣ : store_ty_extends Σ Σ').
-        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        { eapply store_ty_extends_trans_early. exact Hext_base.
+          eapply store_ty_extends_trans_early; eassumption. }
 
-        (* Build extended environment *)
-        assert (Hval_at_Σ : val_rel Σ T1 v v').
-        { apply (val_rel_store_weaken_back Σ Σ' T1 v v' HextΣ).
-          apply (val_rel_n_to_val_rel_any Σ' T1 v v' 0 Hvalv Hvalv' Hval). }
+        (* GENERALIZED: Build extended environment at Σ' *)
+        assert (Hval_at_Σ' : val_rel Σ' T1 v v').
+        { apply (val_rel_n_to_val_rel_any Σ' T1 v v' 0 Hvalv Hvalv' Hval). }
 
-        assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
-        { apply env_rel_extend. exact Henv. exact Hval_at_Σ. }
+        assert (Henv' : env_rel Σ' ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+        { apply env_rel_extend.
+          - apply env_rel_mono_store with Σ_base; [|exact Henv].
+            eapply store_ty_extends_trans_early; eassumption.
+          - exact Hval_at_Σ'. }
 
         destruct (val_rel_n_closed 0 Σ' T1 v v' Hval) as [Hcl1 Hcl2].
         assert (Hno1' : rho_no_free_all (rho_extend rho1 x v)).
@@ -3864,7 +3894,7 @@ Proof.
         assert (Hno2' : rho_no_free_all (rho_extend rho2 x v')).
         { apply rho_no_free_extend. exact Hno2. exact Hcl2. }
 
-        specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as He2_rel.
+        specialize (IHHty2 Σ' HextΣ (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as He2_rel.
         unfold exp_rel in He2_rel.
 
         assert (Hsubst1 : [x := v] (subst_rho (rho_shadow rho1 x) e2) =
@@ -3874,7 +3904,7 @@ Proof.
                           subst_rho (rho_extend rho2 x v') e2).
         { apply subst_rho_extend. exact Hno2. }
 
-        specialize (He2_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree') as
+        specialize (He2_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
           [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
         exists v1, v2, st1'', st2'', ctx'', Σ''.
@@ -3899,18 +3929,18 @@ Proof.
 
       (* n' = S n'': have budget to evaluate body *)
       assert (Hext_for_e2 : store_ty_extends Σ Σ').
-      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+      { eapply store_ty_extends_trans_early. exact Hext_base.
+        eapply store_ty_extends_trans_early; eassumption. }
 
-      (* Build extended environment at ORIGINAL Σ *)
-      (* Requires: val_rel Σ T1 v v' from val_rel_n (S n'') Σ' T1 v v' *)
-      assert (Hval_at_Σ : val_rel Σ T1 v v').
-      { apply (val_rel_store_weaken_back Σ Σ' T1 v v' Hext_for_e2).
-        apply (val_rel_n_to_val_rel_any Σ' T1 v v' (S n'') Hvalv Hvalv' Hval). }
+      (* GENERALIZED: Build extended environment at Σ' *)
+      assert (Hval_at_Σ' : val_rel Σ' T1 v v').
+      { apply (val_rel_n_to_val_rel_any Σ' T1 v v' (S n'') Hvalv Hvalv' Hval). }
 
-      assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+      assert (Henv' : env_rel Σ' ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
       { apply env_rel_extend.
-        - exact Henv.
-        - exact Hval_at_Σ. }
+        - apply env_rel_mono_store with Σ_base; [|exact Henv].
+          eapply store_ty_extends_trans_early; eassumption.
+        - exact Hval_at_Σ'. }
 
       (* v and v' are closed because they come from val_rel_n at S n'' > 0 *)
       destruct (val_rel_n_closed (S n'') Σ' T1 v v' Hval) as [Hcl1 Hcl2].
@@ -3923,8 +3953,8 @@ Proof.
         - exact Hno2.
         - exact Hcl2. }
 
-      (* Apply IH for e2 with extended environment *)
-      specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as He2_rel.
+      (* Apply IH for e2 with Σ_base := Σ' *)
+      specialize (IHHty2 Σ' Hext_for_e2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as He2_rel.
       unfold exp_rel in He2_rel.
 
       (* Connect substitutions: [x := v](subst_rho (rho_shadow rho1 x) e2) = subst_rho (rho_extend rho1 x v) e2 *)
@@ -3935,8 +3965,8 @@ Proof.
                         subst_rho (rho_extend rho2 x v') e2).
       { apply subst_rho_extend. exact Hno2. }
 
-      (* Apply IH at step (S (S n'')) with store Σ' *)
-      specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_e2 Hstore' Hwf1' Hwf2' Hagree') as
+      (* Apply IH at step (S (S n'')) with Σ_cur = Σ' (reflexive) *)
+      specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
         [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
       exists v1, v2, st1'', st2'', ctx'', Σ''.
@@ -3965,7 +3995,7 @@ Proof.
   - (* T_Perform - Effect perform just passes through the value *)
     (* EPerform eff e evaluates e to a value v, then EPerform eff v --> v *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: trivially true *)
@@ -4001,7 +4031,7 @@ Proof.
   - (* T_Handle - Effect handler is like let-binding *)
     (* EHandle e x h evaluates e to v, then steps to [x := v] h *)
     simpl.
-    specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: trivially true *)
@@ -4014,14 +4044,18 @@ Proof.
       destruct n' as [| n''].
       { (* n' = 0: Step-1 case — compose IHs directly *)
         assert (HextΣ : store_ty_extends Σ Σ').
-        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        { eapply store_ty_extends_trans_early. exact Hext_base.
+          eapply store_ty_extends_trans_early; eassumption. }
 
-        assert (Hval_at_Σ : val_rel Σ T1 v v').
-        { apply (val_rel_store_weaken_back Σ Σ' T1 v v' HextΣ).
-          apply (val_rel_n_to_val_rel_any Σ' T1 v v' 0 Hvalv Hvalv' Hval). }
+        (* GENERALIZED: Build extended environment at Σ' *)
+        assert (Hval_at_Σ' : val_rel Σ' T1 v v').
+        { apply (val_rel_n_to_val_rel_any Σ' T1 v v' 0 Hvalv Hvalv' Hval). }
 
-        assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
-        { apply env_rel_extend. exact Henv. exact Hval_at_Σ. }
+        assert (Henv' : env_rel Σ' ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+        { apply env_rel_extend.
+          - apply env_rel_mono_store with Σ_base; [|exact Henv].
+            eapply store_ty_extends_trans_early; eassumption.
+          - exact Hval_at_Σ'. }
 
         destruct (val_rel_n_closed 0 Σ' T1 v v' Hval) as [Hcl1 Hcl2].
         assert (Hno1' : rho_no_free_all (rho_extend rho1 x v)).
@@ -4029,7 +4063,7 @@ Proof.
         assert (Hno2' : rho_no_free_all (rho_extend rho2 x v')).
         { apply rho_no_free_extend. exact Hno2. exact Hcl2. }
 
-        specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as Hh_rel.
+        specialize (IHHty2 Σ' HextΣ (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as Hh_rel.
         unfold exp_rel in Hh_rel.
 
         assert (Hsubst1 : [x := v] (subst_rho (rho_shadow rho1 x) h) =
@@ -4039,7 +4073,7 @@ Proof.
                           subst_rho (rho_extend rho2 x v') h).
         { apply subst_rho_extend. exact Hno2. }
 
-        specialize (Hh_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree') as
+        specialize (Hh_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
           [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
         exists r1, r2, st1'', st2'', ctx'', Σ''.
@@ -4064,17 +4098,18 @@ Proof.
 
       (* n' = S n'': have budget to evaluate handler body *)
       assert (Hext_for_h : store_ty_extends Σ Σ').
-      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+      { eapply store_ty_extends_trans_early. exact Hext_base.
+        eapply store_ty_extends_trans_early; eassumption. }
 
-      (* Build extended environment at ORIGINAL Σ *)
-      assert (Hval_at_Σ : val_rel Σ T1 v v').
-      { apply (val_rel_store_weaken_back Σ Σ' T1 v v' Hext_for_h).
-        apply (val_rel_n_to_val_rel_any Σ' T1 v v' (S n'') Hvalv Hvalv' Hval). }
+      (* GENERALIZED: Build extended environment at Σ' *)
+      assert (Hval_at_Σ' : val_rel Σ' T1 v v').
+      { apply (val_rel_n_to_val_rel_any Σ' T1 v v' (S n'') Hvalv Hvalv' Hval). }
 
-      assert (Henv' : env_rel Σ ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
+      assert (Henv' : env_rel Σ' ((x, T1) :: Γ) (rho_extend rho1 x v) (rho_extend rho2 x v')).
       { apply env_rel_extend.
-        - exact Henv.
-        - exact Hval_at_Σ. }
+        - apply env_rel_mono_store with Σ_base; [|exact Henv].
+          eapply store_ty_extends_trans_early; eassumption.
+        - exact Hval_at_Σ'. }
 
       destruct (val_rel_n_closed (S n'') Σ' T1 v v' Hval) as [Hcl1 Hcl2].
       assert (Hno1' : rho_no_free_all (rho_extend rho1 x v)).
@@ -4082,7 +4117,7 @@ Proof.
       assert (Hno2' : rho_no_free_all (rho_extend rho2 x v')).
       { apply rho_no_free_extend. exact Hno2. exact Hcl2. }
 
-      specialize (IHHty2 (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as Hh_rel.
+      specialize (IHHty2 Σ' Hext_for_h (rho_extend rho1 x v) (rho_extend rho2 x v') Henv' Hno1' Hno2') as Hh_rel.
       unfold exp_rel in Hh_rel.
 
       (* Connect substitutions *)
@@ -4093,7 +4128,7 @@ Proof.
                         subst_rho (rho_extend rho2 x v') h).
       { apply subst_rho_extend. exact Hno2. }
 
-      specialize (Hh_rel (S (S n'')) Σ' st1' st2' ctx' Hext_for_h Hstore' Hwf1' Hwf2' Hagree') as
+      specialize (Hh_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
         [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
 
       exists r1, r2, st1'', st2'', ctx'', Σ''.
@@ -4147,7 +4182,7 @@ Proof.
     + exact Hno2.
   - (* T_Classify - Wrapping in TSecret is trivially related *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: trivially true *)
@@ -4185,7 +4220,7 @@ Proof.
   - (* T_Prove - Wrapping in EProve produces proof type *)
     (* EProve e evaluates e to v, then EProve v is a value of type TProof T *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: trivially true *)
@@ -4214,7 +4249,7 @@ Proof.
   - (* T_Require - Effect require just passes through the value *)
     (* ERequire eff e evaluates e to v, then ERequire eff v --> v *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: trivially true *)
@@ -4248,7 +4283,7 @@ Proof.
   - (* T_Grant - Effect grant just passes through the value *)
     (* EGrant eff e evaluates e to v, then EGrant eff v --> v *)
     simpl.
-    specialize (IHHty rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + (* n = 0: trivially true *)
