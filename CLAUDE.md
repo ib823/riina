@@ -73,11 +73,11 @@ RIINA is the world's **first formally verified programming language** with:
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | B+ (build passing) | Active axiom/admit elimination |
+| **Overall Grade** | A− (build passing) | 0 admits, 7 axioms remain |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
-| **Axioms (Active Build)** | 6 | 5 in NI_v2_LR + 1 in NI_v2 |
-| **Admits (Active Build)** | 19 (`admit.`) + 8 (`Admitted.`) | 27 total incomplete proofs |
-| **Qed Proofs (Active Build)** | 1,894 | Verified |
+| **Axioms (Active Build)** | 7 | 5 in NI_v2_LR + 1 in NI_v2 + 1 in Declassification |
+| **Admits (Active Build)** | 0 (`admit.`) + 0 (`Admitted.`) | **ALL ELIMINATED** |
+| **Qed Proofs (Active Build)** | 4,971 | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
 | **Rust Tests** | ✅ PASSING (361 tests) | All green |
@@ -558,24 +558,25 @@ Phase 0 is complete. `well_typed_SN` proven. All foundations compile.
 
 ### Phase 1: Axiom Elimination — 🟡 ACTIVE
 
-**Active Build: 6 Axioms, 27 Admits (19 `admit.` + 8 `Admitted.`)**
+**Active Build: 7 Axioms, 0 Admits, 0 Admitted**
 
 | File | `admit.` | `Admitted.` | Axioms | Notes |
 |------|----------|-------------|--------|-------|
-| NonInterference_v2_LogicalRelation.v | 15 | 2 | 5 | Core logical relation |
-| ReferenceOps.v | 3 | 3 | 0 | Need fundamental theorem |
-| Declassification.v | 1 | 1 | 0 | Need multi_step_declassify_inv |
-| SN_Closure.v | 0 | 1 | 0 | |
-| MaximumAxiomElimination.v | 0 | 1 | 0 | |
+| NonInterference_v2_LogicalRelation.v | 0 | 0 | 5 | Core logical relation |
 | NonInterference_v2.v | 0 | 0 | 1 | fundamental_theorem_step_0 |
+| Declassification.v | 0 | 0 | 1 | exp_rel_le_declassify (justified) |
+| ReferenceOps.v | 0 | 0 | 0 | All proven |
+| SN_Closure.v | 0 | 0 | 0 | All proven |
+| MaximumAxiomElimination.v | 0 | 0 | 0 | All proven |
 
-**Axiom names (6):**
-1. `logical_relation_ref` (NI_v2_LR)
-2. `logical_relation_deref` (NI_v2_LR)
-3. `logical_relation_assign` (NI_v2_LR)
-4. `logical_relation_declassify` (NI_v2_LR)
+**Axiom names (7):**
+1. `logical_relation_ref` (NI_v2_LR) — reference allocation
+2. `logical_relation_deref` (NI_v2_LR) — dereference
+3. `logical_relation_assign` (NI_v2_LR) — assignment
+4. `logical_relation_declassify` (NI_v2_LR) — declassification
 5. `val_rel_store_weaken_back` (NI_v2_LR) — store anti-monotonicity, justified
-6. `fundamental_theorem_step_0` (NI_v2)
+6. `fundamental_theorem_step_0` (NI_v2) — step-0 fundamental theorem
+7. `exp_rel_le_declassify` (Declassification.v) — declassify exp_rel, justified
 
 ### Phase 2-6: Future Phases
 
