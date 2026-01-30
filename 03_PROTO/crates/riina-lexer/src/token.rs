@@ -122,6 +122,16 @@ pub enum TokenKind {
     KwSpeculationSafe,
     KwCombined,
     KwZeroize,
+    KwIn,
+    KwIs,
+    KwPure,
+    KwSafe,
+    KwPolicy,
+    KwLevel,
+    KwChannel,
+    KwBorrow,
+    KwCopy,
+    KwClone,
 
     // Operators & Punctuation
     Plus,       // +
