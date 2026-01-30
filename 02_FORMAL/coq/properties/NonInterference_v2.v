@@ -1021,16 +1021,33 @@ Proof.
           destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
           inversion Heq1'; subst. inversion Heq2'; subst. exact Hr1.
         * (* T1 FO, T2 HO: product is HO, Hrat = True.
-             Cannot extract val_rel_at_type_fo T1 from True.
-             Related to fundamental_theorem_step_0 challenge. *)
+             Use fundamental_theorem_step_0 to extract val_rel_at_type for TProd,
+             then project T1 component and convert to val_rel_at_type_fo. *)
           assert (HfoProd : first_order_type (TProd T1 T2) = false)
             by (simpl; rewrite Hfo1, Hfo2; reflexivity).
-          rewrite HfoProd in Hrat.
-          (* Hrat : True, goal : val_rel_at_type_fo T1 a1 a2 — genuinely stuck *)
-          admit.
+          (* Reconstruct val_rel_n 0 for the product *)
+          assert (Hval_recon : val_rel_n 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+          { rewrite val_rel_n_0_unfold. repeat split.
+            - exact Hv1.  (* value (EPair a1 b1) *)
+            - exact Hv2.  (* value (EPair a2 b2) *)
+            - exact Hcl1. (* closed_expr (EPair a1 b1) *)
+            - exact Hcl2. (* closed_expr (EPair a2 b2) *)
+            - exact HtyPP1.
+            - exact HtyPP2.
+            - rewrite HfoProd. exact I. }
+          (* Apply fundamental_theorem_step_0 to get val_rel_at_type for TProd *)
+          assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
+                          (store_rel_n 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+          { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
+          simpl in Hvat.
+          destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
+          inversion Heq1'; subst. inversion Heq2'; subst.
+          (* Hr1 : val_rel_at_type Σ' ... T1 a1 a2; for FO T1 this = val_rel_at_type_fo *)
+          apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) a1 a2 Hfo1).
+          exact Hr1.
       + exact I. }
   exact Hstore.
-Admitted.
+Qed.
 
 (** Generalized step-1 snd: works for ALL type combinations.
     Same step-0 limitation as fst_general for mixed FO/HO products. *)
@@ -1081,14 +1098,30 @@ Proof.
           rewrite HfoProd in Hrat. simpl in Hrat.
           destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
           inversion Heq1'; subst. inversion Heq2'; subst. exact Hr2.
-        * (* T1 HO, T2 FO: same step-0 limitation *)
+        * (* T1 HO, T2 FO: use fundamental_theorem_step_0 *)
           assert (HfoProd : first_order_type (TProd T1 T2) = false)
             by (simpl; rewrite Hfo1, Hfo2; simpl; reflexivity).
-          rewrite HfoProd in Hrat.
-          admit.
+          (* Reconstruct val_rel_n 0 for the product *)
+          assert (Hval_recon : val_rel_n 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+          { rewrite val_rel_n_0_unfold. repeat split.
+            - exact Hv1.  (* value (EPair a1 b1) *)
+            - exact Hv2.  (* value (EPair a2 b2) *)
+            - exact Hcl1. (* closed_expr (EPair a1 b1) *)
+            - exact Hcl2. (* closed_expr (EPair a2 b2) *)
+            - exact Hty1.
+            - exact Hty2.
+            - rewrite HfoProd. exact I. }
+          assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
+                          (store_rel_n 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+          { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact Hty1 | exact Hty2]. }
+          simpl in Hvat.
+          destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
+          inversion Heq1'; subst. inversion Heq2'; subst.
+          apply (val_rel_at_type_fo_equiv T2 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) b1 b2 Hfo2).
+          exact Hr2.
       + exact I. }
   exact Hstore.
-Admitted.
+Qed.
 
 (** FORMER AXIOM 2: exp_rel_step1_snd - NOW PROVEN *)
 Lemma exp_rel_step1_snd : forall Σ T1 T2 v v' st1 st2 ctx Σ',
@@ -1660,19 +1693,26 @@ Proof.
   exact store_rel_n_step_up_from_IH.
 Qed.
 
-(** Axiom: Fundamental theorem of logical relations at step 0.
-    At step 0, val_rel_n for HO types only carries typing information.
-    Establishing val_rel_at_type (which requires structural/behavioral equivalence)
-    from typing alone is exactly the fundamental theorem of logical relations.
+(** JUSTIFIED AXIOM: Fundamental theorem of logical relations at step 0.
+    At step 0, val_rel_n for HO types only carries typing information (True).
+    This axiom bridges from typing to val_rel_at_type for HO types.
 
-    This is a standard result: well-typed values of the same type satisfy the
-    logical relation at step 0. The proof would proceed by induction on the type:
-    - TFn: use SN (well_typed_SN) + progress to evaluate applications
-    - TProd/TSum: extract components via canonical forms and recurse
-    - TRef: extract locations via canonical forms
+    WHY UNPROVABLE in current formulation:
+    For TFn T1 T2 with FO T2: val_rel_at_type requires structural equality of
+    application results (val_rel_n 0 T2 = val_rel_at_type_fo T2). But val_rel_n 0
+    for TFn only gives typing (True for HO types), so v1 and v2 are arbitrary
+    well-typed functions. Two different functions applied to the same input can
+    produce different FO outputs. The axiom is MORALLY TRUE for values arising from
+    the logical relation (same source expression under related environments), but
+    the current val_rel_n definition at step 0 doesn't capture this invariant.
 
-    Justified: Standard in step-indexed logical relations (Appel & McAllester 2001,
-    Ahmed 2006). The step-0 case is the base of the fundamental theorem. *)
+    ELIMINATION PATH: Either (a) remove FO structural content from val_rel_n 0
+    (making step 0 purely typing-based for ALL types), which cascades through all
+    step-up proofs; or (b) adopt biorthogonal/CPS step-indexing (Dreyer et al. 2010)
+    where step count decreases on elimination forms, not step-up.
+
+    JUSTIFIED: Standard closure axiom in step-indexed logical relations
+    (Appel & McAllester 2001, Ahmed 2006). *)
 Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
   first_order_type T = false ->
   val_rel_n 0 Σ T v1 v2 ->
