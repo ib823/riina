@@ -78,3 +78,24 @@
 **Decision**: Use ty_size_induction for TFn case in val_rel step-up.
 **Rationale**: Arguments T1 in TFn T1 T2 have strictly smaller ty_size, enabling recursive IH application.
 **Status**: IMPLEMENTED (Session 41)
+
+### D012: Materialization Plan Adoption
+
+**Date**: 2026-01-30
+**Decision**: Adopt `RIINA_MATERIALIZATION_PLAN_v1_0_0.md` as authoritative 7-phase plan for taking RIINA from prototype to production.
+**Rationale**: Comprehensive plan correcting inaccurate state assumptions, incorporating syntax improvement spec, with concrete file paths, line estimates, and dependency graph.
+**Status**: DOCUMENTED (execution deferred until Track A stabilizes)
+
+### D013: Parser Desugaring Principle
+
+**Date**: 2026-01-30
+**Decision**: New parser syntax (pipe `|>`, guard `pastikan`, for-in, while) MUST desugar to existing `expr` constructors (EApp, EIf, ELet, ELam) — zero Coq impact.
+**Rationale**: Avoids expensive re-verification of formal proofs when adding syntactic sugar.
+**Status**: DOCUMENTED (pending implementation in Phase 1.2)
+
+### D014: While Loop Termination Strategy (OPEN)
+
+**Date**: 2026-01-30
+**Decision**: PENDING — requires decision between (a) bounded iteration with fuel parameter, (b) effect-based divergence marker, or (c) termination proof obligation.
+**Rationale**: While loops can diverge; RIINA's strong normalization guarantee (well_typed_SN) must be reconciled.
+**Status**: OPEN (see materialization plan §15 for details)

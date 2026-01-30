@@ -374,6 +374,20 @@ cargo fmt --check
 3. `riina-types/` — Type checker
 4. `riinac/` — Compiler driver
 
+#### Materialization Plan (Post Track A)
+
+Track B materialization is governed by `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md`. Execution is deferred until Track A (formal proofs) reaches a stable state. The plan covers 7 phases:
+
+1. **Phase 1**: Compiler completion (wire codegen, extend parser, complete C emitter, REPL, diagnostics)
+2. **Phase 2**: Standard library (prelude, core modules, effect-gated I/O)
+3. **Phase 3**: Formal verification completion (eliminate remaining admits/axioms, multi-prover)
+4. **Phase 4**: Developer experience (LSP, VS Code extension, formatter, doc generator)
+5. **Phase 5**: Ecosystem & distribution (package manager, CI/CD, website)
+6. **Phase 6**: Adoption & community (demo apps, FFI, enterprise path)
+7. **Phase 7**: Long-term vision (self-hosting, hardware verification, verified OS)
+
+**Critical path**: Wire codegen → Extend parser → Complete C emitter → Stdlib → Demo apps
+
 #### Coordination with Track A
 
 - Lexer tokens MUST match `foundations/Syntax.v` definitions
@@ -599,6 +613,10 @@ Phase 0 is complete. `well_typed_SN` proven. All foundations compile.
 - `RIINA-LANG-GRAMMAR-*.md` — Grammar specifications
 - `RIINA-LANG-AST_v1_0_0.md` — AST specification
 
+**Materialization & Implementation Plans (in 04_SPECS/language/):**
+- `RIINA_MATERIALIZATION_PLAN_v1_0_0.md` — **Master 7-phase plan: prototype → production language**
+- `SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` — Syntax improvement tiers (Tier 0-2)
+
 **Track Foundation Documents:**
 - `RESEARCH_R01_FOUNDATION.md` — Translation Validation
 - `RESEARCH_S01_FOUNDATION.md` — Hardware Contracts
@@ -667,7 +685,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-30*
+*Last updated: 2026-01-30 (materialization plan references added)*
 
 ---
 
