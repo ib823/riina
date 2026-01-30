@@ -638,6 +638,80 @@ Proof.
   - intros x Tx Hlook'. simpl in Hlook'. discriminate.
 Qed.
 
+(** Bridge: extract env_typed from env_rel using val_rel_n_typing.
+    env_rel gives val_rel_n at every step; val_rel_n_typing extracts typing. *)
+Lemma env_rel_implies_env_typed : forall Σ Γ rho1 rho2,
+  env_rel Σ Γ rho1 rho2 ->
+  env_typed Σ Γ rho1 /\ env_typed Σ Γ rho2.
+Proof.
+  intros Σ Γ rho1 rho2 Henv.
+  split; unfold env_typed; intros x T Hlook.
+  - (* rho1 *)
+    specialize (Henv 0). unfold env_rel_n in Henv.
+    specialize (Henv x T Hlook).
+    split.
+    + apply (val_rel_value_left_n 0 Σ T). exact Henv.
+    + destruct (val_rel_n_typing 0 Σ T (rho1 x) (rho2 x) Henv) as [Ht _]. exact Ht.
+  - (* rho2 *)
+    specialize (Henv 0). unfold env_rel_n in Henv.
+    specialize (Henv x T Hlook).
+    split.
+    + apply (val_rel_value_right_n 0 Σ T). exact Henv.
+    + destruct (val_rel_n_typing 0 Σ T (rho1 x) (rho2 x) Henv) as [_ Ht]. exact Ht.
+Qed.
+
+(** Helper: typing for substituted lambda from env_rel.
+    Given Γ ⊢ ELam x T1 e : TFn T1 T2 ε and env_rel on Γ,
+    the substituted lambda has_type nil Σ Public ... (TFn T1 T2 ε) EffectPure. *)
+Lemma lam_typing_from_env_rel : forall Γ Σ x T1 T2 e ε rho1 rho2,
+  has_type ((x, T1) :: Γ) Σ Public e T2 ε ->
+  env_rel Σ Γ rho1 rho2 ->
+  has_type nil Σ Public (ELam x T1 (subst_rho (rho_shadow rho1 x) e)) (TFn T1 T2 ε) EffectPure /\
+  has_type nil Σ Public (ELam x T1 (subst_rho (rho_shadow rho2 x) e)) (TFn T1 T2 ε) EffectPure.
+Proof.
+  intros Γ Σ x T1 T2 e ε rho1 rho2 Hty Henv.
+  destruct (env_rel_implies_env_typed Σ Γ rho1 rho2 Henv) as [Henv_ty1 Henv_ty2].
+  (* For each rho_i, use subst_rho_typing_general with
+     Γ = (x,T1)::Γ, Γ' = (x,T1)::nil, rho = rho_shadow rho_i x *)
+  assert (Hbody1 : has_type ((x, T1) :: nil) Σ Public (subst_rho (rho_shadow rho1 x) e) T2 ε).
+  { apply (subst_rho_typing_general ((x, T1) :: Γ) ((x, T1) :: nil) Σ Public e T2 ε (rho_shadow rho1 x) Hty).
+    - intros y Ty Hlook Hlook'.
+      simpl in Hlook. simpl in Hlook'.
+      destruct (String.eqb y x) eqn:Heq.
+      + (* y = x: but then Hlook' would find it in (x,T1)::nil *)
+        simpl in Hlook'. rewrite Heq in Hlook'. discriminate.
+      + (* y ≠ x: rho_shadow rho1 x y = rho1 y, use env_typed *)
+        unfold rho_shadow. rewrite Heq.
+        apply Henv_ty1. exact Hlook.
+    - intros y Hlook'.
+      simpl in Hlook'.
+      destruct (String.eqb y x) eqn:Heq.
+      + unfold rho_shadow. rewrite Heq. reflexivity.
+      + exfalso. apply Hlook'. reflexivity.
+    - intros y Ty Hlook'. simpl in Hlook'.
+      destruct (String.eqb y x) eqn:Heq.
+      + simpl. rewrite Heq. exact Hlook'.
+      + simpl in Hlook'. discriminate. }
+  assert (Hbody2 : has_type ((x, T1) :: nil) Σ Public (subst_rho (rho_shadow rho2 x) e) T2 ε).
+  { apply (subst_rho_typing_general ((x, T1) :: Γ) ((x, T1) :: nil) Σ Public e T2 ε (rho_shadow rho2 x) Hty).
+    - intros y Ty Hlook Hlook'.
+      simpl in Hlook. simpl in Hlook'.
+      destruct (String.eqb y x) eqn:Heq.
+      + simpl in Hlook'. rewrite Heq in Hlook'. discriminate.
+      + unfold rho_shadow. rewrite Heq.
+        apply Henv_ty2. exact Hlook.
+    - intros y Hlook'.
+      simpl in Hlook'.
+      destruct (String.eqb y x) eqn:Heq.
+      + unfold rho_shadow. rewrite Heq. reflexivity.
+      + exfalso. apply Hlook'. reflexivity.
+    - intros y Ty Hlook'. simpl in Hlook'.
+      destruct (String.eqb y x) eqn:Heq.
+      + simpl. rewrite Heq. exact Hlook'.
+      + simpl in Hlook'. discriminate. }
+  split; apply T_Lam; assumption.
+Qed.
+
 (** ** Effect Operation Axioms
 
     Effects (T_Perform, T_Handle) involve complex effect context manipulation.
@@ -2807,6 +2881,15 @@ Proof.
        for all related args, applying the lambdas produces related results. *)
     simpl.
     (* Note: IHHty is for the body under extended context *)
+    (* Obtain typing for both substituted lambdas from env_rel *)
+    assert (Hlam_ty : has_type nil Σ Public (ELam x T1 (subst_rho (rho_shadow rho1 x) e)) (TFn T1 T2 ε) EffectPure /\
+                      has_type nil Σ Public (ELam x T1 (subst_rho (rho_shadow rho2 x) e)) (TFn T1 T2 ε) EffectPure).
+    { apply (lam_typing_from_env_rel G Σ x T1 T2 e ε rho1 rho2 Hty Henv). }
+    destruct Hlam_ty as [Hlam_ty1 Hlam_ty2].
+    assert (Hcl1 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho1 x) e))).
+    { apply (typing_nil_closed Σ Public). exact Hlam_ty1. }
+    assert (Hcl2 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho2 x) e))).
+    { apply (typing_nil_closed Σ Public). exact Hlam_ty2. }
     (* We prove exp_rel from val_rel *)
     apply exp_rel_of_val_rel.
     unfold val_rel. intro n.
@@ -2816,14 +2899,11 @@ Proof.
       rewrite val_rel_n_0_unfold. simpl.
       split. { constructor. }
       split. { constructor. }
-      split. { (* closed_expr for lambda 1 - needs typing judgment which is not preserved *)
-               (* Would use closed_expr_lam + closed_except_subst_rho_shadow but
-                  the typing premise is consumed by induction to form IHHty *)
-               admit. }
-      split. { (* closed_expr for lambda 2 - same issue *)
-               admit. }
-      (* TFn is HO, so this needs typing - admit *)
-      admit.
+      split. { exact Hcl1. }
+      split. { exact Hcl2. }
+      (* TFn is HO, so needs typing *)
+      change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
+      simpl. split; assumption.
     + (* S n' case - prove val_rel_n (S n') for TFn *)
       rewrite val_rel_n_S_unfold.
       split.
@@ -2832,9 +2912,11 @@ Proof.
       * (* value /\ value /\ closed /\ closed /\ typing /\ val_rel_at_type *)
         split. { constructor. }
         split. { constructor. }
-        split. { (* closed_expr for lambda 1 - needs typing *) admit. }
-        split. { (* closed_expr for lambda 2 - needs typing *) admit. }
-        split. { (* typing conjunct for TFn *) admit. }
+        split. { exact Hcl1. }
+        split. { exact Hcl2. }
+        split. { (* typing conjunct for TFn *)
+          change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
+          simpl. split; assumption. }
         (* val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
         simpl.
         intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
