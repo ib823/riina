@@ -12,73 +12,345 @@ pub type Ident = String;
 
 /// Security Levels
 ///
-/// RIINA uses a two-point lattice for information flow:
-/// - Public: Information that can be observed by anyone
-/// - Secret: Information that must be protected
+/// RIINA uses a multi-level lattice for information flow control.
+/// Matches Coq `security_level` in `foundations/Syntax.v`.
+///
+/// Lattice: Public ⊑ Internal ⊑ Session ⊑ User ⊑ System ⊑ Secret
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum SecurityLevel {
+    /// Publicly observable
     Public,
+    /// Internal use only
+    Internal,
+    /// Session-scoped
+    Session,
+    /// User-level sensitive
+    User,
+    /// System-level sensitive
+    System,
+    /// Maximum secrecy
     Secret,
+}
+
+impl SecurityLevel {
+    /// Numeric encoding matching Coq `sec_level_num`
+    #[must_use]
+    pub const fn level(self) -> u8 {
+        match self {
+            Self::Public => 0,
+            Self::Internal => 1,
+            Self::Session => 2,
+            Self::User => 3,
+            Self::System => 4,
+            Self::Secret => 5,
+        }
+    }
+
+    /// Ordering: l1 ⊑ l2
+    #[must_use]
+    pub const fn leq(self, other: Self) -> bool {
+        self.level() <= other.level()
+    }
+
+    /// Join (least upper bound)
+    #[must_use]
+    pub const fn join(self, other: Self) -> Self {
+        if self.level() <= other.level() {
+            other
+        } else {
+            self
+        }
+    }
+
+    /// Meet (greatest lower bound)
+    #[must_use]
+    pub const fn meet(self, other: Self) -> Self {
+        if self.level() <= other.level() {
+            self
+        } else {
+            other
+        }
+    }
 }
 
 /// Effects
 ///
 /// Effects track observable behaviors of computations.
+/// Matches Coq `effect` in `foundations/Syntax.v`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum Effect {
+    // Base effects
+    /// No observable effect
     Pure,
+    /// Memory/state read
     Read,
+    /// Memory/state write
     Write,
+    /// File system access
+    FileSystem,
+    // Network effects
+    /// Network I/O
+    Network,
+    /// Secure network (TLS)
+    NetworkSecure,
+    // Crypto effects
+    /// Cryptographic operations
+    Crypto,
+    /// Random number generation
+    Random,
+    // System effects
+    /// System calls
+    System,
+    /// Time/clock access
+    Time,
+    /// Process management
+    Process,
+    // RIINA product effects
+    /// Panel UI operations
+    Panel,
+    /// Zirah API operations
+    Zirah,
+    /// Benteng auth operations
+    Benteng,
+    /// Sandi crypto operations
+    Sandi,
+    /// Menara device operations
+    Menara,
+    /// Gapura gateway operations
+    Gapura,
+}
+
+/// Effect category for partial ordering.
+/// Matches Coq `effect_category`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+pub enum EffectCategory {
+    Pure,
+    IO,
     Network,
     Crypto,
     System,
+    Product,
 }
 
 impl Effect {
-    pub fn level(&self) -> u8 {
+    /// Numeric level matching Coq `effect_level`
+    #[must_use]
+    pub const fn level(self) -> u8 {
         match self {
-            Effect::Pure => 0,
-            Effect::Read => 1,
-            Effect::Write => 2,
-            Effect::Network => 3,
-            Effect::Crypto => 4,
-            Effect::System => 5,
+            Self::Pure => 0,
+            Self::Read => 1,
+            Self::Write => 2,
+            Self::FileSystem => 3,
+            Self::Network => 4,
+            Self::NetworkSecure => 5,
+            Self::Crypto => 6,
+            Self::Random => 7,
+            Self::System => 8,
+            Self::Time => 9,
+            Self::Process => 10,
+            Self::Panel => 11,
+            Self::Zirah => 12,
+            Self::Benteng => 13,
+            Self::Sandi => 14,
+            Self::Menara => 15,
+            Self::Gapura => 16,
         }
     }
 
-    pub fn join(self, other: Self) -> Self {
+    /// Category matching Coq `effect_cat`
+    #[must_use]
+    pub const fn category(self) -> EffectCategory {
+        match self {
+            Self::Pure => EffectCategory::Pure,
+            Self::Read | Self::Write | Self::FileSystem => EffectCategory::IO,
+            Self::Network | Self::NetworkSecure => EffectCategory::Network,
+            Self::Crypto | Self::Random => EffectCategory::Crypto,
+            Self::System | Self::Time | Self::Process => EffectCategory::System,
+            Self::Panel | Self::Zirah | Self::Benteng
+            | Self::Sandi | Self::Menara | Self::Gapura => EffectCategory::Product,
+        }
+    }
+
+    /// Join: max in the hierarchy
+    #[must_use]
+    pub const fn join(self, other: Self) -> Self {
         if self.level() < other.level() {
             other
         } else {
             self
         }
     }
+
+    /// Map effect to a default capability kind.
+    /// Matches Coq `TCapabilityOld` backward-compat mapping.
+    #[must_use]
+    pub const fn to_capability_kind(self) -> CapabilityKind {
+        match self {
+            Self::Read => CapabilityKind::FileRead,
+            Self::Write | Self::FileSystem => CapabilityKind::FileWrite,
+            Self::Network | Self::NetworkSecure => CapabilityKind::NetConnect,
+            Self::System | Self::Time => CapabilityKind::SysTime,
+            Self::Random => CapabilityKind::SysRandom,
+            Self::Process => CapabilityKind::ProcSpawn,
+            _ => CapabilityKind::SysRandom, // fallback
+        }
+    }
+}
+
+/// Taint sources for untrusted data.
+/// Matches Coq `taint_source` in `foundations/Syntax.v`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+pub enum TaintSource {
+    NetworkExternal,
+    NetworkInternal,
+    UserInput,
+    FileSystem,
+    Database,
+    Environment,
+    GapuraRequest,
+    ZirahEvent,
+    ZirahEndpoint,
+    BentengBiometric,
+    SandiSignature,
+    MenaraDevice,
+}
+
+/// Sanitizer markers for tainted data.
+/// Matches Coq `sanitizer` in `foundations/Syntax.v`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Sanitizer {
+    // Web
+    HtmlEscape,
+    UrlEncode,
+    JsEscape,
+    CssEscape,
+    // SQL
+    SqlEscape,
+    SqlParam,
+    // Injection prevention
+    XssFilter,
+    PathTraversal,
+    CommandEscape,
+    LdapEscape,
+    XmlEscape,
+    // Validation
+    JsonValidation,
+    XmlValidation,
+    EmailValidation,
+    PhoneValidation,
+    // Bound
+    LengthBound(u64),
+    RangeBound(u64, u64),
+    RegexMatch(std::string::String),
+    Whitelist(Vec<std::string::String>),
+    // Crypto
+    HashVerify,
+    SignatureVerify,
+    MacVerify,
+    // RIINA product
+    GapuraAuth,
+    ZirahSession,
+    BentengBiometric,
+    SandiDecrypt,
+    MenaraAttestation,
+}
+
+/// Capability kinds for access control.
+/// Matches Coq `capability_kind` in `foundations/Syntax.v`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
+pub enum CapabilityKind {
+    FileRead,
+    FileWrite,
+    FileExecute,
+    FileDelete,
+    NetConnect,
+    NetListen,
+    NetBind,
+    ProcSpawn,
+    ProcSignal,
+    SysTime,
+    SysRandom,
+    SysEnv,
+    RootProduct,
+    ProductAccess,
+}
+
+/// Capability with optional constraints.
+/// Matches Coq `capability` in `foundations/Syntax.v`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Capability {
+    Basic(CapabilityKind),
+    Revocable(Box<Capability>),
+    TimeBound(Box<Capability>, u64),
+    Delegated(Box<Capability>, Ident),
+}
+
+/// Session types for binary communication protocols.
+/// Matches Coq `session_type` in `foundations/Syntax.v`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum SessionType {
+    End,
+    Send(Box<Ty>, Box<SessionType>),
+    Recv(Box<Ty>, Box<SessionType>),
+    Select(Box<SessionType>, Box<SessionType>),
+    Branch(Box<SessionType>, Box<SessionType>),
+    Rec(Ident, Box<SessionType>),
+    Var(Ident),
 }
 
 /// Types
 ///
 /// Core type constructors for RIINA.
+/// Matches Coq `ty` in `foundations/Syntax.v`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Ty {
+    // Primitive types
     Unit,
     Bool,
     Int,
     String,
     Bytes,
+    // Function types
     /// T1 -[ε]-> T2
     Fn(Box<Ty>, Box<Ty>, Effect),
+    // Compound types
     /// T1 × T2
     Prod(Box<Ty>, Box<Ty>),
     /// T1 + T2
     Sum(Box<Ty>, Box<Ty>),
+    /// List[T]
+    List(Box<Ty>),
+    /// Option[T]
+    Option(Box<Ty>),
+    // Reference types
     /// Ref[T]@l
     Ref(Box<Ty>, SecurityLevel),
-    /// Secret[T]
+    // Security types
+    /// Secret[T] - classified data
     Secret(Box<Ty>),
-    /// Proof[T]
+    /// Labeled[T, l] - security label
+    Labeled(Box<Ty>, SecurityLevel),
+    /// Tainted[T, src] - tainted data
+    Tainted(Box<Ty>, TaintSource),
+    /// Sanitized[T, san] - sanitized data
+    Sanitized(Box<Ty>, Sanitizer),
+    /// Proof[T] - declassification proof
     Proof(Box<Ty>),
-    /// Cap[ε]
-    Capability(Effect),
+    // Capability types
+    /// Cap[kind] - simple capability
+    Capability(CapabilityKind),
+    /// Full capability with constraints
+    CapabilityFull(Capability),
+    // Session types
+    /// Chan[S] - channel with session
+    Chan(SessionType),
+    /// SecureChan[S, l] - secure channel
+    SecureChan(SessionType, SecurityLevel),
+    // Constant-time types
+    /// ConstantTime[T] - for crypto
+    ConstantTime(Box<Ty>),
+    /// Zeroizing[T] - cleared on drop
+    Zeroizing(Box<Ty>),
 }
 
 /// Expressions
