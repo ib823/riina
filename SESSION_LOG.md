@@ -1,5 +1,41 @@
 # Session Log
 
+## 2026-01-30 (Session 50c): Axiom Elimination Attempt (7→6)
+
+**Goal:** Eliminate all 7 remaining axioms. Achieved 1 elimination; 6 remain.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | **Eliminated axiom `exp_rel_le_declassify`** from Declassification.v (dead code, unused) | ✅ |
+| 2 | Investigated axiom 6 (`fundamental_theorem_step_0`): definition change approach | ❌ Cascading issues |
+| 3 | Investigated axiom 6: direct proof approach | ❌ Unprovable for TFn with FO output |
+| 4 | Investigated axiom 6: higher step index approach | ❌ Circular via `store_rel_n_step_up` |
+| 5 | Analyzed remaining 6 axioms — documented tractability | ✅ |
+| 6 | Updated PROGRESS.md, CLAUDE.md, SESSION_LOG.md | ✅ |
+
+### Axiom Analysis Results
+
+| Axiom | Elimination Strategy | Feasibility |
+|-------|---------------------|-------------|
+| `exp_rel_le_declassify` | Dead code removal | ✅ **DONE** |
+| `logical_relation_ref/deref/assign` (1-3) | Inline store operation proofs | MEDIUM — most tractable |
+| `logical_relation_declassify` (4) | None — fundamentally unprovable | KEEP as justified |
+| `val_rel_store_weaken_back` (5) | Generalize logical_relation with Σ_base | HARD — massive restructuring |
+| `fundamental_theorem_step_0` (6) | Definition change or direct proof | HARD — cascading/circular |
+
+### Final State
+
+- **admit.**: 0
+- **Admitted.**: 0
+- **Axioms**: 6 (was 7 — eliminated `exp_rel_le_declassify`)
+- **Qed proofs**: 4,971
+- **Build**: PASSING
+- **Commit**: 820930d
+
+---
+
 ## 2026-01-30 (Session 50b): store_wf Threading + Admit/Admitted Zero
 
 **Goal:** Thread store_wf through exp_rel_n to eliminate all remaining admits and Admitted proofs.
