@@ -160,6 +160,11 @@ pub enum Value {
     // BASE VALUES (correspond to Expr::Unit, Expr::Bool, Expr::Int, Expr::String)
     // ═══════════════════════════════════════════════════════════════════
 
+    /// Built-in function (name, implementation pointer index)
+    ///
+    /// Not in Coq — Rust-only extension for I/O builtins.
+    Builtin(String),
+
     /// Unit value `()`
     ///
     /// Corresponds to Coq `VUnit`.
@@ -574,6 +579,7 @@ impl Value {
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Builtin(name) => write!(f, "<builtin:{name}>"),
             Self::Unit => write!(f, "()"),
             Self::Bool(b) => write!(f, "{b}"),
             Self::Int(n) => write!(f, "{n}"),

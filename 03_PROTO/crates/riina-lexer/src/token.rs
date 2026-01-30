@@ -132,8 +132,18 @@ pub enum TokenKind {
     KwBorrow,
     KwCopy,
     KwClone,
+    KwLifetime,   // jangka / lifetime
+
+    // Logic keywords
+    KwAnd,        // dan / and
+    KwOr,         // atau / or
+    KwNot,        // bukan / not
+
+    // Guard clause
+    KwGuard,      // pastikan / guard
 
     // Operators & Punctuation
+    Pipe,         // |>
     Plus,       // +
     Minus,      // -
     Star,       // *

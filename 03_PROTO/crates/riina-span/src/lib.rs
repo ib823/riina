@@ -351,6 +351,12 @@ impl SourceMap {
         self.file(file).lookup(pos)
     }
 
+    /// Returns a reference to a source file by ID, or `None` if invalid.
+    #[must_use]
+    pub fn get_file(&self, id: FileId) -> Option<&SourceFile> {
+        self.files.get(id.0 as usize)
+    }
+
     /// Returns the number of files.
     #[must_use]
     pub fn file_count(&self) -> usize {
@@ -406,6 +412,9 @@ impl<T: fmt::Debug> fmt::Debug for Spanned<T> {
         write!(f, "{:?} @ {:?}", self.value, self.span)
     }
 }
+
+/// Bilingual diagnostic rendering.
+pub mod diagnostics;
 
 #[cfg(test)]
 mod tests {

@@ -49,7 +49,7 @@
 
 use crate::value::{Closure, Env, Location, RefCell, Sum, Value};
 use crate::{Error, Result};
-use riina_types::{Effect, Expr, SecurityLevel};
+use riina_types::{BinOp, Effect, Expr, SecurityLevel};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -193,6 +193,12 @@ impl Interpreter {
         self.eval_with_env(&env, expr)
     }
 
+    /// Evaluate with built-in functions pre-registered.
+    pub fn eval_with_builtins(&mut self, expr: &Expr) -> Result<Value> {
+        let env = crate::builtins::register_builtins(&Env::new());
+        self.eval_with_env(&env, expr)
+    }
+
     /// Evaluate with an environment
     ///
     /// This is the core evaluation function. Each match arm corresponds
@@ -251,6 +257,9 @@ impl Interpreter {
                         let new_env = closure.env.extend(closure.param.clone(), arg_val);
                         // Evaluate body
                         self.eval_with_env(&new_env, &closure.body)
+                    }
+                    Value::Builtin(name) => {
+                        crate::builtins::apply_builtin(&name, arg_val)
                     }
                     _ => Err(Error::TypeMismatch {
                         expected: "function".to_string(),
@@ -528,6 +537,42 @@ impl Interpreter {
             Expr::Grant(effect, body) => {
                 self.caps.grant(*effect);
                 self.eval_with_env(env, body)
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // BINARY OPERATIONS (Expr::BinOp)
+            // ═══════════════════════════════════════════════════════════════
+            Expr::BinOp(op, lhs, rhs) => {
+                let l = self.eval_with_env(env, lhs)?;
+                let r = self.eval_with_env(env, rhs)?;
+                match (op, &l, &r) {
+                    (BinOp::Add, Value::Int(a), Value::Int(b)) => Ok(Value::Int(a.wrapping_add(*b))),
+                    (BinOp::Sub, Value::Int(a), Value::Int(b)) => Ok(Value::Int(a.wrapping_sub(*b))),
+                    (BinOp::Mul, Value::Int(a), Value::Int(b)) => Ok(Value::Int(a.wrapping_mul(*b))),
+                    (BinOp::Div, Value::Int(a), Value::Int(b)) => {
+                        if *b == 0 { return Err(Error::DivisionByZero); }
+                        Ok(Value::Int(a / b))
+                    }
+                    (BinOp::Mod, Value::Int(a), Value::Int(b)) => {
+                        if *b == 0 { return Err(Error::DivisionByZero); }
+                        Ok(Value::Int(a % b))
+                    }
+                    (BinOp::Eq, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a == b)),
+                    (BinOp::Ne, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a != b)),
+                    (BinOp::Lt, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a < b)),
+                    (BinOp::Le, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a <= b)),
+                    (BinOp::Gt, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a > b)),
+                    (BinOp::Ge, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a >= b)),
+                    (BinOp::Eq, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a == b)),
+                    (BinOp::Ne, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a != b)),
+                    (BinOp::And, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(*a && *b)),
+                    (BinOp::Or, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(*a || *b)),
+                    _ => Err(Error::TypeMismatch {
+                        expected: "matching operand types for binary op".to_string(),
+                        found: format!("{:?} {:?} {:?}", l, op, r),
+                        context: "binary operation".to_string(),
+                    }),
+                }
             }
         }
     }

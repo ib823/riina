@@ -6,7 +6,7 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 use riina_lexer::{Token, TokenKind, Lexer, Span};
-use riina_types::{Expr, Ty, Ident, SecurityLevel, Effect};
+use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program};
 use std::iter::Peekable;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -52,7 +52,114 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_expr(&mut self) -> Result<Expr, ParseError> {
-        self.parse_control_flow()
+        self.parse_stmt_sequence()
+    }
+
+    /// Parse a complete .rii file as a sequence of top-level declarations.
+    pub fn parse_program(&mut self) -> Result<Program, ParseError> {
+        let mut decls = Vec::new();
+        while self.peek().map(|t| &t.kind) != Some(&TokenKind::Eof) && self.peek().is_some() {
+            decls.push(self.parse_top_level_decl()?);
+        }
+        Ok(Program { decls })
+    }
+
+    fn parse_top_level_decl(&mut self) -> Result<TopLevelDecl, ParseError> {
+        match self.peek().map(|t| &t.kind) {
+            Some(TokenKind::KwFn) => self.parse_function_decl(),
+            Some(TokenKind::KwLet) => {
+                self.consume(TokenKind::KwLet)?;
+                let name = self.parse_ident()?;
+                self.consume(TokenKind::Eq)?;
+                let value = self.parse_control_flow()?;
+                self.consume(TokenKind::Semi)?;
+                Ok(TopLevelDecl::Binding { name, value: Box::new(value) })
+            }
+            _ => {
+                let expr = self.parse_expr()?;
+                Ok(TopLevelDecl::Expr(Box::new(expr)))
+            }
+        }
+    }
+
+    fn parse_function_decl(&mut self) -> Result<TopLevelDecl, ParseError> {
+        self.consume(TokenKind::KwFn)?;
+        let name = self.parse_ident()?;
+        self.consume(TokenKind::LParen)?;
+        let params = self.parse_param_list()?;
+        self.consume(TokenKind::RParen)?;
+
+        // Optional return type
+        let return_ty = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Arrow)) {
+            self.consume(TokenKind::Arrow)?;
+            self.parse_ty()?
+        } else {
+            Ty::Unit
+        };
+
+        // Optional effect annotation
+        let effect = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwEffect)) {
+            self.consume(TokenKind::KwEffect)?;
+            self.parse_effect()?
+        } else {
+            Effect::Pure
+        };
+
+        // Body in braces
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+
+        Ok(TopLevelDecl::Function {
+            name, params, return_ty, effect, body: Box::new(body),
+        })
+    }
+
+    fn parse_param_list(&mut self) -> Result<Vec<(Ident, Ty)>, ParseError> {
+        let mut params = Vec::new();
+        if !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RParen)) {
+            let name = self.parse_ident()?;
+            self.consume(TokenKind::Colon)?;
+            let ty = self.parse_ty()?;
+            params.push((name, ty));
+
+            while matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                self.consume(TokenKind::Comma)?;
+                let name = self.parse_ident()?;
+                self.consume(TokenKind::Colon)?;
+                let ty = self.parse_ty()?;
+                params.push((name, ty));
+            }
+        }
+        Ok(params)
+    }
+
+    /// Parse a sequence of statements separated by semicolons.
+    /// stmt_seq ::= (stmt ';')* expr
+    /// A `biar` binding: `biar x = e1; rest` desugars to Let(x, e1, rest).
+    /// A non-binding expression followed by `;`: `e1; rest` desugars to Let("_", e1, rest).
+    fn parse_stmt_sequence(&mut self) -> Result<Expr, ParseError> {
+        // Check if this is a let-binding
+        if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwLet)) {
+            self.consume(TokenKind::KwLet)?;
+            let name = self.parse_ident()?;
+            self.consume(TokenKind::Eq)?;
+            let e1 = self.parse_control_flow()?;
+            self.consume(TokenKind::Semi)?;
+            let e2 = self.parse_stmt_sequence()?;
+            return Ok(Expr::Let(name, Box::new(e1), Box::new(e2)));
+        }
+
+        let first = self.parse_control_flow()?;
+
+        // If next token is ';', this is a statement sequence
+        if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Semi)) {
+            self.consume(TokenKind::Semi)?;
+            let rest = self.parse_stmt_sequence()?;
+            Ok(Expr::Let("_".to_string(), Box::new(first), Box::new(rest)))
+        } else {
+            Ok(first)
+        }
     }
 
     fn peek(&mut self) -> Option<&Token> {
@@ -91,24 +198,134 @@ impl<'a> Parser<'a> {
 
     fn parse_control_flow(&mut self) -> Result<Expr, ParseError> {
         match self.peek().map(|t| &t.kind) {
-            Some(TokenKind::KwLet) => self.parse_let(),
             Some(TokenKind::KwIf) => self.parse_if(),
             Some(TokenKind::KwFn) => self.parse_lam(),
             Some(TokenKind::KwMatch) => self.parse_match(),
             Some(TokenKind::KwHandle) => self.parse_handle(),
-            _ => self.parse_assignment(),
+            Some(TokenKind::KwGuard) => self.parse_guard(),
+            _ => self.parse_pipe(),
         }
     }
 
+    /// Parse guard clause:
+    ///   'pastikan'|'guard' expr 'lain'|'else' '{' expr '}' ';' expr
+    /// Desugars to If(cond, continuation, else_body)
+    fn parse_guard(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwGuard)?;
+        let cond = self.parse_pipe()?;
+        self.consume(TokenKind::KwElse)?;
+        self.consume(TokenKind::LBrace)?;
+        let else_body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        self.consume(TokenKind::Semi)?;
+        let continuation = self.parse_expr()?;
+        Ok(Expr::If(Box::new(cond), Box::new(continuation), Box::new(else_body)))
+    }
+
+    /// Parse pipe expressions: expr (|> expr)*
+    /// a |> f |> g  desugars to  App(g, App(f, a))
+    fn parse_pipe(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.parse_assignment()?;
+        while matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Pipe)) {
+            self.consume(TokenKind::Pipe)?;
+            let func = self.parse_assignment()?;
+            expr = Expr::App(Box::new(func), Box::new(expr));
+        }
+        Ok(expr)
+    }
+
     fn parse_assignment(&mut self) -> Result<Expr, ParseError> {
-        let lhs = self.parse_app()?;
+        let lhs = self.parse_or()?;
         if let Some(TokenKind::ColonEq) = self.peek().map(|t| &t.kind) {
             self.consume(TokenKind::ColonEq)?;
-            let rhs = self.parse_expr()?; 
+            let rhs = self.parse_expr()?;
             Ok(Expr::Assign(Box::new(lhs), Box::new(rhs)))
         } else {
             Ok(lhs)
         }
+    }
+
+    fn parse_or(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.parse_and()?;
+        while let Some(TokenKind::OrOr) = self.peek().map(|t| &t.kind) {
+            self.next();
+            let right = self.parse_and()?;
+            left = Expr::BinOp(BinOp::Or, Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_and(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.parse_equality()?;
+        while let Some(TokenKind::AndAnd) = self.peek().map(|t| &t.kind) {
+            self.next();
+            let right = self.parse_equality()?;
+            left = Expr::BinOp(BinOp::And, Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_equality(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.parse_comparison()?;
+        loop {
+            let op = match self.peek().map(|t| &t.kind) {
+                Some(TokenKind::EqEq) => BinOp::Eq,
+                Some(TokenKind::Ne) => BinOp::Ne,
+                _ => break,
+            };
+            self.next();
+            let right = self.parse_comparison()?;
+            left = Expr::BinOp(op, Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_comparison(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.parse_additive()?;
+        loop {
+            let op = match self.peek().map(|t| &t.kind) {
+                Some(TokenKind::Lt) => BinOp::Lt,
+                Some(TokenKind::Gt) => BinOp::Gt,
+                Some(TokenKind::Le) => BinOp::Le,
+                Some(TokenKind::Ge) => BinOp::Ge,
+                _ => break,
+            };
+            self.next();
+            let right = self.parse_additive()?;
+            left = Expr::BinOp(op, Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_additive(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.parse_multiplicative()?;
+        loop {
+            let op = match self.peek().map(|t| &t.kind) {
+                Some(TokenKind::Plus) => BinOp::Add,
+                Some(TokenKind::Minus) => BinOp::Sub,
+                _ => break,
+            };
+            self.next();
+            let right = self.parse_multiplicative()?;
+            left = Expr::BinOp(op, Box::new(left), Box::new(right));
+        }
+        Ok(left)
+    }
+
+    fn parse_multiplicative(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.parse_app()?;
+        loop {
+            let op = match self.peek().map(|t| &t.kind) {
+                Some(TokenKind::Star) => BinOp::Mul,
+                Some(TokenKind::Slash) => BinOp::Div,
+                Some(TokenKind::Percent) => BinOp::Mod,
+                _ => break,
+            };
+            self.next();
+            let right = self.parse_app()?;
+            left = Expr::BinOp(op, Box::new(left), Box::new(right));
+        }
+        Ok(left)
     }
 
     fn parse_app(&mut self) -> Result<Expr, ParseError> {
@@ -260,15 +477,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_let(&mut self) -> Result<Expr, ParseError> {
-        self.consume(TokenKind::KwLet)?;
-        let name = self.parse_ident()?;
-        self.consume(TokenKind::Eq)?;
-        let e1 = self.parse_expr()?;
-        self.consume(TokenKind::Semi)?;
-        let e2 = self.parse_expr()?;
-        Ok(Expr::Let(name, Box::new(e1), Box::new(e2)))
-    }
+    // parse_let logic is now inlined in parse_stmt_sequence
 
     fn parse_if(&mut self) -> Result<Expr, ParseError> {
         self.consume(TokenKind::KwIf)?;
@@ -290,7 +499,7 @@ impl<'a> Parser<'a> {
         self.consume(TokenKind::Colon)?;
         let ty = self.parse_ty()?;
         self.consume(TokenKind::RParen)?;
-        let body = self.parse_expr()?;
+        let body = self.parse_control_flow()?;
         Ok(Expr::Lam(name, ty, Box::new(body)))
     }
 
@@ -353,15 +562,90 @@ impl<'a> Parser<'a> {
     fn parse_ty(&mut self) -> Result<Ty, ParseError> {
         let kind = self.peek().map(|t| t.kind.clone());
         match kind {
+            Some(TokenKind::LParen) => {
+                self.next();
+                // () = Unit, or (T1, T2) = Prod
+                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RParen)) {
+                    self.next();
+                    return Ok(Ty::Unit);
+                }
+                let t1 = self.parse_ty()?;
+                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                    self.consume(TokenKind::Comma)?;
+                    let t2 = self.parse_ty()?;
+                    self.consume(TokenKind::RParen)?;
+                    Ok(Ty::Prod(Box::new(t1), Box::new(t2)))
+                } else {
+                    self.consume(TokenKind::RParen)?;
+                    Ok(t1)
+                }
+            },
             Some(TokenKind::Identifier(s)) => {
                 self.next();
                 match s.as_str() {
-                    "Int" => Ok(Ty::Int),
-                    "Bool" => Ok(Ty::Bool),
+                    // Primitives
+                    "Int" | "Nombor" => Ok(Ty::Int),
+                    "Bool" | "Benar" => Ok(Ty::Bool),
                     "Unit" => Ok(Ty::Unit),
-                    "String" => Ok(Ty::String),
-                    "Bytes" => Ok(Ty::Bytes),
-                    _ => Ok(Ty::Unit), // Fallback/Placeholder
+                    "String" | "Teks" => Ok(Ty::String),
+                    "Bytes" | "Bait" => Ok(Ty::Bytes),
+
+                    // Parameterized types: Name<T>
+                    "List" | "Senarai" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::List(Box::new(inner)))
+                    },
+                    "Option" | "Mungkin" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Option(Box::new(inner)))
+                    },
+                    "Secret" | "Rahsia" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Secret(Box::new(inner)))
+                    },
+                    "Proof" | "Bukti" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Proof(Box::new(inner)))
+                    },
+                    "ConstantTime" | "MasaTetap" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::ConstantTime(Box::new(inner)))
+                    },
+                    "Zeroizing" | "Sifar" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Zeroizing(Box::new(inner)))
+                    },
+                    // Ref<T>@level
+                    "Ref" | "Ruj" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        self.consume(TokenKind::At)?;
+                        let level = self.parse_security_level()?;
+                        Ok(Ty::Ref(Box::new(inner), level))
+                    },
+                    // Sum type: Sum<T1, T2>
+                    "Sum" => {
+                        self.consume(TokenKind::Lt)?;
+                        let t1 = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let t2 = self.parse_ty()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Sum(Box::new(t1), Box::new(t2)))
+                    },
+                    _ => Ok(Ty::Unit), // Fallback
                 }
             },
             _ => Err(ParseError {

@@ -353,6 +353,90 @@ pub enum Ty {
     Zeroizing(Box<Ty>),
 }
 
+/// Binary operators
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BinOp {
+    // Arithmetic
+    Add, Sub, Mul, Div, Mod,
+    // Comparison
+    Eq, Ne, Lt, Le, Gt, Ge,
+    // Logical
+    And, Or,
+}
+
+/// A top-level declaration in a .rii file.
+/// These are parsed but desugared to expressions for typechecking/codegen.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TopLevelDecl {
+    /// fungsi name(params) -> return_ty kesan eff { body }
+    Function {
+        name: Ident,
+        params: Vec<(Ident, Ty)>,
+        return_ty: Ty,
+        effect: Effect,
+        body: Box<Expr>,
+    },
+    /// biar name = expr;
+    Binding {
+        name: Ident,
+        value: Box<Expr>,
+    },
+    /// Expression at top level (the program's main expression)
+    Expr(Box<Expr>),
+}
+
+/// A complete .rii file
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Program {
+    pub decls: Vec<TopLevelDecl>,
+}
+
+impl Program {
+    /// Desugar a program into a single expression.
+    /// Functions become Let + Lam, bindings become Let, and the final
+    /// expression is the program's value.
+    #[must_use]
+    pub fn desugar(self) -> Expr {
+        let mut decls = self.decls;
+        if decls.is_empty() {
+            return Expr::Unit;
+        }
+        // Build from the end: last decl is the program body
+        let last = decls.pop().unwrap();
+        let mut result = match last {
+            TopLevelDecl::Expr(e) => *e,
+            TopLevelDecl::Binding { name, value } => {
+                // Trailing binding with no continuation — body is Unit
+                Expr::Let(name, value, Box::new(Expr::Unit))
+            }
+            TopLevelDecl::Function { name, params, body, .. } => {
+                let lam = params.into_iter().rev().fold(*body, |acc, (p, ty)| {
+                    Expr::Lam(p, ty, Box::new(acc))
+                });
+                Expr::Let(name, Box::new(lam), Box::new(Expr::Unit))
+            }
+        };
+        // Wrap remaining decls from back to front
+        for decl in decls.into_iter().rev() {
+            result = match decl {
+                TopLevelDecl::Expr(e) => {
+                    Expr::Let("_".to_string(), e, Box::new(result))
+                }
+                TopLevelDecl::Binding { name, value } => {
+                    Expr::Let(name, value, Box::new(result))
+                }
+                TopLevelDecl::Function { name, params, body, .. } => {
+                    let lam = params.into_iter().rev().fold(*body, |acc, (p, ty)| {
+                        Expr::Lam(p, ty, Box::new(acc))
+                    });
+                    Expr::Let(name, Box::new(lam), Box::new(result))
+                }
+            };
+        }
+        result
+    }
+}
+
 /// Expressions
 ///
 /// Core expression forms.
@@ -420,4 +504,8 @@ pub enum Expr {
     Require(Effect, Box<Expr>),
     /// grant ε to e
     Grant(Effect, Box<Expr>),
+
+    // Binary operations
+    /// e1 op e2
+    BinOp(BinOp, Box<Expr>, Box<Expr>),
 }
