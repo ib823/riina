@@ -623,7 +623,7 @@ Proof.
     + (* m = 0: need val_rel_n 0 from val_rel_n (S n') *)
       rewrite val_rel_n_0_unfold.
       rewrite val_rel_n_S_unfold in Hn.
-      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
+      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 [Hty2 Hrat]]]]]]].
       repeat split; try assumption.
       (* Need: if first_order_type T then val_rel_at_type_fo T v1 v2 else ... *)
       rewrite Hfo.
@@ -633,7 +633,7 @@ Proof.
     + (* m = S m': need val_rel_n (S m') from val_rel_n (S n') *)
       rewrite val_rel_n_S_unfold.
       rewrite val_rel_n_S_unfold in Hn.
-      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
+      destruct Hn as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 [Hty2 Hrat]]]]]]]].
       split.
       * (* val_rel_n m' Σ T v1 v2: use IH *)
         apply IHn with (Σ := Σ) (T := T); [exact Hfo | lia | exact Hrec].
@@ -642,9 +642,8 @@ Proof.
         split. { exact Hv2. }
         split. { exact Hc1. }
         split. { exact Hc2. }
-        split.
-        { (* typing conjunct: True for FO types *)
-          rewrite Hfo. exact I. }
+        split. { exact Hty1. }
+        split. { exact Hty2. }
         { (* val_rel_at_type at m' from val_rel_at_type at n' *)
           (* For FO types, both equal val_rel_at_type_fo *)
           apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
@@ -944,6 +943,118 @@ Proof.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 Hr2]]]]]]].
       inversion Heq1'; subst. inversion Heq2'; subst.
       exact Hr1. }
+  exact Hstore.
+Qed.
+
+(** Generalized step-1 fst: works for ALL type combinations (not just FO) *)
+Lemma exp_rel_step1_fst_general : forall Σ T1 T2 v v' st1 st2 ctx Σ',
+  val_rel_n 0 Σ' (TProd T1 T2) v v' ->
+  store_rel_n 0 Σ' st1 st2 ->
+  store_ty_extends Σ Σ' ->
+  exists a1 a2 st1' st2' ctx' Σ'',
+    store_ty_extends Σ' Σ'' /\
+    (EFst v, st1, ctx) -->* (a1, st1', ctx') /\
+    (EFst v', st2, ctx) -->* (a2, st2', ctx') /\
+    value a1 /\ value a2 /\
+    val_rel_n 0 Σ'' T1 a1 a2 /\
+    store_rel_n 0 Σ'' st1' st2'.
+Proof.
+  intros Σ T1 T2 v v' st1 st2 ctx Σ' Hval Hstore Hext.
+  (* Extract typing from val_rel_n 0 *)
+  destruct (val_rel_n_typing 0 Σ' (TProd T1 T2) v v' Hval) as [Hty1 Hty2].
+  destruct (val_rel_n_value 0 Σ' (TProd T1 T2) v v' Hval) as [Hv1 Hv2].
+  (* Get pair structure via canonical forms *)
+  destruct (canonical_forms_prod nil Σ' Public v T1 T2 EffectPure Hv1 Hty1)
+    as [a1 [b1 [Heq1 [Hva1 Hvb1]]]].
+  destruct (canonical_forms_prod nil Σ' Public v' T1 T2 EffectPure Hv2 Hty2)
+    as [a2 [b2 [Heq2 [Hva2 Hvb2]]]].
+  subst v v'.
+  destruct (val_rel_n_closed 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2) Hval)
+    as [Hcl1 Hcl2].
+  exists a1, a2, st1, st2, ctx, Σ'.
+  split. { apply store_ty_extends_refl. }
+  split.
+  { eapply MS_Step. apply ST_Fst; assumption. apply MS_Refl. }
+  split.
+  { eapply MS_Step. apply ST_Fst; assumption. apply MS_Refl. }
+  split. { exact Hva1. }
+  split. { exact Hva2. }
+  split.
+  { rewrite val_rel_n_0_unfold. repeat split.
+    - exact Hva1.
+    - exact Hva2.
+    - intros y Hfree. apply (Hcl1 y). simpl. left. exact Hfree.
+    - intros y Hfree. apply (Hcl2 y). simpl. left. exact Hfree.
+    - (* typing for a1 at T1 — invert pair typing *)
+      inversion Hty1; subst. assumption.
+    - (* typing for a2 at T1 *)
+      inversion Hty2; subst. assumption.
+    - (* val_rel FO/HO *)
+      destruct (first_order_type T1) eqn:Hfo1.
+      + (* FO T1: extract from product's FO relation *)
+        rewrite val_rel_n_0_unfold in Hval.
+        destruct Hval as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+        simpl first_order_type in Hrat.
+        destruct (first_order_type T2) eqn:Hfo2.
+        * (* Both FO *)
+          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+          destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
+          inversion Heq1'; subst. inversion Heq2'; subst. exact Hr1.
+        * (* T1 FO, T2 HO — TProd is HO *)
+          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat. exact I.
+      + exact I. }
+  exact Hstore.
+Qed.
+
+(** Generalized step-1 snd: works for ALL type combinations *)
+Lemma exp_rel_step1_snd_general : forall Σ T1 T2 v v' st1 st2 ctx Σ',
+  val_rel_n 0 Σ' (TProd T1 T2) v v' ->
+  store_rel_n 0 Σ' st1 st2 ->
+  store_ty_extends Σ Σ' ->
+  exists b1 b2 st1' st2' ctx' Σ'',
+    store_ty_extends Σ' Σ'' /\
+    (ESnd v, st1, ctx) -->* (b1, st1', ctx') /\
+    (ESnd v', st2, ctx) -->* (b2, st2', ctx') /\
+    value b1 /\ value b2 /\
+    val_rel_n 0 Σ'' T2 b1 b2 /\
+    store_rel_n 0 Σ'' st1' st2'.
+Proof.
+  intros Σ T1 T2 v v' st1 st2 ctx Σ' Hval Hstore Hext.
+  destruct (val_rel_n_typing 0 Σ' (TProd T1 T2) v v' Hval) as [Hty1 Hty2].
+  destruct (val_rel_n_value 0 Σ' (TProd T1 T2) v v' Hval) as [Hv1 Hv2].
+  destruct (canonical_forms_prod nil Σ' Public v T1 T2 EffectPure Hv1 Hty1)
+    as [a1 [b1 [Heq1 [Hva1 Hvb1]]]].
+  destruct (canonical_forms_prod nil Σ' Public v' T1 T2 EffectPure Hv2 Hty2)
+    as [a2 [b2 [Heq2 [Hva2 Hvb2]]]].
+  subst v v'.
+  destruct (val_rel_n_closed 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2) Hval)
+    as [Hcl1 Hcl2].
+  exists b1, b2, st1, st2, ctx, Σ'.
+  split. { apply store_ty_extends_refl. }
+  split.
+  { eapply MS_Step. apply ST_Snd; assumption. apply MS_Refl. }
+  split.
+  { eapply MS_Step. apply ST_Snd; assumption. apply MS_Refl. }
+  split. { exact Hvb1. }
+  split. { exact Hvb2. }
+  split.
+  { rewrite val_rel_n_0_unfold. repeat split.
+    - exact Hvb1.
+    - exact Hvb2.
+    - intros y Hfree. apply (Hcl1 y). simpl. right. exact Hfree.
+    - intros y Hfree. apply (Hcl2 y). simpl. right. exact Hfree.
+    - inversion Hty1; subst. assumption.
+    - inversion Hty2; subst. assumption.
+    - destruct (first_order_type T2) eqn:Hfo2.
+      + rewrite val_rel_n_0_unfold in Hval.
+        destruct Hval as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+        simpl first_order_type in Hrat.
+        destruct (first_order_type T1) eqn:Hfo1.
+        * rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+          destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
+          inversion Heq1'; subst. inversion Heq2'; subst. exact Hr2.
+        * rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat. exact I.
+      + exact I. }
   exact Hstore.
 Qed.
 
