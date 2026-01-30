@@ -401,19 +401,20 @@ Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} 
   match n with
   | 0 =>
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+      has_type nil Σ Public v1 T EffectPure /\
+      has_type nil Σ Public v2 T EffectPure /\
       (if first_order_type T
        then val_rel_at_type_fo T v1 v2
-       else (* HO types require typing at step 0 *)
-         has_type nil Σ Public v1 T EffectPure /\
-         has_type nil Σ Public v2 T EffectPure)
+       else True)
   | S n' =>
       val_rel_n n' Σ T v1 v2 /\
       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-      (if first_order_type T
-       then True
-       else (* HO types require typing at step S n' *)
-         has_type nil Σ Public v1 T EffectPure /\
-         has_type nil Σ Public v2 T EffectPure) /\
+      (* UNCONDITIONAL TYPING: All types require typing at step S n'.
+         For FO types this is derivable from canonical forms + val_rel_at_type_fo.
+         Making it unconditional eliminates the need for a substitution typing lemma
+         when constructing val_rel_n for compound HO types with FO components. *)
+      has_type nil Σ Public v1 T EffectPure /\
+      has_type nil Σ Public v2 T EffectPure /\
       val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2
   end
 with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
@@ -442,20 +443,19 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
 Lemma val_rel_n_0_unfold : forall Σ T v1 v2,
   val_rel_n 0 Σ T v1 v2 =
   (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+   has_type nil Σ Public v1 T EffectPure /\
+   has_type nil Σ Public v2 T EffectPure /\
    (if first_order_type T
     then val_rel_at_type_fo T v1 v2
-    else has_type nil Σ Public v1 T EffectPure /\
-         has_type nil Σ Public v2 T EffectPure)).
+    else True)).
 Proof. reflexivity. Qed.
 
 Lemma val_rel_n_S_unfold : forall n Σ T v1 v2,
   val_rel_n (S n) Σ T v1 v2 =
   (val_rel_n n Σ T v1 v2 /\
    value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-   (if first_order_type T
-    then True
-    else has_type nil Σ Public v1 T EffectPure /\
-         has_type nil Σ Public v2 T EffectPure) /\
+   has_type nil Σ Public v1 T EffectPure /\
+   has_type nil Σ Public v2 T EffectPure /\
    val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T v1 v2).
 Proof. reflexivity. Qed.
 
@@ -590,12 +590,10 @@ Proof.
     rewrite val_rel_n_S_unfold. split.
     + (* Need val_rel_n n' Σ T v1 v2 - use IH *)
       exact IHn.
-    + (* Need value, closed, typing (True for FO), and val_rel_at_type *)
+    + (* Need value, closed, typing, and val_rel_at_type *)
       rewrite val_rel_n_0_unfold in H0.
-      destruct H0 as [Hv1 [Hv2 [Hc1 [Hc2 Hrat]]]].
+      destruct H0 as [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 [Hty2 Hrat]]]]]].
       repeat split; auto.
-      * (* typing conjunct: True for FO types *)
-        rewrite Hfo. exact I.
       * (* val_rel_at_type Σ ... T v1 v2 from val_rel_at_type_fo T v1 v2 *)
         apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
         rewrite Hfo in Hrat. exact Hrat.
@@ -707,6 +705,17 @@ Proof.
   destruct n; simpl in Hrel.
   - destruct Hrel as [_ [_ [Hc1 [Hc2 _]]]]. split; assumption.
   - destruct Hrel as [_ [_ [_ [Hc1 [Hc2 _]]]]]. split; assumption.
+Qed.
+
+(** Extract typing from val_rel_n (unconditional since typing is always present) *)
+Lemma val_rel_n_typing : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  has_type nil Σ Public v1 T EffectPure /\ has_type nil Σ Public v2 T EffectPure.
+Proof.
+  intros n Σ T v1 v2 Hrel.
+  destruct n; simpl in Hrel.
+  - destruct Hrel as [_ [_ [_ [_ [Hty1 [Hty2 _]]]]]]. split; assumption.
+  - destruct Hrel as [_ [_ [_ [_ [Hty1 [Hty2 _]]]]]]. split; assumption.
 Qed.
 
 (** Extract pair structure from val_rel_n for TProd - FIRST-ORDER TYPES ONLY *)
@@ -1318,24 +1327,18 @@ Proof.
     + (* val_rel_n (S n') Σ'' T2 v1' v2' - step-up result using IH *)
       apply IH_val.
       * exact Hvrel.
-      * (* typing for v1' if HO - extract from val_rel_n *)
-        intros Hho.
+      * (* typing for v1' - extract from val_rel_n *)
         destruct n' as [| n''].
         -- rewrite val_rel_n_0_unfold in Hvrel.
-           destruct Hvrel as [_ [_ [_ [_ Hty_r]]]].
-           rewrite Hho in Hty_r. destruct Hty_r as [Hty1 _]. exact Hty1.
+           destruct Hvrel as [_ [_ [_ [_ [Hty1_r _]]]]]. exact Hty1_r.
         -- rewrite val_rel_n_S_unfold in Hvrel.
-           destruct Hvrel as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-           rewrite Hho in Hty_r. destruct Hty_r as [Hty1 _]. exact Hty1.
-      * (* typing for v2' if HO - extract from val_rel_n *)
-        intros Hho.
+           destruct Hvrel as [_ [_ [_ [_ [Hty1_r _]]]]]. exact Hty1_r.
+      * (* typing for v2' - extract from val_rel_n *)
         destruct n' as [| n''].
         -- rewrite val_rel_n_0_unfold in Hvrel.
-           destruct Hvrel as [_ [_ [_ [_ Hty_r]]]].
-           rewrite Hho in Hty_r. destruct Hty_r as [_ Hty2]. exact Hty2.
+           destruct Hvrel as [_ [_ [_ [_ [_ [Hty2_r _]]]]]]. exact Hty2_r.
         -- rewrite val_rel_n_S_unfold in Hvrel.
-           destruct Hvrel as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-           rewrite Hho in Hty_r. destruct Hty_r as [_ Hty2]. exact Hty2.
+           destruct Hvrel as [_ [_ [_ [_ [_ [Hty2_r _]]]]]]. exact Hty2_r.
     + (* store_rel_n (S n') Σ'' st1' st2' - NOW PROVABLE! *)
       split.
       { apply IH_store.
@@ -1408,8 +1411,8 @@ Qed.
 Definition combined_step_up (n : nat) : Prop :=
   (forall T Σ v1 v2,
      val_rel_n n Σ T v1 v2 ->
-     (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-     (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+     has_type nil Σ Public v1 T EffectPure ->
+     has_type nil Σ Public v2 T EffectPure ->
      val_rel_n (S n) Σ T v1 v2) /\
   (forall Σ st1 st2,
      store_rel_n n Σ st1 st2 ->
@@ -1425,8 +1428,8 @@ Lemma store_rel_n_step_up_from_IH : forall n' Σ st1 st2,
   (* IH: val_rel step-up at n' for all types *)
   (forall T Σ' v1 v2,
      val_rel_n n' Σ' T v1 v2 ->
-     (first_order_type T = false -> has_type nil Σ' Public v1 T EffectPure) ->
-     (first_order_type T = false -> has_type nil Σ' Public v2 T EffectPure) ->
+     has_type nil Σ' Public v1 T EffectPure ->
+     has_type nil Σ' Public v2 T EffectPure ->
      val_rel_n (S n') Σ' T v1 v2) ->
   store_rel_n (S n') Σ st1 st2 ->
   store_wf Σ st1 ->
@@ -1457,8 +1460,8 @@ Proof.
     + (* LOW: Use IH_val to step up from n' to S n' *)
       apply IH_val.
       * exact Hvrel_n'.
-      * intros Hho. exact Hty1.
-      * intros Hho. exact Hty2.
+      * exact Hty1.
+      * exact Hty2.
     + (* HIGH: Just need typing, which we already have *)
       assert (Hc1: closed_expr v1).
       { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
@@ -1486,8 +1489,8 @@ Lemma store_rel_n_step_up_with_val_IH : forall m Σ st1 st2,
   (* Val_rel step-up at step m for all types *)
   (forall T Σ' v1 v2,
      val_rel_n m Σ' T v1 v2 ->
-     (first_order_type T = false -> has_type nil Σ' Public v1 T EffectPure) ->
-     (first_order_type T = false -> has_type nil Σ' Public v2 T EffectPure) ->
+     has_type nil Σ' Public v1 T EffectPure ->
+     has_type nil Σ' Public v2 T EffectPure ->
      val_rel_n (S m) Σ' T v1 v2) ->
   store_rel_n (S m) Σ st1 st2 ->
   store_wf Σ st1 ->
@@ -1516,8 +1519,8 @@ Qed.
 Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
   first_order_type T = false ->
   val_rel_n 0 Σ T v1 v2 ->
-  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2.
 (* JUSTIFIED: Standard in step-indexed logical relations. At step 0,
    val_rel_at_type for TFn requires: given related args (val_rel_n 0) and
@@ -1540,8 +1543,8 @@ Proof.
     apply (ty_size_induction (fun T =>
       forall Σ v1 v2,
         val_rel_n n Σ T v1 v2 ->
-        (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-        (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+        has_type nil Σ Public v1 T EffectPure ->
+        has_type nil Σ Public v2 T EffectPure ->
         val_rel_n (S n) Σ T v1 v2)).
     intros T IH_ty Σ v1 v2 Hrel Hty1 Hty2.
     rewrite val_rel_n_S_unfold. split.
@@ -1552,21 +1555,21 @@ Proof.
       split. { exact Hv2. }
       split. { exact Hc1. }
       split. { exact Hc2. }
+      (* Unconditional typing *)
+      split. { exact Hty1. }
+      split. { exact Hty2. }
+      (* val_rel_at_type *)
       destruct (first_order_type T) eqn:Hfo.
       * (* First-order: use val_rel_at_type_fo_equiv *)
-        split. { exact I. }
         apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
         destruct n as [| n']; simpl in Hrel.
-        -- destruct Hrel as [_ [_ [_ [_ Hfo_rel]]]].
+        -- destruct Hrel as [_ [_ [_ [_ [_ [_ Hfo_rel]]]]]].
            rewrite Hfo in Hfo_rel. exact Hfo_rel.
         -- destruct Hrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
            apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
            exact Hrat.
       * (* Higher-order type case: first_order_type T = false *)
         (* This includes TFn, TChan, TSecureChan, and compound types with HO components. *)
-        split.
-        { (* Typing conjunct: we have typing from Hty1, Hty2 *)
-          split; [apply Hty1; exact eq_refl | apply Hty2; exact eq_refl]. }
         { (* val_rel_at_type at step n *)
           (* For n = 0, this is the Fundamental Theorem territory *)
           (* For n = S n', we can use val_rel_at_type from Hrel at step n' *)
@@ -1578,11 +1581,11 @@ Proof.
             apply fundamental_theorem_step_0 with (T := T).
             * exact Hfo.
             * exact Hrel.
-            * intros _. apply Hty1. exact eq_refl.
-            * intros _. apply Hty2. exact eq_refl.
+            * exact Hty1.
+            * exact Hty2.
           - (* n = S n': Use val_rel_at_type from Hrel at step n' *)
             simpl in Hrel.
-            destruct Hrel as [Hrel_n' [_ [_ [_ [_ [_ Hrat_n']]]]]].
+            destruct Hrel as [Hrel_n' [_ [_ [_ [_ [_ [_ Hrat_n']]]]]]].
             (* Hrat_n' : val_rel_at_type at step n' with predicates val_rel_n n', store_rel_n n' *)
             (* We need val_rel_at_type at step S n' with predicates val_rel_n (S n'), store_rel_n (S n') *)
             (* For non-TFn types (TProd, TSum with HO components, etc.), val_rel_at_type
@@ -1616,26 +1619,22 @@ Proof.
               { (* val_rel_n (S n') Σ'' T2 v1' v2' *)
                 apply Hval_step.
                 * exact Hvrel_n'.
-                * intros Hho_T2.
+                * (* typing for v1' — extract from val_rel_n *)
                   destruct n' as [| n''].
                   -- rewrite val_rel_n_0_unfold in Hvrel_n'.
-                     destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
-                     rewrite Hho_T2 in Htyping.
-                     destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
+                     destruct Hvrel_n' as [_ [_ [_ [_ [Hty_v1' _]]]]].
+                     exact Hty_v1'.
                   -- rewrite val_rel_n_S_unfold in Hvrel_n'.
-                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
-                     rewrite Hho_T2 in Htyping.
-                     destruct Htyping as [Hty_v1' _]. exact Hty_v1'.
-                * intros Hho_T2.
+                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [Hty_v1' _]]]]]].
+                     exact Hty_v1'.
+                * (* typing for v2' — extract from val_rel_n *)
                   destruct n' as [| n''].
                   -- rewrite val_rel_n_0_unfold in Hvrel_n'.
-                     destruct Hvrel_n' as [_ [_ [_ [_ Htyping]]]].
-                     rewrite Hho_T2 in Htyping.
-                     destruct Htyping as [_ Hty_v2']. exact Hty_v2'.
+                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [Hty_v2' _]]]]]].
+                     exact Hty_v2'.
                   -- rewrite val_rel_n_S_unfold in Hvrel_n'.
-                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [Htyping _]]]]]].
-                     rewrite Hho_T2 in Htyping.
-                     destruct Htyping as [_ Hty_v2']. exact Hty_v2'. }
+                     destruct Hvrel_n' as [_ [_ [_ [_ [_ [_ [Hty_v2' _]]]]]]].
+                     exact Hty_v2'. }
               split.
               { (* store_rel_n (S n') Σ'' st1' st2' - NOW PROVABLE! *)
                 apply Hstore_step.
@@ -1696,26 +1695,22 @@ Proof.
                     split.
                     { apply Hval_step_n'.
                       - exact Hvrel_r.
-                      - intros Hho_res.
+                      - (* typing for res1 *)
                         destruct n' as [| n''].
                         ++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [Hty1_r _]]]]].
+                           exact Hty1_r.
                         ++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
-                      - intros Hho_res.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty1_r _]]]]]].
+                           exact Hty1_r.
+                      - (* typing for res2 *)
                         destruct n' as [| n''].
                         ++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty2_r _]]]]]].
+                           exact Hty2_r.
                         ++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [_ [Hty2_r _]]]]]]].
+                           exact Hty2_r. }
                     split.
                     { (* store_rel step-up - NOW PROVABLE! *)
                       apply Hstore_step_n'.
@@ -1783,26 +1778,22 @@ Proof.
                     split.
                     { apply Hval_step_n'.
                       - exact Hvrel_r.
-                      - intros Hho_res.
+                      - (* typing for res1 *)
                         destruct n' as [| n''].
                         ++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [Hty1_r _]]]]].
+                           exact Hty1_r.
                         ++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [Hty1_r _]. exact Hty1_r.
-                      - intros Hho_res.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty1_r _]]]]]].
+                           exact Hty1_r.
+                      - (* typing for res2 *)
                         destruct n' as [| n''].
                         ++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty2_r _]]]]]].
+                           exact Hty2_r.
                         ++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                           destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                           rewrite Hho_res in Hty_r.
-                           destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                           destruct Hvrel_r as [_ [_ [_ [_ [_ [_ [Hty2_r _]]]]]]].
+                           exact Hty2_r. }
                     split.
                     { (* store_rel step-up - NOW PROVABLE! *)
                       apply Hstore_step_n'.
@@ -1874,26 +1865,16 @@ Proof.
                       split.
                       { apply Hval_step_n'.
                         - exact Hvrel_r.
-                        - intros Hho_res.
-                          destruct n' as [| n''].
+                        - destruct n' as [| n''].
                           +++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [Hty1_r _]]]]]. exact Hty1_r.
                           +++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
-                        - intros Hho_res.
-                          destruct n' as [| n''].
+                              destruct Hvrel_r as [_ [_ [_ [_ [Hty1_r _]]]]]. exact Hty1_r.
+                        - destruct n' as [| n''].
                           +++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty2_r _]]]]]]. exact Hty2_r.
                           +++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty2_r _]]]]]]. exact Hty2_r. }
                       split.
                       { (* store_rel step-up - NOW PROVABLE! *)
                         apply Hstore_step_n'.
@@ -1962,26 +1943,16 @@ Proof.
                       split.
                       { apply Hval_step_n'.
                         - exact Hvrel_r.
-                        - intros Hho_res.
-                          destruct n' as [| n''].
+                        - destruct n' as [| n''].
                           +++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [Hty1_r _]]]]]. exact Hty1_r.
                           +++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [Hty1_r _]. exact Hty1_r.
-                        - intros Hho_res.
-                          destruct n' as [| n''].
+                              destruct Hvrel_r as [_ [_ [_ [_ [Hty1_r _]]]]]. exact Hty1_r.
+                        - destruct n' as [| n''].
                           +++ rewrite val_rel_n_0_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ Hty_r]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r.
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty2_r _]]]]]]. exact Hty2_r.
                           +++ rewrite val_rel_n_S_unfold in Hvrel_r.
-                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty_r _]]]]]].
-                              rewrite Hho_res in Hty_r.
-                              destruct Hty_r as [_ Hty2_r]. exact Hty2_r. }
+                              destruct Hvrel_r as [_ [_ [_ [_ [_ [Hty2_r _]]]]]]. exact Hty2_r. }
                       split.
                       { (* store_rel step-up - NOW PROVABLE! *)
                         apply Hstore_step_n'.
@@ -2096,8 +2067,8 @@ Proof.
            destruct Hcombined as [Hval_step _].
            apply Hval_step.
            ++ exact Hvrel_n'.
-           ++ intros Hho. exact Hty1.
-           ++ intros Hho. exact Hty2.
+           ++ exact Hty1.
+           ++ exact Hty2.
       * (* HIGH security: only need typing, not val_rel_n *)
         (* Hv1 and Hv2 already available from store_wf destruct above *)
         assert (Hc1: closed_expr v1).
@@ -2110,8 +2081,8 @@ Qed.
 (** Corollary: Extract val_rel step-up from combined_step_up_all *)
 Corollary val_rel_n_step_up_from_combined : forall n T Σ v1 v2,
   val_rel_n n Σ T v1 v2 ->
-  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
   intros n T Σ v1 v2 Hrel Hty1 Hty2.
@@ -2169,8 +2140,8 @@ Qed.
 *)
 Lemma val_rel_n_step_up_by_type : forall T n Σ v1 v2,
   val_rel_n n Σ T v1 v2 ->
-  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
   (* SIMPLIFIED: Use the proven corollary from combined_step_up_all.
@@ -2184,8 +2155,8 @@ Qed.
 (** Main step-up lemma - derives from type-structural version *)
 Lemma val_rel_n_step_up : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
-  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
   intros n Σ T v1 v2 Hrel Hty1 Hty2.

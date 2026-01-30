@@ -362,10 +362,10 @@ impl<'a> Lexer<'a> {
             "type" | "jenis" => TokenKind::KwType,
             "struct" | "bentuk" => TokenKind::KwStruct,
             "enum" | "pilihan" => TokenKind::KwEnum,
-            "union" => TokenKind::KwUnion,
+            "union" | "kesatuan" => TokenKind::KwUnion,
             "trait" | "sifat" => TokenKind::KwTrait,
             "impl" | "laksana" => TokenKind::KwImpl,
-            "where" => TokenKind::KwWhere,
+            "where" | "dimana" => TokenKind::KwWhere,
             "mod" | "modul" => TokenKind::KwMod,
             "pub" | "awam" => TokenKind::KwPub,
             "use" | "guna" => TokenKind::KwUse,
@@ -391,12 +391,12 @@ impl<'a> Lexer<'a> {
             // Self references (English | Bahasa Melayu)
             "self" | "diri" => TokenKind::KwSelfValue,
             "Self" | "Diri" => TokenKind::KwSelfType,
-            "super" => TokenKind::KwSuper,
+            "super" | "induk" => TokenKind::KwSuper,
             "crate" | "peti" => TokenKind::KwCrate,
 
-            // Async/await (English only for now)
-            "async" => TokenKind::KwAsync,
-            "await" => TokenKind::KwAwait,
+            // Async/await (English | Bahasa Melayu)
+            "async" | "tak_segerak" => TokenKind::KwAsync,
+            "await" | "tunggu" => TokenKind::KwAwait,
 
             // Safety keywords (English | Bahasa Melayu)
             "unsafe" | "bahaya" => TokenKind::KwUnsafe,
@@ -412,10 +412,28 @@ impl<'a> Lexer<'a> {
             "secret" | "rahsia" => TokenKind::KwSecret,
             "classify" | "sulit" => TokenKind::KwClassify,
             "public" | "terbuka" => TokenKind::KwPublic,
-            "tainted" => TokenKind::KwTainted,
+            "tainted" | "tercemar" => TokenKind::KwTainted,
             "declassify" | "dedah" => TokenKind::KwDeclassify,
             "prove" | "bukti" => TokenKind::KwProve,
-            "sanitize" => TokenKind::KwSanitize,
+            "sanitize" | "bersihkan" => TokenKind::KwSanitize,
+
+            // Logic keywords (Bahasa Melayu contextual)
+            "in" | "dalam" => TokenKind::KwIn,
+            "is" | "ialah" => TokenKind::KwIs,
+
+            // Security extended (English | Bahasa Melayu)
+            "pure" | "bersih" => TokenKind::KwPure,
+            "safe" | "selamat" => TokenKind::KwSafe,
+            "policy" | "dasar" => TokenKind::KwPolicy,
+            "level" | "tahap" => TokenKind::KwLevel,
+
+            // Concurrency extended (English | Bahasa Melayu)
+            "channel" | "saluran" => TokenKind::KwChannel,
+
+            // Reference extended (English | Bahasa Melayu)
+            "borrow" | "pinjam" => TokenKind::KwBorrow,
+            "copy" | "salin" => TokenKind::KwCopy,
+            "clone" | "klon" => TokenKind::KwClone,
 
             // Sum type constructors
             "inl" => TokenKind::KwInl,
@@ -429,21 +447,21 @@ impl<'a> Lexer<'a> {
             "branch" | "cabang" => TokenKind::KwBranch,
             "end" | "tamat" => TokenKind::KwEnd,
 
-            // Capabilities
-            "capability" => TokenKind::KwCapability,
-            "revoke" => TokenKind::KwRevoke,
+            // Capabilities (English | Bahasa Melayu)
+            "capability" | "keupayaan" => TokenKind::KwCapability,
+            "revoke" | "tarik_balik" => TokenKind::KwRevoke,
 
             // Concurrency/Memory ordering (English | Bahasa Melayu)
             "atomic" | "atom" => TokenKind::KwAtomic,
             "fence" | "pagar" => TokenKind::KwFence,
             "acquire" | "peroleh" => TokenKind::KwAcquire,
             "release" | "lepas" => TokenKind::KwRelease,
-            "seqcst" => TokenKind::KwSeqCst,
-            "relaxed" => TokenKind::KwRelaxed,
-            "acqrel" => TokenKind::KwAcqRel,
+            "seqcst" | "turutan_ketat" => TokenKind::KwSeqCst,
+            "relaxed" | "santai" => TokenKind::KwRelaxed,
+            "acqrel" | "peroleh_lepas" => TokenKind::KwAcqRel,
 
-            // Product types
-            "product" => TokenKind::KwProduct,
+            // Product types (English | Bahasa Melayu)
+            "product" | "hasil_darab" => TokenKind::KwProduct,
 
             // Constant-time (English | Bahasa Melayu)
             "ct" | "masa_tetap" => TokenKind::KwCt,

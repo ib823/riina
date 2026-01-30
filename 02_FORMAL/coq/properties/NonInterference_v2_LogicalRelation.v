@@ -2606,8 +2606,8 @@ Definition fundamental_at_step (n : nat) : Prop :=
 Definition step_up_at (n : nat) : Prop :=
   forall Σ T v1 v2,
     val_rel_n n Σ T v1 v2 ->
-    (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-    (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+    has_type nil Σ Public v1 T EffectPure ->
+    has_type nil Σ Public v2 T EffectPure ->
     val_rel_n (S n) Σ T v1 v2.
 
 (** Combined statement: both hold at step n *)
@@ -2713,8 +2713,8 @@ Admitted.
 (** Corollary: step_up holds at all steps *)
 Corollary val_rel_n_step_up_proven : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
-  (first_order_type T = false -> has_type nil Σ Public v1 T EffectPure) ->
-  (first_order_type T = false -> has_type nil Σ Public v2 T EffectPure) ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
   val_rel_n (S n) Σ T v1 v2.
 Proof.
   intros n.
@@ -2985,22 +2985,18 @@ Proof.
       split. { exact Hvalr2. }
       split.
       { (* Need val_rel_n (S n'') Σ''' T2 r1 r2 from val_rel_n n'' *)
-        (* For FO T2: use val_rel_n_step_up_fo (no typing needed)
-           For HO T2: use val_rel_n_step_up (needs typing premises) *)
-        destruct (first_order_type T2) eqn:HfoT2.
-        - (* FO T2: proven without typing *)
-          apply val_rel_n_step_up_fo; try assumption.
-          (* Need val_rel_n 0 from val_rel_n n'' *)
-          apply (val_rel_n_mono 0 n'' Σ''' T2 r1 r2); [lia | exact Hrrel].
-        - (* HO T2: needs typing for results - standard semantic typing *)
-          apply val_rel_n_step_up; try exact Hrrel.
-          + (* typing premise for r1 - needs type preservation *)
-            admit.
-          + (* typing premise for r2 *)
-            admit. }
+        apply val_rel_n_step_up.
+        - exact Hrrel.
+        - destruct (val_rel_n_typing n'' Σ''' T2 r1 r2 Hrrel) as [Hty1_r _]. exact Hty1_r.
+        - destruct (val_rel_n_typing n'' Σ''' T2 r1 r2 Hrrel) as [_ Hty2_r]. exact Hty2_r. }
       { (* Need store_rel_n (S n'') Σ''' from store_rel_n n'' *)
-        (* For now admit - requires store_rel_n_step_up or similar *)
-        admit. }
+        apply store_rel_n_step_up.
+        - exact Hstore3.
+        - exact Hwf1'''.
+        - exact Hwf2'''.
+        - apply store_wf_to_has_values with Σ'''. exact Hwf1'''.
+        - apply store_wf_to_has_values with Σ'''. exact Hwf2'''.
+        - exact Hagree'''. }
   - (* T_Pair - With Kripke-style exp_rel_n, the proof chains evaluations *)
     (* IH for e1 and e2 accept any current store typing extending Σ.
        We chain: Σ_cur → Σ' (after e1) → Σ'' (after e2). *)
@@ -3062,17 +3058,15 @@ Proof.
              By store monotonicity (Σ' ⊆ Σ''):
              - val_rel_n n' Σ'' T1 v1 v1'
              Then use val_rel_n_prod_compose. *)
+          assert (Hval1_ext : val_rel_n n' Σ'' T1 v1 v1').
+          { apply (val_rel_n_mono_store n' Σ' Σ'' T1 v1 v1' Hext2 Hval1). }
           apply val_rel_n_prod_compose.
-          - apply (val_rel_n_mono_store n' Σ' Σ'' T1 v1 v1' Hext2 Hval1).
+          - exact Hval1_ext.
           - exact Hval2.
-          - (* typing for v1 at T1 - from preservation of e1 evaluation *)
-            admit.
-          - (* typing for v1' at T1 *)
-            admit.
-          - (* typing for v2 at T2 - from preservation of e2 evaluation *)
-            admit.
-          - (* typing for v2' at T2 *)
-            admit. }
+          - destruct (val_rel_n_typing n' Σ'' T1 v1 v1' Hval1_ext) as [Ht _]. exact Ht.
+          - destruct (val_rel_n_typing n' Σ'' T1 v1 v1' Hval1_ext) as [_ Ht]. exact Ht.
+          - destruct (val_rel_n_typing n' Σ'' T2 v2 v2' Hval2) as [Ht _]. exact Ht.
+          - destruct (val_rel_n_typing n' Σ'' T2 v2 v2' Hval2) as [_ Ht]. exact Ht. }
         { exact Hstore2. }
   - (* T_Fst - First projection *)
     simpl.
@@ -3242,8 +3236,8 @@ Proof.
       split. { constructor; assumption. }
       split. { constructor; assumption. }
       split. { apply val_rel_n_sum_inl; try exact Hval.
-              - (* typing for v at T1 from preservation *) admit.
-              - (* typing for v' at T1 from preservation *) admit. }
+              - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [Ht _]. exact Ht.
+              - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [_ Ht]. exact Ht. }
       { exact Hstore'. }
   - (* T_Inr - Right injection *)
     simpl.
@@ -3261,8 +3255,8 @@ Proof.
       split. { constructor; assumption. }
       split. { constructor; assumption. }
       split. { apply val_rel_n_sum_inr; try exact Hval.
-              - (* typing for v at T2 from preservation *) admit.
-              - (* typing for v' at T2 from preservation *) admit. }
+              - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [Ht _]. exact Ht.
+              - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [_ Ht]. exact Ht. }
       { exact Hstore'. }
   - (* T_Case - Pattern matching on sums *)
     simpl.
@@ -3794,8 +3788,8 @@ Proof.
       { (* val_rel_n for TSecret T - use val_rel_n_classify *)
         destruct (val_rel_n_closed n' Σ' T v v' Hval) as [Hcl1 Hcl2].
         apply val_rel_n_classify; try assumption.
-        - (* typing for v at T from preservation *) admit.
-        - (* typing for v' at T from preservation *) admit. }
+        - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [Ht _]. exact Ht.
+        - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [_ Ht]. exact Ht. }
       { exact Hstore'. }
   - (* T_Declassify - Uses logical_relation_declassify axiom *)
     (* The axiom logical_relation_declassify directly proves this case. *)
@@ -3829,8 +3823,8 @@ Proof.
       { (* val_rel_n for TProof T - use val_rel_n_prove *)
         destruct (val_rel_n_closed n' Σ' T v v' Hval) as [Hcl1 Hcl2].
         apply val_rel_n_prove; try assumption.
-        - (* typing for v at T from preservation *) admit.
-        - (* typing for v' at T from preservation *) admit. }
+        - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [Ht _]. exact Ht.
+        - destruct (val_rel_n_typing _ _ _ _ _ Hval) as [_ Ht]. exact Ht. }
       { exact Hstore'. }
   - (* T_Require - Effect require just passes through the value *)
     (* ERequire eff e evaluates e to v, then ERequire eff v --> v *)

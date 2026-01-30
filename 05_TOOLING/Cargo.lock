@@ -549,6 +549,110 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
+name = "riina-artifact-sign"
+version = "0.1.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
+name = "riina-build"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+]
+
+[[package]]
+name = "riina-build-manifest"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "riina-core"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+]
+
+[[package]]
+name = "riina-effect"
+version = "0.1.0"
+dependencies = [
+ "riina-core",
+]
+
+[[package]]
+name = "riina-hash-chain"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "riina-lang-codegen"
+version = "0.1.0"
+dependencies = [
+ "riina-core",
+ "riina-lang-types",
+]
+
+[[package]]
+name = "riina-lang-lexer"
+version = "0.1.0"
+dependencies = [
+ "riina-core",
+]
+
+[[package]]
+name = "riina-lang-parser"
+version = "0.1.0"
+dependencies = [
+ "riina-core",
+ "riina-lang-lexer",
+]
+
+[[package]]
+name = "riina-lang-types"
+version = "0.1.0"
+dependencies = [
+ "riina-core",
+]
+
+[[package]]
+name = "riina-verify"
+version = "0.1.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
+name = "riinac"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "riina-core",
+ "riina-lang-codegen",
+ "riina-lang-lexer",
+ "riina-lang-parser",
+ "riina-lang-types",
+]
+
+[[package]]
 name = "rustix"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -708,110 +812,6 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "teras-artifact-sign"
-version = "0.1.0"
-dependencies = [
- "clap",
-]
-
-[[package]]
-name = "teras-build"
-version = "0.1.0"
-dependencies = [
- "clap",
- "serde",
- "serde_json",
- "tokio",
- "toml",
-]
-
-[[package]]
-name = "teras-build-manifest"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
-name = "teras-core"
-version = "0.1.0"
-dependencies = [
- "proptest",
-]
-
-[[package]]
-name = "teras-effect"
-version = "0.1.0"
-dependencies = [
- "teras-core",
-]
-
-[[package]]
-name = "teras-hash-chain"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
-]
-
-[[package]]
-name = "teras-lang-codegen"
-version = "0.1.0"
-dependencies = [
- "teras-core",
- "teras-lang-types",
-]
-
-[[package]]
-name = "teras-lang-lexer"
-version = "0.1.0"
-dependencies = [
- "teras-core",
-]
-
-[[package]]
-name = "teras-lang-parser"
-version = "0.1.0"
-dependencies = [
- "teras-core",
- "teras-lang-lexer",
-]
-
-[[package]]
-name = "teras-lang-types"
-version = "0.1.0"
-dependencies = [
- "teras-core",
-]
-
-[[package]]
-name = "teras-verify"
-version = "0.1.0"
-dependencies = [
- "clap",
-]
-
-[[package]]
-name = "terasc"
-version = "0.1.0"
-dependencies = [
- "clap",
- "teras-core",
- "teras-lang-codegen",
- "teras-lang-lexer",
- "teras-lang-parser",
- "teras-lang-types",
 ]
 
 [[package]]
