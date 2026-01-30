@@ -544,6 +544,15 @@ impl Interpreter {
             }
 
             // ═══════════════════════════════════════════════════════════════
+            // LOCATIONS (Expr::Loc — runtime-only, corresponds to Coq ELoc)
+            // ═══════════════════════════════════════════════════════════════
+            Expr::Loc(l) => {
+                // Store locations are runtime values (Coq ELoc); look up in store
+                let loc = Location::new(*l as u32);
+                self.store.read(loc).cloned()
+            }
+
+            // ═══════════════════════════════════════════════════════════════
             // BINARY OPERATIONS (Expr::BinOp)
             // ═══════════════════════════════════════════════════════════════
             Expr::BinOp(op, lhs, rhs) => {

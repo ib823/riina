@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
-## Version: 3.5.0
-## Last Updated: 2026-01-30 (Session 49)
+## Version: 3.6.0
+## Last Updated: 2026-01-30 (Session 51)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -33,20 +33,21 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-30 Session 49)
+### Grand Totals (2026-01-30 Session 51)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
 | **Total Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Delegation Prompts** | **90** | **100% coverage** |
 | **Coq .v Files (Active Build)** | 98 | All compile |
-| **Coq Qed Proofs (Active Build)** | 1,894 | Growing |
-| **`admit.` (Active Build)** | 19 | Down from 122+ |
-| **`Admitted.` (Active Build)** | 8 | |
+| **Coq Qed Proofs (Active Build)** | 4,971 | Verified |
+| **`admit.` (Active Build)** | **0** | **ALL ELIMINATED** |
+| **`Admitted.` (Active Build)** | **0** | **ALL ELIMINATED** |
 | **Axioms (Active Build)** | 6 | Down from 65+ |
-| **Rust Tests** | 361 | All passing |
+| **Rust Tests** | **452** | All passing |
 | **Build Status** | ✅ GREEN | All files compile |
 | **Threats Covered** | 1,231+ | All made obsolete |
+| **Attack→Proof Map** | ✅ | `06_COORDINATION/ATTACK_PROOF_MAP.md` |
 
 ### Materialization Plan (Track B — Deferred)
 
@@ -55,9 +56,21 @@
 | Materialization plan document | ✅ COMPLETE | `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` |
 | Syntax improvement spec | ✅ ESTABLISHED | `04_SPECS/language/SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` |
 | Authoritative doc updates | ✅ COMPLETE | CLAUDE.md, PROGRESS.md, SESSION_LOG.md, DECISIONS.md |
-| Execution start | ⏸️ DEFERRED | Blocked on Track A stabilization |
+| Execution start | 🟢 **IN PROGRESS** | Phase 1 ~95% complete, gap remediation active |
+| Gap remediation | ✅ ACTIVE | 13-item plan in materialization doc Section 7 |
+| ATTACK_PROOF_MAP.md | ✅ COMPLETE | `06_COORDINATION/ATTACK_PROOF_MAP.md` (490 lines) |
 
-**Dependency**: Track B materialization execution begins after Track A (formal proofs) reaches 0 admits/0 unjustified axioms, or by explicit decision to proceed in parallel.
+**Decision (Session 51)**: Track B materialization proceeds in parallel with Track A. Track B work is restricted to Rust-only changes that do not affect `02_FORMAL/coq/` files. Track A (6 remaining axioms) continues independently.
+
+### Track B Session 51 Enhancements
+
+| Item | Description | Status |
+|------|-------------|--------|
+| `Expr::Loc(u64)` | Coq `ELoc` alignment in Rust AST | ✅ |
+| SSA phi destruction | Copy-insertion pass in C emitter | ✅ |
+| ATTACK_PROOF_MAP.md | 350+ threats mapped to Coq theorems | ✅ |
+| Materialization plan update | 13-item gap remediation, Gates 5-9 | ✅ |
+| Phase 1 audit | 84%→95% complete | ✅ |
 
 ### Session 42 Part 4: DELEGATION PROMPTS AUDIT & SYNC ✅
 

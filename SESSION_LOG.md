@@ -1,5 +1,68 @@
 # Session Log
 
+## 2026-01-30 (Session 51): Track B Materialization — Gap Remediation
+
+**Goal:** Implement materialization plan items 5.4, 7.7.1, 7.9 (Track B enhancements that do not affect Track A).
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | **7.7.1: Added `Expr::Loc(u64)`** to riina-types (Coq `ELoc` alignment) | ✅ |
+| 2 | Updated all match arms: typechecker, interpreter, lowering (3 functions) | ✅ |
+| 3 | **5.4: Phi node SSA destruction** — proper copy-insertion pass in emit.rs | ✅ |
+| 4 | Built `PhiMap` type, `build_phi_map()`, `emit_phi_copies()`, `emit_terminator_with_phi()` | ✅ |
+| 5 | Removed legacy `emit_block`/`emit_terminator` (dead code after SSA destruction refactor) | ✅ |
+| 6 | **7.9: Created `ATTACK_PROOF_MAP.md`** — 350+ threats mapped to Coq theorems (490 lines) | ✅ |
+| 7 | **Exhaustive audit**: 4 parallel agents — Coq build, type enforcement, threat model, Rust↔Coq alignment | ✅ |
+| 8 | **Updated materialization plan** with 13-item gap remediation (Section 7 rewrite, Gates 5-9) | ✅ |
+| 9 | All 452 Rust tests passing (was 361 — +91 from Phase 2 stdlib builtins) | ✅ |
+| 10 | Updated PROGRESS.md, CLAUDE.md, SESSION_LOG.md, COORDINATION_LOG.md | ✅ |
+
+### Track B Phase 1 Completion Status
+
+| Item | Status |
+|------|--------|
+| 5.1 Wire codegen | ✅ COMPLETE |
+| 5.2 Lexer bilingual keywords | ✅ COMPLETE (72 pairs) |
+| 5.3 Parser extension | ✅ COMPLETE |
+| 5.4 C emitter SSA destruction | ✅ **COMPLETED THIS SESSION** |
+| 5.5 REPL | ✅ COMPLETE |
+| 5.6 Error diagnostics | ✅ COMPLETE |
+| 5.7 Built-in functions | ✅ COMPLETE (59 builtins) |
+
+### Gap Remediation Items Completed
+
+| Plan Item | Description | Status |
+|-----------|-------------|--------|
+| 7.7.1 | Add `Expr::Loc(u64)` — Coq `ELoc` alignment | ✅ |
+| 7.9 | Create ATTACK_PROOF_MAP.md — attack→theorem traceability | ✅ |
+| 5.4 | SSA phi destruction pass — proper copy-insertion | ✅ |
+
+### Final State
+
+- **admit.**: 0
+- **Admitted.**: 0
+- **Axioms**: 6
+- **Qed proofs**: 4,971
+- **Rust tests**: 452 (all passing)
+- **Build**: PASSING (Coq + Rust)
+
+### Files Modified/Created
+
+| File | Action |
+|------|--------|
+| `03_PROTO/crates/riina-types/src/lib.rs` | Added `Expr::Loc(u64)` variant |
+| `03_PROTO/crates/riina-codegen/src/emit.rs` | SSA phi destruction pass, PhiMap, copy insertion |
+| `03_PROTO/crates/riina-codegen/src/lower.rs` | `Expr::Loc` in infer_type, infer_effect, lower_expr |
+| `03_PROTO/crates/riina-codegen/src/interp.rs` | `Expr::Loc` eval via store lookup |
+| `03_PROTO/crates/riina-typechecker/src/lib.rs` | `Expr::Loc` type checking |
+| `03_PROTO/crates/riina-codegen/src/lib.rs` | (no net change — error variant added then removed) |
+| `06_COORDINATION/ATTACK_PROOF_MAP.md` | **NEW** — 490-line attack→proof traceability |
+| `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` | Updated with 13-item gap remediation |
+
+---
+
 ## 2026-01-30 (Session 50c): Axiom Elimination Attempt (7→6)
 
 **Goal:** Eliminate all 7 remaining axioms. Achieved 1 elimination; 6 remain.

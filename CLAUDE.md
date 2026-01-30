@@ -80,12 +80,13 @@ RIINA is the world's **first formally verified programming language** with:
 | **Qed Proofs (Active Build)** | 4,971 | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (361 tests) | All green |
+| **Rust Tests** | ✅ PASSING (452 tests) | All green |
 
 **Phase Status:**
 - Phase 0 (Foundation): ✅ Complete (well_typed_SN proven)
-- Phase 1 (Axiom Elimination): 🟡 Active (6 axioms, 27 admits remain)
+- Phase 1 (Axiom Elimination): 🟡 Active (6 axioms, 0 admits remain)
 - Phase 3 (Domain Properties): ✅ Complete (876 lemmas)
+- Track B (Materialization): 🟢 In Progress — Phase 1 ~90% complete, gap remediation active
 
 **See `PROGRESS.md` for detailed status.**
 
