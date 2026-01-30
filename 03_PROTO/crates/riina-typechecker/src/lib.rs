@@ -43,6 +43,7 @@ impl std::fmt::Display for TypeError {
 
 impl std::error::Error for TypeError {}
 
+#[derive(Clone)]
 pub struct Context {
     vars: HashMap<Ident, Ty>,
     level: SecurityLevel,
@@ -76,6 +77,71 @@ impl Context {
     }
 }
 
+/// Register builtin function types into a context.
+/// Uses Ty::Any for polymorphic builtins.
+pub fn register_builtin_types(ctx: &Context) -> Context {
+    let mut c = ctx.clone();
+    // I/O builtins
+    c = c.extend("cetak".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Unit), Effect::System));
+    c = c.extend("print".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Unit), Effect::System));
+    c = c.extend("cetakln".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Unit), Effect::System));
+    c = c.extend("println".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Unit), Effect::System));
+    // String
+    c = c.extend("gabung_teks".to_string(), Ty::Fn(
+        Box::new(Ty::Prod(Box::new(Ty::String), Box::new(Ty::String))),
+        Box::new(Ty::String), Effect::Pure));
+    c = c.extend("concat".to_string(), Ty::Fn(
+        Box::new(Ty::Prod(Box::new(Ty::String), Box::new(Ty::String))),
+        Box::new(Ty::String), Effect::Pure));
+    c = c.extend("panjang".to_string(), Ty::Fn(Box::new(Ty::String), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("length".to_string(), Ty::Fn(Box::new(Ty::String), Box::new(Ty::Int), Effect::Pure));
+    // Conversion
+    c = c.extend("ke_teks".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::String), Effect::Pure));
+    c = c.extend("to_string".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::String), Effect::Pure));
+    c = c.extend("ke_nombor".to_string(), Ty::Fn(Box::new(Ty::String), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("parse_int".to_string(), Ty::Fn(Box::new(Ty::String), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("ke_bool".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Bool), Effect::Pure));
+    c = c.extend("to_bool".to_string(), Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Bool), Effect::Pure));
+    // Math
+    c = c.extend("mutlak".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("abs".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure));
+    for name in &["minimum", "min", "maksimum", "max", "kuasa", "pow", "gcd", "lcm"] {
+        c = c.extend(name.to_string(), Ty::Fn(
+            Box::new(Ty::Prod(Box::new(Ty::Int), Box::new(Ty::Int))),
+            Box::new(Ty::Int), Effect::Pure));
+    }
+    c = c.extend("punca".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("sqrt".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure));
+    // Assert
+    c = c.extend("tegaskan".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("assert".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("tegaskan_betul".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("assert_true".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("tegaskan_salah".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("assert_false".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("tegaskan_sama".to_string(), Ty::Fn(
+        Box::new(Ty::Prod(Box::new(Ty::Any), Box::new(Ty::Any))),
+        Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("assert_eq".to_string(), Ty::Fn(
+        Box::new(Ty::Prod(Box::new(Ty::Any), Box::new(Ty::Any))),
+        Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("tegaskan_beza".to_string(), Ty::Fn(
+        Box::new(Ty::Prod(Box::new(Ty::Any), Box::new(Ty::Any))),
+        Box::new(Ty::Unit), Effect::Pure));
+    c = c.extend("assert_ne".to_string(), Ty::Fn(
+        Box::new(Ty::Prod(Box::new(Ty::Any), Box::new(Ty::Any))),
+        Box::new(Ty::Unit), Effect::Pure));
+    c
+}
+
+/// Check if two types are compatible, considering Ty::Any as a wildcard.
+pub fn types_compatible(expected: &Ty, found: &Ty) -> bool {
+    if *expected == Ty::Any || *found == Ty::Any {
+        return true;
+    }
+    expected == found
+}
+
 pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError> {
     match expr {
         // VERIFIED: Values
@@ -100,7 +166,7 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
             
             match t1 {
                 Ty::Fn(arg_ty, ret_ty, fn_eff) => {
-                    if *arg_ty != t2 {
+                    if !types_compatible(&arg_ty, &t2) {
                         return Err(TypeError::TypeMismatch { expected: *arg_ty, found: t2 });
                     }
                     // Effect accumulation: eff1 + eff2 + fn_eff

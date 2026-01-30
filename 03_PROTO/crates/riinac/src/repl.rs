@@ -121,7 +121,7 @@ fn eval_line(input: &str) {
         }
     };
 
-    let ctx = Context::new();
+    let ctx = riina_typechecker::register_builtin_types(&Context::new());
     let (ty, eff) = match type_check(&ctx, &expr) {
         Ok(r) => r,
         Err(e) => {
@@ -150,7 +150,7 @@ fn show_type(input: &str) {
         }
     };
 
-    let ctx = Context::new();
+    let ctx = riina_typechecker::register_builtin_types(&Context::new());
     match type_check(&ctx, &expr) {
         Ok((ty, eff)) => println!("{:?} [{:?}]", ty, eff),
         Err(e) => eprintln!("Ralat jenis / Type error: {}", e),
