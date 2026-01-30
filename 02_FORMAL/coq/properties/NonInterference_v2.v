@@ -1016,11 +1016,18 @@ Proof.
       exact (proj1 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyPP2)).
     - (* val_rel FO/HO *)
       destruct (first_order_type T1) eqn:Hfo1.
-      + (* FO T1: val_rel_at_type_fo T1 a1 a2 needed *)
-        admit.
+      + (* FO T1: extract from product's FO relation *)
+        simpl first_order_type in Hrat.
+        destruct (first_order_type T2) eqn:Hfo2.
+        * (* Both FO: product is FO, Hrat has val_rel_at_type_fo *)
+          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+          destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
+          inversion Heq1'; subst. inversion Heq2'; subst. exact Hr1.
+        * (* T1 FO, T2 HO — TProd is HO, Hrat = True *)
+          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat. exact I.
       + exact I. }
   exact Hstore.
-Admitted. (* FO component extraction from general product *)
+Qed.
 
 (** Generalized step-1 snd: works for ALL type combinations *)
 Lemma exp_rel_step1_snd_general : forall Σ T1 T2 v v' st1 st2 ctx Σ',
@@ -1054,7 +1061,9 @@ Proof.
   split. { exact Hvb1. }
   split. { exact Hvb2. }
   split.
-  { rewrite val_rel_n_0_unfold. repeat split.
+  { rewrite val_rel_n_0_unfold in Hval.
+    destruct Hval as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+    rewrite val_rel_n_0_unfold. repeat split.
     - exact Hvb1.
     - exact Hvb2.
     - intros y Hfree. apply (Hcl1 y). simpl. right. exact Hfree.
@@ -1062,11 +1071,18 @@ Proof.
     - exact (proj2 (pair_typing_pure_inv _ _ _ a1 b1 T1 T2 Hty1)).
     - exact (proj2 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 Hty2)).
     - destruct (first_order_type T2) eqn:Hfo2.
-      + (* FO T2: val_rel_at_type_fo T2 b1 b2 needed *)
-        admit.
+      + (* FO T2: extract from product's FO relation *)
+        simpl first_order_type in Hrat.
+        destruct (first_order_type T1) eqn:Hfo1.
+        * (* Both FO: product is FO, Hrat has val_rel_at_type_fo *)
+          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+          destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
+          inversion Heq1'; subst. inversion Heq2'; subst. exact Hr2.
+        * (* T1 HO, T2 FO — TProd is HO, Hrat = True *)
+          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat. exact I.
       + exact I. }
   exact Hstore.
-Admitted. (* FO component extraction from general product *)
+Qed.
 
 (** FORMER AXIOM 2: exp_rel_step1_snd - NOW PROVEN *)
 Lemma exp_rel_step1_snd : forall Σ T1 T2 v v' st1 st2 ctx Σ',
