@@ -650,13 +650,13 @@ Proof.
     specialize (Henv 0). unfold env_rel_n in Henv.
     specialize (Henv x T Hlook).
     split.
-    + apply (val_rel_value_left_n 0 Σ T). exact Henv.
+    + apply (val_rel_value_left_n 0 Σ T (rho1 x) (rho2 x)). exact Henv.
     + destruct (val_rel_n_typing 0 Σ T (rho1 x) (rho2 x) Henv) as [Ht _]. exact Ht.
   - (* rho2 *)
     specialize (Henv 0). unfold env_rel_n in Henv.
     specialize (Henv x T Hlook).
     split.
-    + apply (val_rel_value_right_n 0 Σ T). exact Henv.
+    + apply (val_rel_value_right_n 0 Σ T (rho1 x) (rho2 x)). exact Henv.
     + destruct (val_rel_n_typing 0 Σ T (rho1 x) (rho2 x) Henv) as [_ Ht]. exact Ht.
 Qed.
 
