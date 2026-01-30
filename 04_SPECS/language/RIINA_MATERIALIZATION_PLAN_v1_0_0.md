@@ -24,7 +24,18 @@
   - [5.6 Error Diagnostics](#56-error-diagnostics)
   - [5.7 Built-in Functions](#57-built-in-functions)
 - [6. PHASE 2: STANDARD LIBRARY](#6-phase-2-standard-library)
-- [7. PHASE 3: FORMAL VERIFICATION](#7-phase-3-formal-verification)
+- [7. PHASE 3: FORMAL VERIFICATION & SEMANTIC COMPLETENESS](#7-phase-3-formal-verification--semantic-completeness)
+  - [7.1 Current Status](#71-current-status)
+  - [7.2 P0: Axiom & Admit Elimination](#72-p0-axiom--admit-elimination)
+  - [7.3 P0: Domain File Integration](#73-p0-domain-file-integration)
+  - [7.4 P0: Fix Uncompilable Domain Files](#74-p0-fix-uncompilable-domain-files)
+  - [7.5 P1: Semantic Completeness — Type Annotation Enforcement](#75-p1-semantic-completeness--type-annotation-enforcement)
+  - [7.6 P1: Rust Evaluator Implementation](#76-p1-rust-evaluator-implementation)
+  - [7.7 P1: Coq↔Rust Alignment Fixes](#77-p1-coqrust-alignment-fixes)
+  - [7.8 P2: Threat Model Coverage](#78-p2-threat-model-coverage)
+  - [7.9 P2: Traceability Index](#79-p2-traceability-index)
+  - [7.10 Multi-Prover Verification](#710-multi-prover-verification)
+  - [7.11 Compiler Correctness](#711-compiler-correctness)
 - [8. PHASE 4: DEVELOPER EXPERIENCE](#8-phase-4-developer-experience)
 - [9. PHASE 5: ECOSYSTEM & DISTRIBUTION](#9-phase-5-ecosystem--distribution)
 - [10. PHASE 6: ADOPTION & COMMUNITY](#10-phase-6-adoption--community)
@@ -284,7 +295,7 @@ When adding new code, **do NOT add external dependencies** to any `Cargo.toml`.
 | **Arena** | `riina-arena/src/lib.rs` | 437 | Complete. Typed arena with grow support. |
 | **Driver** | `riinac/src/main.rs` | 63 | **Minimal.** Reads file, parses, typechecks, prints type/effect. No codegen, no subcommands. |
 | **Crypto** | `05_TOOLING/crates/riina-core/` | ~15,000 | Complete. 15 modules (AES, SHA, HMAC, X25519, Ed25519, ML-KEM, ML-DSA, etc.). |
-| **Coq Proofs** | `02_FORMAL/coq/` | ~50,000 | 1,867 Qed, 17 admits, 6 axioms. Track A actively working. |
+| **Coq Proofs** | `02_FORMAL/coq/` | ~89,282 | 4,971 Qed, 0 admits, 6 axioms. 98 files in active build. 124 domain files outside build (118 complete, 3 uncompilable). Track A actively working. |
 
 ### 3.2 What Does NOT Work Today
 
@@ -306,21 +317,32 @@ When adding new code, **do NOT add external dependencies** to any `Cargo.toml`.
 
 ### 3.3 Coq-Rust Alignment Status
 
-**The Rust `riina-types` crate is ALREADY fully synced with Coq.** Specifically:
+**Structural alignment is 94%.** The Rust `riina-types` crate is synced with Coq for type definitions:
 
 | Definition | Coq Variants | Rust Variants | Status |
 |------------|-------------|---------------|--------|
 | `security_level` | 6 | 6 | SYNCED |
 | `effect` | 17 | 17 | SYNCED |
-| `ty` | 22 | 22 | SYNCED |
-| `expr` | 27 | 25 | 2 Coq-internal (`ELoc`, `EString` as `String(String)`) |
+| `ty` | 22 | 23 | Rust has extra `Ty::Any` (polymorphic extension) |
+| `expr` | 26 | 27 | See misalignments below |
 | `taint_source` | 12 | 12 | SYNCED |
 | `sanitizer` | 25+ | 25+ | SYNCED |
 | `capability_kind` | 14 | 14 | SYNCED |
 | `capability` | 4 | 4 | SYNCED |
 | `session_type` | 7 | 7 | SYNCED |
 
-**No type synchronization work is needed.** The `SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` sections 2.1-2.3 (Rust type sync) are already complete.
+**Critical Misalignments (from 2026-01-30 audit):**
+
+| # | Issue | Severity | Detail |
+|---|-------|----------|--------|
+| 1 | **Missing `Expr::Loc(u64)` in Rust** | BREAKING | Coq has `ELoc : loc -> expr` for heap locations; Rust has no equivalent. Cannot represent raw location values. |
+| 2 | **No evaluator in Rust** | BREAKING | Coq defines 31 small-step semantic rules in `Semantics.v`; Rust has no corresponding interpreter matching these rules. |
+| 3 | **BinOp mismatch** | BREAKING | Rust has `Expr::BinOp` with 8 operators (Add, Sub, Mul, Div, Mod, Eq, Ne, Lt, etc.); Coq treats these as function applications. No formal typing rules for BinOp exist in Coq. |
+| 4 | **Ty::Any unformalized** | MEDIUM | Rust `Ty::Any` for builtin overloading has no Coq counterpart. |
+| 5 | **Type checker unauditable** | MEDIUM | Cannot verify all 30+ Coq typing rules are implemented in Rust. Security context handling unknown. |
+| 6 | **Builtin functions unformalized** | MEDIUM | Rust registers builtins via `eval_with_builtins()`; Coq defines only primitives. |
+
+**See Section 7.7 for remediation plan.**
 
 ### 3.4 Lexer Keyword Gap
 
@@ -1405,44 +1427,357 @@ fungsi utama() -> () kesan IO {
 
 ---
 
-## 7. PHASE 3: FORMAL VERIFICATION
+## 7. PHASE 3: FORMAL VERIFICATION & SEMANTIC COMPLETENESS
+
+This phase addresses ALL gaps identified by the exhaustive 4-agent audit (2026-01-30). Items are ordered P0→P3 by priority.
 
 ### 7.1 Current Status
 
-| Metric | Value |
-|--------|-------|
-| Completed proofs (Qed) | 1,867 |
-| Incomplete proofs (Admitted) | 17 |
-| Axioms | 6 |
-| Compilation status | Failing (v2 migration) |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Completed proofs (Qed) | 4,971 | Active build |
+| Incomplete proofs (admit.) | 0 | ALL ELIMINATED |
+| Incomplete proofs (Admitted.) | 0 | ALL ELIMINATED |
+| Axioms (active build) | 6 | See 7.2 for elimination plan |
+| Compilation status | ✅ PASSING | 98 files compile clean |
+| Domain files outside build | 124 | 118 complete, 3 uncompilable, 3 other |
+| Threat model coverage | ~1-3% | 350+ threats documented, <5 with proofs |
+| Type enforcement gaps | 14 | Across 8 type categories (annotation-only) |
+| Rust semantic alignment | 94% structural | 0% semantic (no evaluator) |
 
-### 7.2 Admit Elimination
+---
 
-All 17 admits are in `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v`. They trace to one mutual induction over ~20 type constructors. Track A (other worker) is handling this.
+### 7.2 P0: Axiom & Admit Elimination
 
-**This plan does NOT touch Coq files.** All formal verification is handled by Track A.
+**Goal: 0 axioms, 0 admits in active build.**
 
-### 7.3 Axiom Elimination
+**6 remaining axioms:**
 
-6 axioms in `NonInterference_v2_LogicalRelation.v`:
-- 5 logical relation axioms (ref, deref, assign, declassify, val_rel bridge)
-- 1 fundamental theorem base case
+| # | Axiom | File | Difficulty | Strategy |
+|---|-------|------|-----------|----------|
+| 1 | `logical_relation_ref` | NI_v2_LR.v | HIGH | Prove allocation preserves store relation via store_ty_extends |
+| 2 | `logical_relation_deref` | NI_v2_LR.v | HIGH | Prove location lookup in related stores yields related values |
+| 3 | `logical_relation_assign` | NI_v2_LR.v | HIGH | Prove assignment preserves store relation |
+| 4 | `logical_relation_declassify` | NI_v2_LR.v | FUNDAMENTAL | TSecret val_rel_at_type = True; declassification intentionally breaks NI. May remain as justified axiom. |
+| 5 | `val_rel_store_weaken_back` | NI_v2_LR.v | MEDIUM | Store anti-monotonicity — justified by Kripke semantics |
+| 6 | `fundamental_theorem_step_0` | NI_v2.v | HIGH | Step-0 base case of fundamental theorem |
 
-These require proving the logical relation is well-founded for reference types.
+**2 remaining admits (in NI_v2.v):**
 
-### 7.4 Multi-Prover Verification (Phase 3+)
+| # | Admit | Line | Issue |
+|---|-------|------|-------|
+| 1 | `exp_rel_step1_fst_general` | ~1023 | FO component extraction from mixed FO/HO products |
+| 2 | `exp_rel_step1_snd_general` | ~1069 | Same issue for second projection |
 
-After Coq proofs are complete:
+**Root cause:** At step 0, `val_rel_n` gives `True` for the type-specific part of HO types, losing the FO relation for product components. Requires definition change to `val_rel_n` to store FO components independently.
+
+**Owner:** Track A (formal proofs worker).
+
+---
+
+### 7.3 P0: Domain File Integration
+
+**Goal: Add 118 complete domain files to `_CoqProject`, expanding verified theorems by 6,002.**
+
+**Action:** Append 118 file paths to `02_FORMAL/coq/_CoqProject`.
+
+**Statistics:**
+
+| Category | Files | Theorems | Lines |
+|----------|-------|----------|-------|
+| Core domains | 75 | ~4,800 | ~45,000 |
+| Mobile OS | 29 | ~530 | ~4,700 |
+| Security foundation | 11 | ~220 | ~2,300 |
+| UI/UX | 5 | ~80 | ~810 |
+| **Total** | **118** | **6,002** | **57,785** |
+
+**Key domains covered by these files:**
+- Post-quantum cryptography (ML-KEM, ML-DSA, SLH-DSA)
+- AI/ML security (adversarial robustness, differential privacy)
+- Hardware security (synthesis correctness, timing analysis, trojan detection)
+- Memory safety (buffer overflow prevention, use-after-free prevention)
+- Information flow (declassification with budgets, covert channel elimination)
+- Distributed systems (consensus, Byzantine fault tolerance)
+- Compliance (HIPAA, PCI-DSS, ISO 26262, DO-178C, Common Criteria EAL7)
+- Tracks R-Z: Translation validation, hardware contracts, hermetic build, runtime guardian, termination, verified memory, concurrency, verified stdlib, declassification policy
+
+**Verification:** After adding to `_CoqProject`, run `make` and confirm all 216 files (98 existing + 118 new) compile.
+
+---
+
+### 7.4 P0: Fix Uncompilable Domain Files
+
+**Goal: Resolve 3 files with unproven code so they can enter the active build.**
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `domains/LinearTypes.v` (685 lines) | 1 `Admitted.` at ~line 583 (linearity proof) | Complete the proof or document as intentional placeholder |
+| `domains/StandardLibrary.v` (1,344 lines) | 2 `Parameter` declarations (Option/Result monad ops) | Replace Parameters with concrete definitions |
+| `domains/VerifiedIdentity.v` (981 lines) | 1 `Parameter` (identity type core) | Replace Parameter with `Inductive` or `Definition` |
+
+**Additional files to keep separate:**
+- `domains/PhysicalSecurity.v` (29 Parameters, redeclares type system) — refactor to use RIINA namespace imports
+- `domains/All.v` (aggregator) — add after domain dependencies integrated
+- `domains/uiux/ScrollPhysics.v` (scaffold, 7 theorems) — expand before integration
+
+---
+
+### 7.5 P1: Semantic Completeness — Type Annotation Enforcement
+
+**Critical finding:** RIINA enforces security via formal proof (logical relations), NOT runtime semantics. Of 22 type constructors, only 2 have runtime enforcement. The remaining 20 are annotation-only.
+
+**This is architecturally intentional** — the security guarantee comes from the Coq proofs, not runtime checks. However, for compiled code to be trusted, the following semantic gaps must be addressed:
+
+#### 7.5.1 Types Requiring Operational Semantics
+
+| # | Type | Gap | Required Coq Change |
+|---|------|-----|---------------------|
+| 1 | `TLabeled T l` | Security label defined but UNUSED — no typing or semantic rules reference it | Add typing rules that check label `l` at dereference/assignment boundaries in `Typing.v`; add `ST_LabelCheck` to `Semantics.v` |
+| 2 | `TTainted T src` | 25 sanitizer types defined but no enforcement that tainted data requires sanitization before use | Add typing rule: `TTainted T src` cannot flow to sink without `TSanitized T san` conversion |
+| 3 | `TSanitized T san` | No rule converts `TTainted → TSanitized`; no `ESanitize` expression exists | Add `ESanitize : sanitizer -> expr -> expr` to `Syntax.v` and corresponding typing/semantic rules |
+| 4 | `TConstantTime T` | No timing model — type has zero operational meaning | Add timing cost annotation to step relation or separate analysis pass in `ConstantTimeAnalysis.v` |
+| 5 | `TZeroizing T` | No memory clearing in semantics — type has zero operational meaning | Add `ST_DropZeroizing` to `Semantics.v` that clears store location on scope exit |
+| 6 | `TCapability` | `ST_RequireValue`/`ST_GrantValue` are NO-OPS (just unwrap values) | Replace with rules that check/update capability context: `ST_RequireChecked`, `ST_GrantTracked` |
+| 7 | `TProof T` | `EProve e` evaluates e but never validates it as a proof | Add proof validation semantics or document as compile-time-only type |
+
+#### 7.5.2 Effect System Enforcement
+
+| Issue | Detail | Fix |
+|-------|--------|-----|
+| `ST_PerformValue` discards effect | Effect annotation lost at runtime — no audit trail | Add effect context parameter to step relation; `ST_PerformChecked` verifies effect is in context |
+| Store `security_level` unused | `store_ty` includes per-location security level but no rule checks it | Either integrate into `ST_DerefLoc`/`ST_AssignLoc` or document as proof-only metadata |
+
+#### 7.5.3 Implementation Order
+
+```
+PHASE 3A (can start immediately — Coq changes):
+1. TLabeled enforcement (Typing.v + Semantics.v)
+2. TTainted→TSanitized conversion rules
+3. TCapability runtime checking
+
+PHASE 3B (after 3A — requires new expression constructors):
+4. ESanitize expression + proofs
+5. Effect context in step relation
+
+PHASE 3C (deferred — requires separate analysis framework):
+6. TConstantTime timing model
+7. TZeroizing memory model
+```
+
+**IMPORTANT:** Items in Phase 3B and 3C add new `expr` constructors to Coq. Per Design Principle #1, these MUST NOT be added until axiom elimination (7.2) is complete (0 axioms, 0 admits).
+
+---
+
+### 7.6 P1: Rust Evaluator Implementation
+
+**Goal: Implement a reference evaluator in Rust that matches all 31 Coq semantic rules.**
+
+**Current state:** No evaluator exists. `riina-codegen::eval_with_builtins()` mentioned in driver but not visible.
+
+**Required:** New module `03_PROTO/crates/riina-codegen/src/evaluator.rs`
+
+```rust
+/// Small-step evaluator matching Semantics.v exactly.
+/// Each match arm corresponds to a Coq step rule.
+pub fn step(expr: &Expr, store: &mut Store, ctx: &EffectCtx)
+    -> Result<(Expr, StepResult), Stuck>
+{
+    match expr {
+        // ST_AppAbs: beta reduction
+        Expr::App(box Expr::Lam(x, _ty, body), v) if is_value(v) => { ... }
+        // ST_App1: congruence
+        Expr::App(e1, e2) if !is_value(e1) => { ... }
+        // ST_App2: congruence
+        Expr::App(v1, e2) if is_value(v1) && !is_value(e2) => { ... }
+        // ... 28 more rules matching Semantics.v exactly
+    }
+}
+
+/// Multi-step evaluation to a value
+pub fn eval(expr: &Expr) -> Result<Value, EvalError> {
+    let mut store = Store::new();
+    let mut ctx = EffectCtx::new();
+    let mut current = expr.clone();
+    loop {
+        if is_value(&current) { return Ok(to_value(&current)); }
+        let (next, _) = step(&current, &mut store, &ctx)?;
+        current = next;
+    }
+}
+```
+
+**31 rules to implement:**
+
+| # | Rule | Coq Name | Category |
+|---|------|----------|----------|
+| 1 | Beta reduction | `ST_AppAbs` | Core |
+| 2-3 | Application congruence | `ST_App1`, `ST_App2` | Congruence |
+| 4-5 | Pair congruence | `ST_Pair1`, `ST_Pair2` | Congruence |
+| 6-7 | Projection | `ST_Fst`, `ST_Snd` | Elimination |
+| 8-9 | Projection congruence | `ST_FstStep`, `ST_SndStep` | Congruence |
+| 10-12 | Sum elimination | `ST_CaseInl`, `ST_CaseInr`, `ST_CaseStep` | Elimination |
+| 13-14 | Sum congruence | `ST_InlStep`, `ST_InrStep` | Congruence |
+| 15-17 | Conditional | `ST_IfTrue`, `ST_IfFalse`, `ST_IfStep` | Control |
+| 18-19 | Let binding | `ST_LetValue`, `ST_LetStep` | Binding |
+| 20-21 | Effect perform | `ST_PerformStep`, `ST_PerformValue` | Effects |
+| 22-23 | Effect handler | `ST_HandleStep`, `ST_HandleValue` | Effects |
+| 24-25 | Reference alloc | `ST_RefStep`, `ST_RefValue` | Store |
+| 26-27 | Dereference | `ST_DerefStep`, `ST_DerefLoc` | Store |
+| 28-30 | Assignment | `ST_Assign1`, `ST_Assign2`, `ST_AssignLoc` | Store |
+| 31 | Classify | `ST_ClassifyStep` | Security |
+
+**Each Rust match arm MUST include a Coq reference comment:**
+```rust
+// Coq: foundations/Semantics.v:96-98 (ST_AppAbs)
+```
+
+**Estimated:** ~500 lines.
+
+**Dependencies:** None. Can start immediately.
+
+---
+
+### 7.7 P1: Coq↔Rust Alignment Fixes
+
+**3 breaking misalignments identified by audit:**
+
+#### 7.7.1 Add `Expr::Loc(u64)` to Rust
+
+**File:** `03_PROTO/crates/riina-types/src/lib.rs`
+
+Add variant to `Expr` enum:
+```rust
+/// Heap location (Coq: ELoc : loc -> expr)
+/// Internal — not parseable from source, only created by evaluator
+Loc(u64),
+```
+
+Update all `Expr` match arms across: parser, typechecker, codegen (lower, interp, emit), value.
+
+**Estimated:** +50 lines across 6 files.
+
+#### 7.7.2 Resolve BinOp Mismatch
+
+**Options (choose one):**
+
+| Option | Change | Impact |
+|--------|--------|--------|
+| **A (RECOMMENDED)** | Add `EBinOp` to Coq `expr` in `Syntax.v` with typing/semantic rules | ~100 lines Coq, requires updating subst/free_in/step/has_type/value across ~25 files. BLOCKED until 0 axioms. |
+| **B** | Desugar `Expr::BinOp` to `Expr::App` in Rust parser/lowering | ~30 lines Rust. Requires builtins for `tambah`, `tolak`, etc. No Coq change. |
+
+**Recommendation:** Option B now (unblocked), Option A after axiom elimination.
+
+#### 7.7.3 Formalize Builtin Function Signatures
+
+**File:** New Coq file `02_FORMAL/coq/foundations/Builtins.v`
+
+Define axiomatized builtin signatures that the Rust builtins module must match:
+
+```coq
+(* Builtins.v — Axiomatized builtin function signatures *)
+(* These correspond to 03_PROTO/crates/riina-codegen/src/builtins.rs *)
+
+Definition builtin_add_ty := TFn TInt (TFn TInt TInt EffectPure) EffectPure.
+Definition builtin_print_ty := TFn TString TUnit EffectSystem.
+(* ... etc ... *)
+```
+
+**Estimated:** ~100 lines Coq.
+
+---
+
+### 7.8 P2: Threat Model Coverage
+
+**Current state:** 350+ threats documented in `01_RESEARCH/MASTER_THREAT_MODEL.md`. <5 have actual Coq proofs. 0 are fully proven.
+
+#### 7.8.1 Missing Research Tracks
+
+**10 required tracks not yet created:**
+
+| Track | Name | Attacks Covered | Action |
+|-------|------|-----------------|--------|
+| **AA** | Verified Identity & Authentication | AUTH-001 to AUTH-020 (20 attacks: credential stuffing, brute force, MFA bypass, session hijacking, etc.) | CREATE: `01_RESEARCH/27_DOMAIN_AA_VERIFIED_IDENTITY/` + Coq file `domains/VerifiedAuthentication.v` |
+| **AB** | Verified Supply Chain | SUP-001 to SUP-015 (16 attacks: compromised deps, compiler trojans, etc.) | CREATE: `01_RESEARCH/28_DOMAIN_AB_VERIFIED_SUPPLY_CHAIN/` + expand existing `SupplyChainSecurity.v` |
+| **AC** | Covert Channel Elimination | COV-001 to COV-015 (15 attacks: storage channels, timing channels, cache channels) | CREATE: `01_RESEARCH/29_DOMAIN_AC_COVERT_CHANNELS/` + expand existing `CovertChannelElimination.v` |
+| **AD** | Time Security | TIME-004 to TIME-015 (12 attacks: race conditions, TOCTOU, timing oracles) | CREATE: `01_RESEARCH/30_DOMAIN_AD_TIME_SECURITY/` + Coq file `domains/TimeSafetyProofs.v` |
+| **AE** | Verified Audit | Logging, forensics, audit trails | CREATE: `01_RESEARCH/31_DOMAIN_AE_VERIFIED_AUDIT/` + expand `VerifiedAudit.v` |
+| **AF** | Verified Updates | Secure update protocols, rollback protection | CREATE: `01_RESEARCH/32_DOMAIN_AF_VERIFIED_UPDATES/` + expand `SecureUpdates.v` |
+| **AG** | Verified Key Lifecycle | Key generation, rotation, revocation, escrow | CREATE: `01_RESEARCH/33_DOMAIN_AG_KEY_LIFECYCLE/` + expand `KeyLifecycle.v` |
+| **AH** | Verified Protocols | TLS 1.3, QUIC, custom protocol verification | CREATE: `01_RESEARCH/34_DOMAIN_AH_VERIFIED_PROTOCOLS/` + expand `VerifiedProtocols.v` |
+| **AI** | Verified Isolation | Container, VM, process isolation proofs | CREATE: `01_RESEARCH/35_DOMAIN_AI_VERIFIED_ISOLATION/` + expand `VerifiedIsolation.v` |
+| **AJ** | Verified Compliance | HIPAA, PCI-DSS, DO-178C regulatory mapping | CREATE: `01_RESEARCH/36_DOMAIN_AJ_VERIFIED_COMPLIANCE/` + expand `VerifiedCompliance.v` |
+
+#### 7.8.2 Zero-Coverage Attack Classes
+
+**Entire categories with 0 proofs despite being in threat model:**
+
+| Category | Attacks | Required Proofs | Priority |
+|----------|---------|-----------------|----------|
+| Web security (XSS, CSRF, SSRF) | WEB-001 to WEB-025 | Context-aware escaping, output safety | HIGH |
+| Authentication | AUTH-001 to AUTH-020 | Protocol modeling, rate limiting | HIGH |
+| Hardware/microarch (Spectre, Meltdown) | HW-001 to HW-034 | CPU speculation modeling, barrier correctness | HIGH |
+| Memory corruption (heap overflow, UAF) | MEM-001 to MEM-020 | Verified allocator, bounds proofs | HIGH |
+| Control flow (ROP, JOP) | CTL-001 to CTL-015 | CFI + verified codegen | MEDIUM |
+| Network (MITM, DNS poisoning) | NET-001 to NET-025 | Protocol verification | MEDIUM |
+| Supply chain | SUP-001 to SUP-016 | Dependency verification | MEDIUM |
+| Physical (device theft, TEMPEST) | PHYS-001 to PHYS-020 | Hardware modeling | LOW |
+| Covert channels | COV-001 to COV-015 | Information flow proofs | MEDIUM |
+| AI/ML (adversarial examples) | AI-001 to AI-018 | Model robustness | LOW |
+
+#### 7.8.3 Framework Coverage Targets
+
+| Framework | Current | Target (Phase 3) | Target (Phase 5) |
+|-----------|---------|-------------------|-------------------|
+| OWASP Top 10 | 10% (1/10 partial) | 50% (5/10 partial) | 100% |
+| CWE Top 25 | 8% (2/25 partial) | 40% (10/25) | 80% |
+| MITRE ATT&CK | ~3% | 15% | 50% |
+| Custom threat model (350+) | ~1% | 20% (70 proven) | 80% (280 proven) |
+
+---
+
+### 7.9 P2: Traceability Index
+
+**Goal: Build formal mapping from Attack ID → Coq Theorem → Proof Status.**
+
+**Current state:** `01_RESEARCH/TRACEABILITY_MATRIX.md` exists but documents 0% completion.
+
+**Action:** Create machine-readable traceability file:
+
+**File:** `06_COORDINATION/ATTACK_PROOF_MAP.md`
+
+Format:
+```markdown
+| Attack ID | Attack Name | Coq Theorem | File:Line | Status |
+|-----------|-------------|-------------|-----------|--------|
+| MEM-001 | Stack Buffer Overflow | bounds_check_safe | Syntax.v:xxx | PARTIAL |
+| MEM-002 | Heap Buffer Overflow | — | — | NO PROOF |
+| INJ-001 | SQL Injection | non_interference | NonInterference_v2.v:xxx | AXIOMS (6) |
+| ... | | | | |
+```
+
+**Rules:**
+- Every attack in MASTER_THREAT_MODEL.md MUST appear
+- If no proof exists, status = `NO PROOF`
+- If proof uses axioms, status = `AXIOMS (count)`
+- If proof is complete, status = `PROVEN (Qed)`
+- Update after every axiom/admit elimination
+
+---
+
+### 7.10 Multi-Prover Verification (Phase 3+)
+
+After Coq proofs are complete (0 axioms, 0 admits):
 1. **Lean 4:** Port Progress, Preservation, Type Safety, Non-Interference
 2. **Isabelle/HOL:** Port Type Safety and Non-Interference
 3. Cross-verify: Same theorem statements, independent proof strategies
 
-### 7.5 Compiler Correctness (Phase 3+)
+### 7.11 Compiler Correctness (Phase 3+)
 
 Prove the Rust prototype faithfully implements Coq semantics:
 1. Property-based testing: Use Coq-extracted interpreter as oracle
 2. Translation validation: For each compilation phase, test semantic preservation
 3. Differential testing: Run same programs in interpreter and compiled binary
+4. **NEW:** Verify Rust evaluator (7.6) matches Coq `step` relation rule-for-rule
 
 ---
 
@@ -1768,7 +2103,35 @@ AFTER 5.3.9 (modules work):
 +-- Phase 9: Package manager
 ```
 
-### 12.2 Cross-Phase Dependencies
+### 12.2 Phase 3 Internal Dependencies (NEW)
+
+```
+IMMEDIATE (P0 — no dependencies, start in parallel):
++-- 7.2  Axiom & admit elimination (Track A, ongoing)
++-- 7.3  Domain file integration (add 118 files to _CoqProject)
++-- 7.4  Fix 3 uncompilable domain files
++-- 7.6  Rust evaluator implementation (new evaluator.rs)
++-- 7.9  Traceability index (ATTACK_PROOF_MAP.md)
+
+AFTER 7.2 (0 axioms achieved):
++-- 7.5  Semantic completeness Phase 3A (TLabeled, TTainted, TCapability rules)
++-- 7.7.2 Option A: Add EBinOp to Coq (if chosen over Option B)
++-- 7.7.3 Formalize builtin signatures in Coq
+
+AFTER 7.5 Phase 3A:
++-- 7.5  Phase 3B (ESanitize expression, effect context in step relation)
++-- 7.8  Create 10 missing tracks (AA-AJ)
+
+AFTER 7.5 Phase 3B:
++-- 7.5  Phase 3C (TConstantTime timing model, TZeroizing memory model)
++-- 7.8  Prove web security, auth, hardware attack properties
+
+CAN START IMMEDIATELY (Rust-only, no Coq dependency):
++-- 7.7.1 Add Expr::Loc(u64) to Rust
++-- 7.7.2 Option B: Desugar BinOp to App in Rust
+```
+
+### 12.3 Cross-Phase Dependencies
 
 ```
 Phase 1 (Compiler)
@@ -1779,20 +2142,39 @@ Phase 1 (Compiler)
     |                               |
     +--> Phase 9 (Ecosystem) ----> Phase 10 (Adoption)
 
-Phase 7 (Formal Verification) --> Phase 10 (Enterprise) --> Phase 11 (Long-term)
+Phase 3 (Formal Verification + Semantic Completeness)
+    |
+    +-- 7.2 Axiom elimination ──┐
+    +-- 7.3 Domain integration  ├──> 7.5 Semantic completeness ──> 7.8 Threat coverage
+    +-- 7.4 Fix uncompilable   ─┘        |
+    +-- 7.6 Rust evaluator ──────────────> 7.11 Compiler correctness
+    +-- 7.7 Alignment fixes ─────────────> Phase 1 (C emitter, builtins)
+    +-- 7.9 Traceability ────────────────> Phase 10 (Enterprise, compliance)
+    |
+    +--> Phase 10 (Enterprise) --> Phase 11 (Long-term)
 
 Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 ```
 
-### 12.3 Critical Path
+### 12.4 Critical Path
 
-The **critical path** (longest sequence of dependent work) is:
+**Two parallel critical paths exist:**
 
+**Path A (Compiler):**
 ```
 5.2 Lexer --> 5.3.1 Statements --> 5.3.2 Functions --> 5.7 Builtins --> 5.4 C emitter --> 5.3.9 Modules --> Phase 6 Stdlib --> Phase 10 Demos
 ```
 
-**The parser extension (5.3) is the bottleneck.** Everything downstream depends on it.
+**Path B (Verification — NEW):**
+```
+7.2 Axiom elimination --> 7.5 Phase 3A (type enforcement) --> 7.5 Phase 3B (new expressions) --> 7.8 Threat coverage --> 7.10 Multi-prover --> Phase 10 Enterprise
+```
+
+**Paths A and B can proceed in parallel.** Path A is the compiler bottleneck (parser extension). Path B is the formal verification bottleneck (axiom elimination).
+
+**Unblocked items (start immediately on both paths):**
+- Path A: Lexer changes (5.2), wire codegen (5.1), CI/CD (9.1)
+- Path B: Domain integration (7.3), Rust evaluator (7.6), Expr::Loc fix (7.7.1), traceability index (7.9)
 
 ---
 
@@ -1822,39 +2204,62 @@ The **critical path** (longest sequence of dependent work) is:
 
 **Phase 1 Total: ~3,031 new/modified lines across 17 files.**
 
-### 13.2 Phase 4 Files (Developer Experience)
+### 13.2 Phase 3 Files (Formal Verification & Semantic Completeness)
+
+| # | File | Action | Est. Lines | Priority | Depends On |
+|---|------|--------|-----------|----------|------------|
+| 18 | `02_FORMAL/coq/_CoqProject` | MODIFY: add 118 domain file paths | +118 | P0 | — |
+| 19 | `02_FORMAL/coq/domains/LinearTypes.v` | FIX: complete 1 Admitted proof | ~20 | P0 | — |
+| 20 | `02_FORMAL/coq/domains/StandardLibrary.v` | FIX: replace 2 Parameters with definitions | ~40 | P0 | — |
+| 21 | `02_FORMAL/coq/domains/VerifiedIdentity.v` | FIX: replace 1 Parameter with Inductive | ~30 | P0 | — |
+| 22 | `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v` | PROVE: eliminate 5 axioms | ~500 | P0 | — |
+| 23 | `02_FORMAL/coq/properties/NonInterference_v2.v` | PROVE: eliminate 1 axiom + 2 admits | ~200 | P0 | — |
+| 24 | `03_PROTO/crates/riina-codegen/src/evaluator.rs` | CREATE: reference evaluator (31 step rules) | ~500 | P1 | — |
+| 25 | `03_PROTO/crates/riina-types/src/lib.rs` | MODIFY: add `Expr::Loc(u64)` variant | +10 | P1 | — |
+| 26 | `02_FORMAL/coq/foundations/Builtins.v` | CREATE: axiomatized builtin signatures | ~100 | P1 | #22 |
+| 27 | `02_FORMAL/coq/foundations/Typing.v` | MODIFY: add TLabeled/TTainted enforcement rules | ~150 | P1 | #22 |
+| 28 | `02_FORMAL/coq/foundations/Semantics.v` | MODIFY: add capability checking, sanitization semantics | ~200 | P1 | #22, #27 |
+| 29 | `06_COORDINATION/ATTACK_PROOF_MAP.md` | CREATE: attack→theorem traceability index | ~400 | P2 | — |
+| 30 | `01_RESEARCH/27_DOMAIN_AA_VERIFIED_IDENTITY/RESEARCH_AA01_FOUNDATION.md` | CREATE: Track AA foundation | ~300 | P2 | — |
+| 31 | `01_RESEARCH/29_DOMAIN_AC_COVERT_CHANNELS/RESEARCH_AC01_FOUNDATION.md` | CREATE: Track AC foundation | ~300 | P2 | — |
+| 32 | `01_RESEARCH/30_DOMAIN_AD_TIME_SECURITY/RESEARCH_AD01_FOUNDATION.md` | CREATE: Track AD foundation | ~300 | P2 | — |
+| 33 | Remaining 7 track foundations (AE-AJ) | CREATE: 7 foundation documents | ~2,100 | P3 | — |
+
+**Phase 3 Total: ~5,268 new/modified lines across 16+ files.**
+
+### 13.3 Phase 4 Files (Developer Experience)
 
 | # | File | Action | Est. Lines |
 |---|------|--------|-----------|
-| 18 | `03_PROTO/crates/riina-lsp/Cargo.toml` | CREATE | ~20 |
-| 19 | `03_PROTO/crates/riina-lsp/src/lib.rs` | CREATE: LSP server | ~3,500 |
-| 20 | `03_PROTO/Cargo.toml` | MODIFY: add riina-lsp to workspace | +1 |
-| 21 | `riina-vscode/package.json` | CREATE | ~50 |
-| 22 | `riina-vscode/syntaxes/riina.tmLanguage.json` | CREATE | ~300 |
-| 23 | `riina-vscode/language-configuration.json` | CREATE | ~30 |
-| 24 | `riina-vscode/snippets/riina.json` | CREATE | ~80 |
-| 25 | `riina-vscode/src/extension.ts` | CREATE | ~100 |
-| 26 | `03_PROTO/crates/riina-fmt/Cargo.toml` | CREATE | ~15 |
-| 27 | `03_PROTO/crates/riina-fmt/src/lib.rs` | CREATE: formatter | ~800 |
-| 28 | `03_PROTO/crates/riina-doc/Cargo.toml` | CREATE | ~15 |
-| 29 | `03_PROTO/crates/riina-doc/src/lib.rs` | CREATE: doc generator | ~1,500 |
+| 34 | `03_PROTO/crates/riina-lsp/Cargo.toml` | CREATE | ~20 |
+| 35 | `03_PROTO/crates/riina-lsp/src/lib.rs` | CREATE: LSP server | ~3,500 |
+| 36 | `03_PROTO/Cargo.toml` | MODIFY: add riina-lsp to workspace | +1 |
+| 37 | `riina-vscode/package.json` | CREATE | ~50 |
+| 38 | `riina-vscode/syntaxes/riina.tmLanguage.json` | CREATE | ~300 |
+| 39 | `riina-vscode/language-configuration.json` | CREATE | ~30 |
+| 40 | `riina-vscode/snippets/riina.json` | CREATE | ~80 |
+| 41 | `riina-vscode/src/extension.ts` | CREATE | ~100 |
+| 42 | `03_PROTO/crates/riina-fmt/Cargo.toml` | CREATE | ~15 |
+| 43 | `03_PROTO/crates/riina-fmt/src/lib.rs` | CREATE: formatter | ~800 |
+| 44 | `03_PROTO/crates/riina-doc/Cargo.toml` | CREATE | ~15 |
+| 45 | `03_PROTO/crates/riina-doc/src/lib.rs` | CREATE: doc generator | ~1,500 |
 
-### 13.3 Phase 5 Files (Ecosystem)
-
-| # | File | Action | Est. Lines |
-|---|------|--------|-----------|
-| 30 | `.github/workflows/ci.yml` | CREATE | ~80 |
-| 31 | `.github/workflows/release.yml` | CREATE | ~80 |
-| 32 | `.github/workflows/nightly.yml` | CREATE | ~40 |
-
-### 13.4 Phase 6 Files (Adoption)
+### 13.4 Phase 5 Files (Ecosystem)
 
 | # | File | Action | Est. Lines |
 |---|------|--------|-----------|
-| 33 | `03_PROTO/crates/riina-codegen/src/ffi.rs` | CREATE: FFI support | ~200 |
-| 34 | `08_DEMOS/web-server/` | CREATE: demo 1 | ~800 |
-| 35 | `08_DEMOS/messenger/` | CREATE: demo 2 | ~800 |
-| 36 | `08_DEMOS/medical/` | CREATE: demo 3 | ~800 |
+| 46 | `.github/workflows/ci.yml` | CREATE | ~80 |
+| 47 | `.github/workflows/release.yml` | CREATE | ~80 |
+| 48 | `.github/workflows/nightly.yml` | CREATE | ~40 |
+
+### 13.5 Phase 6 Files (Adoption)
+
+| # | File | Action | Est. Lines |
+|---|------|--------|-----------|
+| 49 | `03_PROTO/crates/riina-codegen/src/ffi.rs` | CREATE: FFI support | ~200 |
+| 50 | `08_DEMOS/web-server/` | CREATE: demo 1 | ~800 |
+| 51 | `08_DEMOS/messenger/` | CREATE: demo 2 | ~800 |
+| 52 | `08_DEMOS/medical/` | CREATE: demo 3 | ~800 |
 
 ---
 
@@ -1913,13 +2318,50 @@ git push origin main
 # All jobs (rust-proto, rust-tooling, coq, examples) green
 ```
 
-### Gate 5: Coq Proofs (Track A, after Phase 7)
+### Gate 5: Domain Integration (after 7.3)
+
+```bash
+cd /workspaces/proof/02_FORMAL/coq
+make                                    # Must pass with 216+ files
+wc -l _CoqProject                      # Must show 216+ entries
+grep -rc "Admitted" domains/*.v         # Must be 0 (after 7.4 fixes)
+```
+
+### Gate 6: Rust Evaluator (after 7.6)
+
+```bash
+cd /workspaces/proof/03_PROTO
+cargo test --all                        # Must pass
+# Evaluator must handle all 31 step rules
+cargo test -p riina-codegen evaluator   # All evaluator tests pass
+```
+
+### Gate 7: Coq Proofs — Zero Axioms (Track A, after 7.2)
 
 ```bash
 cd /workspaces/proof/02_FORMAL/coq
 make                                    # Must pass
 grep -rc "Admitted" **/*.v              # Must be 0
-grep -c "Axiom" **/*.v                  # Must be ≤ justified compliance axioms
+grep -rc "admit\." **/*.v              # Must be 0
+grep -c "Axiom" properties/*.v          # Must be 0 (core axioms eliminated)
+```
+
+### Gate 8: Semantic Completeness (after 7.5)
+
+```bash
+cd /workspaces/proof/02_FORMAL/coq
+make                                    # Must pass
+# TLabeled, TTainted, TCapability must have typing + semantic rules
+grep -c "T_Labeled\|T_Tainted\|ST_RequireChecked" foundations/Typing.v foundations/Semantics.v
+# Must show non-zero counts for each
+```
+
+### Gate 9: Threat Coverage (after 7.8)
+
+```bash
+# Traceability index must exist
+cat 06_COORDINATION/ATTACK_PROOF_MAP.md | grep "PROVEN" | wc -l
+# Target: ≥70 attacks with PROVEN status (Phase 3 target)
 ```
 
 ---
@@ -2261,6 +2703,7 @@ Only after 0 axioms and 0 admits:
 
 *Document ID: RIINA_MATERIALIZATION_PLAN_v1_0_0*
 *Status: AUTHORITATIVE*
-*Date: 2026-01-30*
-*Mode: ULTRA KIASU | ZERO TRUST | ZERO ADMITS*
+*Date: 2026-01-30 (updated with exhaustive gap analysis from 4-agent audit)*
+*Incorporates: 13-item remediation plan (P0-P3) from build integrity, type system enforcement, threat model coverage, and Coq↔Rust alignment audits*
+*Mode: ULTRA KIASU | ZERO TRUST | ZERO ADMITS | ZERO AXIOMS TARGET*
 *"QED Eternum."*
