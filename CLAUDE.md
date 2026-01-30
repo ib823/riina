@@ -685,7 +685,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-30 (materialization plan references added)*
+*Last updated: 2026-01-30 (axiom 7 eliminated, 6 remain)*
 
 ---
 

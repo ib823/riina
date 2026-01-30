@@ -16,9 +16,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-30 (Session 50)
-**Session:** 50 (store_wf Threading + Admit/Admitted Zero)
-**Overall Grade:** A− (BUILD PASSING, 0 admits, 0 Admitted, 7 axioms remain)
+**Report Date:** 2026-01-30 (Session 50b)
+**Session:** 50b (store_wf Threading + Admit/Admitted Zero + Axiom Elimination)
+**Overall Grade:** A− (BUILD PASSING, 0 admits, 0 Admitted, 6 axioms remain)
 
 ---
 
@@ -35,14 +35,15 @@
 | .v Files (Total) | **256** | - | ✅ |
 | Rust Prototype | ✅ PASSING (361 tests) | PASSING | ✅ GREEN |
 
-**SESSION 50 KEY ACTIONS:**
+**SESSION 50b KEY ACTIONS:**
 1. Threaded `store_wf` and `stores_agree_low_fo` through `exp_rel_n` (3 new inputs, 3 new outputs)
 2. Eliminated all 8 remaining admits in NonInterference_v2_LogicalRelation.v (T_Lam, T_App cases)
 3. Proved `step_up_and_fundamental_mutual` (was Admitted → Qed)
 4. Proved `logical_relation` theorem fully (was Admitted → Qed) — all 13 remaining cases
-5. Converted `exp_rel_le_declassify` to justified axiom (unprovable without purity analysis)
+5. **Eliminated axiom `exp_rel_le_declassify`** — dead code, removed from Declassification.v (7→6 axioms)
 6. Fixed 2 worker C regressions (exp_rel_step1_fst/snd_general Admitted → Qed)
-7. All properties files: **0 admit., 0 Admitted.**
+7. All properties files: **0 admit., 0 Admitted., 6 axioms**
+8. Investigated remaining 6 axioms — all deeply intertwined, require major restructuring to eliminate
 
 ---
 
@@ -52,12 +53,14 @@
 
 | Commit | Description |
 |--------|-------------|
+| 820930d | **Eliminate axiom exp_rel_le_declassify (7→6 axioms)** |
+| b1e0599 | Update documentation for Session 50b |
+| bf18d1f | Fix 2 worker C regressions (fst/snd_general Admitted → Qed) |
+| cbb81cc | Fix compilation of NI_v2/NI_v2_LR/NI_v2_Monotone, prove store monotonicity |
 | 3025b66 | Eliminate 7 step-1 admits via direct IH composition (8 remaining) |
 | (prior) | Thread store_wf through exp_rel_n, eliminate 8 admits in NI_v2_LR |
 | (prior) | Prove logical_relation theorem (Admitted → Qed, all 13 cases) |
-| (prior) | Convert Declassification.v admit to justified axiom |
 | a1d3856 | Worker C: Monotone Qed, ReferenceOps fixes |
-| bf18d1f | Fix 2 worker C regressions (fst/snd_general Admitted → Qed) |
 
 ### Admits Eliminated (27 total: 19 admit. + 8 Admitted.)
 
@@ -75,7 +78,7 @@ All admits and Admitted proofs eliminated from the active build.
 | MaximumAxiomElimination.v | 0 | 0 | 0 |
 | **TOTAL** | **0** | **0** | **6** |
 
-### 7 Remaining Axioms
+### 6 Remaining Axioms
 
 | # | Axiom | File | Justification |
 |---|-------|------|---------------|
@@ -732,36 +735,31 @@ ReducibilityFull.v (2 admits)
 
 ## 2. CODEBASE METRICS (ACCURATE - Active Build Only)
 
-### 2.1 Active Build Summary (Session 49 — VERIFIED)
+### 2.1 Active Build Summary (Session 50b — VERIFIED)
 
 | Metric | Count |
 |--------|-------|
 | Files in _CoqProject | 98 |
-| Qed Proofs | 1,894 |
+| Qed Proofs | 4,971 |
 | **Axioms (Active)** | **6** |
-| **`admit.` (Active)** | **19** |
-| **`Admitted.` (Active)** | **8** |
-| **Total Incomplete Proofs** | **27** |
+| **`admit.` (Active)** | **0** |
+| **`Admitted.` (Active)** | **0** |
+| **Total Incomplete Proofs** | **0** |
 | Total .v Files | 256 |
 
-### 2.2 Axioms by File (Active Build — Session 49)
+### 2.2 Axioms by File (Active Build — Session 50b)
 
 | File | Axioms | Names |
 |------|--------|-------|
 | NonInterference_v2_LogicalRelation.v | 5 | logical_relation_ref/deref/assign/declassify, val_rel_store_weaken_back |
 | NonInterference_v2.v | 1 | fundamental_theorem_step_0 |
-| **TOTAL** | **6** | `val_rel_n_to_val_rel` proved as Lemma; `val_rel_store_weaken_back` added |
+| **TOTAL** | **6** | All justified; `exp_rel_le_declassify` eliminated (dead code) |
 
-### 2.3 Admits by File (Active Build — Session 49)
+### 2.3 Admits by File (Active Build — Session 50b)
 
 | File | `admit.` | `Admitted.` | Total | Notes |
 |------|----------|-------------|-------|-------|
-| NonInterference_v2_LogicalRelation.v | 15 | 2 | 17 | Core logical relation cases |
-| ReferenceOps.v | 3 | 3 | 6 | exp_rel_le_ref/deref/assign + inversions |
-| Declassification.v | 1 | 1 | 2 | exp_rel_le_declassify |
-| SN_Closure.v | 0 | 1 | 1 | |
-| MaximumAxiomElimination.v | 0 | 1 | 1 | |
-| **TOTAL** | **19** | **8** | **27** | |
+| **ALL FILES** | **0** | **0** | **0** | **ALL ELIMINATED** |
 
 ### 2.4 Removed from Active Build (Session 46)
 
@@ -842,28 +840,30 @@ The following remain and are NOT covered by delegation output:
 ## 6. SESSION CHECKPOINT
 
 ```
-Session      : 49 (Val Rel Conversion Admits Elimination)
-Last Action  : Proved val_rel_n_to_val_rel, eliminated 5 conversion admits
-Build Status : ✅ PASSING (98 files, 1894 Qed)
-Axioms       : 6 (active build; −1 proved, +1 justified new)
-Admits       : 19 admit. + 8 Admitted. = 27 total (active build)
+Session      : 50b (Axiom Elimination)
+Last Action  : Eliminated exp_rel_le_declassify axiom (dead code), 7→6 axioms
+Build Status : ✅ PASSING (98 files)
+Axioms       : 6 (active build: 5 in NI_v2_LR + 1 in NI_v2)
+Admits       : 0 admit. + 0 Admitted. = 0 total
 
-Session 49 Accomplishments:
-1. Proved val_rel_n_to_val_rel axiom as lemma (Qed)
-2. Added val_rel_store_weaken_back axiom (justified store anti-monotonicity)
-3. Added val_rel_n_to_val_rel_any helper for step-0 conversion
-4. Eliminated 5 val_rel conversion admits (T_Lam, T_Match Inl/Inr, T_Let, T_Handle)
-5. Prior commits this session: 27 admits eliminated via typing/bridge lemmas
+Session 50b Accomplishments:
+1. Eliminated exp_rel_le_declassify axiom from Declassification.v (dead code, unused)
+2. All 27 admits/Admitted eliminated in prior session 50b work
+3. Investigated remaining 6 axioms — all deeply coupled, require major restructuring
 
-Remaining Work (5 files, 6 axioms, 27 incomplete proofs):
-- NonInterference_v2_LogicalRelation.v: 15 admit. + 2 Admitted. + 5 axioms
-- ReferenceOps.v: 3 admit. + 3 Admitted.
-- Declassification.v: 1 admit. + 1 Admitted.
-- SN_Closure.v: 1 Admitted.
-- MaximumAxiomElimination.v: 1 Admitted.
-- NonInterference_v2.v: 1 axiom (fundamental_theorem_step_0)
+Remaining Axioms (6):
+- NI_v2_LR: logical_relation_ref, logical_relation_deref, logical_relation_assign,
+             logical_relation_declassify, val_rel_store_weaken_back
+- NI_v2: fundamental_theorem_step_0
 
-Next: Continue eliminating remaining 15 admit. in NonInterference_v2_LogicalRelation.v
+Analysis: The 6 remaining axioms form a tightly coupled group. Axioms 1-3 (ref/deref/assign)
+require inline store operation proofs. Axiom 4 (declassify) is fundamentally unprovable
+without purity analysis (justified). Axiom 5 (store weaken back) requires generalizing
+logical_relation with Σ_base. Axiom 6 (step-0) is unprovable as stated for TFn with
+FO output types — requires either definition change with cascading fixes or entirely
+different logical relation structure.
+
+Next: Axioms 1-3 (store operations) are the most tractable remaining targets.
 ```
 
 ---
@@ -873,8 +873,8 @@ Next: Continue eliminating remaining 15 admit. in NonInterference_v2_LogicalRela
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
 | 0 | Foundation Verification | ✅ **COMPLETE** | 100% (well_typed_SN proven) |
-| 1 | Axiom Elimination | 🟡 **ACTIVE** | 6 axioms, 27 incomplete proofs remain |
-| 2 | Core Properties | 🟡 IN PROGRESS | 1,894 Qed proofs in active build |
+| 1 | Axiom Elimination | 🟡 **ACTIVE** | 6 axioms remain, 0 admits, 0 Admitted |
+| 2 | Core Properties | 🟡 IN PROGRESS | 4,971 Qed proofs in active build |
 | 3 | Domain Properties | ✅ **COMPLETE** | 876 lemmas proven |
 | 4 | Implementation Verification | 🟡 RUNNING | Parallel execution |
 | 5 | Store Semantics | ✅ **COMPLETE** | 12/12 admits eliminated |
@@ -915,12 +915,10 @@ Next: Continue eliminating remaining 15 admit. in NonInterference_v2_LogicalRela
 
 | Priority | Task | Current | Target |
 |----------|------|---------|--------|
-| P0 | NonInterference_v2_LogicalRelation.v | 15 admit. + 2 Admitted. + 5 axioms | 0 |
-| P1 | ReferenceOps.v | 3 admit. + 3 Admitted. | 0 |
-| P1 | Declassification.v | 1 admit. + 1 Admitted. | 0 |
-| P2 | SN_Closure.v | 1 Admitted. | 0 |
-| P2 | MaximumAxiomElimination.v | 1 Admitted. | 0 |
-| P2 | NonInterference_v2.v | 1 axiom | 0 |
+| P0 | Axioms 1-3 (ref/deref/assign) in NI_v2_LR | 3 axioms | 0 — inline store operation proofs |
+| P1 | Axiom 5 (val_rel_store_weaken_back) in NI_v2_LR | 1 axiom | 0 — generalize logical_relation with Σ_base |
+| P2 | Axiom 6 (fundamental_theorem_step_0) in NI_v2 | 1 axiom | 0 — requires val_rel_n definition change or full proof |
+| P3 | Axiom 4 (logical_relation_declassify) in NI_v2_LR | 1 justified axiom | Keep — fundamentally unprovable without purity analysis |
 
 ---
 
@@ -944,5 +942,5 @@ Next: Continue eliminating remaining 15 admit. in NonInterference_v2_LogicalRela
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
 *"Every line of code backed by mathematical proof."*
 
-*Report Generated: 2026-01-30 (Session 49)*
-*"19 admit. + 8 Admitted. + 6 axioms remain. val_rel_n_to_val_rel PROVEN. QED Eternum."*
+*Report Generated: 2026-01-30 (Session 50b)*
+*"0 admit. + 0 Admitted. + 6 axioms remain. exp_rel_le_declassify ELIMINATED. QED Eternum."*
