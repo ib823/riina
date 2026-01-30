@@ -1,0 +1,2266 @@
+# RIINA Materialization Plan v1.0.0
+
+**Document ID:** `RIINA_MATERIALIZATION_PLAN_v1_0_0`
+**Date:** 2026-01-30
+**Status:** AUTHORITATIVE
+**Incorporates:** `SYNTAX_IMPROVEMENT_SPEC_v2_0_0` (fully included herein)
+**Scope:** Complete plan from current prototype to production-ready language
+
+---
+
+## TABLE OF CONTENTS
+
+- [0. ABOUT THIS DOCUMENT](#0-about-this-document)
+- [1. WHAT IS RIINA](#1-what-is-riina)
+- [2. REPOSITORY STRUCTURE](#2-repository-structure)
+- [3. CURRENT STATE AUDIT](#3-current-state-audit)
+- [4. DESIGN PRINCIPLES](#4-design-principles)
+- [5. PHASE 1: COMPILER COMPLETION](#5-phase-1-compiler-completion)
+  - [5.1 Wire Codegen into riinac](#51-wire-codegen-into-riinac)
+  - [5.2 Lexer Changes](#52-lexer-changes)
+  - [5.3 Parser Extension](#53-parser-extension)
+  - [5.4 C Emitter Completion](#54-c-emitter-completion)
+  - [5.5 REPL](#55-repl)
+  - [5.6 Error Diagnostics](#56-error-diagnostics)
+  - [5.7 Built-in Functions](#57-built-in-functions)
+- [6. PHASE 2: STANDARD LIBRARY](#6-phase-2-standard-library)
+- [7. PHASE 3: FORMAL VERIFICATION](#7-phase-3-formal-verification)
+- [8. PHASE 4: DEVELOPER EXPERIENCE](#8-phase-4-developer-experience)
+- [9. PHASE 5: ECOSYSTEM & DISTRIBUTION](#9-phase-5-ecosystem--distribution)
+- [10. PHASE 6: ADOPTION & COMMUNITY](#10-phase-6-adoption--community)
+- [11. PHASE 7: LONG-TERM VISION](#11-phase-7-long-term-vision)
+- [12. EXECUTION ORDER & DEPENDENCY GRAPH](#12-execution-order--dependency-graph)
+- [13. FILES TO CREATE OR MODIFY](#13-files-to-create-or-modify)
+- [14. VERIFICATION GATES](#14-verification-gates)
+- [15. OPEN DECISIONS](#15-open-decisions)
+- [APPENDIX A: COQ-RUST TYPE CORRESPONDENCE](#appendix-a-coq-rust-type-correspondence)
+- [APPENDIX B: BAHASA MELAYU KEYWORD REFERENCE](#appendix-b-bahasa-melayu-keyword-reference)
+- [APPENDIX C: REJECTED PROPOSALS](#appendix-c-rejected-proposals)
+- [APPENDIX D: EXAMPLE .rii FILES](#appendix-d-example-rii-files)
+
+---
+
+## 0. ABOUT THIS DOCUMENT
+
+### 0.1 Purpose
+
+This document is the **single, complete, self-contained plan** to take RIINA from its current prototype state to a production-ready, world-usable programming language. It covers:
+
+1. **Compiler completion** — making `riinac` produce runnable binaries
+2. **Syntax improvements** — syncing Rust code with Coq formalization, adding Bahasa Melayu keywords
+3. **Standard library** — built-in functions and modules
+4. **Formal verification** — eliminating all proof admits and axioms
+5. **Developer experience** — IDE support, formatter, documentation
+6. **Ecosystem** — CI/CD, package manager, website, distribution
+7. **Adoption** — demo applications, FFI, community
+
+### 0.2 How to Read This Document
+
+- **If you are implementing Phase 1:** Read sections 1-5 completely. Pay special attention to section 5 which contains exact file paths, code snippets, and line-by-line instructions.
+- **If you are implementing later phases:** Read sections 1-4 for context, then your target phase section.
+- **If you are reviewing:** Read section 3 (current state) and section 14 (verification gates).
+
+### 0.3 Assumptions
+
+- You have access to the repository at `/workspaces/proof/`
+- Rust toolchain is installed (`rustc 1.84.0+`)
+- Coq is installed (`coqc 8.18.0+`) — only needed for Phase 3
+- You can run `cargo build`, `cargo test`, `cargo clippy` in `03_PROTO/`
+- Another worker (Track A) is independently handling Coq proof work in `02_FORMAL/coq/`. **Do NOT modify files under `02_FORMAL/`** unless explicitly working on Phase 3.
+
+### 0.4 Relationship to Other Documents
+
+| Document | Relationship |
+|----------|-------------|
+| `CLAUDE.md` (repo root) | Master instructions for working in this repository. **Read it first.** |
+| `SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` (same directory) | Predecessor. Fully incorporated into this document (sections 5.2, 5.3, Appendix A-C). |
+| `PROGRESS.md` (repo root) | Live progress tracker. Update it after completing work. |
+| `SESSION_LOG.md` (repo root) | Session continuity log. Update it during work. |
+| `04_SPECS/scope/RIINA_DEFINITIVE_SCOPE.md` | Core language definition. Reference for semantics. |
+| `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md` | Bahasa Melayu syntax specification. Reference for keywords. |
+
+---
+
+## 1. WHAT IS RIINA
+
+### 1.1 Name
+
+```
+RIINA = Rigorous Immutable Invariant — Normalized Axiom
+```
+
+### 1.2 Concept
+
+RIINA is a programming language where **security properties are mathematically proven at compile time**. It uses:
+
+- **Information flow control** — The type system tracks secrecy levels. Data labeled `Secret` cannot flow to `Public` outputs. This is enforced by the compiler, not runtime checks.
+- **Effect system** — Every function declares what side effects it performs (IO, Network, Crypto, etc.). Functions without declared effects cannot perform them.
+- **Capability system** — Access to resources (files, network, processes) requires explicit capability tokens that are granted and revoked.
+- **Formal verification** — All of the above properties are proven correct in the Coq proof assistant. The Rust prototype implements these proofs.
+
+### 1.3 Bahasa Melayu
+
+RIINA uses **Bahasa Melayu** (Malay language) keywords as first-class citizens. Every keyword has both English and Bahasa Melayu forms. Example:
+
+```riina
+// Bahasa Melayu
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor {
+    pulang x
+}
+
+// English equivalent
+fn add(x: Int, y: Int) -> Int {
+    return x
+}
+
+// Both can be mixed (default mode)
+```
+
+### 1.4 File Extensions
+
+| Extension | Purpose |
+|-----------|---------|
+| `.rii` | RIINA source files |
+| `.riih` | RIINA header/interface files (future) |
+
+### 1.5 Architecture Overview
+
+```
+                    RIINA COMPILATION PIPELINE
+
+Source (.rii)
+    |
+    v
+[riina-lexer]        Tokenizes source into tokens.
+    |                 Handles bilingual keywords.
+    |                 70+ keyword variants.
+    v
+[riina-parser]       Parses tokens into AST (Abstract Syntax Tree).
+    |                 25 expression forms matching Coq formalization.
+    |                 Desugars syntactic sugar to core forms.
+    v
+[riina-typechecker]  Type-checks the AST.
+    |                 Infers types and effects.
+    |                 Enforces information flow (secrecy).
+    |                 Enforces capability requirements.
+    v
+[riina-codegen]      Three backends:
+    |--- [lower]     AST -> SSA-form IR (30+ instruction types)
+    |--- [interp]    Reference interpreter (direct evaluation)
+    |--- [emit]      C99 code emission (for compilation to binary)
+    v
+Output: interpreted result, C source, or compiled binary
+
+
+SUPPORTING CRATES:
+- riina-types     Core AST type definitions (Expr, Ty, Effect, SecurityLevel)
+- riina-span      Source location tracking (8-byte packed spans)
+- riina-symbols   String interning (O(1) comparisons)
+- riina-arena     Arena allocator (cache-friendly AST storage)
+```
+
+### 1.6 Formal Verification Stack
+
+```
+Coq Proofs (02_FORMAL/coq/)
+    |
+    | Proves: Type Safety, Progress, Preservation,
+    |         Non-Interference, Effect Safety
+    |
+    v
+Rust Prototype (03_PROTO/)
+    |
+    | Implements: The same type system and semantics
+    | Correspondence: Each Rust enum matches a Coq inductive type
+    |
+    v
+Compiled Binary
+    |
+    | Guarantees: Security properties proven in Coq
+    | hold for all programs compiled by riinac.
+```
+
+---
+
+## 2. REPOSITORY STRUCTURE
+
+```
+/workspaces/proof/
+|
++-- CLAUDE.md                          Master instructions (READ FIRST)
++-- PROGRESS.md                        Progress tracker
++-- SESSION_LOG.md                     Session continuity log
+|
++-- 00_SETUP/                          Setup scripts
+|   +-- scripts/
+|       +-- install_coq.sh
+|       +-- install_rust.sh
+|       +-- verify_setup.sh
+|
++-- 01_RESEARCH/                       Research archive (READ-ONLY reference)
+|   +-- specs/bahasa/                  Bahasa Melayu syntax specs
+|   +-- MASTER_ATTACK_PLAN_COMPLETE.md Definitive 6-phase plan
+|   +-- MASTER_THREAT_MODEL.md         All threat categories
+|   +-- (Domains A-Z)                  Research track archives
+|
++-- 02_FORMAL/                         Formal proofs (Track A — DO NOT MODIFY)
+|   +-- coq/
+|       +-- _CoqProject               Coq project configuration
+|       +-- Makefile                   Build configuration
+|       +-- foundations/               Core definitions (Syntax.v, Semantics.v)
+|       +-- type_system/              Type safety (Typing.v, Progress.v, Preservation.v)
+|       +-- effects/                  Effect system proofs
+|       +-- properties/               Security properties (NonInterference, etc.)
+|
++-- 03_PROTO/                          Rust prototype (Track B — PRIMARY WORK TARGET)
+|   +-- Cargo.toml                     Workspace root (9 crates, ZERO external deps)
+|   +-- crates/
+|       +-- riina-arena/               Arena allocator (437 lines)
+|       +-- riina-codegen/             Code generation (4,594 lines total)
+|       |   +-- src/lib.rs             Main API (469 lines)
+|       |   +-- src/ir.rs              SSA IR definitions (1,234 lines)
+|       |   +-- src/lower.rs           AST->IR lowering (1,268 lines)
+|       |   +-- src/value.rs           Runtime values (950 lines)
+|       |   +-- src/emit.rs            C code emitter (1,468 lines)
+|       |   +-- src/interp.rs          Reference interpreter (1,173 lines)
+|       +-- riina-lexer/               Tokenizer (2,001 lines total)
+|       |   +-- src/lib.rs             Tests (1,506 lines)
+|       |   +-- src/token.rs           Token definitions (196 lines)
+|       |   +-- src/lexer.rs           Lexer implementation (483 lines)
+|       |   +-- src/error.rs           Lex errors (32 lines)
+|       +-- riina-parser/              Parser (414 lines + tests file)
+|       |   +-- src/lib.rs             Parser implementation (414 lines)
+|       |   +-- src/tests.rs           Parser tests
+|       +-- riina-span/                Source locations (512 lines)
+|       +-- riina-symbols/             String interning (369 lines)
+|       +-- riina-typechecker/         Type checker (282 lines)
+|       +-- riina-types/               AST type definitions (424 lines)
+|       +-- riinac/                    Compiler driver (63 lines)
+|           +-- src/main.rs            CLI entry point
+|
++-- 04_SPECS/                          Specifications
+|   +-- language/                      Language specs (including THIS FILE)
+|   +-- scope/                         Scope definition
+|   +-- industries/                    Industry compliance specs (15 industries)
+|   +-- cross-cutting/                 Cross-cutting concerns
+|
++-- 05_TOOLING/                        Build tools & crypto
+|   +-- crates/riina-core/             Cryptographic primitives (15 modules, 100% complete)
+|
++-- 06_COORDINATION/                   Cross-track coordination
+|
++-- 07_EXAMPLES/                       Example .rii files
+    +-- hello_dunia.rii                Hello World
+    +-- pengesahan.rii                 Authentication example
+    +-- kripto.rii                     Cryptography example
+    +-- pemprosesan_data.rii           Data processing example
+```
+
+### 2.1 Key Constraint: Zero External Dependencies
+
+The `03_PROTO/` workspace uses **ZERO** external Rust crates. All infrastructure (hashing, arena allocation, string interning, JSON-RPC for LSP, etc.) is hand-written. This is a deliberate security decision — the compiler's supply chain must be auditable.
+
+When adding new code, **do NOT add external dependencies** to any `Cargo.toml`.
+
+---
+
+## 3. CURRENT STATE AUDIT
+
+### 3.1 What Works Today
+
+| Component | File(s) | Lines | Status |
+|-----------|---------|-------|--------|
+| **Lexer** | `riina-lexer/src/{token,lexer,error}.rs` | 711 | Production-ready. 70+ bilingual keywords, all operators, comments, string/int literals. |
+| **Parser** | `riina-parser/src/lib.rs` | 414 | **Alpha.** Parses single expressions only. 25 expression forms. No statements, functions, types, modules. |
+| **Type checker** | `riina-typechecker/src/lib.rs` | 282 | Beta. Checks all 25 expression forms. Security/effect checking partial. |
+| **Types (AST)** | `riina-types/src/lib.rs` | 424 | **Complete.** 22 type variants, 25 expr variants, 17 effects, 6 security levels, all supporting types (TaintSource, Sanitizer, Capability, SessionType). |
+| **IR** | `riina-codegen/src/ir.rs` | 1,234 | Complete. SSA-form IR with 30+ instructions, basic blocks, terminators. |
+| **Lowering** | `riina-codegen/src/lower.rs` | 1,268 | Complete for all 25 expression forms. |
+| **Interpreter** | `riina-codegen/src/interp.rs` | 1,173 | Complete for all 25 expression forms. Security enforcement, capability checking. |
+| **C Emitter** | `riina-codegen/src/emit.rs` | 1,468 | ~85% complete. All instructions translated. Missing: closure captures, phi nodes, effect handlers. |
+| **Values** | `riina-codegen/src/value.rs` | 950 | Complete. 12 value variants, security level tracking. |
+| **Spans** | `riina-span/src/lib.rs` | 512 | Complete. 8-byte packed spans, source maps. |
+| **Symbols** | `riina-symbols/src/lib.rs` | 369 | Complete. FxHash-based interning. |
+| **Arena** | `riina-arena/src/lib.rs` | 437 | Complete. Typed arena with grow support. |
+| **Driver** | `riinac/src/main.rs` | 63 | **Minimal.** Reads file, parses, typechecks, prints type/effect. No codegen, no subcommands. |
+| **Crypto** | `05_TOOLING/crates/riina-core/` | ~15,000 | Complete. 15 modules (AES, SHA, HMAC, X25519, Ed25519, ML-KEM, ML-DSA, etc.). |
+| **Coq Proofs** | `02_FORMAL/coq/` | ~50,000 | 1,867 Qed, 17 admits, 6 axioms. Track A actively working. |
+
+### 3.2 What Does NOT Work Today
+
+1. **`riinac` cannot produce binaries.** It stops after typechecking. The codegen crate exists but is not wired into the driver.
+
+2. **The parser cannot parse real programs.** It handles single expressions only. A `.rii` file containing function declarations, type definitions, or module imports will fail to parse.
+
+3. **No built-in arithmetic.** The AST has no binary operation expressions. The IR and C emitter support arithmetic (via `BinOp`), but the parser has no syntax for `+`, `-`, `*`, `/`.
+
+4. **No built-in I/O.** There is no `print` or `println` function. The interpreter and C emitter have no I/O built-ins.
+
+5. **No error diagnostics.** Errors are bare Rust `Debug` output. No source location, no code snippets, no suggestions.
+
+6. **No CI/CD.** No GitHub Actions workflows.
+
+7. **No IDE support.** No LSP server, no VS Code extension.
+
+8. **No standard library, no package manager, no FFI.**
+
+### 3.3 Coq-Rust Alignment Status
+
+**The Rust `riina-types` crate is ALREADY fully synced with Coq.** Specifically:
+
+| Definition | Coq Variants | Rust Variants | Status |
+|------------|-------------|---------------|--------|
+| `security_level` | 6 | 6 | SYNCED |
+| `effect` | 17 | 17 | SYNCED |
+| `ty` | 22 | 22 | SYNCED |
+| `expr` | 27 | 25 | 2 Coq-internal (`ELoc`, `EString` as `String(String)`) |
+| `taint_source` | 12 | 12 | SYNCED |
+| `sanitizer` | 25+ | 25+ | SYNCED |
+| `capability_kind` | 14 | 14 | SYNCED |
+| `capability` | 4 | 4 | SYNCED |
+| `session_type` | 7 | 7 | SYNCED |
+
+**No type synchronization work is needed.** The `SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` sections 2.1-2.3 (Rust type sync) are already complete.
+
+### 3.4 Lexer Keyword Gap
+
+The lexer has 70+ bilingual keywords. However, the following from the Bahasa Melayu syntax spec are **missing**:
+
+**Missing BM equivalents for existing English-only keywords:**
+
+| English | Proposed BM | Token |
+|---------|------------|-------|
+| `union` | `gabung` | `KwUnion` |
+| `where` | `di_mana` | `KwWhere` |
+| `tainted` | `tercemar` | `KwTainted` |
+| `sanitize` | `bersihkan` | `KwSanitize` |
+| `capability` | `keupayaan` | `KwCapability` |
+| `revoke` | `tarikbalik` | `KwRevoke` |
+| `seqcst` | `turutan_ketat` | `KwSeqCst` |
+| `relaxed` | `longgar` | `KwRelaxed` |
+| `acqrel` | `peroleh_lepas` | `KwAcqRel` |
+| `async` | `tak_segerak` | `KwAsync` |
+| `await` | `tunggu` | `KwAwait` |
+| `super` | `induk` | `KwSuper` |
+| `product` | `produk` | `KwProduct` |
+
+**Entirely missing keywords (not in lexer at all):**
+
+| BM | English | Purpose | Token |
+|----|---------|---------|-------|
+| `dan` | `and` | Logical AND | `KwAnd` |
+| `atau` | `or` | Logical OR | `KwOr` |
+| `bukan` | `not` | Logical NOT | `KwNot` |
+| `dalam` | `in` | For-in loops | `KwIn` |
+| `ialah` | `is` | Type checking | `KwIs` |
+| `bersih` | `pure` | Pure effect | `KwPure` |
+| `selamat` | `safe` | Safe annotation | `KwSafe` |
+| `pinjam` | `borrow` | Borrow reference | `KwBorrow` |
+| `salin` | `copy` | Copy value | `KwCopy` |
+| `klon` | `clone` | Clone value | `KwClone` |
+| `jangka` | `lifetime` | Lifetime annotation | `KwLifetime` |
+| `pastikan` | `guard` | Guard clause | `KwGuard` |
+| `dasar` | `policy` | Declassification policy | `KwPolicy` |
+
+**Missing operator:**
+
+| Token | Symbol | Purpose |
+|-------|--------|---------|
+| `Pipe` | `\|>` | Pipe operator (desugars to function application) |
+
+---
+
+## 4. DESIGN PRINCIPLES
+
+These principles govern ALL changes in this plan:
+
+1. **Never break Coq proofs.** Zero new `Admitted`. Zero new `Axiom`. Zero new `expr` constructors until Phase 1 axiom elimination is complete. The Coq formalization is the source of truth.
+
+2. **Desugar in the parser, not the core AST.** New syntactic forms (pipe, guard, for-in, while) compile to existing `expr` constructors (`EApp`, `EIf`, `ELet`, `ELam`). This means the formal proofs cover all desugared forms automatically.
+
+3. **Zero external dependencies.** No third-party Rust crates. All infrastructure is hand-written for auditability.
+
+4. **Bahasa Melayu is not an afterthought.** Every keyword gets a BM equivalent from day one. Error messages are bilingual (BM + English).
+
+5. **No speculative features.** Every change must be justified by a current gap or existing specification requirement.
+
+6. **Coq correspondence comments.** Every Rust type, function, or match arm that corresponds to a Coq definition must have a comment citing the Coq reference. Format: `// Coq: foundations/Syntax.v:31-37`
+
+---
+
+## 5. PHASE 1: COMPILER COMPLETION
+
+### 5.1 Wire Codegen into riinac
+
+#### 5.1.1 Problem
+
+The compiler driver (`riinac/src/main.rs`, 63 lines) currently:
+1. Reads a `.rii` file
+2. Parses it into an `Expr`
+3. Typechecks it
+4. Prints the type and effect
+5. Exits
+
+It does NOT produce a runnable binary. It does NOT have subcommands. It does NOT depend on `riina-codegen`.
+
+#### 5.1.2 Changes
+
+**File: `03_PROTO/crates/riinac/Cargo.toml`**
+
+Current contents:
+```toml
+[package]
+name = "riinac"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "riinac"
+path = "src/main.rs"
+
+[dependencies]
+riina-lexer = { workspace = true }
+riina-parser = { workspace = true }
+riina-types = { workspace = true }
+riina-typechecker = { workspace = true }
+```
+
+Add this line to `[dependencies]`:
+```toml
+riina-codegen = { workspace = true }
+```
+
+**File: `03_PROTO/crates/riinac/src/main.rs`**
+
+Replace the entire file. The new version should:
+
+1. Parse CLI arguments to determine subcommand:
+   - `riinac check <file.rii>` — typecheck only (current behavior)
+   - `riinac run <file.rii>` — interpret (parse → typecheck → eval via `riina_codegen::eval()`)
+   - `riinac emit-c <file.rii>` — emit C source (parse → typecheck → lower → emit via `riina_codegen::compile_to_c()`)
+   - `riinac emit-ir <file.rii>` — emit IR text (parse → typecheck → lower → print IR)
+   - `riinac build <file.rii> [-o output]` — compile to binary (emit C → invoke `cc`)
+   - `riinac repl` — interactive mode (Phase 5.5)
+   - `riinac fmt <file.rii>` — format (Phase 8.3, stub for now)
+   - Default (no subcommand): treat as `check`
+
+2. Accept flags:
+   - `--bahasa=ms|en|both` — language mode (default: `both`)
+   - `--output <path>` or `-o <path>` — output path for `build`
+   - `--verbose` or `-v` — verbose output
+
+3. Pipeline for `build`:
+   ```
+   read file → lex → parse → typecheck → lower to IR → emit C
+   → write C to temp file → invoke cc → produce binary
+   ```
+
+4. Exit codes:
+   - 0: success
+   - 1: file I/O error
+   - 2: parse error
+   - 3: type error
+   - 4: codegen error
+   - 5: C compiler error
+
+**Estimated size:** ~200 lines.
+
+**How `riina_codegen` API works (for the implementor):**
+
+```rust
+// In riina-codegen/src/lib.rs, these public functions exist:
+
+/// Interpret an expression directly (reference semantics)
+pub fn eval(expr: &Expr) -> Result<Value> {
+    let mut interp = interp::Interpreter::new();
+    interp.eval(expr)
+}
+
+/// Compile an expression to SSA IR
+pub fn compile(expr: &Expr) -> Result<ir::Program> {
+    let mut lower = lower::Lower::new();
+    lower.compile(expr)
+}
+
+/// Compile an expression to C99 source code
+pub fn compile_to_c(expr: &Expr) -> Result<String> {
+    let program = compile(expr)?;
+    emit::emit_c(&program)
+}
+```
+
+So the `build` subcommand implementation is roughly:
+```rust
+let c_source = riina_codegen::compile_to_c(&expr)?;
+std::fs::write(&temp_path, &c_source)?;
+let status = std::process::Command::new("cc")
+    .args(["-std=c99", "-O2", "-o", &output_path, &temp_path])
+    .status()?;
+```
+
+#### 5.1.3 Dependencies
+
+None. Can start immediately.
+
+---
+
+### 5.2 Lexer Changes
+
+#### 5.2.1 Add New TokenKind Variants
+
+**File: `03_PROTO/crates/riina-lexer/src/token.rs`**
+
+The `TokenKind` enum currently has ~65 variants. Add these 14 new variants anywhere in the enum (recommend grouping them):
+
+```rust
+// Add to TokenKind enum:
+
+// Logic keywords
+KwAnd,        // dan / and
+KwOr,         // atau / or
+KwNot,        // bukan / not
+
+// Additional keywords
+KwIn,         // dalam / in
+KwIs,         // ialah / is
+KwPure,       // bersih / pure
+KwSafe,       // selamat / safe
+
+// Ownership keywords
+KwBorrow,     // pinjam / borrow
+KwCopy,       // salin / copy
+KwClone,      // klon / clone
+KwLifetime,   // jangka / lifetime
+
+// Guard clause
+KwGuard,      // pastikan / guard
+
+// Declassification policy
+KwPolicy,     // dasar / policy
+
+// Pipe operator
+Pipe,         // |>
+```
+
+Also update the `Display` or `Debug` implementation for `TokenKind` to include these new variants.
+
+#### 5.2.2 Add BM Equivalents for Existing English-Only Keywords
+
+**File: `03_PROTO/crates/riina-lexer/src/lexer.rs`**
+
+In the `read_identifier` method, there is a large `match` block that maps identifier strings to `TokenKind` values. Find each of these existing English-only entries and add the BM equivalent:
+
+```rust
+// BEFORE (English-only):
+"union" => TokenKind::KwUnion,
+
+// AFTER (bilingual):
+"union" | "gabung" => TokenKind::KwUnion,
+```
+
+Complete list of entries to modify (add the BM alternative separated by `|`):
+
+```rust
+"union" | "gabung" => TokenKind::KwUnion,
+"where" | "di_mana" => TokenKind::KwWhere,
+"tainted" | "tercemar" => TokenKind::KwTainted,
+"sanitize" | "bersihkan" => TokenKind::KwSanitize,
+"capability" | "keupayaan" => TokenKind::KwCapability,
+"revoke" | "tarikbalik" => TokenKind::KwRevoke,
+"seqcst" | "turutan_ketat" => TokenKind::KwSeqCst,
+"relaxed" | "longgar" => TokenKind::KwRelaxed,
+"acqrel" | "peroleh_lepas" => TokenKind::KwAcqRel,
+"async" | "tak_segerak" => TokenKind::KwAsync,
+"await" | "tunggu" => TokenKind::KwAwait,
+"super" | "induk" => TokenKind::KwSuper,
+"product" | "produk" => TokenKind::KwProduct,
+```
+
+#### 5.2.3 Add New Keyword Mappings
+
+**File: `03_PROTO/crates/riina-lexer/src/lexer.rs`**
+
+Add these new entries to the `read_identifier` match block:
+
+```rust
+// Logic keywords (English | Bahasa Melayu)
+"and" | "dan" => TokenKind::KwAnd,
+"or" | "atau" => TokenKind::KwOr,
+"not" | "bukan" => TokenKind::KwNot,
+
+// Additional keywords
+"in" | "dalam" => TokenKind::KwIn,
+"is" | "ialah" => TokenKind::KwIs,
+"pure" | "bersih" => TokenKind::KwPure,
+"safe" | "selamat" => TokenKind::KwSafe,
+
+// Ownership keywords
+"borrow" | "pinjam" => TokenKind::KwBorrow,
+"copy" | "salin" => TokenKind::KwCopy,
+"clone" | "klon" => TokenKind::KwClone,
+"lifetime" | "jangka" => TokenKind::KwLifetime,
+
+// Guard clause
+"guard" | "pastikan" => TokenKind::KwGuard,
+
+// Declassification policy
+"policy" | "dasar" => TokenKind::KwPolicy,
+
+// Fence alias (sempadan as alternative to existing pagar)
+"fence" | "pagar" | "sempadan" => TokenKind::KwFence,
+```
+
+#### 5.2.4 Add Pipe Operator
+
+**File: `03_PROTO/crates/riina-lexer/src/lexer.rs`**
+
+Find the `'|'` match arm in the main lexer loop. It currently looks like:
+
+```rust
+'|' => {
+    if self.peek() == Some(&'|') {
+        self.advance();
+        TokenKind::OrOr
+    } else if self.peek() == Some(&'=') {
+        self.advance();
+        TokenKind::OrEq
+    } else {
+        TokenKind::Or
+    }
+}
+```
+
+Change it to:
+
+```rust
+'|' => {
+    if self.peek() == Some(&'|') {
+        self.advance();
+        TokenKind::OrOr
+    } else if self.peek() == Some(&'>') {
+        self.advance();
+        TokenKind::Pipe      // |>
+    } else if self.peek() == Some(&'=') {
+        self.advance();
+        TokenKind::OrEq
+    } else {
+        TokenKind::Or
+    }
+}
+```
+
+**The `|>` check MUST come before `|=` to avoid ambiguity.**
+
+#### 5.2.5 Add Bilingual Error Messages
+
+**File: `03_PROTO/crates/riina-lexer/src/error.rs`**
+
+Current error types are English-only. Add a new variant:
+
+```rust
+// Add to LexError enum:
+KeywordLanguageMismatch {
+    keyword: String,
+    expected: String, // "ms" or "en"
+    position: usize,
+},
+```
+
+Update the `Display` implementation to show bilingual errors:
+
+```rust
+LexError::UnexpectedChar(c, pos) => write!(f,
+    "Ralat: Aksara tidak dijangka '{}' pada kedudukan {}\n\
+     Error: Unexpected character '{}' at position {}", c, pos, c, pos),
+
+LexError::UnterminatedString(pos) => write!(f,
+    "Ralat: Teks tidak ditamatkan pada kedudukan {}\n\
+     Error: Unterminated string at position {}", pos, pos),
+```
+
+#### 5.2.6 Tests
+
+Add tests for:
+- Each new keyword tokenizes correctly (both BM and English forms)
+- Pipe operator `|>` tokenizes as `Pipe`
+- `|>` does not interfere with `||` or `|=` or bare `|`
+
+**Coq impact: NONE. All lexer changes are Rust-only.**
+
+---
+
+### 5.3 Parser Extension
+
+This is the **largest and most critical** work item. The parser must be extended from 414 lines to approximately 1,100+ lines.
+
+#### 5.3.1 Statement Sequences and Blocks
+
+**What:** Allow multiple statements separated by semicolons, where the last expression is the block's value.
+
+**Syntax:**
+```
+biar x = 42;
+biar y = 10;
+x
+```
+
+**Desugaring:** `s1; s2; expr` becomes `Let("_0", s1, Let("_1", s2, expr))`. This uses existing `Expr::Let`.
+
+**Implementation in `03_PROTO/crates/riina-parser/src/lib.rs`:**
+
+Add a new method `parse_stmt_sequence`:
+```rust
+/// Parse a sequence of statements.
+/// stmt_seq ::= (stmt ';')* expr
+/// Each non-final statement desugars to Let("_", stmt, rest)
+fn parse_stmt_sequence(&mut self) -> Result<Expr, ParseError> {
+    let first = self.parse_control_flow()?;
+
+    // If next token is ';', this is a statement sequence
+    if self.peek_is(TokenKind::Semi) {
+        self.consume(TokenKind::Semi)?;
+        let rest = self.parse_stmt_sequence()?; // recursive
+        Ok(Expr::Let("_".to_string(), Box::new(first), Box::new(rest)))
+    } else {
+        Ok(first)
+    }
+}
+```
+
+Update `parse_expr` to call `parse_stmt_sequence`:
+```rust
+pub fn parse_expr(&mut self) -> Result<Expr, ParseError> {
+    self.parse_stmt_sequence()  // was: self.parse_control_flow()
+}
+```
+
+**NOTE:** This changes the semicolon semantics. Currently, `let x = 1; x` uses `;` as part of the let syntax. After this change, `;` becomes a general statement separator. The `parse_let` method must be updated to NOT consume its own semicolon — instead, the semicolon is consumed by `parse_stmt_sequence`.
+
+**Coq impact: NONE.** Desugars to existing `Expr::Let`.
+
+#### 5.3.2 Top-Level Declarations
+
+**What:** Parse function declarations, type definitions, and module headers at the top level of a `.rii` file.
+
+**New types in `03_PROTO/crates/riina-types/src/lib.rs`:**
+
+```rust
+/// A top-level declaration in a .rii file.
+/// These are parsed but desugared to expressions for typechecking/codegen.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TopLevelDecl {
+    /// fungsi name(params) -> return_ty kesan eff { body }
+    Function {
+        name: Ident,
+        params: Vec<(Ident, Ty)>,
+        return_ty: Ty,
+        effect: Effect,
+        body: Box<Expr>,
+    },
+    /// biar name = expr;
+    Binding {
+        name: Ident,
+        value: Box<Expr>,
+    },
+    /// Expression at top level (the program's main expression)
+    Expr(Box<Expr>),
+}
+
+/// A complete .rii file
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Program {
+    pub decls: Vec<TopLevelDecl>,
+}
+```
+
+**Implementation in `03_PROTO/crates/riina-parser/src/lib.rs`:**
+
+Add `parse_program`:
+```rust
+/// Parse a complete .rii file.
+/// program ::= top_decl*
+pub fn parse_program(&mut self) -> Result<Program, ParseError> {
+    let mut decls = Vec::new();
+    while self.peek().is_some() {
+        decls.push(self.parse_top_level_decl()?);
+    }
+    Ok(Program { decls })
+}
+
+/// Parse a top-level declaration.
+/// top_decl ::= function_decl | let_binding | expr
+fn parse_top_level_decl(&mut self) -> Result<TopLevelDecl, ParseError> {
+    match self.peek().map(|t| &t.kind) {
+        Some(TokenKind::KwFn) => self.parse_function_decl(),
+        Some(TokenKind::KwLet) => self.parse_top_level_let(),
+        _ => {
+            let expr = self.parse_expr()?;
+            Ok(TopLevelDecl::Expr(Box::new(expr)))
+        }
+    }
+}
+```
+
+Add `parse_function_decl`:
+```rust
+/// Parse function declaration.
+/// fn_decl ::= 'fungsi'|'fn' IDENT '(' param_list ')' ('->' type)? ('kesan'|'effect' effect)? '{' expr '}'
+fn parse_function_decl(&mut self) -> Result<TopLevelDecl, ParseError> {
+    self.consume(TokenKind::KwFn)?;  // 'fungsi' or 'fn'
+    let name = self.parse_ident()?;
+    self.consume(TokenKind::LParen)?;
+    let params = self.parse_param_list()?;
+    self.consume(TokenKind::RParen)?;
+
+    // Optional return type
+    let return_ty = if self.peek_is(TokenKind::Arrow) {
+        self.consume(TokenKind::Arrow)?;
+        self.parse_ty()?
+    } else {
+        Ty::Unit
+    };
+
+    // Optional effect annotation
+    let effect = if self.peek_is(TokenKind::KwEffect) {
+        self.consume(TokenKind::KwEffect)?;
+        self.parse_effect()?
+    } else {
+        Effect::Pure
+    };
+
+    // Body
+    self.consume(TokenKind::LBrace)?;
+    let body = self.parse_expr()?;
+    self.consume(TokenKind::RBrace)?;
+
+    Ok(TopLevelDecl::Function {
+        name, params, return_ty, effect, body: Box::new(body),
+    })
+}
+
+/// Parse parameter list: (name: Type, name: Type, ...)
+fn parse_param_list(&mut self) -> Result<Vec<(Ident, Ty)>, ParseError> {
+    let mut params = Vec::new();
+    if !self.peek_is(TokenKind::RParen) {
+        let name = self.parse_ident()?;
+        self.consume(TokenKind::Colon)?;
+        let ty = self.parse_ty()?;
+        params.push((name, ty));
+
+        while self.peek_is(TokenKind::Comma) {
+            self.consume(TokenKind::Comma)?;
+            let name = self.parse_ident()?;
+            self.consume(TokenKind::Colon)?;
+            let ty = self.parse_ty()?;
+            params.push((name, ty));
+        }
+    }
+    Ok(params)
+}
+```
+
+**Desugaring in riinac:** A program with declarations desugars to nested lets and lambdas:
+
+```
+fungsi f(x: Int) -> Int { x }
+fungsi g(y: Int) -> Int { f y }
+g 42
+```
+
+Desugars to:
+
+```
+let f = fun(x: Int) x;
+let g = fun(y: Int) f y;
+g 42
+```
+
+Which is `Expr::Let("f", Expr::Lam(...), Expr::Let("g", Expr::Lam(...), Expr::App(...)))`.
+
+**Coq impact: NONE.** All desugars to existing `Expr::Let` and `Expr::Lam`.
+
+#### 5.3.3 Pipe Operator
+
+**Syntax:** `a |> f |> g` means "apply `f` to `a`, then apply `g` to the result."
+
+**Desugaring:** `a |> f` becomes `App(f, a)`. Left-associative.
+
+**Implementation:**
+
+Add `parse_pipe` between `parse_expr`/`parse_stmt_sequence` and `parse_assignment`:
+
+```rust
+/// Parse pipe expressions: expr (|> expr)*
+/// a |> f |> g  desugars to  App(g, App(f, a))
+fn parse_pipe(&mut self) -> Result<Expr, ParseError> {
+    let mut expr = self.parse_assignment()?;
+    while self.peek_is(TokenKind::Pipe) {
+        self.consume(TokenKind::Pipe)?;
+        let func = self.parse_assignment()?;
+        expr = Expr::App(Box::new(func), Box::new(expr));
+    }
+    Ok(expr)
+}
+```
+
+Update `parse_control_flow` (or wherever the precedence chain starts) to call `parse_pipe` instead of `parse_assignment`.
+
+**Coq impact: NONE.** Desugars to existing `Expr::App`.
+
+#### 5.3.4 Guard Clause
+
+**Syntax:**
+```
+pastikan cond lain { early_return };
+continuation
+```
+
+**Desugaring:** `pastikan C lain { E }; K` becomes `If(C, K, E)`.
+
+**Implementation:**
+
+```rust
+/// Parse guard clause:
+///   'pastikan'|'guard' expr 'lain'|'else' '{' expr '}' ';' expr
+fn parse_guard(&mut self) -> Result<Expr, ParseError> {
+    self.consume(TokenKind::KwGuard)?;
+    let cond = self.parse_pipe()?;      // condition
+    self.consume(TokenKind::KwElse)?;    // 'lain' or 'else'
+    self.consume(TokenKind::LBrace)?;
+    let else_body = self.parse_expr()?;  // early return body
+    self.consume(TokenKind::RBrace)?;
+    self.consume(TokenKind::Semi)?;
+    let continuation = self.parse_expr()?;
+    Ok(Expr::If(Box::new(cond), Box::new(continuation), Box::new(else_body)))
+}
+```
+
+Add `Some(TokenKind::KwGuard) => self.parse_guard()` to the `parse_control_flow` match block.
+
+**Coq impact: NONE.** Desugars to existing `Expr::If`.
+
+#### 5.3.5 Multi-Arm Match
+
+**Current state:** Parser only handles exactly 2 arms with `inl`/`inr` patterns.
+
+**Target:**
+```
+padan expr {
+    inl x => body1,
+    inr y => body2,
+}
+```
+
+And eventually:
+```
+padan expr {
+    0 => "sifar",
+    1 => "satu",
+    _ => "lain",
+}
+```
+
+**Implementation (Phase 1):** Keep the current `inl`/`inr` match but make it more robust (handle trailing comma, validate braces). **Defer** arbitrary pattern matching until the Pattern.v Coq file exists.
+
+**Implementation (Phase 2+):** Compile multi-arm match to nested `If`/`Case` chains:
+- Literal patterns → `If(Eq(scrutinee, literal), body, next_arm)`
+- `inl x` / `inr y` → `Case(scrutinee, x, body1, y, body2)`
+- Wildcard `_` → default body
+
+**Coq impact: NONE.** All compile to existing `Expr::If` and `Expr::Case`.
+
+#### 5.3.6 For-In Loop (TIER 1 — after core parser works)
+
+**Syntax:** `untuk x dalam senarai { body }`
+
+**Desugaring:**
+```
+untuk x dalam senarai { body }
+===
+biar __fn = fungsi(x: _) { body };
+map(__fn, senarai)
+```
+
+This uses `Expr::Let`, `Expr::Lam`, `Expr::App`. Requires `map` as a built-in function (Phase 5.7).
+
+**Coq impact: NONE.**
+
+#### 5.3.7 While Loop (TIER 1 — REQUIRES DECISION)
+
+**Syntax:** `selagi cond { body }`
+
+**Termination concern:** Unrestricted while loops break strong normalization (`well_typed_SN` theorem in Coq). Two options:
+
+- **Option A (RECOMMENDED):** Bounded — `selagi cond, had: 1000 { body }`. Desugars to bounded recursion. Provably terminates.
+- **Option B:** Effect-gated — `selagi` only allowed in `kesan Sistem` functions. Termination proofs only cover pure code.
+
+**DO NOT IMPLEMENT until a decision is made. See section 15 (Open Decisions).**
+
+#### 5.3.8 Extended Type Parsing
+
+**Current state:** `parse_ty()` only handles 5 types: `Int`, `Bool`, `Unit`, `String`, `Bytes`.
+
+**Target:** Handle all 22 Ty variants that exist in `riina-types`:
+
+```rust
+fn parse_ty(&mut self) -> Result<Ty, ParseError> {
+    let ident = self.parse_ident()?;
+    match ident.as_str() {
+        // Primitives
+        "Int" | "Nombor" => Ok(Ty::Int),
+        "Bool" | "Benar" => Ok(Ty::Bool),
+        "Unit" | "()" => Ok(Ty::Unit),
+        "String" | "Teks" => Ok(Ty::String),
+        "Bytes" | "Bait" => Ok(Ty::Bytes),
+
+        // Parameterized types: List<T>, Option<T>, Secret<T>, etc.
+        "List" | "Senarai" => {
+            self.consume(TokenKind::Lt)?;
+            let inner = self.parse_ty()?;
+            self.consume(TokenKind::Gt)?;
+            Ok(Ty::List(Box::new(inner)))
+        },
+        "Option" | "Mungkin" => {
+            self.consume(TokenKind::Lt)?;
+            let inner = self.parse_ty()?;
+            self.consume(TokenKind::Gt)?;
+            Ok(Ty::Option(Box::new(inner)))
+        },
+        "Secret" | "Rahsia" => {
+            self.consume(TokenKind::Lt)?;
+            let inner = self.parse_ty()?;
+            self.consume(TokenKind::Gt)?;
+            Ok(Ty::Secret(Box::new(inner)))
+        },
+        "Proof" | "Bukti" => {
+            self.consume(TokenKind::Lt)?;
+            let inner = self.parse_ty()?;
+            self.consume(TokenKind::Gt)?;
+            Ok(Ty::Proof(Box::new(inner)))
+        },
+        "ConstantTime" | "MasaTetap" => {
+            self.consume(TokenKind::Lt)?;
+            let inner = self.parse_ty()?;
+            self.consume(TokenKind::Gt)?;
+            Ok(Ty::ConstantTime(Box::new(inner)))
+        },
+        "Zeroizing" | "Sifar" => {
+            self.consume(TokenKind::Lt)?;
+            let inner = self.parse_ty()?;
+            self.consume(TokenKind::Gt)?;
+            Ok(Ty::Zeroizing(Box::new(inner)))
+        },
+
+        // Function type: Fn(A, B, effect)
+        // Prod: (A, B) — handled via tuple syntax
+        // Sum: A | B — handled via '|' token
+        // Ref: Ref<T>@level
+        // Labeled, Tainted, Sanitized, Capability, etc. — add as needed
+
+        _ => Ok(Ty::Unit), // Fallback for unrecognized types
+    }
+}
+```
+
+#### 5.3.9 Module System (DEFERRED — Phase 1.5)
+
+**Syntax:**
+```
+modul nama_modul;
+guna pakej::modul;
+awam fungsi f() -> () { ... }
+```
+
+**This is a significant subsystem** requiring:
+- File-based module resolution (`modul foo;` looks for `foo.rii` or `foo/lib.rii`)
+- Namespace management
+- Visibility modifiers (`awam` / `pub`)
+- Import resolution
+
+**Estimated:** ~500 lines. **Defer until all core parser features work.**
+
+---
+
+### 5.4 C Emitter Completion
+
+#### 5.4.1 Current State
+
+`emit.rs` (1,468 lines) already translates ALL current IR instructions to C99. It produces compilable C programs with:
+- Full runtime prelude (tagged unions, security levels, effects)
+- Value constructors for all 12 value types
+- Binary operations (add, sub, mul, div, mod, eq, ne, lt, le, gt, ge, and, or)
+- Unary operations (not, neg)
+- All IR instructions (const, copy, pair, fst, snd, inl, inr, closure, call, alloc, load, store, classify, declassify, prove, perform, require_cap, grant_cap, phi)
+- Terminators (return, branch, cond_branch, handle, unreachable)
+- Security checks at runtime
+- Main wrapper
+
+#### 5.4.2 Remaining Gaps
+
+**Gap 1: Closures with captures**
+
+Current behavior: Returns `Error::InvalidOperation("Closures with captures not yet implemented")`.
+
+Fix in `emit_instruction` for `Instruction::Closure`:
+```rust
+Instruction::Closure { func, captures } => {
+    // Allocate closure
+    self.writeln(&format!("{result} = riina_alloc();"));
+    self.writeln(&format!("{result}->tag = RIINA_TAG_CLOSURE;"));
+    self.writeln(&format!("{result}->security = RIINA_LEVEL_PUBLIC;"));
+    self.writeln(&format!("{result}->data.closure_val.func_ptr = (void*){};",
+        self.func_name(func)));
+
+    if captures.is_empty() {
+        self.writeln(&format!("{result}->data.closure_val.captures = NULL;"));
+        self.writeln(&format!("{result}->data.closure_val.num_captures = 0;"));
+    } else {
+        // Allocate capture array
+        self.writeln(&format!(
+            "{result}->data.closure_val.captures = (riina_value_t**)malloc({} * sizeof(riina_value_t*));",
+            captures.len()
+        ));
+        self.writeln(&format!(
+            "{result}->data.closure_val.num_captures = {};",
+            captures.len()
+        ));
+        // Copy each capture
+        for (i, cap) in captures.iter().enumerate() {
+            self.writeln(&format!(
+                "{result}->data.closure_val.captures[{}] = {};",
+                i, self.var_name(cap)
+            ));
+        }
+    }
+}
+```
+
+Also update the `Call` instruction to pass captures to the function. This requires a calling convention change: captured variables are accessed through the closure struct.
+
+**Estimated:** ~100 lines.
+
+**Gap 2: Phi node SSA destruction**
+
+Current behavior: Uses first phi entry as placeholder.
+
+Fix: Before emitting blocks, perform a copy-insertion pass. For each phi `v = phi(b1:v1, b2:v2)`, insert `v = v1` at the end of block b1 and `v = v2` at the end of block b2, then remove the phi.
+
+**Estimated:** ~100 lines.
+
+**Gap 3: String operations in C runtime**
+
+Add to the runtime prelude:
+- `riina_string_concat(a, b)` — concatenate two strings
+- `riina_string_length(s)` — return string length as int
+- `riina_string_eq(a, b)` — string equality
+
+**Estimated:** ~50 lines.
+
+#### 5.4.3 Dependencies
+
+Depends on: Nothing. Can start in parallel with parser work.
+
+---
+
+### 5.5 REPL
+
+#### 5.5.1 Design
+
+Interactive read-eval-print loop using the interpreter backend.
+
+```
+$ riinac repl
+RIINA REPL v0.1.0
+Taip ':bantuan' untuk bantuan. / Type ':help' for help.
+
+>>> 42
+42 : Int [Pure]
+
+>>> biar x = 10; x
+10 : Int [Pure]
+
+>>> fungsi(x: Int) x
+<closure> : Int -> Int [Pure]
+
+>>> :jenis fungsi(x: Int) x
+Int -> Int [Pure]
+
+>>> :ir 42
+  v0 = const_int 42
+  return v0
+
+>>> :keluar
+Selamat tinggal! / Goodbye!
+```
+
+#### 5.5.2 Implementation
+
+**File:** New module `03_PROTO/crates/riinac/src/repl.rs`
+
+Features:
+- Line-by-line stdin reading
+- Persistent environment across inputs (bindings accumulate)
+- Special commands prefixed with `:`:
+  - `:bantuan` / `:help` — show help
+  - `:jenis` / `:type` `<expr>` — show type without evaluating
+  - `:kesan` / `:effect` `<expr>` — show effect
+  - `:ir` `<expr>` — show lowered IR
+  - `:c` `<expr>` — show emitted C code
+  - `:muat` / `:load` `<file>` — load definitions
+  - `:set semula` / `:reset` — clear environment
+  - `:keluar` / `:quit` — exit
+
+**Estimated:** ~300 lines.
+
+---
+
+### 5.6 Error Diagnostics
+
+#### 5.6.1 Problem
+
+Current errors look like:
+```
+Parse Error: ParseError { kind: UnexpectedToken(KwIf), span: Span { start: 5, end: 10 } }
+```
+
+Should look like:
+```
+ralat[P0001]: Token tidak dijangka
+error[P0001]: Unexpected token
+  --> contoh.rii:2:5
+   |
+ 2 |     kalau x > 0
+   |     ^^^^^ dijangka ungkapan, ditemui 'kalau'
+   |           expected expression, found 'kalau'
+```
+
+#### 5.6.2 Implementation
+
+**File:** New `03_PROTO/crates/riina-span/src/diagnostics.rs` (or new crate `riina-diagnostics`)
+
+```rust
+/// Severity of a diagnostic message
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    Error,
+    Warning,
+    Note,
+}
+
+/// A labeled source location
+pub struct SpannedLabel {
+    pub span: Span,
+    pub file_id: FileId,
+    pub label_en: String,
+    pub label_bm: String,
+}
+
+/// A diagnostic message
+pub struct Diagnostic {
+    pub severity: Severity,
+    pub code: String,           // e.g., "P0001", "T0003", "S0001"
+    pub message_en: String,
+    pub message_bm: String,
+    pub primary: SpannedLabel,
+    pub secondary: Vec<SpannedLabel>,
+    pub notes_en: Vec<String>,
+    pub notes_bm: Vec<String>,
+}
+
+/// Pretty-print a diagnostic with source context
+pub fn render_diagnostic(diag: &Diagnostic, source_map: &SourceMap) -> String {
+    // 1. Print severity + code + message (bilingual)
+    // 2. Print file:line:col
+    // 3. Print source line with underline
+    // 4. Print label
+    // 5. Print notes
+    // ... implementation ...
+}
+```
+
+**Error code scheme:**
+- `L0xxx` — Lexer errors
+- `P0xxx` — Parser errors
+- `T0xxx` — Type errors
+- `S0xxx` — Security errors (information flow)
+- `E0xxx` — Effect errors (missing capability)
+- `C0xxx` — Codegen errors
+
+**Integration:** Convert each error type to `Diagnostic`:
+- `LexError` → `Diagnostic` (in lexer crate)
+- `ParseError` → `Diagnostic` (in parser crate)
+- `TypeError` → `Diagnostic` (in typechecker crate)
+- `codegen::Error` → `Diagnostic` (in codegen crate)
+
+**Estimated:** ~800 lines.
+
+---
+
+### 5.7 Built-in Functions
+
+#### 5.7.1 Problem
+
+The language currently has no arithmetic operators, no I/O, no string operations. These are needed to make any useful program.
+
+#### 5.7.2 Approach
+
+Add built-in functions to the interpreter environment and C runtime. These are NOT new AST nodes — they are closures pre-registered in the environment.
+
+**File:** New `03_PROTO/crates/riina-codegen/src/builtins.rs`
+
+```rust
+/// Register all built-in functions in an interpreter environment
+pub fn register_builtins(env: &mut Env) {
+    // Arithmetic
+    env.bind("tambah", builtin_add);   // add
+    env.bind("tolak", builtin_sub);    // sub
+    env.bind("darab", builtin_mul);    // mul
+    env.bind("bahagi", builtin_div);   // div
+    env.bind("baki", builtin_mod);     // mod
+
+    // Comparison
+    env.bind("sama", builtin_eq);      // eq
+    env.bind("kurang", builtin_lt);    // lt
+    env.bind("lebih", builtin_gt);     // gt
+
+    // String
+    env.bind("gabung_teks", builtin_concat); // concat
+    env.bind("panjang", builtin_length);     // length
+
+    // I/O (require Effect::System capability)
+    env.bind("cetak", builtin_print);      // print
+    env.bind("cetakln", builtin_println);  // println
+    env.bind("baca_baris", builtin_readline); // read_line
+
+    // Conversion
+    env.bind("ke_teks", builtin_to_string);   // to_string
+    env.bind("ke_nombor", builtin_parse_int); // parse_int
+}
+```
+
+For the C emitter, add corresponding C functions to the runtime prelude:
+```c
+static riina_value_t* riina_builtin_println(riina_value_t* arg) {
+    if (arg->tag == RIINA_TAG_STRING) {
+        printf("%s\n", arg->data.string_val.data);
+    } else if (arg->tag == RIINA_TAG_INT) {
+        printf("%llu\n", (unsigned long long)arg->data.int_val);
+    } else if (arg->tag == RIINA_TAG_BOOL) {
+        printf("%s\n", arg->data.bool_val ? "betul" : "salah");
+    }
+    return riina_unit();
+}
+```
+
+**Also needed:** Parser support for infix operators. Either:
+- **Option A:** Add infix syntax `x + y` that desugars to `App(App(Var("tambah"), x), y)`
+- **Option B:** Use function call syntax `tambah x y` (already supported)
+
+**Recommendation:** Option A for ergonomics. Add `parse_binary_op` precedence level.
+
+**Estimated:** ~400 lines (builtins.rs) + ~200 lines (C runtime additions) + ~100 lines (infix parser).
+
+---
+
+## 6. PHASE 2: STANDARD LIBRARY
+
+### 6.1 Approach
+
+Until the parser supports modules (Phase 5.3.9), the stdlib is implemented as **built-in functions** (Phase 5.7). After modules work, these can be re-exposed as `.rii` files.
+
+### 6.2 Planned Modules
+
+| Module (BM) | Module (EN) | Contents | Phase |
+|-------------|-------------|----------|-------|
+| `praasas` | `prelude` | Auto-imported types & functions | Phase 1 (builtins) |
+| `teks` | `string` | Split, join, trim, contains, replace, format | Phase 2 |
+| `senarai` | `list` | Map, filter, fold, sort, find, zip, enumerate | Phase 2 |
+| `peta` | `map` | Insert, get, remove, keys, values | Phase 2 |
+| `set` | `set` | Insert, remove, contains, union, intersection | Phase 2 |
+| `fail` | `file` | Read, write, append, exists, delete | Phase 2 |
+| `rangkaian` | `net` | TCP connect/listen, HTTP client/server | Phase 3+ |
+| `kripto` | `crypto` | Hash, sign, verify, encrypt, decrypt (wraps riina-core) | Phase 3+ |
+| `masa` | `time` | Now, sleep, duration, format | Phase 2 |
+| `json` | `json` | Parse, serialize, query | Phase 2 |
+| `ujian` | `test` | Assert, test runner | Phase 2 |
+
+### 6.3 Effect-Gated I/O
+
+All I/O functions require effect capabilities:
+
+```riina
+// This is a TYPE ERROR without the IO effect:
+fungsi utama() -> () {
+    cetakln("Hello");  // ERROR: requires IO effect
+}
+
+// Correct:
+fungsi utama() -> () kesan IO {
+    cetakln("Hello");  // OK
+}
+```
+
+**Estimated total:** ~5,000-8,000 lines across all stdlib modules (Phase 2+).
+
+---
+
+## 7. PHASE 3: FORMAL VERIFICATION
+
+### 7.1 Current Status
+
+| Metric | Value |
+|--------|-------|
+| Completed proofs (Qed) | 1,867 |
+| Incomplete proofs (Admitted) | 17 |
+| Axioms | 6 |
+| Compilation status | Failing (v2 migration) |
+
+### 7.2 Admit Elimination
+
+All 17 admits are in `02_FORMAL/coq/properties/NonInterference_v2_LogicalRelation.v`. They trace to one mutual induction over ~20 type constructors. Track A (other worker) is handling this.
+
+**This plan does NOT touch Coq files.** All formal verification is handled by Track A.
+
+### 7.3 Axiom Elimination
+
+6 axioms in `NonInterference_v2_LogicalRelation.v`:
+- 5 logical relation axioms (ref, deref, assign, declassify, val_rel bridge)
+- 1 fundamental theorem base case
+
+These require proving the logical relation is well-founded for reference types.
+
+### 7.4 Multi-Prover Verification (Phase 3+)
+
+After Coq proofs are complete:
+1. **Lean 4:** Port Progress, Preservation, Type Safety, Non-Interference
+2. **Isabelle/HOL:** Port Type Safety and Non-Interference
+3. Cross-verify: Same theorem statements, independent proof strategies
+
+### 7.5 Compiler Correctness (Phase 3+)
+
+Prove the Rust prototype faithfully implements Coq semantics:
+1. Property-based testing: Use Coq-extracted interpreter as oracle
+2. Translation validation: For each compilation phase, test semantic preservation
+3. Differential testing: Run same programs in interpreter and compiled binary
+
+---
+
+## 8. PHASE 4: DEVELOPER EXPERIENCE
+
+### 8.1 Language Server Protocol (LSP)
+
+**New crate:** `03_PROTO/crates/riina-lsp/`
+
+**Dependencies:** `riina-lexer`, `riina-parser`, `riina-typechecker`, `riina-span`, `riina-types`
+
+**Implementation:** Minimal LSP over stdio. Hand-written JSON-RPC (no external deps).
+
+**Capabilities:**
+
+| LSP Method | Description | Priority |
+|------------|-------------|----------|
+| `textDocument/publishDiagnostics` | Parse + typecheck errors | P0 |
+| `textDocument/didOpen` | Trigger initial analysis | P0 |
+| `textDocument/didChange` | Re-analyze on edit | P0 |
+| `textDocument/hover` | Show type + effect + security level | P1 |
+| `textDocument/completion` | Keyword + identifier completion | P1 |
+| `textDocument/definition` | Go to definition | P2 |
+| `textDocument/formatting` | Auto-format | P2 |
+| `textDocument/codeAction` | Quick fixes | P3 |
+
+**Implementation detail:** The LSP server runs as a separate process. It reads JSON-RPC messages from stdin and writes responses to stdout. The protocol is well-specified at https://microsoft.github.io/language-server-protocol/.
+
+Hand-rolled JSON-RPC reader/writer: ~300 lines.
+Message handlers: ~500 lines per capability.
+
+**Estimated total:** ~3,000-4,000 lines.
+
+### 8.2 VS Code Extension
+
+**New directory:** `riina-vscode/`
+
+```
+riina-vscode/
++-- package.json                Extension manifest
++-- syntaxes/
+|   +-- riina.tmLanguage.json   TextMate grammar
++-- language-configuration.json Bracket matching, comments
++-- snippets/
+|   +-- riina.json              Code snippets
++-- src/
+    +-- extension.ts            LSP client
+```
+
+**TextMate grammar** highlights:
+- All BM + English keywords (from Appendix B)
+- String literals, numeric literals
+- Security levels (Public, Internal, Session, User, System, Secret)
+- Effect annotations (kesan IO, kesan Crypto, etc.)
+- Comments (`//` line, `/* */` block, `///` doc)
+- Type names (Int, Bool, String, Secret, etc.)
+
+**Snippets:**
+- `fungsi` → function template
+- `kalau` → if/else template
+- `padan` → match template
+- `biar` → let binding
+
+**Estimated:** ~800 lines (TypeScript + JSON).
+
+### 8.3 Formatter
+
+**New crate:** `03_PROTO/crates/riina-fmt/`
+
+- Parse → pretty-print with consistent style
+- 4-space indent, max 100 columns
+- Configurable via `riina.toml` (future)
+- `riinac fmt <file.rii>` CLI command
+- Integration with LSP `textDocument/formatting`
+
+**Estimated:** ~800 lines.
+
+### 8.4 Documentation Generator
+
+**New crate:** `03_PROTO/crates/riina-doc/`
+
+- Parse `///` doc comments
+- Generate HTML documentation
+- Cross-reference types, functions, modules
+- Show effect and security annotations
+- `riinac doc` CLI command
+
+**Estimated:** ~1,500 lines.
+
+---
+
+## 9. PHASE 5: ECOSYSTEM & DISTRIBUTION
+
+### 9.1 CI/CD Pipeline
+
+**File: `.github/workflows/ci.yml`**
+
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  rust-proto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build prototype
+        run: cd 03_PROTO && cargo build --all
+      - name: Test prototype
+        run: cd 03_PROTO && cargo test --all
+      - name: Lint prototype
+        run: cd 03_PROTO && cargo clippy -- -D warnings
+      - name: Format check
+        run: cd 03_PROTO && cargo fmt --check
+
+  rust-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build tooling
+        run: cd 05_TOOLING && cargo build --all
+      - name: Test tooling
+        run: cd 05_TOOLING && cargo test --all
+
+  coq:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Coq
+        run: sudo apt-get install -y coq
+      - name: Build proofs
+        run: cd 02_FORMAL/coq && make
+      - name: Check admits
+        run: |
+          count=$(grep -rc "Admitted" 02_FORMAL/coq/**/*.v 2>/dev/null | grep -v ':0$' | wc -l)
+          echo "Files with admits: $count"
+
+  examples:
+    needs: rust-proto
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check examples
+        run: |
+          cd 03_PROTO
+          for f in ../07_EXAMPLES/*.rii; do
+            echo "Checking $f..."
+            cargo run --bin riinac -- check "$f" || true
+          done
+```
+
+**File: `.github/workflows/release.yml`** — triggered on version tags. Builds binaries for Linux/macOS/Windows, creates GitHub Release.
+
+**Estimated:** ~200 lines YAML total.
+
+### 9.2 Package Manager (DEFERRED — Phase 5+)
+
+Requires module system. Design outline:
+
+**Manifest: `riina.toml`**
+```toml
+[pakej]
+nama = "contoh"
+versi = "0.1.0"
+pengarang = ["Ahmad <ahmad@contoh.my>"]
+
+[kebergantungan]
+kripto = "1.0"
+
+[kesan-dibenarkan]
+IO = true
+Crypto = true
+Network = false  # This package cannot use network
+```
+
+**Security feature:** Packages declare required effects. Dependencies cannot escalate effects without explicit grant. This is enforced by the type system.
+
+### 9.3 Website (DEFERRED — Phase 6+)
+
+**Domain:** `riina.my` or `riina.dev`
+
+Content outline:
+1. Landing page — what is RIINA, key differentiators
+2. Installation — `curl -sSf https://riina.my/install | sh`
+3. Tutorial — "Build your first RIINA program"
+4. Language reference — complete syntax and semantics
+5. Standard library reference — auto-generated by riina-doc
+6. Formal proofs explorer — browse Coq theorems
+7. Playground — in-browser RIINA editor (WASM-compiled riinac)
+
+### 9.4 Distribution
+
+1. **Binary releases:** Pre-built for Linux x86_64/aarch64, macOS x86_64/aarch64, Windows x86_64
+2. **Package managers:** Homebrew, apt/dnf, Scoop
+3. **Docker image:** `ghcr.io/ib823/riina:latest`
+4. **WASM:** Compile riinac to WebAssembly for browser playground
+5. **Nix flake:** Reproducible dev environments
+
+### 9.5 Licensing
+
+**Recommended dual license:**
+- **Compiler + Proofs + Stdlib:** MPL-2.0 (Mozilla Public License)
+  - Programs written in RIINA can be proprietary
+  - Modifications to the compiler must be shared
+  - Proofs are publicly auditable
+- **Enterprise tooling:** Proprietary (advanced IDE, compliance reports)
+
+---
+
+## 10. PHASE 6: ADOPTION & COMMUNITY
+
+### 10.1 FFI (Foreign Function Interface)
+
+**New file:** `03_PROTO/crates/riina-codegen/src/ffi.rs`
+
+**C FFI syntax:**
+```riina
+luar "C" {
+    fungsi printf(fmt: *Teks, ...) -> Nombor;
+}
+```
+
+**Implementation:** The C emitter already generates C99. FFI functions emit `extern` declarations and call them directly.
+
+**Estimated:** ~200 lines.
+
+### 10.2 Demo Applications
+
+Three showcase applications:
+
+**Demo 1: Provably Secure Web Server**
+- HTTP handler where type system prevents injection
+- Compiler PROVES: no SQL injection, no XSS, no path traversal, no information leakage
+
+**Demo 2: Post-Quantum Encrypted Messenger**
+- E2E encrypted chat using ML-KEM + ML-DSA
+- Compiler PROVES: keys zeroized, no plaintext leakage, constant-time comparison
+
+**Demo 3: HIPAA-Compliant Medical Records**
+- PHI (Protected Health Information) handling
+- Compiler PROVES: PHI never escapes authorized scope, audit trail for all access
+
+### 10.3 Community Building
+
+1. GitHub repo with CONTRIBUTING.md, issue/PR templates
+2. Discord server
+3. Documentation in English, Bahasa Melayu, Mandarin
+4. Conference talks (POPL, ICFP, PLDI, RustConf, BlackHat/DEF CON)
+5. University partnerships (UM, UTM, USM, NUS, NTU, CMU, ETH, INRIA)
+6. Bug bounty for soundness bugs in formal proofs
+
+### 10.4 Enterprise Adoption
+
+1. **Compliance automation** — "Write in RIINA, get compliance proof for free"
+2. **Security audit replacement** — formal proofs replace manual pentesting
+3. **Gradual adoption** — use RIINA for security-critical modules via FFI
+4. **Certification** — machine-checkable proof certificates
+
+---
+
+## 11. PHASE 7: LONG-TERM VISION
+
+### 11.1 Self-Hosting
+
+Rewrite `riinac` in RIINA itself:
+1. RIINA lexer in RIINA
+2. RIINA parser in RIINA
+3. RIINA typechecker in RIINA
+4. Prove self-hosted compiler correct (Track R)
+5. Bootstrap: Rust compiler compiles RIINA compiler written in RIINA
+
+### 11.2 Hardware Verification
+
+Extend guarantees to hardware (Track S):
+1. Model CPU execution (side-channel freedom)
+2. Verify RIINA programs on specific hardware targets
+3. Partner with RISC-V ecosystem
+
+### 11.3 Verified Operating System
+
+Build a verified microkernel using RIINA (Track U):
+1. RIINA-based microhypervisor with proven isolation
+2. Verified secure boot chain
+3. Runs on commodity ARM/RISC-V hardware
+
+---
+
+## 12. EXECUTION ORDER & DEPENDENCY GRAPH
+
+### 12.1 Phase 1 Internal Dependencies
+
+```
+IMMEDIATE (no dependencies, start in parallel):
++-- 5.1 Wire codegen into riinac (main.rs rewrite)
++-- 5.2 Lexer changes (new tokens, BM keywords, pipe operator)
++-- 9.1 CI/CD pipeline (.github/workflows/)
++-- 5.6 Error diagnostics (new crate/module)
+
+AFTER 5.2 (lexer complete):
++-- 5.3.1 Statement sequences & blocks
++-- 5.3.3 Pipe operator (parser)
++-- 5.3.4 Guard clause (parser)
+
+AFTER 5.3.1 (statements work):
++-- 5.3.2 Top-level function declarations
++-- 5.3.5 Multi-arm match
++-- 5.3.8 Extended type parsing
+
+AFTER 5.3.2 (functions work):
++-- 5.3.6 For-in loop
++-- 5.3.7 While/loop (BLOCKED on decision — see section 15)
++-- 5.5 REPL
++-- 5.7 Built-in functions (arithmetic, I/O, strings)
+
+AFTER 5.7 (builtins work):
++-- 5.4 C emitter completion (closures, phi nodes)
++-- 5.3.9 Module system (DEFERRED)
+
+AFTER 5.3.9 (modules work):
++-- Phase 6: Standard library as .rii files
++-- Phase 9: Package manager
+```
+
+### 12.2 Cross-Phase Dependencies
+
+```
+Phase 1 (Compiler)
+    |
+    +--> Phase 2 (Stdlib) -------> Phase 10 (Demos)
+    |                               |
+    +--> Phase 8 (DX) -----------> Phase 10 (Adoption)
+    |                               |
+    +--> Phase 9 (Ecosystem) ----> Phase 10 (Adoption)
+
+Phase 7 (Formal Verification) --> Phase 10 (Enterprise) --> Phase 11 (Long-term)
+
+Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
+```
+
+### 12.3 Critical Path
+
+The **critical path** (longest sequence of dependent work) is:
+
+```
+5.2 Lexer --> 5.3.1 Statements --> 5.3.2 Functions --> 5.7 Builtins --> 5.4 C emitter --> 5.3.9 Modules --> Phase 6 Stdlib --> Phase 10 Demos
+```
+
+**The parser extension (5.3) is the bottleneck.** Everything downstream depends on it.
+
+---
+
+## 13. FILES TO CREATE OR MODIFY
+
+### 13.1 Phase 1 Files
+
+| # | File | Action | Est. Lines | Depends On |
+|---|------|--------|-----------|------------|
+| 1 | `03_PROTO/crates/riinac/Cargo.toml` | MODIFY: add riina-codegen dep | +1 | — |
+| 2 | `03_PROTO/crates/riinac/src/main.rs` | REWRITE: CLI subcommands, --bahasa flag | ~200 | — |
+| 3 | `03_PROTO/crates/riina-lexer/src/token.rs` | MODIFY: 14 new TokenKind variants + Pipe | +20 | — |
+| 4 | `03_PROTO/crates/riina-lexer/src/lexer.rs` | MODIFY: 13 BM equivalents + 14 new keyword mappings + pipe | +60 | #3 |
+| 5 | `03_PROTO/crates/riina-lexer/src/error.rs` | MODIFY: bilingual errors, KeywordLanguageMismatch | +40 | — |
+| 6 | `03_PROTO/crates/riina-types/src/lib.rs` | MODIFY: add TopLevelDecl, Program types | +30 | — |
+| 7 | `03_PROTO/crates/riina-parser/src/lib.rs` | MAJOR EXTEND: statements, functions, pipe, guard, match, types | +700 | #3, #4, #6 |
+| 8 | `03_PROTO/crates/riina-typechecker/src/lib.rs` | MODIFY: handle Program, multi-param functions | +100 | #6, #7 |
+| 9 | `03_PROTO/crates/riina-codegen/src/builtins.rs` | CREATE: built-in function registry | ~400 | — |
+| 10 | `03_PROTO/crates/riina-codegen/src/emit.rs` | MODIFY: closure captures, phi nodes, string ops | +250 | — |
+| 11 | `03_PROTO/crates/riina-codegen/src/interp.rs` | MODIFY: integrate builtins | +50 | #9 |
+| 12 | `03_PROTO/crates/riina-codegen/src/lib.rs` | MODIFY: re-export builtins module | +5 | #9 |
+| 13 | `03_PROTO/crates/riina-span/src/diagnostics.rs` | CREATE: error diagnostic system | ~800 | — |
+| 14 | `03_PROTO/crates/riinac/src/repl.rs` | CREATE: REPL implementation | ~300 | #7, #9 |
+| 15 | `07_EXAMPLES/pengawal_input.rii` | CREATE: guard clause example | ~25 | — |
+| 16 | `07_EXAMPLES/saluran_paip.rii` | CREATE: pipe operator example | ~20 | — |
+| 17 | `07_EXAMPLES/keselamatan_kuantitatif.rii` | CREATE: quantitative declassification example | ~30 | — |
+
+**Phase 1 Total: ~3,031 new/modified lines across 17 files.**
+
+### 13.2 Phase 4 Files (Developer Experience)
+
+| # | File | Action | Est. Lines |
+|---|------|--------|-----------|
+| 18 | `03_PROTO/crates/riina-lsp/Cargo.toml` | CREATE | ~20 |
+| 19 | `03_PROTO/crates/riina-lsp/src/lib.rs` | CREATE: LSP server | ~3,500 |
+| 20 | `03_PROTO/Cargo.toml` | MODIFY: add riina-lsp to workspace | +1 |
+| 21 | `riina-vscode/package.json` | CREATE | ~50 |
+| 22 | `riina-vscode/syntaxes/riina.tmLanguage.json` | CREATE | ~300 |
+| 23 | `riina-vscode/language-configuration.json` | CREATE | ~30 |
+| 24 | `riina-vscode/snippets/riina.json` | CREATE | ~80 |
+| 25 | `riina-vscode/src/extension.ts` | CREATE | ~100 |
+| 26 | `03_PROTO/crates/riina-fmt/Cargo.toml` | CREATE | ~15 |
+| 27 | `03_PROTO/crates/riina-fmt/src/lib.rs` | CREATE: formatter | ~800 |
+| 28 | `03_PROTO/crates/riina-doc/Cargo.toml` | CREATE | ~15 |
+| 29 | `03_PROTO/crates/riina-doc/src/lib.rs` | CREATE: doc generator | ~1,500 |
+
+### 13.3 Phase 5 Files (Ecosystem)
+
+| # | File | Action | Est. Lines |
+|---|------|--------|-----------|
+| 30 | `.github/workflows/ci.yml` | CREATE | ~80 |
+| 31 | `.github/workflows/release.yml` | CREATE | ~80 |
+| 32 | `.github/workflows/nightly.yml` | CREATE | ~40 |
+
+### 13.4 Phase 6 Files (Adoption)
+
+| # | File | Action | Est. Lines |
+|---|------|--------|-----------|
+| 33 | `03_PROTO/crates/riina-codegen/src/ffi.rs` | CREATE: FFI support | ~200 |
+| 34 | `08_DEMOS/web-server/` | CREATE: demo 1 | ~800 |
+| 35 | `08_DEMOS/messenger/` | CREATE: demo 2 | ~800 |
+| 36 | `08_DEMOS/medical/` | CREATE: demo 3 | ~800 |
+
+---
+
+## 14. VERIFICATION GATES
+
+### Gate 1: Lexer + Driver (after 5.1, 5.2)
+
+```bash
+cd /workspaces/proof/03_PROTO
+cargo build --all            # Must pass
+cargo test --all             # Must pass (existing + new lexer tests)
+cargo clippy -- -D warnings  # Must pass
+cargo run --bin riinac -- check ../07_EXAMPLES/hello_dunia.rii  # Must work
+```
+
+### Gate 2: Parser (after 5.3)
+
+```bash
+cd /workspaces/proof/03_PROTO
+cargo test --all             # All parser tests pass
+
+# Parse function declarations:
+echo 'fungsi f(x: Int) -> Int { x }' | cargo run --bin riinac -- check /dev/stdin
+
+# Parse statement sequences:
+echo 'biar x = 42; x' | cargo run --bin riinac -- check /dev/stdin
+
+# Parse pipe:
+echo 'biar f = fn(x: Int) x; 42 |> f' | cargo run --bin riinac -- check /dev/stdin
+```
+
+### Gate 3: End-to-End (after 5.4, 5.7)
+
+```bash
+# Interpret
+cargo run --bin riinac -- run ../07_EXAMPLES/hello_dunia.rii
+# Expected: prints result
+
+# Emit C
+cargo run --bin riinac -- emit-c ../07_EXAMPLES/hello_dunia.rii > /tmp/hello.c
+cc -std=c99 -o /tmp/hello /tmp/hello.c
+/tmp/hello
+# Expected: prints result
+
+# Build (automated)
+cargo run --bin riinac -- build ../07_EXAMPLES/hello_dunia.rii -o /tmp/hello2
+/tmp/hello2
+# Expected: prints result
+```
+
+### Gate 4: CI/CD (after 9.1)
+
+```bash
+# GitHub Actions passes on push
+git push origin main
+# All jobs (rust-proto, rust-tooling, coq, examples) green
+```
+
+### Gate 5: Coq Proofs (Track A, after Phase 7)
+
+```bash
+cd /workspaces/proof/02_FORMAL/coq
+make                                    # Must pass
+grep -rc "Admitted" **/*.v              # Must be 0
+grep -c "Axiom" **/*.v                  # Must be ≤ justified compliance axioms
+```
+
+---
+
+## 15. OPEN DECISIONS
+
+### Decision 1: While Loop Termination Strategy
+
+**Context:** `selagi` (while) loops break strong normalization if unrestricted.
+
+**Options:**
+- **A (RECOMMENDED):** Fuel-based — `selagi cond, had: 1000 { body }` desugars to bounded recursion. Provably terminates.
+- **B:** Effect-gated — `selagi cond { body }` only allowed in `kesan Sistem` functions. Pure code guaranteed to terminate; effectful code not guaranteed.
+
+**Impact:** Determines parser syntax and whether loops are available in pure functions.
+
+**Decision needed before:** Implementing section 5.3.7.
+
+### Decision 2: Module Resolution Strategy
+
+**Context:** How does `modul foo;` find `foo`'s source code?
+
+**Options:**
+- **A (RECOMMENDED):** File-based (like Rust): `modul foo;` looks for `foo.rii` or `foo/lib.rii` relative to current file.
+- **B:** Declaration-based (like OCaml): Modules are declared inline in the same file.
+
+**Impact:** Determines file system layout and import semantics.
+
+**Decision needed before:** Implementing section 5.3.9.
+
+### Decision 3: Integer Representation
+
+**Context:** `Expr::Int` currently holds `u64` (unsigned). RIINA programs may need negative numbers.
+
+**Options:**
+- **A:** Add `i64` support alongside `u64` — `Ty::Int` for signed, `Ty::Nat` for unsigned
+- **B:** Use `i64` everywhere — simpler, covers most cases
+- **C (RECOMMENDED):** Keep `u64` as the core representation (matches Coq's `nat`), add signed operations as library functions
+
+**Impact:** Affects parser, typechecker, interpreter, C emitter.
+
+**Decision needed before:** Implementing arithmetic builtins (section 5.7).
+
+### Decision 4: Infix Operator Syntax
+
+**Context:** Should RIINA have infix operators (`x + y`) or function-call style (`tambah x y`)?
+
+**Options:**
+- **A (RECOMMENDED):** Both — infix operators desugar to function calls. `x + y` becomes `App(App(Var("tambah"), x), y)`.
+- **B:** Function-call only — simpler parser, but less ergonomic.
+
+**Impact:** Determines parser complexity.
+
+**Decision needed before:** Implementing arithmetic (section 5.7).
+
+---
+
+## APPENDIX A: COQ-RUST TYPE CORRESPONDENCE
+
+This table shows the exact correspondence between Coq inductive types in `02_FORMAL/coq/foundations/Syntax.v` and Rust enums in `03_PROTO/crates/riina-types/src/lib.rs`.
+
+### A.1 Security Levels
+
+| Coq Constructor | Rust Variant | Numeric Level |
+|----------------|-------------|---------------|
+| `LPublic` | `SecurityLevel::Public` | 0 |
+| `LInternal` | `SecurityLevel::Internal` | 1 |
+| `LSession` | `SecurityLevel::Session` | 2 |
+| `LUser` | `SecurityLevel::User` | 3 |
+| `LSystem` | `SecurityLevel::System` | 4 |
+| `LSecret` | `SecurityLevel::Secret` | 5 |
+
+### A.2 Effects
+
+| Coq Constructor | Rust Variant | Level | Category |
+|----------------|-------------|-------|----------|
+| `EffPure` | `Effect::Pure` | 0 | Pure |
+| `EffRead` | `Effect::Read` | 1 | IO |
+| `EffWrite` | `Effect::Write` | 2 | IO |
+| `EffFileSystem` | `Effect::FileSystem` | 3 | IO |
+| `EffNetwork` | `Effect::Network` | 4 | Network |
+| `EffNetSecure` | `Effect::NetworkSecure` | 5 | Network |
+| `EffCrypto` | `Effect::Crypto` | 6 | Crypto |
+| `EffRandom` | `Effect::Random` | 7 | Crypto |
+| `EffSystem` | `Effect::System` | 8 | System |
+| `EffTime` | `Effect::Time` | 9 | System |
+| `EffProcess` | `Effect::Process` | 10 | System |
+| `EffPanel` | `Effect::Panel` | 11 | Product |
+| `EffZirah` | `Effect::Zirah` | 12 | Product |
+| `EffBenteng` | `Effect::Benteng` | 13 | Product |
+| `EffSandi` | `Effect::Sandi` | 14 | Product |
+| `EffMenara` | `Effect::Menara` | 15 | Product |
+| `EffGapura` | `Effect::Gapura` | 16 | Product |
+
+### A.3 Types
+
+| Coq Constructor | Rust Variant | Parameters |
+|----------------|-------------|-----------|
+| `TUnit` | `Ty::Unit` | — |
+| `TBool` | `Ty::Bool` | — |
+| `TInt` | `Ty::Int` | — |
+| `TString` | `Ty::String` | — |
+| `TBytes` | `Ty::Bytes` | — |
+| `TFn` | `Ty::Fn` | `(Box<Ty>, Box<Ty>, Effect)` |
+| `TProd` | `Ty::Prod` | `(Box<Ty>, Box<Ty>)` |
+| `TSum` | `Ty::Sum` | `(Box<Ty>, Box<Ty>)` |
+| `TList` | `Ty::List` | `Box<Ty>` |
+| `TOption` | `Ty::Option` | `Box<Ty>` |
+| `TRef` | `Ty::Ref` | `(Box<Ty>, SecurityLevel)` |
+| `TSecret` | `Ty::Secret` | `Box<Ty>` |
+| `TLabeled` | `Ty::Labeled` | `(Box<Ty>, SecurityLevel)` |
+| `TTainted` | `Ty::Tainted` | `(Box<Ty>, TaintSource)` |
+| `TSanitized` | `Ty::Sanitized` | `(Box<Ty>, Sanitizer)` |
+| `TProof` | `Ty::Proof` | `Box<Ty>` |
+| `TCapability` | `Ty::Capability` | `CapabilityKind` |
+| `TCapabilityFull` | `Ty::CapabilityFull` | `Capability` |
+| `TChan` | `Ty::Chan` | `SessionType` |
+| `TSecureChan` | `Ty::SecureChan` | `(SessionType, SecurityLevel)` |
+| `TConstantTime` | `Ty::ConstantTime` | `Box<Ty>` |
+| `TZeroizing` | `Ty::Zeroizing` | `Box<Ty>` |
+
+### A.4 Expressions
+
+| Coq Constructor | Rust Variant | Parameters |
+|----------------|-------------|-----------|
+| `EUnit` | `Expr::Unit` | — |
+| `EBool` | `Expr::Bool` | `bool` |
+| `EInt` | `Expr::Int` | `u64` |
+| `EString` | `Expr::String` | `String` |
+| `EVar` | `Expr::Var` | `Ident` |
+| `ELam` | `Expr::Lam` | `(Ident, Ty, Box<Expr>)` |
+| `EApp` | `Expr::App` | `(Box<Expr>, Box<Expr>)` |
+| `EPair` | `Expr::Pair` | `(Box<Expr>, Box<Expr>)` |
+| `EFst` | `Expr::Fst` | `Box<Expr>` |
+| `ESnd` | `Expr::Snd` | `Box<Expr>` |
+| `EInl` | `Expr::Inl` | `(Box<Expr>, Ty)` |
+| `EInr` | `Expr::Inr` | `(Box<Expr>, Ty)` |
+| `ECase` | `Expr::Case` | `(Box<Expr>, Ident, Box<Expr>, Ident, Box<Expr>)` |
+| `EIf` | `Expr::If` | `(Box<Expr>, Box<Expr>, Box<Expr>)` |
+| `ELet` | `Expr::Let` | `(Ident, Box<Expr>, Box<Expr>)` |
+| `EPerform` | `Expr::Perform` | `(Effect, Box<Expr>)` |
+| `EHandle` | `Expr::Handle` | `(Box<Expr>, Ident, Box<Expr>)` |
+| `ERef` | `Expr::Ref` | `(Box<Expr>, SecurityLevel)` |
+| `EDeref` | `Expr::Deref` | `Box<Expr>` |
+| `EAssign` | `Expr::Assign` | `(Box<Expr>, Box<Expr>)` |
+| `EClassify` | `Expr::Classify` | `Box<Expr>` |
+| `EDeclassify` | `Expr::Declassify` | `(Box<Expr>, Box<Expr>)` |
+| `EProve` | `Expr::Prove` | `Box<Expr>` |
+| `ERequire` | `Expr::Require` | `(Effect, Box<Expr>)` |
+| `EGrant` | `Expr::Grant` | `(Effect, Box<Expr>)` |
+| `ELoc` | *(internal only)* | Heap location — not in source AST |
+
+---
+
+## APPENDIX B: BAHASA MELAYU KEYWORD REFERENCE
+
+Complete bilingual keyword table. ALL of these should be recognized by the lexer.
+
+### B.1 Currently Implemented (in lexer)
+
+| Bahasa Melayu | English | TokenKind | Purpose |
+|---------------|---------|-----------|---------|
+| `fungsi` | `fn` | `KwFn` | Function declaration |
+| `biar` | `let` | `KwLet` | Variable binding |
+| `ubah` | `mut` | `KwMut` | Mutable modifier |
+| `tetap` | `const` | `KwConst` | Constant |
+| `kalau` | `if` | `KwIf` | Conditional |
+| `lain` | `else` | `KwElse` | Alternative |
+| `untuk` | `for` | `KwFor` | For loop |
+| `selagi` | `while` | `KwWhile` | While loop |
+| `ulang` | `loop` | `KwLoop` | Infinite loop |
+| `pulang` | `return` | `KwReturn` | Return value |
+| `padan` | `match` | `KwMatch` | Pattern match |
+| `betul` | `true` | `KwTrue` | True literal |
+| `salah` | `false` | `KwFalse` | False literal |
+| `rahsia` | `secret` | `KwSecret` | Secret type |
+| `dedah` | `declassify` | `KwDeclassify` | Declassify |
+| `kesan` | `effect` | `KwEffect` | Effect annotation |
+| `bentuk` | `struct` | `KwStruct` | Structure |
+| `pilihan` | `enum` | `KwEnum` | Enumeration |
+| `jenis` | `type` | `KwType` | Type alias |
+| `sifat` | `trait` | `KwTrait` | Trait |
+| `laksana` | `impl` | `KwImpl` | Implementation |
+| `awam` | `pub` | `KwPub` | Public visibility |
+| `modul` | `mod` | `KwMod` | Module |
+| `guna` | `use` | `KwUse` | Import |
+| `diri` | `self` | `KwSelf` | Self reference |
+| `rujukan` | `ref` | `KwRef` | Reference |
+| `lunas` | `inl` | `KwInl` | Left injection |
+| `lunan` | `inr` | `KwInr` | Right injection |
+| `dengan` | `with` | `KwWith` | With clause |
+| `urus` | `handle` | `KwHandle` | Effect handler |
+| `lakukan` | `perform` | `KwPerform` | Perform effect |
+| `perlu` | `require` | `KwRequire` | Require capability |
+| `beri` | `grant` | `KwGrant` | Grant capability |
+| `sahkan` | `prove` | `KwProve` | Prove |
+| `kelaskan` | `classify` | `KwClassify` | Classify |
+| `keluar` | `break` | `KwBreak` | Break |
+| `ulangi` | `continue` | `KwContinue` | Continue |
+| `pagar` | `fence` | `KwFence` | Memory fence |
+| `masa_tetap` | `constant_time` | `KwConstantTime` | Constant-time block |
+| `berbilang` | `concurrent` | `KwConcurrent` | Concurrent block |
+| `atom` | `atomic` | `KwAtomic` | Atomic operation |
+| `saluran` | `channel` | `KwChannel` | Channel |
+| `hantar` | `send` | `KwSend` | Send on channel |
+| `terima` | `recv` | `KwRecv` | Receive from channel |
+
+### B.2 To Be Added (from section 5.2)
+
+| Bahasa Melayu | English | TokenKind | Purpose |
+|---------------|---------|-----------|---------|
+| `gabung` | `union` | `KwUnion` | Union type (BM alias) |
+| `di_mana` | `where` | `KwWhere` | Where clause (BM alias) |
+| `tercemar` | `tainted` | `KwTainted` | Tainted type (BM alias) |
+| `bersihkan` | `sanitize` | `KwSanitize` | Sanitize (BM alias) |
+| `keupayaan` | `capability` | `KwCapability` | Capability (BM alias) |
+| `tarikbalik` | `revoke` | `KwRevoke` | Revoke (BM alias) |
+| `turutan_ketat` | `seqcst` | `KwSeqCst` | Memory order (BM alias) |
+| `longgar` | `relaxed` | `KwRelaxed` | Memory order (BM alias) |
+| `peroleh_lepas` | `acqrel` | `KwAcqRel` | Memory order (BM alias) |
+| `tak_segerak` | `async` | `KwAsync` | Async (BM alias) |
+| `tunggu` | `await` | `KwAwait` | Await (BM alias) |
+| `induk` | `super` | `KwSuper` | Super (BM alias) |
+| `produk` | `product` | `KwProduct` | Product (BM alias) |
+| `dan` | `and` | `KwAnd` | Logical AND (NEW) |
+| `atau` | `or` | `KwOr` | Logical OR (NEW) |
+| `bukan` | `not` | `KwNot` | Logical NOT (NEW) |
+| `dalam` | `in` | `KwIn` | For-in (NEW) |
+| `ialah` | `is` | `KwIs` | Type check (NEW) |
+| `bersih` | `pure` | `KwPure` | Pure effect (NEW) |
+| `selamat` | `safe` | `KwSafe` | Safe annotation (NEW) |
+| `pinjam` | `borrow` | `KwBorrow` | Borrow (NEW) |
+| `salin` | `copy` | `KwCopy` | Copy (NEW) |
+| `klon` | `clone` | `KwClone` | Clone (NEW) |
+| `jangka` | `lifetime` | `KwLifetime` | Lifetime (NEW) |
+| `pastikan` | `guard` | `KwGuard` | Guard clause (NEW) |
+| `dasar` | `policy` | `KwPolicy` | Declassification policy (NEW) |
+| `sempadan` | `fence` | `KwFence` | Fence alias (NEW alias for `pagar`) |
+
+---
+
+## APPENDIX C: REJECTED PROPOSALS
+
+These were proposed in `SYNTAX_IMPROVEMENT_SPEC_v1_0_0` and rejected. They are listed here so future implementors do not re-propose them.
+
+| Proposal | Reason Rejected |
+|----------|-----------------|
+| Add `EffConstantTime` / `EffSpecSafe` to `effect` enum | Category error: constant-time and speculation-safety are verification properties, not computational effects. Would break all 17 effect matches across 25+ Coq files. Correct approach: separate analysis pass (section 4.2 of syntax spec). |
+| Change `TFn` to take `effect_row` (list effect) | Would break every `TFn` match in all 222 .v Coq files. The current `effect_join` lattice approach is already sound. |
+| Add `EFor` / `EWhile` / `ELoop` to core `expr` | `ELoop` (infinite loop) directly contradicts `well_typed_SN` (strong normalization theorem). Loops must be bounded or effectful. Parser desugaring is the correct approach. |
+| Add 6 new `expr` constructors + admit downstream | Violates CLAUDE.md: "NO `admit.` — No tactical admits allowed." Every new constructor requires updating `subst`, `free_in`, `step`, `has_type`, `value` across 25+ files. |
+| Add `TFloat` / `TChar` to Coq `ty` | Would break all `ty` matches across 222 files for no proof benefit. Defer until Phase 2+. |
+| Sync SecurityLevel Rust 2→6 | Already done — Rust already has 6 levels. |
+| Sync Effect Rust 6→17 | Already done — Rust already has 17 effects. |
+| Sync Ty Rust 12→22 | Already done — Rust already has 22 types. |
+
+---
+
+## APPENDIX D: EXAMPLE .rii FILES
+
+### D.1 `07_EXAMPLES/pengawal_input.rii` — Guard Clause
+
+```riina
+// pengawal_input.rii — Guard clause examples
+// Demonstrates 'pastikan' (guard) syntax
+
+// Guard: early return if condition fails
+// pastikan <cond> lain { <early_return> };
+// <continuation>
+
+biar input = "hello";
+
+pastikan betul lain {
+    "input kosong"
+};
+
+input
+```
+
+### D.2 `07_EXAMPLES/saluran_paip.rii` — Pipe Operator
+
+```riina
+// saluran_paip.rii — Pipe operator examples
+// x |> f  desugars to  f(x)
+
+biar double = fn(x: Int) x;
+biar identity = fn(x: Int) x;
+
+42 |> identity |> double
+```
+
+### D.3 `07_EXAMPLES/keselamatan_kuantitatif.rii` — Security
+
+```riina
+// keselamatan_kuantitatif.rii — Security type demonstration
+// Shows classify/declassify/prove workflow
+
+biar kunci = classify 42;
+biar bukti = prove betul;
+biar nilai = declassify kunci with bukti;
+
+nilai
+```
+
+---
+
+## APPENDIX E: DEFERRED WORK (POST-PHASE 1)
+
+These items require new Coq constructors or significant proof work. They MUST NOT be implemented until Phase 1 axiom elimination (17 admits → 0, 6 axioms → 0) is complete.
+
+### E.1 Quantitative Declassification (Phase 2+)
+
+New Coq file: `properties/DeclassificationPolicy.v` (~200 lines)
+
+Defines `declassification_policy` record and proves that declassification respects budget constraints.
+
+### E.2 ConstantTime Verification (Phase 3+)
+
+New Coq file: `properties/ConstantTimeAnalysis.v` (~150 lines)
+
+Defines what it means for a term to be constant-time and proves the property is preserved by evaluation.
+
+### E.3 Effect Rows (Phase 3+)
+
+If the single-effect `TFn` proves insufficient, add `TFnRow : ty -> ty -> list effect -> ty` as a NEW constructor alongside `TFn`, with a compatibility proof.
+
+### E.4 New `expr` Constructors (Phase 2+)
+
+Only after 0 axioms and 0 admits:
+
+| Constructor | Justification | Impact per constructor |
+|-------------|--------------|----------------------|
+| `EMatch` | Multi-arm match (if parser desugaring insufficient) | ~50-100 lines across ~25 files |
+| `EGuard` | Guard clause (only if parser desugaring insufficient) | ~50-100 lines |
+| `EFor` | For loops (requires iterator protocol + termination proof) | ~80-120 lines |
+| `EWhile` | While loops (requires bounded recursion proof) | ~80-120 lines |
+
+---
+
+*Document ID: RIINA_MATERIALIZATION_PLAN_v1_0_0*
+*Status: AUTHORITATIVE*
+*Date: 2026-01-30*
+*Mode: ULTRA KIASU | ZERO TRUST | ZERO ADMITS*
+*"QED Eternum."*

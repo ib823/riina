@@ -48,6 +48,17 @@
 | **Build Status** | ✅ GREEN | All files compile |
 | **Threats Covered** | 1,231+ | All made obsolete |
 
+### Materialization Plan (Track B — Deferred)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Materialization plan document | ✅ COMPLETE | `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` |
+| Syntax improvement spec | ✅ ESTABLISHED | `04_SPECS/language/SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` |
+| Authoritative doc updates | ✅ COMPLETE | CLAUDE.md, PROGRESS.md, SESSION_LOG.md, DECISIONS.md |
+| Execution start | ⏸️ DEFERRED | Blocked on Track A stabilization |
+
+**Dependency**: Track B materialization execution begins after Track A (formal proofs) reaches 0 admits/0 unjustified axioms, or by explicit decision to proceed in parallel.
+
 ### Session 42 Part 4: DELEGATION PROMPTS AUDIT & SYNC ✅
 
 | Item | Status | Notes |

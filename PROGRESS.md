@@ -784,6 +784,8 @@ The following remain and are NOT covered by delegation output:
 
 **Total Tests:** 361 | **All Passing** ✅
 
+**Materialization Plan:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` — 7-phase plan from prototype to production language. Execution deferred until Track A stabilizes.
+
 ---
 
 ## 6. SESSION CHECKPOINT
@@ -883,6 +885,8 @@ Next: Continue eliminating remaining 15 admit. in NonInterference_v2_LogicalRela
 | **MaximumAxiomElimination.v** | **53 proven lemmas** | `02_FORMAL/coq/properties/` |
 | **LogicalRelationAssign_PROOF_FIXED.v** | **7 axioms eliminated** | `02_FORMAL/coq/properties/` |
 | **EXECUTION_REPORT.md** | **Axiom elimination report** | `06_COORDINATION/axiom_elimination/` |
+| **RIINA_MATERIALIZATION_PLAN_v1_0_0.md** | **7-phase materialization plan** | `04_SPECS/language/` |
+| **SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md** | **Syntax improvement tiers** | `04_SPECS/language/` |
 
 ---
 
