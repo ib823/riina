@@ -210,7 +210,11 @@ impl CEmitter {
         self.writeln("");
         self.writeln("typedef enum {");
         self.writeln("    RIINA_LEVEL_PUBLIC = 0,");
-        self.writeln("    RIINA_LEVEL_SECRET = 1");
+        self.writeln("    RIINA_LEVEL_INTERNAL = 1,");
+        self.writeln("    RIINA_LEVEL_SESSION = 2,");
+        self.writeln("    RIINA_LEVEL_USER = 3,");
+        self.writeln("    RIINA_LEVEL_SYSTEM = 4,");
+        self.writeln("    RIINA_LEVEL_SECRET = 5");
         self.writeln("} riina_security_level_t;");
         self.writeln("");
 
@@ -223,9 +227,20 @@ impl CEmitter {
         self.writeln("    RIINA_EFFECT_PURE = 0,");
         self.writeln("    RIINA_EFFECT_READ = 1,");
         self.writeln("    RIINA_EFFECT_WRITE = 2,");
-        self.writeln("    RIINA_EFFECT_NETWORK = 3,");
-        self.writeln("    RIINA_EFFECT_CRYPTO = 4,");
-        self.writeln("    RIINA_EFFECT_SYSTEM = 5");
+        self.writeln("    RIINA_EFFECT_FILESYSTEM = 3,");
+        self.writeln("    RIINA_EFFECT_NETWORK = 4,");
+        self.writeln("    RIINA_EFFECT_NETWORK_SECURE = 5,");
+        self.writeln("    RIINA_EFFECT_CRYPTO = 6,");
+        self.writeln("    RIINA_EFFECT_RANDOM = 7,");
+        self.writeln("    RIINA_EFFECT_SYSTEM = 8,");
+        self.writeln("    RIINA_EFFECT_TIME = 9,");
+        self.writeln("    RIINA_EFFECT_PROCESS = 10,");
+        self.writeln("    RIINA_EFFECT_PANEL = 11,");
+        self.writeln("    RIINA_EFFECT_ZIRAH = 12,");
+        self.writeln("    RIINA_EFFECT_BENTENG = 13,");
+        self.writeln("    RIINA_EFFECT_SANDI = 14,");
+        self.writeln("    RIINA_EFFECT_MENARA = 15,");
+        self.writeln("    RIINA_EFFECT_GAPURA = 16");
         self.writeln("} riina_effect_t;");
         self.writeln("");
 
@@ -1158,6 +1173,10 @@ impl CEmitter {
     fn security_level_str(&self, level: &SecurityLevel) -> &'static str {
         match level {
             SecurityLevel::Public => "RIINA_LEVEL_PUBLIC",
+            SecurityLevel::Internal => "RIINA_LEVEL_INTERNAL",
+            SecurityLevel::Session => "RIINA_LEVEL_SESSION",
+            SecurityLevel::User => "RIINA_LEVEL_USER",
+            SecurityLevel::System => "RIINA_LEVEL_SYSTEM",
             SecurityLevel::Secret => "RIINA_LEVEL_SECRET",
         }
     }
@@ -1168,9 +1187,20 @@ impl CEmitter {
             Effect::Pure => "RIINA_EFFECT_PURE",
             Effect::Read => "RIINA_EFFECT_READ",
             Effect::Write => "RIINA_EFFECT_WRITE",
+            Effect::FileSystem => "RIINA_EFFECT_FILESYSTEM",
             Effect::Network => "RIINA_EFFECT_NETWORK",
+            Effect::NetworkSecure => "RIINA_EFFECT_NETWORK_SECURE",
             Effect::Crypto => "RIINA_EFFECT_CRYPTO",
+            Effect::Random => "RIINA_EFFECT_RANDOM",
             Effect::System => "RIINA_EFFECT_SYSTEM",
+            Effect::Time => "RIINA_EFFECT_TIME",
+            Effect::Process => "RIINA_EFFECT_PROCESS",
+            Effect::Panel => "RIINA_EFFECT_PANEL",
+            Effect::Zirah => "RIINA_EFFECT_ZIRAH",
+            Effect::Benteng => "RIINA_EFFECT_BENTENG",
+            Effect::Sandi => "RIINA_EFFECT_SANDI",
+            Effect::Menara => "RIINA_EFFECT_MENARA",
+            Effect::Gapura => "RIINA_EFFECT_GAPURA",
         }
     }
 

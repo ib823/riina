@@ -435,9 +435,8 @@ impl Interpreter {
                     Value::Ref(cell) => {
                         let (val, level) = self.store.read_with_level(cell.location)?;
 
-                        // Security check: don't leak secrets to public context
-                        if level == SecurityLevel::Secret
-                            && self.security_context == SecurityLevel::Public
+                        // Security check: don't leak high data to low context
+                        if !level.leq(self.security_context)
                         {
                             return Err(Error::SecurityViolation {
                                 context_level: self.security_context,

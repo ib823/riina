@@ -242,7 +242,7 @@ impl Lower {
                 }
             }
             Expr::Perform(_, e) | Expr::Handle(e, _, _) => self.infer_type(e),
-            Expr::Require(eff, _) => Ty::Capability(*eff),
+            Expr::Require(eff, _) => Ty::Capability(eff.to_capability_kind()),
             Expr::Grant(_, e) => self.infer_type(e),
             Expr::Var(_) => Ty::Unit, // Would need type environment
         }
@@ -919,7 +919,7 @@ impl Lower {
             Expr::Require(effect, body) => {
                 let _cap = self.emit(
                     Instruction::RequireCap(*effect),
-                    Ty::Capability(*effect),
+                    Ty::Capability(effect.to_capability_kind()),
                     SecurityLevel::Public,
                     *effect,
                 );
@@ -929,7 +929,7 @@ impl Lower {
             Expr::Grant(effect, body) => {
                 let _cap = self.emit(
                     Instruction::GrantCap(*effect),
-                    Ty::Capability(*effect),
+                    Ty::Capability(effect.to_capability_kind()),
                     SecurityLevel::Public,
                     Effect::Pure,
                 );
