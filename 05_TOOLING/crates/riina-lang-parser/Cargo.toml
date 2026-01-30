@@ -1,0 +1,12 @@
+[package]
+name = "riina-lang-parser"
+version.workspace = true
+edition.workspace = true
+description = "RIINA parser"
+
+[dependencies]
+riina-core.workspace = true
+riina-lang-lexer.workspace = true
+
+[lints]
+workspace = true

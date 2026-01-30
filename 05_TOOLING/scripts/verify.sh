@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# TERAS BUILD VERIFICATION SCRIPT
+# RIINA BUILD VERIFICATION SCRIPT
 # Track F Deliverable: TRACK_F-TOOL-BUILD_v1_0_0
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 #
-# This script verifies the entire TERAS build:
+# This script verifies the entire RIINA build:
 # - Reproducibility
 # - Verification levels
 # - Security checks
@@ -178,7 +178,7 @@ verify_level_2() {
     
     log_info "Running Miri (memory safety)..."
     if check_tool miri; then
-        if ! cargo +nightly miri test -p teras-core 2>&1; then
+        if ! cargo +nightly miri test -p riina-core 2>&1; then
             log_error "Miri check failed"
             return 1
         fi
@@ -220,7 +220,7 @@ verify_level_3() {
     
     log_info "Running Kani model checking..."
     if check_tool kani; then
-        if ! cargo kani --tests -p teras-core 2>&1; then
+        if ! cargo kani --tests -p riina-core 2>&1; then
             log_warning "Kani verification incomplete (harnesses pending)"
         fi
         log_success "Kani verification completed"
@@ -340,7 +340,7 @@ verify_level_5() {
     
     log_info "Running mutation testing..."
     if check_tool cargo-mutants; then
-        if ! cargo mutants --package teras-core -- --timeout 600 2>&1; then
+        if ! cargo mutants --package riina-core -- --timeout 600 2>&1; then
             log_warning "Some mutants survived (review required)"
         fi
         log_success "Mutation testing completed"
@@ -367,10 +367,10 @@ verify_level_6() {
     log_info "Build 1..."
     SOURCE_DATE_EPOCH=0 CARGO_INCREMENTAL=0 cargo build --release 2>&1
     
-    mkdir -p /tmp/teras-build1
-    for binary in target/release/terasc target/release/teras-hash-chain; do
+    mkdir -p /tmp/riina-build1
+    for binary in target/release/riinac target/release/riina-hash-chain; do
         if [ -f "$binary" ]; then
-            cp "$binary" /tmp/teras-build1/
+            cp "$binary" /tmp/riina-build1/
         fi
     done
     
@@ -381,19 +381,19 @@ verify_level_6() {
     log_info "Build 2..."
     SOURCE_DATE_EPOCH=0 CARGO_INCREMENTAL=0 cargo build --release 2>&1
     
-    mkdir -p /tmp/teras-build2
-    for binary in target/release/terasc target/release/teras-hash-chain; do
+    mkdir -p /tmp/riina-build2
+    for binary in target/release/riinac target/release/riina-hash-chain; do
         if [ -f "$binary" ]; then
-            cp "$binary" /tmp/teras-build2/
+            cp "$binary" /tmp/riina-build2/
         fi
     done
     
     # Compare
     log_info "Comparing builds..."
     MISMATCH=0
-    for binary in terasc teras-hash-chain; do
-        if [ -f "/tmp/teras-build1/$binary" ] && [ -f "/tmp/teras-build2/$binary" ]; then
-            if ! diff "/tmp/teras-build1/$binary" "/tmp/teras-build2/$binary" > /dev/null 2>&1; then
+    for binary in riinac riina-hash-chain; do
+        if [ -f "/tmp/riina-build1/$binary" ] && [ -f "/tmp/riina-build2/$binary" ]; then
+            if ! diff "/tmp/riina-build1/$binary" "/tmp/riina-build2/$binary" > /dev/null 2>&1; then
                 log_error "Build mismatch: $binary"
                 MISMATCH=1
             else
@@ -403,7 +403,7 @@ verify_level_6() {
     done
     
     # Cleanup
-    rm -rf /tmp/teras-build1 /tmp/teras-build2
+    rm -rf /tmp/riina-build1 /tmp/riina-build2
     
     if [ "$MISMATCH" -eq 1 ]; then
         log_error "Reproducibility verification FAILED"
@@ -420,7 +420,7 @@ verify_level_6() {
 # ═══════════════════════════════════════════════════════════════════════════════
 
 main() {
-    log_header "TERAS BUILD VERIFICATION - LEVEL $LEVEL"
+    log_header "RIINA BUILD VERIFICATION - LEVEL $LEVEL"
     
     echo "Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS"
     echo ""

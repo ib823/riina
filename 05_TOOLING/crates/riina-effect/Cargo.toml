@@ -1,0 +1,11 @@
+[package]
+name = "riina-effect"
+version.workspace = true
+edition.workspace = true
+description = "RIINA Effect System runtime"
+
+[dependencies]
+riina-core.workspace = true
+
+[lints]
+workspace = true

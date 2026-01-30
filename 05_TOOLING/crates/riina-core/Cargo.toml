@@ -1,0 +1,30 @@
+# crates/riina-core/Cargo.toml
+# RIINA Core Primitives
+# Version: 0.1.0
+
+[package]
+name = "riina-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+description = "RIINA core primitives and foundational types"
+
+[dependencies]
+# ZERO runtime dependencies per Law 8
+
+[dev-dependencies]
+proptest.workspace = true
+
+# Use crate-specific lints instead of workspace lints
+# Crypto code has legitimate needs for patterns disallowed in other crates
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+
+[features]
+default = []
+# Enable additional verification
+verification = []
