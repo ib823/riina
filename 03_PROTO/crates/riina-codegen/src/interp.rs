@@ -258,6 +258,10 @@ impl Interpreter {
                         // Evaluate body
                         self.eval_with_env(&new_env, &closure.body)
                     }
+                    Value::Builtin(ref name) if crate::builtins::is_higher_order_builtin(name) => {
+                        self.eval_higher_order_builtin(name, arg_val)?
+                            .ok_or_else(|| Error::InvalidOperation(format!("higher-order builtin {} failed", name)))
+                    }
                     Value::Builtin(name) => {
                         crate::builtins::apply_builtin(&name, arg_val)
                     }
@@ -574,6 +578,132 @@ impl Interpreter {
                     }),
                 }
             }
+        }
+    }
+}
+
+impl Interpreter {
+    /// Evaluate higher-order builtins that need closure invocation.
+    fn eval_higher_order_builtin(&mut self, name: &str, arg: Value) -> Result<Option<Value>> {
+        match name {
+            "senarai_peta" => {
+                // (List, Closure) -> List
+                match arg {
+                    Value::Pair(list, func) => {
+                        let items = match *list {
+                            Value::List(items) => items,
+                            _ => return Err(Error::TypeMismatch {
+                                expected: "list".to_string(),
+                                found: format!("{:?}", list),
+                                context: "senarai_peta".to_string(),
+                            }),
+                        };
+                        let closure = match *func {
+                            Value::Closure(c) => c,
+                            _ => return Err(Error::TypeMismatch {
+                                expected: "closure".to_string(),
+                                found: format!("{:?}", func),
+                                context: "senarai_peta".to_string(),
+                            }),
+                        };
+                        let mut result = Vec::with_capacity(items.len());
+                        for item in items {
+                            let new_env = closure.env.extend(closure.param.clone(), item);
+                            let val = self.eval_with_env(&new_env, &closure.body)?;
+                            result.push(val);
+                        }
+                        Ok(Some(Value::List(result)))
+                    }
+                    _ => Err(Error::TypeMismatch {
+                        expected: "(list, closure)".to_string(),
+                        found: format!("{:?}", arg),
+                        context: "senarai_peta".to_string(),
+                    }),
+                }
+            }
+            "senarai_tapis" => {
+                // (List, Closure) -> List
+                match arg {
+                    Value::Pair(list, func) => {
+                        let items = match *list {
+                            Value::List(items) => items,
+                            _ => return Err(Error::TypeMismatch {
+                                expected: "list".to_string(),
+                                found: format!("{:?}", list),
+                                context: "senarai_tapis".to_string(),
+                            }),
+                        };
+                        let closure = match *func {
+                            Value::Closure(c) => c,
+                            _ => return Err(Error::TypeMismatch {
+                                expected: "closure".to_string(),
+                                found: format!("{:?}", func),
+                                context: "senarai_tapis".to_string(),
+                            }),
+                        };
+                        let mut result = Vec::new();
+                        for item in items {
+                            let new_env = closure.env.extend(closure.param.clone(), item.clone());
+                            let val = self.eval_with_env(&new_env, &closure.body)?;
+                            if val == Value::Bool(true) {
+                                result.push(item);
+                            }
+                        }
+                        Ok(Some(Value::List(result)))
+                    }
+                    _ => Err(Error::TypeMismatch {
+                        expected: "(list, closure)".to_string(),
+                        found: format!("{:?}", arg),
+                        context: "senarai_tapis".to_string(),
+                    }),
+                }
+            }
+            "senarai_lipat" => {
+                // (List, (Value, Closure)) -> Value
+                match arg {
+                    Value::Pair(list, init_and_func) => {
+                        let items = match *list {
+                            Value::List(items) => items,
+                            _ => return Err(Error::TypeMismatch {
+                                expected: "list".to_string(),
+                                found: format!("{:?}", list),
+                                context: "senarai_lipat".to_string(),
+                            }),
+                        };
+                        match *init_and_func {
+                            Value::Pair(init, func) => {
+                                let closure = match *func {
+                                    Value::Closure(c) => c,
+                                    _ => return Err(Error::TypeMismatch {
+                                        expected: "closure".to_string(),
+                                        found: format!("{:?}", func),
+                                        context: "senarai_lipat".to_string(),
+                                    }),
+                                };
+                                let mut acc = *init;
+                                for item in items {
+                                    // Closure takes a pair (acc, item)
+                                    let pair = Value::Pair(Box::new(acc), Box::new(item));
+                                    let new_env = closure.env.extend(closure.param.clone(), pair);
+                                    acc = self.eval_with_env(&new_env, &closure.body)?;
+                                }
+                                Ok(Some(acc))
+                            }
+                            _ => Err(Error::TypeMismatch {
+                                expected: "(value, closure)".to_string(),
+                                found: format!("{:?}", init_and_func),
+                                context: "senarai_lipat".to_string(),
+                            }),
+                        }
+                    }
+                    _ => Err(Error::TypeMismatch {
+                        expected: "(list, (value, closure))".to_string(),
+                        found: format!("{:?}", arg),
+                        context: "senarai_lipat".to_string(),
+                    }),
+                }
+            }
+            _ => Ok(None),
         }
     }
 }

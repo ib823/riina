@@ -98,8 +98,8 @@ fn main() {
         }
     };
 
-    // 2. Typecheck
-    let ctx = Context::new();
+    // 2. Typecheck (with builtin types registered)
+    let ctx = riina_typechecker::register_builtin_types(&Context::new());
     let (ty, eff) = match type_check(&ctx, &expr) {
         Ok(r) => r,
         Err(e) => {
