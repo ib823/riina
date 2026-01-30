@@ -375,6 +375,10 @@ impl<'a> Parser<'a> {
         let ident = self.parse_ident()?;
         match ident.as_str() {
             "Public" => Ok(SecurityLevel::Public),
+            "Internal" => Ok(SecurityLevel::Internal),
+            "Session" => Ok(SecurityLevel::Session),
+            "User" => Ok(SecurityLevel::User),
+            "System" => Ok(SecurityLevel::System),
             "Secret" => Ok(SecurityLevel::Secret),
              _ => Err(ParseError { kind: ParseErrorKind::InvalidSecurityLevel, span: self.current_span })
         }
@@ -386,9 +390,20 @@ impl<'a> Parser<'a> {
              "Pure" => Ok(Effect::Pure),
              "Read" => Ok(Effect::Read),
              "Write" => Ok(Effect::Write),
+             "FileSystem" => Ok(Effect::FileSystem),
              "Network" => Ok(Effect::Network),
+             "NetworkSecure" => Ok(Effect::NetworkSecure),
              "Crypto" => Ok(Effect::Crypto),
+             "Random" => Ok(Effect::Random),
              "System" => Ok(Effect::System),
+             "Time" => Ok(Effect::Time),
+             "Process" => Ok(Effect::Process),
+             "Panel" => Ok(Effect::Panel),
+             "Zirah" => Ok(Effect::Zirah),
+             "Benteng" => Ok(Effect::Benteng),
+             "Sandi" => Ok(Effect::Sandi),
+             "Menara" => Ok(Effect::Menara),
+             "Gapura" => Ok(Effect::Gapura),
              _ => Err(ParseError { kind: ParseErrorKind::InvalidEffect, span: self.current_span })
          }
     }

@@ -567,10 +567,7 @@ impl Value {
     /// Information flow rule: High cannot flow to Low
     #[must_use]
     pub fn can_flow_to(&self, target_level: SecurityLevel) -> bool {
-        !matches!(
-            (self.security_level(), target_level),
-            (SecurityLevel::Secret, SecurityLevel::Public)
-        )
+        self.security_level().leq(target_level)
     }
 }
 
