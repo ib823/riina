@@ -1,6 +1,6 @@
 # rust-toolchain.toml
 # Pinned Rust version for reproducible builds
-# TERAS Build System v1.0.0
+# RIINA Build System v1.0.0
 
 [toolchain]
 channel = "1.84.0"

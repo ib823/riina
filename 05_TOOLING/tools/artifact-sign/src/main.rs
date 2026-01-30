@@ -1,4 +1,4 @@
-//! TERAS Artifact Signing Tool
+//! RIINA Artifact Signing Tool
 //! ═══════════════════════════════════════════════════════════════════════════════
 //! Track F Deliverable: TRACK_F-TOOL-BUILD_v1_0_0
 //! ═══════════════════════════════════════════════════════════════════════════════
@@ -31,9 +31,9 @@ use clap::{Parser, Subcommand, ValueEnum};
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[derive(Parser)]
-#[command(name = "teras-artifact-sign")]
+#[command(name = "riina-artifact-sign")]
 #[command(version = "1.0.0")]
-#[command(about = "TERAS Artifact Signing - Post-Quantum Secure Signatures")]
+#[command(about = "RIINA Artifact Signing - Post-Quantum Secure Signatures")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -162,7 +162,7 @@ struct KeyPair {
 
 impl KeyPair {
     fn generate(algorithm: SigningAlgorithm) -> Self {
-        // Placeholder: In production, use teras-kunci for actual key generation
+        // Placeholder: In production, use riina-kunci for actual key generation
         let (public_key, private_key) = match algorithm {
             SigningAlgorithm::Mldsa65 => {
                 // ML-DSA-65 public key: 1952 bytes, private key: 4032 bytes
@@ -210,7 +210,7 @@ impl Signature {
         let mut bytes = Vec::new();
 
         // Magic header
-        bytes.extend(b"TERAS-SIG-V1");
+        bytes.extend(b"RIINA-SIG-V1");
 
         // Algorithm (32 bytes, null-padded)
         let mut algo = self.algorithm.as_bytes().to_vec();
@@ -240,7 +240,7 @@ impl Signature {
         }
 
         // Check magic
-        if &bytes[0..12] != b"TERAS-SIG-V1" {
+        if &bytes[0..12] != b"RIINA-SIG-V1" {
             return None;
         }
 
@@ -317,7 +317,7 @@ fn generate_keypair(name: &str, algorithm: SigningAlgorithm, output: &Path, verb
 
     // Write public key
     let mut pub_file = File::create(&public_path)?;
-    writeln!(pub_file, "-----BEGIN TERAS PUBLIC KEY-----")?;
+    writeln!(pub_file, "-----BEGIN RIINA PUBLIC KEY-----")?;
     writeln!(pub_file, "Algorithm: {}", algorithm.name())?;
     writeln!(pub_file, "Name: {name}")?;
     writeln!(pub_file, "")?;
@@ -328,11 +328,11 @@ fn generate_keypair(name: &str, algorithm: SigningAlgorithm, output: &Path, verb
         writeln!(pub_file, "{encoded}")?;
     }
 
-    writeln!(pub_file, "-----END TERAS PUBLIC KEY-----")?;
+    writeln!(pub_file, "-----END RIINA PUBLIC KEY-----")?;
 
     // Write private key
     let mut priv_file = File::create(&private_path)?;
-    writeln!(priv_file, "-----BEGIN TERAS PRIVATE KEY-----")?;
+    writeln!(priv_file, "-----BEGIN RIINA PRIVATE KEY-----")?;
     writeln!(priv_file, "Algorithm: {}", algorithm.name())?;
     writeln!(priv_file, "Name: {name}")?;
     writeln!(priv_file, "")?;
@@ -342,7 +342,7 @@ fn generate_keypair(name: &str, algorithm: SigningAlgorithm, output: &Path, verb
         writeln!(priv_file, "{encoded}")?;
     }
 
-    writeln!(priv_file, "-----END TERAS PRIVATE KEY-----")?;
+    writeln!(priv_file, "-----END RIINA PRIVATE KEY-----")?;
 
     println!("✓ Public key:  {}", public_path.display());
     println!("✓ Private key: {}", private_path.display());
@@ -366,7 +366,7 @@ fn sign_file(file: &Path, key: &Path, output: Option<&Path>, verbose: bool) -> i
 
     // Read private key (placeholder - just check it exists)
     let key_contents = fs::read_to_string(key)?;
-    if !key_contents.contains("TERAS PRIVATE KEY") {
+    if !key_contents.contains("RIINA PRIVATE KEY") {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid private key"));
     }
 
@@ -414,7 +414,7 @@ fn verify_signature(file: &Path, sig_path: &Path, key: &Path, verbose: bool) -> 
 
     // Read public key
     let key_contents = fs::read_to_string(key)?;
-    if !key_contents.contains("TERAS PUBLIC KEY") {
+    if !key_contents.contains("RIINA PUBLIC KEY") {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid public key"));
     }
 
@@ -478,14 +478,14 @@ fn generate_cyclonedx(components: &[String], timestamp: u64) -> String {
     let mut json = String::from("{\n");
     json.push_str("  \"bomFormat\": \"CycloneDX\",\n");
     json.push_str("  \"specVersion\": \"1.5\",\n");
-    json.push_str(&format!("  \"serialNumber\": \"urn:uuid:teras-{timestamp}\",\n"));
+    json.push_str(&format!("  \"serialNumber\": \"urn:uuid:riina-{timestamp}\",\n"));
     json.push_str("  \"version\": 1,\n");
     json.push_str("  \"metadata\": {\n");
     json.push_str(&format!("    \"timestamp\": \"{timestamp}\",\n"));
     json.push_str("    \"tools\": [\n");
     json.push_str("      {\n");
-    json.push_str("        \"vendor\": \"TERAS\",\n");
-    json.push_str("        \"name\": \"teras-artifact-sign\",\n");
+    json.push_str("        \"vendor\": \"RIINA\",\n");
+    json.push_str("        \"name\": \"riina-artifact-sign\",\n");
     json.push_str("        \"version\": \"1.0.0\"\n");
     json.push_str("      }\n");
     json.push_str("    ]\n");
@@ -509,11 +509,11 @@ fn generate_spdx(components: &[String], timestamp: u64) -> String {
     let mut json = String::from("{\n");
     json.push_str("  \"spdxVersion\": \"SPDX-2.3\",\n");
     json.push_str("  \"dataLicense\": \"CC0-1.0\",\n");
-    json.push_str(&format!("  \"SPDXID\": \"SPDXRef-DOCUMENT-teras-{timestamp}\",\n"));
-    json.push_str("  \"name\": \"TERAS SBOM\",\n");
-    json.push_str("  \"documentNamespace\": \"https://teras.io/sbom\",\n");
+    json.push_str(&format!("  \"SPDXID\": \"SPDXRef-DOCUMENT-riina-{timestamp}\",\n"));
+    json.push_str("  \"name\": \"RIINA SBOM\",\n");
+    json.push_str("  \"documentNamespace\": \"https://riina.io/sbom\",\n");
     json.push_str("  \"creationInfo\": {\n");
-    json.push_str("    \"creators\": [\"Tool: teras-artifact-sign-1.0.0\"]\n");
+    json.push_str("    \"creators\": [\"Tool: riina-artifact-sign-1.0.0\"]\n");
     json.push_str("  },\n");
     json.push_str("  \"packages\": [\n");
 
@@ -539,7 +539,7 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
 
     println!("═══════════════════════════════════════════════════════════════");
-    println!("        TERAS ARTIFACT SIGNING TOOL v1.0.0");
+    println!("        RIINA ARTIFACT SIGNING TOOL v1.0.0");
     println!("  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST");
     println!("═══════════════════════════════════════════════════════════════");
     println!();
