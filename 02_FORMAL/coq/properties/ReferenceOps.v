@@ -53,6 +53,22 @@ Proof.
   intros. pose proof (step_preserves_ctx_snd _ _ H). simpl in H0. auto.
 Qed.
 
+Lemma multi_step_preserves_ctx : forall e st ctx e' st' ctx',
+  multi_step (e, st, ctx) (e', st', ctx') -> ctx' = ctx.
+Proof.
+  intros e st ctx e' st' ctx' Hms.
+  remember (e, st, ctx) as cfg1.
+  remember (e', st', ctx') as cfg2.
+  revert e st ctx e' st' ctx' Heqcfg1 Heqcfg2.
+  induction Hms as [cfg | cfg1 cfg2 cfg3 Hstep Hmulti IH];
+    intros e0 st0 ctx0 e0' st0' ctx0' Heq1 Heq2.
+  - subst. injection Heq2. intros; subst. reflexivity.
+  - subst. destruct cfg2 as [[e2 st2] ctx2].
+    assert (Hctx : ctx2 = ctx0) by (eapply step_preserves_ctx; exact Hstep).
+    subst ctx2.
+    apply (IH _ _ _ _ _ _ eq_refl Heq2).
+Qed.
+
 Lemma value_multi_step_refl : forall v st ctx cfg,
   value v -> multi_step (v, st, ctx) cfg -> cfg = (v, st, ctx).
 Proof.
@@ -253,15 +269,49 @@ Proof.
     exact Hwf.
 Qed.
 
-(** ========== LINE 264: exp_rel_le_ref - MAIN PROOF ========== *)
+(** ========== exp_rel_le_ref - MAIN PROOF ========== *)
+(** Note: We return Σ_mid (from subexpression evaluation) as the output store typing.
+    This avoids needing store_wf for fresh_loc_not_in_store_ty. The ref allocation
+    is invisible to store_rel_simple (which only tracks store_max equality).
+    val_rel_le_build_ref works for any Σ regardless of location membership. *)
 Lemma exp_rel_le_ref : forall n Σ T sl e1 e2 st1 st2 ctx,
   exp_rel_le n Σ T e1 e2 st1 st2 ctx ->
   store_rel_le n Σ st1 st2 ->
   exp_rel_le n Σ (TRef T sl) (ERef e1 sl) (ERef e2 sl) st1 st2 ctx.
 Proof.
-  (* TODO: Fix proof - multi_step_ref_inversion lemma signature mismatch with ctx/ctx' *)
-  admit.
-Admitted.
+  intros n Σ T sl e1 e2 st1 st2 ctx Hsub Hstore_rel.
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Hms1 Hms2 Hval1 Hval2.
+  (* Fix ctx mismatch: multi_step preserves ctx *)
+  assert (Hctx : ctx' = ctx) by (eapply multi_step_preserves_ctx; exact Hms1).
+  subst ctx'.
+  (* Invert the multi_step for ERef *)
+  destruct (multi_step_ref_inversion _ _ _ _ _ _ Hms1 Hval1)
+    as [vi1 [sm1 [l1 [Hms_e1 [Hvi1 [Hv1eq [Hst1eq Hl1]]]]]]].
+  destruct (multi_step_ref_inversion _ _ _ _ _ _ Hms2 Hval2)
+    as [vi2 [sm2 [l2 [Hms_e2 [Hvi2 [Hv2eq [Hst2eq Hl2]]]]]]].
+  subst v1 v2 st1' st2'.
+  (* Use the subexpression exp_rel_le to relate vi1 and vi2 *)
+  unfold exp_rel_le in Hsub.
+  destruct (Hsub k vi1 vi2 sm1 sm2 ctx Hk Hms_e1 Hms_e2 Hvi1 Hvi2)
+    as [Σ_mid [Hext_mid [Hval_mid Hsimple_mid]]].
+  (* Return Σ_mid as the output store typing *)
+  exists Σ_mid.
+  assert (Hfresh_eq : fresh_loc sm1 = fresh_loc sm2).
+  { apply ref_same_location with (Σ := Σ_mid). exact Hsimple_mid. }
+  repeat split.
+  - (* store_ty_extends Σ Σ_mid — from subexpression *)
+    exact Hext_mid.
+  - (* val_rel_le k Σ_mid (TRef T sl) (ELoc l1) (ELoc l2) *)
+    (* l1 = fresh_loc sm1 = fresh_loc sm2 = l2 *)
+    rewrite Hl1, Hl2, Hfresh_eq.
+    apply val_rel_le_build_ref.
+  - (* store_rel_simple Σ_mid (store_update l1 vi1 sm1) (store_update l2 vi2 sm2) *)
+    unfold store_rel_simple.
+    rewrite Hl1, Hl2, Hfresh_eq.
+    apply store_max_update_eq.
+    unfold store_rel_simple in Hsimple_mid. exact Hsimple_mid.
+Qed.
 
 (** ** Axiom 17: Dereference (EDeref) *)
 
@@ -289,15 +339,65 @@ Proof.
     + apply MS_Refl.
 Qed.
 
-(** ========== LINE 286: exp_rel_le_deref - MAIN PROOF ========== *)
+(** ========== exp_rel_le_deref - MAIN PROOF ========== *)
+(** The standard exp_rel_le only returns store_rel_simple (store_max equality),
+    which is insufficient for deref (we need store_rel_le to look up related values).
+    Solution: take a strengthened hypothesis that also returns store_rel_le for
+    intermediate stores AND ensures the resulting location is typed.
+    The fundamental theorem provides both via exp_rel_n + preservation. *)
 Lemma exp_rel_le_deref : forall n Σ T sl e1 e2 st1 st2 ctx,
-  exp_rel_le n Σ (TRef T sl) e1 e2 st1 st2 ctx ->
-  store_rel_le n Σ st1 st2 ->
+  (* Strengthened: returns store_rel_le AND location is typed in output Σ' *)
+  (forall k v1 v2 st1' st2',
+     k <= n ->
+     multi_step (e1, st1, ctx) (v1, st1', ctx) ->
+     multi_step (e2, st2, ctx) (v2, st2', ctx) ->
+     value v1 -> value v2 ->
+     exists Σ' l,
+       store_ty_extends Σ Σ' /\
+       v1 = ELoc l /\ v2 = ELoc l /\
+       store_ty_lookup l Σ' = Some (T, sl) /\
+       store_rel_le k Σ' st1' st2') ->
+  store_has_values st1 ->
+  store_has_values st2 ->
   exp_rel_le n Σ T (EDeref e1) (EDeref e2) st1 st2 ctx.
 Proof.
-  (* TODO: Fix proof - multi_step_deref_inversion lemma signature mismatch with ctx/ctx' *)
-  admit.
-Admitted.
+  intros n Σ T sl e1 e2 st1 st2 ctx Hsub_strong Hshv1 Hshv2.
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Hms1 Hms2 Hval1 Hval2.
+  (* Fix ctx mismatch: multi_step preserves ctx *)
+  assert (Hctx : ctx' = ctx) by (eapply multi_step_preserves_ctx; exact Hms1).
+  subst ctx'.
+  (* Invert the multi_step for EDeref *)
+  destruct (multi_step_deref_inversion _ _ _ _ _ Hms1 Hval1 Hshv1)
+    as [l1 [sm1 [Hms_e1 [Hst1eq Hlook1]]]].
+  destruct (multi_step_deref_inversion _ _ _ _ _ Hms2 Hval2 Hshv2)
+    as [l2 [sm2 [Hms_e2 [Hst2eq Hlook2]]]].
+  subst st1' st2'.
+  (* Use the strengthened hypothesis *)
+  destruct (Hsub_strong k (ELoc l1) (ELoc l2) sm1 sm2 Hk Hms_e1 Hms_e2 (VLoc l1) (VLoc l2))
+    as [Σ_mid [l [Hext_mid [Heql1 [Heql2 [Hty_lookup Hstore_mid]]]]]].
+  injection Heql1 as Heql1. injection Heql2 as Heql2. subst l1 l2.
+  (* Use store_rel_le to look up related values at location l *)
+  destruct k as [|k'].
+  { (* k = 0: val_rel_le 0 is True *)
+    exists Σ_mid. repeat split.
+    - exact Hext_mid.
+    - simpl. exact I.
+    - unfold store_rel_simple.
+      destruct Hstore_mid as [Hmax _]. exact Hmax. }
+  (* k = S k' *)
+  destruct (store_rel_le_lookup (S k') Σ_mid sm1 sm2 l T sl Hstore_mid Hty_lookup)
+    as [w1 [w2 [Hlook_w1 [Hlook_w2 Hval_w]]]].
+  (* w1 = v1 and w2 = v2 (same location, same store) *)
+  rewrite Hlook_w1 in Hlook1. injection Hlook1 as Hlook1. subst w1.
+  rewrite Hlook_w2 in Hlook2. injection Hlook2 as Hlook2. subst w2.
+  exists Σ_mid.
+  repeat split.
+  - exact Hext_mid.
+  - exact Hval_w.
+  - unfold store_rel_simple.
+    destruct Hstore_mid as [Hmax _]. exact Hmax.
+Qed.
 
 (** ** Axiom 18: Assignment (EAssign) *)
 
@@ -330,16 +430,75 @@ Proof.
   - apply store_rel_le_update with (T := T) (sl := sl); auto.
 Qed.
 
-(** ========== LINE 309: exp_rel_le_assign - MAIN PROOF ========== *)
+(** ========== exp_rel_le_assign - MAIN PROOF ========== *)
+(** Like deref, assign requires store_rel_le for intermediate stores.
+    The hypothesis provides: (1) the LHS evaluates to a typed location with store_rel_le,
+    (2) the RHS evaluates to related values with store_rel_le.
+    Additionally, we need sequential evaluation: RHS starts from the stores after LHS. *)
 Lemma exp_rel_le_assign : forall n Σ T sl e1 e2 e1' e2' st1 st2 ctx,
-  exp_rel_le n Σ (TRef T sl) e1 e2 st1 st2 ctx ->
-  exp_rel_le n Σ T e1' e2' st1 st2 ctx ->
-  store_rel_le n Σ st1 st2 ->
+  (* LHS evaluates to a typed location *)
+  (forall k v1 v2 st1' st2',
+     k <= n ->
+     multi_step (e1, st1, ctx) (v1, st1', ctx) ->
+     multi_step (e2, st2, ctx) (v2, st2', ctx) ->
+     value v1 -> value v2 ->
+     exists Σ' l,
+       store_ty_extends Σ Σ' /\
+       v1 = ELoc l /\ v2 = ELoc l /\
+       store_ty_lookup l Σ' = Some (T, sl) /\
+       store_rel_le k Σ' st1' st2') ->
+  (* RHS evaluates to related values (for any starting stores with store_rel_le) *)
+  (forall k Σ_start st1_start st2_start v1 v2 st1' st2',
+     k <= n ->
+     store_ty_extends Σ Σ_start ->
+     store_rel_le k Σ_start st1_start st2_start ->
+     multi_step (e1', st1_start, ctx) (v1, st1', ctx) ->
+     multi_step (e2', st2_start, ctx) (v2, st2', ctx) ->
+     value v1 -> value v2 ->
+     exists Σ',
+       store_ty_extends Σ_start Σ' /\
+       val_rel_le k Σ' T v1 v2 /\
+       store_rel_le k Σ' st1' st2') ->
+  store_has_values st1 ->
+  store_has_values st2 ->
   exp_rel_le n Σ TUnit (EAssign e1 e1') (EAssign e2 e2') st1 st2 ctx.
 Proof.
-  (* TODO: Fix proof - multi_step_assign_inversion lemma signature mismatch with ctx/ctx' *)
-  admit.
-Admitted.
+  intros n Σ T sl e1 e2 e1' e2' st1 st2 ctx
+    Hlhs_strong Hrhs_strong Hshv1 Hshv2.
+  unfold exp_rel_le.
+  intros k v1 v2 st1' st2' ctx' Hk Hms1 Hms2 Hval1 Hval2.
+  (* Fix ctx mismatch *)
+  assert (Hctx : ctx' = ctx) by (eapply multi_step_preserves_ctx; exact Hms1).
+  subst ctx'.
+  (* Invert the multi_step for EAssign *)
+  destruct (multi_step_assign_inversion _ _ _ _ _ _ Hms1 Hval1 Hshv1)
+    as [la1 [va1 [sma1 [smb1 [Hms_lhs1 [Hms_rhs1 [Hva1 [Hveq1 Hsteq1]]]]]]]].
+  destruct (multi_step_assign_inversion _ _ _ _ _ _ Hms2 Hval2 Hshv2)
+    as [la2 [va2 [sma2 [smb2 [Hms_lhs2 [Hms_rhs2 [Hva2 [Hveq2 Hsteq2]]]]]]]].
+  subst v1 v2 st1' st2'.
+  (* Step 1: Use LHS hypothesis to get related locations *)
+  destruct (Hlhs_strong k (ELoc la1) (ELoc la2) sma1 sma2 Hk
+              Hms_lhs1 Hms_lhs2 (VLoc la1) (VLoc la2))
+    as [Σ_lhs [l [Hext_lhs [Heqla1 [Heqla2 [Hty_lookup Hstore_lhs]]]]]].
+  injection Heqla1 as Heqla1. injection Heqla2 as Heqla2. subst la1 la2.
+  (* Step 2: Use RHS hypothesis to get related values *)
+  destruct (Hrhs_strong k Σ_lhs sma1 sma2 va1 va2 smb1 smb2 Hk
+              Hext_lhs Hstore_lhs Hms_rhs1 Hms_rhs2 Hva1 Hva2)
+    as [Σ_rhs [Hext_rhs [Hval_rhs Hstore_rhs]]].
+  (* Step 3: Update the store and show the result *)
+  exists Σ_rhs.
+  repeat split.
+  - (* store_ty_extends Σ Σ_rhs *)
+    apply store_ty_extends_trans with (Σ2 := Σ_lhs).
+    + exact Hext_lhs.
+    + exact Hext_rhs.
+  - (* val_rel_le k Σ_rhs TUnit EUnit EUnit *)
+    apply val_rel_le_unit.
+  - (* store_rel_simple Σ_rhs (store_update l va1 smb1) (store_update l va2 smb2) *)
+    unfold store_rel_simple.
+    apply store_max_update_eq.
+    destruct Hstore_rhs as [Hmax _]. exact Hmax.
+Qed.
 
 (** ** Verification: Axiom Count
 

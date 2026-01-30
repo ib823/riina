@@ -1622,7 +1622,7 @@ Proof.
   intros Σ T v1 v2 Hrel n.
   destruct n as [| n'].
   - exact I.
-  - intros Σ_cur st1 st2 ctx Hext Hstore.
+  - intros Σ_cur st1 st2 ctx Hext Hstore Hwf1 Hwf2 Hagree.
     (* Values don't step, so we return immediately with Σ_cur *)
     exists v1, v2, st1, st2, ctx, Σ_cur.
     split.
@@ -1641,7 +1641,10 @@ Proof.
               ** split.
                  { (* val_rel_n n' Σ_cur T v1 v2 *)
                    apply (val_rel_n_mono_store n' Σ Σ_cur T v1 v2 Hext (Hrel n')). }
-                 { exact Hstore. }
+                 split. { exact Hstore. }
+                 split. { exact Hwf1. }
+                 split. { exact Hwf2. }
+                 { exact Hagree. }
 Qed.
 
 Lemma exp_rel_of_val_rel_step : forall n Σ T v1 v2,
@@ -1649,7 +1652,7 @@ Lemma exp_rel_of_val_rel_step : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
   exp_rel_n (S n) Σ T v1 v2.
 Proof.
-  intros n Σ T v1 v2 Hn Hrel Σ_cur st1 st2 ctx Hext Hstore.
+  intros n Σ T v1 v2 Hn Hrel Σ_cur st1 st2 ctx Hext Hstore Hwf1 Hwf2 Hagree.
   exists v1, v2, st1, st2, ctx, Σ_cur.
   split.
   - unfold store_ty_extends. intros l T' sl Hlook. exact Hlook.
@@ -1663,7 +1666,10 @@ Proof.
            ++ apply (val_rel_value_right_n n Σ T v1 v2 Hn Hrel).
            ++ split.
               ** apply (val_rel_n_mono_store n Σ Σ_cur T v1 v2 Hext Hrel).
-              ** exact Hstore.
+              ** split. { exact Hstore. }
+                 split. { exact Hwf1. }
+                 split. { exact Hwf2. }
+                 { exact Hagree. }
 Qed.
 
 Lemma exp_rel_of_val_rel_n : forall n Σ T v1 v2,
@@ -2800,6 +2806,15 @@ Proof.
   exists Σ', ε'. split; [exact Hext | split; assumption].
 Qed.
 
+(** Security level is irrelevant in typing — Δ is universally passed through *)
+Lemma has_type_level_irrelevant : forall Γ Σ Δ1 e T ε,
+  has_type Γ Σ Δ1 e T ε ->
+  forall Δ2, has_type Γ Σ Δ2 e T ε.
+Proof.
+  intros Γ Σ Δ1 e T ε Hty.
+  induction Hty; intro Δ2; try (econstructor; eauto; fail).
+Qed.
+
 (** The mutual induction theorem.
     Since val_rel_n_step_up is fully proven in the base file (NonInterference_v2.v),
     step_up_at is trivially proven for all n. The fundamental theorem part
@@ -2820,13 +2835,12 @@ Proof.
     + (* fundamental at S n': requires induction on typing derivation *)
       unfold fundamental_at_step.
       intros Γ Σ Δ e0 T ε rho1 rho2 Hty Henv Hno1 Hno2.
-      (* The fundamental theorem at step S n' follows from the
-         logical_relation theorem (by instantiation at step S n').
-         However, logical_relation itself has admits for preservation-related
-         issues (store_wf tracking, typing for evaluated results).
-         Once logical_relation is fully proven, this will follow directly. *)
-      admit.
-Admitted.
+      (* Convert typing from arbitrary Δ to Public *)
+      assert (Hty_pub : has_type Γ Σ Public e0 T ε).
+      { exact (has_type_level_irrelevant Γ Σ Δ e0 T ε Hty Public). }
+      (* Apply the logical_relation theorem *)
+      exact (logical_relation Γ Σ e0 T ε rho1 rho2 Hty_pub Henv Hno1 Hno2 (S n')).
+Qed.
 
 (** Corollary: step_up holds at all steps *)
 Corollary val_rel_n_step_up_proven : forall n Σ T v1 v2,
@@ -3001,8 +3015,8 @@ Proof.
         { apply subst_rho_extend. exact Hno2. }
 
         (* Apply exp_rel at step S n' with Σ_cur = Σ' (since Σ ⊆ Σ') *)
-        specialize (He_rel (S n') Σ' st1 st2 ctx Hext_Σ' Hstrel) as
-          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval Hstore']]]]]]]]]]]].
+        specialize (He_rel (S n') Σ' st1 st2 ctx Hext_Σ' Hstrel Hwf1 Hwf2 Hagree) as
+          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
 
         (* Result *)
         exists v1, v2, st1', st2', ctx', Σ''.
@@ -3019,14 +3033,9 @@ Proof.
           - rewrite Hsubst2. exact Hstep2. }
         split. { exact Hval. }
         split. { exact Hstore'. }
-        split. { (* store_wf Σ'' st1' - from preservation *)
-                 (* He_rel preserves store_wf, but we need to extract it *)
-                 (* For now admit - proper fix needs exp_rel to track store_wf *)
-                 admit. }
-        split. { (* store_wf Σ'' st2' *)
-                 admit. }
-        { (* stores_agree_low_fo Σ'' st1' st2' *)
-          admit. }
+        split. { exact Hwf1'. }
+        split. { exact Hwf2'. }
+        { exact Hagree'. }
   - (* T_App - function application *)
     simpl.
     specialize (IHHty1 rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
@@ -3035,24 +3044,61 @@ Proof.
     destruct n as [| n'].
     + simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
 
       (* Step 1: Evaluate function to lambda *)
-      specialize (Hf_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore) as
-        [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep_f1 [Hstep_f2 [Hvalf1 [Hvalf2 [Hfrel Hstore1]]]]]]]]]]]].
+      specialize (Hf_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
+        [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep_f1 [Hstep_f2 [Hvalf1 [Hvalf2 [Hfrel [Hstore1 [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
 
       (* Step 2: Evaluate argument *)
       assert (Hext_arg : store_ty_extends Σ Σ').
       { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext1). }
-      specialize (Ha_rel (S n') Σ' st1' st2' ctx' Hext_arg Hstore1) as
-        [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_a1 [Hstep_a2 [Hvala1 [Hvala2 [Harel Hstore2]]]]]]]]]]]].
+      specialize (Ha_rel (S n') Σ' st1' st2' ctx' Hext_arg Hstore1 Hwf1' Hwf2' Hagree') as
+        [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_a1 [Hstep_a2 [Hvala1 [Hvala2 [Harel [Hstore2 [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]].
 
       (* Step 3: Apply function to argument *)
       (* f1, f2 are val_rel_n n' at TFn - extract val_rel_at_type *)
       (* Need to use the TFn val_rel_at_type property *)
       destruct n' as [| n''].
-      { (* n' = 0: Step-1 case *)
-        admit. }
+      { (* n' = 0: Step-1 case - use fundamental_theorem_step_0 axiom *)
+        (* f1, f2 : val_rel_n 0 Σ' (TFn T1 T2 ε) — weaken to Σ'' *)
+        assert (Hfrel'' : val_rel_n 0 Σ'' (TFn T1 T2 ε) f1 f2).
+        { apply (val_rel_n_mono_store 0 Σ' Σ'' (TFn T1 T2 ε) f1 f2 Hext2 Hfrel). }
+        destruct (val_rel_n_typing 0 Σ'' (TFn T1 T2 ε) f1 f2 Hfrel'') as [Htyf1'' Htyf2''].
+        (* Get val_rel_at_type via fundamental_theorem_step_0 *)
+        assert (Hfat : val_rel_at_type Σ'' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (TFn T1 T2 ε) f1 f2).
+        { apply fundamental_theorem_step_0; try assumption.
+          simpl. reflexivity. }
+        (* Apply val_rel_at_type for TFn *)
+        simpl in Hfat.
+        destruct (val_rel_n_closed 0 Σ'' T1 a1 a2 Harel) as [Hcla1 Hcla2].
+        specialize (Hfat Σ'' (store_ty_extends_refl Σ'') a1 a2 Hvala1 Hvala2 Hcla1 Hcla2).
+        specialize (Hfat Harel st1'' st2'' ctx'' Hstore2 Hwf1'' Hwf2'' Hagree'') as
+          [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' Hagree''']]]]]]]]]]]]].
+        exists r1, r2, st1''', st2''', ctx''', Σ'''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ'' Σ''').
+                 - apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext1 Hext2).
+                 - exact Hext3. }
+        split.
+        { apply multi_step_trans with (cfg2 := (EApp f1 (subst_rho rho1 e2), st1', ctx')).
+          - apply multi_step_app1. exact Hstep_f1.
+          - apply multi_step_trans with (cfg2 := (EApp f1 a1, st1'', ctx'')).
+            + apply multi_step_app2. exact Hvalf1. exact Hstep_a1.
+            + exact Hstep_app1. }
+        split.
+        { apply multi_step_trans with (cfg2 := (EApp f2 (subst_rho rho2 e2), st2', ctx')).
+          - apply multi_step_app1. exact Hstep_f2.
+          - apply multi_step_trans with (cfg2 := (EApp f2 a2, st2'', ctx'')).
+            + apply multi_step_app2. exact Hvalf2. exact Hstep_a2.
+            + exact Hstep_app2. }
+        destruct (val_rel_n_value 0 Σ''' T2 r1 r2 Hrrel) as [Hvalr1 Hvalr2].
+        split. { exact Hvalr1. }
+        split. { exact Hvalr2. }
+        split. { exact Hrrel. }
+        split. { exact Hstore3. }
+        split. { exact Hwf1'''. }
+        split. { exact Hwf2'''. }
+        { exact Hagree'''. } }
 
       (* n' = S n'': have val_rel_n (S n'') which includes val_rel_at_type *)
       (* Extract the function application property from Hfrel *)
@@ -3077,11 +3123,6 @@ Proof.
          - stores st1'', st2'' which are store_rel_n n'' at Σ'' *)
       specialize (Hfn_at_type Σ'' Hext2 a1 a2 Hvala1 Hvala2 Hcla1 Hcla2).
 
-      (* val_rel_n n'' Σ'' T1 a1 a2 from downgraded Harel' *)
-      (* Need store_wf and stores_agree_low_fo for TFn preconditions *)
-      assert (Hwf1'' : store_wf Σ'' st1'') by admit.
-      assert (Hwf2'' : store_wf Σ'' st2'') by admit.
-      assert (Hagree'' : stores_agree_low_fo Σ'' st1'' st2'') by admit.
       specialize (Hfn_at_type Harel' st1'' st2'' ctx'' Hstore2' Hwf1'' Hwf2'' Hagree'') as
         [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' Hagree''']]]]]]]]]]]]].
 
@@ -3114,6 +3155,7 @@ Proof.
         - exact Hrrel.
         - destruct (val_rel_n_typing n'' Σ''' T2 r1 r2 Hrrel) as [Hty1_r _]. exact Hty1_r.
         - destruct (val_rel_n_typing n'' Σ''' T2 r1 r2 Hrrel) as [_ Hty2_r]. exact Hty2_r. }
+      split.
       { (* Need store_rel_n (S n'') Σ''' from store_rel_n n'' *)
         apply store_rel_n_step_up.
         - exact Hstore3.
@@ -3122,6 +3164,9 @@ Proof.
         - apply store_wf_to_has_values with Σ'''. exact Hwf1'''.
         - apply store_wf_to_has_values with Σ'''. exact Hwf2'''.
         - exact Hagree'''. }
+      split. { exact Hwf1'''. }
+      split. { exact Hwf2'''. }
+      { exact Hagree'''. }
   - (* T_Pair - With Kripke-style exp_rel_n, the proof chains evaluations *)
     (* IH for e1 and e2 accept any current store typing extending Σ.
        We chain: Σ_cur → Σ' (after e1) → Σ'' (after e2). *)

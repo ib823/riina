@@ -2314,6 +2314,9 @@ Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} 
       forall Σ_cur st1 st2 ctx,
         store_ty_extends Σ Σ_cur ->
         store_rel_n n' Σ_cur st1 st2 ->
+        store_wf Σ_cur st1 ->
+        store_wf Σ_cur st2 ->
+        stores_agree_low_fo Σ_cur st1 st2 ->
         exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store)
                (ctx' : effect_ctx) (Σ' : store_ty),
           store_ty_extends Σ_cur Σ' /\
@@ -2321,7 +2324,10 @@ Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} 
           (e2, st2, ctx) -->* (v2, st2', ctx') /\
           value v1 /\ value v2 /\
           val_rel_n n' Σ' T v1 v2 /\
-          store_rel_n n' Σ' st1' st2'
+          store_rel_n n' Σ' st1' st2' /\
+          store_wf Σ' st1' /\
+          store_wf Σ' st2' /\
+          stores_agree_low_fo Σ' st1' st2'
   end.
 
 (** Limit definitions - hold for all step indices *)
@@ -2420,7 +2426,7 @@ Proof.
     apply exp_rel_n_base.
   - (* n = S n': show that EUnit terminates to EUnit with related values *)
     simpl.
-    intros Σ_cur st1 st2 ctx Hext Hstrel.
+    intros Σ_cur st1 st2 ctx Hext Hstrel Hwf1 Hwf2 Hagree.
     (* EUnit is already a value, so it terminates in 0 steps to itself *)
     exists EUnit, EUnit, st1, st2, ctx, Σ_cur.
     repeat split.
@@ -2440,6 +2446,9 @@ Proof.
       * apply val_rel_n_unit. lia.
     + (* store_rel_n n' Σ_cur st1 st2 *)
       exact Hstrel.
+    + exact Hwf1.
+    + exact Hwf2.
+    + exact Hagree.
 Qed.
 
 (** ========================================================================
