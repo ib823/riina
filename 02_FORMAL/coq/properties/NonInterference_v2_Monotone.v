@@ -110,12 +110,11 @@ Proof.
     repeat split; try assumption.
     + apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
     + apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
-    + rewrite Hfo in *. exact Hrat.
   - (* n = S n' *)
     rewrite val_rel_n_S_unfold in *.
     destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]]].
     split.
-    + apply IHn; assumption.
+    + exact (IHn Σ Σ' T v1 v2 Hfo Hext Hrec).
     + repeat split; try assumption.
       * apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
       * apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
@@ -135,12 +134,11 @@ Proof.
     repeat split; try assumption.
     + apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
     + apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
-    + destruct (first_order_type T) eqn:Hfo; [exact Hrat | exact I].
   - (* n = S n' *)
     rewrite val_rel_n_S_unfold in *.
     destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]]].
     split.
-    + apply IHn; assumption.
+    + exact (IHn Σ Σ' T v1 v2 Hext Hrec).
     + repeat split; try assumption.
       * apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
       * apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).

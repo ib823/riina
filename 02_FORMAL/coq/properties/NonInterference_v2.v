@@ -960,15 +960,19 @@ Proof.
       exact (proj1 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyP2)).
     - (* val_rel FO *)
       rewrite Hfo1.
-      simpl first_order_type in Hrat.
-      rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+      assert (HfoProd : first_order_type (TProd T1 T2) = true).
+      { simpl. rewrite Hfo1, Hfo2. reflexivity. }
+      rewrite HfoProd in Hrat. simpl in Hrat.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 Hr2]]]]]]].
       inversion Heq1'; subst. inversion Heq2'; subst.
       exact Hr1. }
   exact Hstore.
 Qed.
 
-(** Generalized step-1 fst: works for ALL type combinations (not just FO) *)
+(** Generalized step-1 fst: works for ALL type combinations (not just FO).
+    NOTE: The T1-FO, T2-HO case at step 0 cannot extract val_rel_at_type_fo
+    for T1 from an HO product (which only gives True at step 0).
+    This is related to the fundamental_theorem_step_0 challenge. *)
 Lemma exp_rel_step1_fst_general : forall Σ T1 T2 v v' st1 st2 ctx Σ',
   val_rel_n 0 Σ' (TProd T1 T2) v v' ->
   store_rel_n 0 Σ' st1 st2 ->
@@ -982,10 +986,8 @@ Lemma exp_rel_step1_fst_general : forall Σ T1 T2 v v' st1 st2 ctx Σ',
     store_rel_n 0 Σ'' st1' st2'.
 Proof.
   intros Σ T1 T2 v v' st1 st2 ctx Σ' Hval Hstore Hext.
-  (* Extract typing from val_rel_n 0 *)
   destruct (val_rel_n_typing 0 Σ' (TProd T1 T2) v v' Hval) as [Hty1 Hty2].
   destruct (val_rel_n_value 0 Σ' (TProd T1 T2) v v' Hval) as [Hv1 Hv2].
-  (* Get pair structure via canonical forms *)
   destruct (canonical_forms_prod nil Σ' Public v T1 T2 EffectPure Hv1 Hty1)
     as [a1 [b1 [Heq1 [Hva1 Hvb1]]]].
   destruct (canonical_forms_prod nil Σ' Public v' T1 T2 EffectPure Hv2 Hty2)
@@ -1002,34 +1004,36 @@ Proof.
   split. { exact Hva1. }
   split. { exact Hva2. }
   split.
-  { (* Extract typing and FO relation from Hval upfront *)
-    rewrite val_rel_n_0_unfold in Hval.
+  { rewrite val_rel_n_0_unfold in Hval.
     destruct Hval as [_ [_ [_ [_ [HtyPP1 [HtyPP2 Hrat]]]]]].
     rewrite val_rel_n_0_unfold. repeat split.
     - exact Hva1.
     - exact Hva2.
     - intros y Hfree. apply (Hcl1 y). simpl. left. exact Hfree.
     - intros y Hfree. apply (Hcl2 y). simpl. left. exact Hfree.
-    - (* typing for a1 at T1 *)
-      exact (proj1 (pair_typing_pure_inv _ _ _ a1 b1 T1 T2 HtyPP1)).
-    - (* typing for a2 at T1 *)
-      exact (proj1 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyPP2)).
-    - (* val_rel FO/HO *)
-      destruct (first_order_type T1) eqn:Hfo1.
-      + (* FO T1: extract from product's FO relation *)
-        simpl first_order_type in Hrat.
-        destruct (first_order_type T2) eqn:Hfo2.
-        * (* Both FO: product is FO, Hrat has val_rel_at_type_fo *)
-          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+    - exact (proj1 (pair_typing_pure_inv _ _ _ a1 b1 T1 T2 HtyPP1)).
+    - exact (proj1 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyPP2)).
+    - destruct (first_order_type T1) eqn:Hfo1.
+      + destruct (first_order_type T2) eqn:Hfo2.
+        * assert (HfoProd : first_order_type (TProd T1 T2) = true)
+            by (simpl; rewrite Hfo1, Hfo2; reflexivity).
+          rewrite HfoProd in Hrat. simpl in Hrat.
           destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
           inversion Heq1'; subst. inversion Heq2'; subst. exact Hr1.
-        * (* T1 FO, T2 HO — TProd is HO, Hrat = True *)
-          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat. exact I.
+        * (* T1 FO, T2 HO: product is HO, Hrat = True.
+             Cannot extract val_rel_at_type_fo T1 from True.
+             Related to fundamental_theorem_step_0 challenge. *)
+          assert (HfoProd : first_order_type (TProd T1 T2) = false)
+            by (simpl; rewrite Hfo1, Hfo2; reflexivity).
+          rewrite HfoProd in Hrat.
+          (* Hrat : True, goal : val_rel_at_type_fo T1 a1 a2 — genuinely stuck *)
+          admit.
       + exact I. }
   exact Hstore.
-Qed.
+Admitted.
 
-(** Generalized step-1 snd: works for ALL type combinations *)
+(** Generalized step-1 snd: works for ALL type combinations.
+    Same step-0 limitation as fst_general for mixed FO/HO products. *)
 Lemma exp_rel_step1_snd_general : forall Σ T1 T2 v v' st1 st2 ctx Σ',
   val_rel_n 0 Σ' (TProd T1 T2) v v' ->
   store_rel_n 0 Σ' st1 st2 ->
@@ -1071,18 +1075,20 @@ Proof.
     - exact (proj2 (pair_typing_pure_inv _ _ _ a1 b1 T1 T2 Hty1)).
     - exact (proj2 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 Hty2)).
     - destruct (first_order_type T2) eqn:Hfo2.
-      + (* FO T2: extract from product's FO relation *)
-        simpl first_order_type in Hrat.
-        destruct (first_order_type T1) eqn:Hfo1.
-        * (* Both FO: product is FO, Hrat has val_rel_at_type_fo *)
-          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+      + destruct (first_order_type T1) eqn:Hfo1.
+        * assert (HfoProd : first_order_type (TProd T1 T2) = true)
+            by (simpl; rewrite Hfo1, Hfo2; reflexivity).
+          rewrite HfoProd in Hrat. simpl in Hrat.
           destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
           inversion Heq1'; subst. inversion Heq2'; subst. exact Hr2.
-        * (* T1 HO, T2 FO — TProd is HO, Hrat = True *)
-          rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat. exact I.
+        * (* T1 HO, T2 FO: same step-0 limitation *)
+          assert (HfoProd : first_order_type (TProd T1 T2) = false)
+            by (simpl; rewrite Hfo1, Hfo2; simpl; reflexivity).
+          rewrite HfoProd in Hrat.
+          admit.
       + exact I. }
   exact Hstore.
-Qed.
+Admitted.
 
 (** FORMER AXIOM 2: exp_rel_step1_snd - NOW PROVEN *)
 Lemma exp_rel_step1_snd : forall Σ T1 T2 v v' st1 st2 ctx Σ',
@@ -1135,8 +1141,9 @@ Proof.
       exact (proj2 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyP2)).
     - (* val_rel FO *)
       rewrite Hfo2.
-      simpl first_order_type in Hrat.
-      rewrite Hfo1, Hfo2 in Hrat. simpl in Hrat.
+      assert (HfoProd : first_order_type (TProd T1 T2) = true).
+      { simpl. rewrite Hfo1, Hfo2. reflexivity. }
+      rewrite HfoProd in Hrat. simpl in Hrat.
       destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 Hr2]]]]]]].
       inversion Heq1'; subst. inversion Heq2'; subst.
       exact Hr2. }
