@@ -190,8 +190,9 @@ impl<'a> Lexer<'a> {
                    else if let Some('&') = self.peek() { self.advance(); TokenKind::AndAnd }
                    else { TokenKind::And },
             
-            '|' => if let Some('=') = self.peek() { self.advance(); TokenKind::OrEq }
-                   else if let Some('|') = self.peek() { self.advance(); TokenKind::OrOr }
+            '|' => if let Some('|') = self.peek() { self.advance(); TokenKind::OrOr }
+                   else if let Some('>') = self.peek() { self.advance(); TokenKind::Pipe }
+                   else if let Some('=') = self.peek() { self.advance(); TokenKind::OrEq }
                    else { TokenKind::Or },
 
             '!' => if let Some('=') = self.peek() { self.advance(); TokenKind::Ne } else { TokenKind::Not },
@@ -434,6 +435,15 @@ impl<'a> Lexer<'a> {
             "borrow" | "pinjam" => TokenKind::KwBorrow,
             "copy" | "salin" => TokenKind::KwCopy,
             "clone" | "klon" => TokenKind::KwClone,
+            "lifetime" | "jangka" => TokenKind::KwLifetime,
+
+            // Logic keywords (English | Bahasa Melayu)
+            "and" | "dan" => TokenKind::KwAnd,
+            "or" | "atau" => TokenKind::KwOr,
+            "not" | "bukan" => TokenKind::KwNot,
+
+            // Guard clause (English | Bahasa Melayu)
+            "guard" | "pastikan" => TokenKind::KwGuard,
 
             // Sum type constructors
             "inl" => TokenKind::KwInl,

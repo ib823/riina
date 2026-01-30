@@ -5,7 +5,7 @@
 //!
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
-use riina_types::{Expr, Ty, SecurityLevel, Effect, Ident};
+use riina_types::{BinOp, Expr, Ty, SecurityLevel, Effect, Ident};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -273,6 +273,42 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
              // Grant satisfies a requirement?
              let (t, e_eff) = type_check(ctx, e)?;
              Ok((t, e_eff)) // Does it remove the effect from the context?
+        },
+
+        // Binary operations
+        Expr::BinOp(op, e1, e2) => {
+            let (t1, eff1) = type_check(ctx, e1)?;
+            let (t2, eff2) = type_check(ctx, e2)?;
+            let eff = eff1.join(eff2);
+            match op {
+                BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
+                    if t1 != Ty::Int {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t1 });
+                    }
+                    if t2 != Ty::Int {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t2 });
+                    }
+                    Ok((Ty::Int, eff))
+                }
+                BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => {
+                    if t1 != Ty::Int {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t1 });
+                    }
+                    if t2 != Ty::Int {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t2 });
+                    }
+                    Ok((Ty::Bool, eff))
+                }
+                BinOp::And | BinOp::Or => {
+                    if t1 != Ty::Bool {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Bool, found: t1 });
+                    }
+                    if t2 != Ty::Bool {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Bool, found: t2 });
+                    }
+                    Ok((Ty::Bool, eff))
+                }
+            }
         }
     }
 }

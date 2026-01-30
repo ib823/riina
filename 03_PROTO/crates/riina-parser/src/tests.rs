@@ -10,7 +10,8 @@
 
 #[allow(unused_imports)]
 use crate::{Parser, ParseError, ParseErrorKind};
-use riina_types::{Expr, Ty, SecurityLevel, Effect};
+#[allow(unused_imports)]
+use riina_types::{BinOp, Expr, Ty, SecurityLevel, Effect, TopLevelDecl, Program};
 
 // =============================================================================
 // LITERAL TESTS
@@ -1148,5 +1149,433 @@ fn test_parse_fungsi_keyword() {
             assert_eq!(*body, Expr::Var("x".to_string()));
         }
         other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+// =============================================================================
+// BINARY OPERATOR TESTS
+// =============================================================================
+
+#[test]
+fn test_parse_binop_add() {
+    let mut p = Parser::new("1 + 2");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::BinOp(BinOp::Add, Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))
+    );
+}
+
+#[test]
+fn test_parse_binop_precedence_mul_over_add() {
+    // 1 + 2 * 3 => Add(1, Mul(2, 3))
+    let mut p = Parser::new("1 + 2 * 3");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::BinOp(
+            BinOp::Add,
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::BinOp(BinOp::Mul, Box::new(Expr::Int(2)), Box::new(Expr::Int(3))))
+        )
+    );
+}
+
+#[test]
+fn test_parse_binop_comparison() {
+    let mut p = Parser::new("1 == 2");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::BinOp(BinOp::Eq, Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))
+    );
+}
+
+#[test]
+fn test_parse_binop_logical_precedence() {
+    // a && b || c => Or(And(a, b), c)
+    let mut p = Parser::new("a && b || c");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::BinOp(
+            BinOp::Or,
+            Box::new(Expr::BinOp(
+                BinOp::And,
+                Box::new(Expr::Var("a".to_string())),
+                Box::new(Expr::Var("b".to_string()))
+            )),
+            Box::new(Expr::Var("c".to_string()))
+        )
+    );
+}
+
+#[test]
+fn test_parse_binop_left_associative() {
+    // 1 - 2 - 3 => Sub(Sub(1, 2), 3)
+    let mut p = Parser::new("1 - 2 - 3");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::BinOp(
+            BinOp::Sub,
+            Box::new(Expr::BinOp(BinOp::Sub, Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))),
+            Box::new(Expr::Int(3))
+        )
+    );
+}
+
+#[test]
+fn test_parse_binop_with_parens() {
+    // (1 + 2) * 3 => Mul(Add(1, 2), 3)
+    let mut p = Parser::new("(1 + 2) * 3");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::BinOp(
+            BinOp::Mul,
+            Box::new(Expr::BinOp(BinOp::Add, Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))),
+            Box::new(Expr::Int(3))
+        )
+    );
+}
+
+#[test]
+fn test_parse_binop_comparison_ops() {
+    for (src, op) in [
+        ("1 < 2", BinOp::Lt), ("1 > 2", BinOp::Gt),
+        ("1 <= 2", BinOp::Le), ("1 >= 2", BinOp::Ge),
+        ("1 != 2", BinOp::Ne),
+    ] {
+        let mut p = Parser::new(src);
+        assert_eq!(
+            p.parse_expr().unwrap(),
+            Expr::BinOp(op, Box::new(Expr::Int(1)), Box::new(Expr::Int(2))),
+            "Failed for: {}", src
+        );
+    }
+}
+
+#[test]
+fn test_parse_binop_all_arithmetic() {
+    for (src, op) in [
+        ("1 + 2", BinOp::Add), ("1 - 2", BinOp::Sub),
+        ("1 * 2", BinOp::Mul), ("1 / 2", BinOp::Div),
+        ("1 % 2", BinOp::Mod),
+    ] {
+        let mut p = Parser::new(src);
+        assert_eq!(
+            p.parse_expr().unwrap(),
+            Expr::BinOp(op, Box::new(Expr::Int(1)), Box::new(Expr::Int(2))),
+            "Failed for: {}", src
+        );
+    }
+}
+
+#[test]
+fn test_parse_binop_in_let() {
+    // let x = 2 + 3; x
+    let mut p = Parser::new("let x = 2 + 3; x");
+    match p.parse_expr().unwrap() {
+        Expr::Let(name, bound, body) => {
+            assert_eq!(name, "x");
+            assert_eq!(*bound, Expr::BinOp(BinOp::Add, Box::new(Expr::Int(2)), Box::new(Expr::Int(3))));
+            assert_eq!(*body, Expr::Var("x".to_string()));
+        }
+        other => panic!("Expected Let, got {:?}", other),
+    }
+}
+
+// ====================================================================
+// Statement Sequence Tests (§5.3.1)
+// ====================================================================
+
+#[test]
+fn test_parse_stmt_sequence_simple() {
+    let mut p = Parser::new("42; 10");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Let(name, e1, e2) => {
+            assert_eq!(name, "_");
+            assert_eq!(*e1, Expr::Int(42));
+            assert_eq!(*e2, Expr::Int(10));
+        }
+        other => panic!("Expected Let(\"_\", ...), got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_stmt_sequence_multi() {
+    let mut p = Parser::new("1; 2; 3");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Let(n1, e1, rest) => {
+            assert_eq!(n1, "_");
+            assert_eq!(*e1, Expr::Int(1));
+            match *rest {
+                Expr::Let(n2, e2, e3) => {
+                    assert_eq!(n2, "_");
+                    assert_eq!(*e2, Expr::Int(2));
+                    assert_eq!(*e3, Expr::Int(3));
+                }
+                other => panic!("Expected inner Let, got {:?}", other),
+            }
+        }
+        other => panic!("Expected Let, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_stmt_sequence_with_let() {
+    let mut p = Parser::new("biar x = 1; biar y = 2; x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Let(n1, _, rest) => {
+            assert_eq!(n1, "x");
+            match *rest {
+                Expr::Let(n2, _, body) => {
+                    assert_eq!(n2, "y");
+                    assert_eq!(*body, Expr::Var("x".to_string()));
+                }
+                other => panic!("Expected inner Let, got {:?}", other),
+            }
+        }
+        other => panic!("Expected Let, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_stmt_sequence_mixed() {
+    let mut p = Parser::new("biar x = 1; 42; x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Let(name, _, rest) => {
+            assert_eq!(name, "x");
+            match *rest {
+                Expr::Let(n2, e, body) => {
+                    assert_eq!(n2, "_");
+                    assert_eq!(*e, Expr::Int(42));
+                    assert_eq!(*body, Expr::Var("x".to_string()));
+                }
+                other => panic!("Expected Let(\"_\", ...), got {:?}", other),
+            }
+        }
+        other => panic!("Expected Let, got {:?}", other),
+    }
+}
+
+// ====================================================================
+// Top-Level Declaration Tests (§5.3.2)
+// ====================================================================
+
+#[test]
+fn test_parse_program_single_expr() {
+    let mut p = Parser::new("42");
+    let prog = p.parse_program().unwrap();
+    assert_eq!(prog.decls.len(), 1);
+    match &prog.decls[0] {
+        TopLevelDecl::Expr(e) => assert_eq!(**e, Expr::Int(42)),
+        other => panic!("Expected Expr, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_program_function_decl() {
+    let mut p = Parser::new("fn f(x: Int) -> Int { x }");
+    let prog = p.parse_program().unwrap();
+    assert_eq!(prog.decls.len(), 1);
+    match &prog.decls[0] {
+        TopLevelDecl::Function { name, params, return_ty, .. } => {
+            assert_eq!(name, "f");
+            assert_eq!(params.len(), 1);
+            assert_eq!(params[0].0, "x");
+            assert_eq!(params[0].1, Ty::Int);
+            assert_eq!(*return_ty, Ty::Int);
+        }
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_program_multi_param_function() {
+    let mut p = Parser::new("fn add(x: Int, y: Int) -> Int { x + y }");
+    let prog = p.parse_program().unwrap();
+    assert_eq!(prog.decls.len(), 1);
+    match &prog.decls[0] {
+        TopLevelDecl::Function { name, params, .. } => {
+            assert_eq!(name, "add");
+            assert_eq!(params.len(), 2);
+        }
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_program_desugar() {
+    let mut p = Parser::new("fn f(x: Int) -> Int { x } f 42");
+    let prog = p.parse_program().unwrap();
+    assert_eq!(prog.decls.len(), 2);
+    let desugared = prog.desugar();
+    // Should be Let("f", Lam("x", Int, Var("x")), App(Var("f"), Int(42)))
+    match desugared {
+        Expr::Let(name, lam, body) => {
+            assert_eq!(name, "f");
+            match *lam {
+                Expr::Lam(p, ty, _) => {
+                    assert_eq!(p, "x");
+                    assert_eq!(ty, Ty::Int);
+                }
+                other => panic!("Expected Lam, got {:?}", other),
+            }
+            match *body {
+                Expr::App(_, _) => {}
+                other => panic!("Expected App, got {:?}", other),
+            }
+        }
+        other => panic!("Expected Let, got {:?}", other),
+    }
+}
+
+#[test]
+// ====================================================================
+// Extended Type Parsing Tests (§5.3.8)
+// ====================================================================
+
+#[test]
+fn test_parse_ty_list() {
+    let mut p = Parser::new("fn(x: List<Int>) x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Lam(_, ty, _) => assert_eq!(ty, Ty::List(Box::new(Ty::Int))),
+        other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_ty_option() {
+    let mut p = Parser::new("fn(x: Option<Bool>) x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Lam(_, ty, _) => assert_eq!(ty, Ty::Option(Box::new(Ty::Bool))),
+        other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_ty_secret() {
+    let mut p = Parser::new("fn(x: Secret<String>) x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Lam(_, ty, _) => assert_eq!(ty, Ty::Secret(Box::new(Ty::String))),
+        other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_ty_prod() {
+    let mut p = Parser::new("fn(x: (Int, Bool)) x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Lam(_, ty, _) => assert_eq!(ty, Ty::Prod(Box::new(Ty::Int), Box::new(Ty::Bool))),
+        other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_ty_sum() {
+    let mut p = Parser::new("fn(x: Sum<Int, Bool>) x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Lam(_, ty, _) => assert_eq!(ty, Ty::Sum(Box::new(Ty::Int), Box::new(Ty::Bool))),
+        other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_ty_nested() {
+    // Note: space before >> to avoid lexing as Shr token
+    let mut p = Parser::new("fn(x: List<Option<Int> >) x");
+    let result = p.parse_expr().unwrap();
+    match result {
+        Expr::Lam(_, ty, _) => assert_eq!(ty, Ty::List(Box::new(Ty::Option(Box::new(Ty::Int))))),
+        other => panic!("Expected Lam, got {:?}", other),
+    }
+}
+
+// ====================================================================
+// Guard Clause Tests (§5.3.4)
+// ====================================================================
+
+#[test]
+fn test_parse_guard_simple() {
+    // guard x else { 0 }; 42
+    // desugars to If(Var("x"), Int(42), Int(0))
+    let mut p = Parser::new("guard x else { 0 }; 42");
+    let result = p.parse_expr().unwrap();
+    assert_eq!(result, Expr::If(
+        Box::new(Expr::Var("x".to_string())),
+        Box::new(Expr::Int(42)),
+        Box::new(Expr::Int(0)),
+    ));
+}
+
+#[test]
+fn test_parse_guard_bahasa() {
+    // pastikan x lain { 0 }; 42
+    let mut p = Parser::new("pastikan x lain { 0 }; 42");
+    let result = p.parse_expr().unwrap();
+    assert_eq!(result, Expr::If(
+        Box::new(Expr::Var("x".to_string())),
+        Box::new(Expr::Int(42)),
+        Box::new(Expr::Int(0)),
+    ));
+}
+
+// ====================================================================
+// Pipe Operator Tests (§5.3.3)
+// ====================================================================
+
+#[test]
+fn test_parse_pipe_simple() {
+    // x |> f  desugars to App(f, x)
+    let mut p = Parser::new("x |> f");
+    let result = p.parse_expr().unwrap();
+    assert_eq!(result, Expr::App(
+        Box::new(Expr::Var("f".to_string())),
+        Box::new(Expr::Var("x".to_string())),
+    ));
+}
+
+#[test]
+fn test_parse_pipe_chain() {
+    // x |> f |> g  desugars to App(g, App(f, x))
+    let mut p = Parser::new("x |> f |> g");
+    let result = p.parse_expr().unwrap();
+    assert_eq!(result, Expr::App(
+        Box::new(Expr::Var("g".to_string())),
+        Box::new(Expr::App(
+            Box::new(Expr::Var("f".to_string())),
+            Box::new(Expr::Var("x".to_string())),
+        )),
+    ));
+}
+
+#[test]
+fn test_parse_pipe_with_literal() {
+    // 42 |> f
+    let mut p = Parser::new("42 |> f");
+    let result = p.parse_expr().unwrap();
+    assert_eq!(result, Expr::App(
+        Box::new(Expr::Var("f".to_string())),
+        Box::new(Expr::Int(42)),
+    ));
+}
+
+#[test]
+fn test_parse_program_binding() {
+    let mut p = Parser::new("biar x = 42; x");
+    let prog = p.parse_program().unwrap();
+    assert_eq!(prog.decls.len(), 2);
+    match &prog.decls[0] {
+        TopLevelDecl::Binding { name, .. } => assert_eq!(name, "x"),
+        other => panic!("Expected Binding, got {:?}", other),
+    }
+    match &prog.decls[1] {
+        TopLevelDecl::Expr(e) => assert_eq!(**e, Expr::Var("x".to_string())),
+        other => panic!("Expected Expr, got {:?}", other),
     }
 }
