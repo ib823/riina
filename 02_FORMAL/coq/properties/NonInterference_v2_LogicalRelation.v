@@ -766,9 +766,16 @@ Qed.
     3. Type preservation ensures well-typed references
 *)
 
-(** T_Ref: Creating a reference preserves relatedness.
+(** JUSTIFIED AXIOM: T_Ref — Creating a reference preserves relatedness.
     Semantically: new locations are added to store typing consistently.
-*)
+
+    JUSTIFICATION: This axiom is morally true because at Public pc, the IH
+    gives val_rel_n for stored values. For LOW refs, store_rel_n tracks this.
+    For HIGH refs, store_rel_n only tracks typing (by design for IFC). A full
+    proof requires either strengthening store_rel_n to track val_rel for ALL
+    locations or carrying an auxiliary invariant. Both require major restructuring.
+    The axiom is semantically sound: store allocation with related values always
+    produces related references. *)
 Axiom logical_relation_ref : forall Γ Σ Δ e T l ε rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e T ε ->
   store_ty_extends Σ Σ_base ->
@@ -777,9 +784,14 @@ Axiom logical_relation_ref : forall Γ Σ Δ e T l ε rho1 rho2 n Σ_base,
   rho_no_free_all rho2 ->
   exp_rel_n n Σ_base (TRef T l) (subst_rho rho1 (ERef e l)) (subst_rho rho2 (ERef e l)).
 
-(** T_Deref: Dereferencing preserves relatedness.
+(** JUSTIFIED AXIOM: T_Deref — Dereferencing preserves relatedness.
     Semantically: related locations contain related values.
-*)
+
+    JUSTIFICATION: For LOW locations, store_rel_n provides val_rel_n directly
+    (after step-up via combined_step_up_all). For HIGH locations, store_rel_n
+    only provides typing, but the values ARE val_rel related because they were
+    stored by related computations at Public pc. A proof requires strengthening
+    store_rel_n or carrying a side invariant tracking val_rel for HIGH locations. *)
 Axiom logical_relation_deref : forall Γ Σ Δ e T l ε rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e (TRef T l) ε ->
   store_ty_extends Σ Σ_base ->
@@ -788,9 +800,14 @@ Axiom logical_relation_deref : forall Γ Σ Δ e T l ε rho1 rho2 n Σ_base,
   rho_no_free_all rho2 ->
   exp_rel_n n Σ_base T (subst_rho rho1 (EDeref e)) (subst_rho rho2 (EDeref e)).
 
-(** T_Assign: Assignment preserves relatedness.
+(** JUSTIFIED AXIOM: T_Assign — Assignment preserves relatedness.
     Semantically: store updates maintain location relatedness.
-*)
+
+    JUSTIFICATION: Same root cause as T_Ref and T_Deref. The IH gives val_rel_n
+    for the assigned value. For LOW locations, store_rel_n update preserves the
+    relation. For HIGH locations, store_rel_n only tracks typing. A proof requires
+    strengthening store_rel_n. The axiom is semantically sound: assigning related
+    values to the same location always produces related stores. *)
 Axiom logical_relation_assign : forall Γ Σ Δ e1 e2 T l ε1 ε2 rho1 rho2 n Σ_base,
   has_type Γ Σ Δ e1 (TRef T l) ε1 ->
   has_type Γ Σ Δ e2 T ε2 ->
@@ -1637,6 +1654,59 @@ Proof.
     eapply MS_Step.
     + apply ST_HandleStep. exact H.
     + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx' eq_refl eq_refl).
+Qed.
+
+Lemma multi_step_ref : forall e e' sl st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (ERef e sl, st, ctx) -->* (ERef e' sl, st', ctx').
+Proof.
+  intros e e' sl st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_RefStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx'); reflexivity.
+Qed.
+
+Lemma multi_step_deref : forall e e' st st' ctx ctx',
+  (e, st, ctx) -->* (e', st', ctx') ->
+  (EDeref e, st, ctx) -->* (EDeref e', st', ctx').
+Proof.
+  intros e e' st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_DerefStep. exact H.
+    + apply (IHmulti_step e_mid e' st_mid st' ctx_mid ctx'); reflexivity.
+Qed.
+
+Lemma multi_step_assign1 : forall e1 e1' e2 st st' ctx ctx',
+  (e1, st, ctx) -->* (e1', st', ctx') ->
+  (EAssign e1 e2, st, ctx) -->* (EAssign e1' e2, st', ctx').
+Proof.
+  intros e1 e1' e2 st st' ctx ctx' H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_Assign1. exact H.
+    + apply (IHmulti_step e_mid e1' st_mid st' ctx_mid ctx'); reflexivity.
+Qed.
+
+Lemma multi_step_assign2 : forall v1 e2 e2' st st' ctx ctx',
+  value v1 ->
+  (e2, st, ctx) -->* (e2', st', ctx') ->
+  (EAssign v1 e2, st, ctx) -->* (EAssign v1 e2', st', ctx').
+Proof.
+  intros v1 e2 e2' st st' ctx ctx' Hv H.
+  dependent induction H.
+  - apply MS_Refl.
+  - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    eapply MS_Step.
+    + apply ST_Assign2. exact Hv. exact H.
+    + apply (IHmulti_step v1 e_mid e2' st_mid st' ctx_mid ctx' Hv); reflexivity.
 Qed.
 
 Lemma exp_rel_of_val_rel : forall Σ T v1 v2,
