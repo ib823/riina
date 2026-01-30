@@ -3083,33 +3083,24 @@ Proof.
       (* v and v' are related products at type TProd T1 T2 *)
 
       destruct n' as [| n''].
-      { (* n' = 0: Step-1 case - use exp_rel_step1_fst for FO types *)
-        destruct (first_order_decidable T1) as [Hfo1 | Hho1];
-        destruct (first_order_decidable T2) as [Hfo2 | Hho2].
-        - (* Both FO - use exp_rel_step1_fst *)
-          assert (HextΣ : store_ty_extends Σ Σ').
-          { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
-          destruct (exp_rel_step1_fst Σ T1 T2 v v' st1' st2' ctx' Σ'
-                     Hfo1 Hfo2 Hval Hstore' HextΣ)
-            as [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepF1 [HstepF2 [Hva1 [Hva2 [Hvrel'' Hstore'']]]]]]]]]]]].
-          exists a1, a2, st1'', st2'', ctx'', Σ''.
-          split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
-          split. { apply multi_step_trans with (cfg2 := (EFst v, st1', ctx')).
-                   - apply multi_step_fst. exact Hstep.
-                   - exact HstepF1. }
-          split. { apply multi_step_trans with (cfg2 := (EFst v', st2', ctx')).
-                   - apply multi_step_fst. exact Hstep'.
-                   - exact HstepF2. }
-          split; [exact Hva1 |].
-          split; [exact Hva2 |].
-          split; [exact Hvrel'' |].
-          exact Hstore''.
-        - (* T1 FO, T2 not FO - admit this corner case *)
-          admit.
-        - (* T1 not FO, T2 FO - admit this corner case *)
-          admit.
-        - (* Neither FO - admit this corner case *)
-          admit. }
+      { (* n' = 0: Step-1 case - use exp_rel_step1_fst_general *)
+        assert (HextΣ : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        destruct (exp_rel_step1_fst_general Σ T1 T2 v v' st1' st2' ctx' Σ'
+                   Hval Hstore' HextΣ)
+          as [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepF1 [HstepF2 [Hva1 [Hva2 [Hvrel'' Hstore'']]]]]]]]]]]].
+        exists a1, a2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+        split. { apply multi_step_trans with (cfg2 := (EFst v, st1', ctx')).
+                 - apply multi_step_fst. exact Hstep.
+                 - exact HstepF1. }
+        split. { apply multi_step_trans with (cfg2 := (EFst v', st2', ctx')).
+                 - apply multi_step_fst. exact Hstep'.
+                 - exact HstepF2. }
+        split; [exact Hva1 |].
+        split; [exact Hva2 |].
+        split; [exact Hvrel'' |].
+        exact Hstore''. }
       (* n' = S n'': use val_rel_n_prod_decompose since n' > 0 *)
       destruct (val_rel_n_prod_decompose (S n'') Σ' T1 T2 v v')
         as [a1 [b1 [a2 [b2 [Heqv [Heqv' [Hva1 [Hvb1 [Hva2 [Hvb2
@@ -3159,33 +3150,24 @@ Proof.
       (* v and v' are related products at type TProd T1 T2 *)
 
       destruct n' as [| n''].
-      { (* n' = 0: Step-1 case - use exp_rel_step1_snd for FO types *)
-        destruct (first_order_decidable T1) as [Hfo1 | Hho1];
-        destruct (first_order_decidable T2) as [Hfo2 | Hho2].
-        - (* Both FO - use exp_rel_step1_snd *)
-          assert (HextΣ : store_ty_extends Σ Σ').
-          { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
-          destruct (exp_rel_step1_snd Σ T1 T2 v v' st1' st2' ctx' Σ'
-                     Hfo1 Hfo2 Hval Hstore' HextΣ)
-            as [b1 [b2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepS1 [HstepS2 [Hvb1 [Hvb2 [Hvrel'' Hstore'']]]]]]]]]]]].
-          exists b1, b2, st1'', st2'', ctx'', Σ''.
-          split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
-          split. { apply multi_step_trans with (cfg2 := (ESnd v, st1', ctx')).
-                   - apply multi_step_snd. exact Hstep.
-                   - exact HstepS1. }
-          split. { apply multi_step_trans with (cfg2 := (ESnd v', st2', ctx')).
-                   - apply multi_step_snd. exact Hstep'.
-                   - exact HstepS2. }
-          split; [exact Hvb1 |].
-          split; [exact Hvb2 |].
-          split; [exact Hvrel'' |].
-          exact Hstore''.
-        - (* T1 FO, T2 not FO - admit this corner case *)
-          admit.
-        - (* T1 not FO, T2 FO - admit this corner case *)
-          admit.
-        - (* Neither FO - admit this corner case *)
-          admit. }
+      { (* n' = 0: Step-1 case - use exp_rel_step1_snd_general *)
+        assert (HextΣ : store_ty_extends Σ Σ').
+        { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
+        destruct (exp_rel_step1_snd_general Σ T1 T2 v v' st1' st2' ctx' Σ'
+                   Hval Hstore' HextΣ)
+          as [b1 [b2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepS1 [HstepS2 [Hvb1 [Hvb2 [Hvrel'' Hstore'']]]]]]]]]]]].
+        exists b1, b2, st1'', st2'', ctx'', Σ''.
+        split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
+        split. { apply multi_step_trans with (cfg2 := (ESnd v, st1', ctx')).
+                 - apply multi_step_snd. exact Hstep.
+                 - exact HstepS1. }
+        split. { apply multi_step_trans with (cfg2 := (ESnd v', st2', ctx')).
+                 - apply multi_step_snd. exact Hstep'.
+                 - exact HstepS2. }
+        split; [exact Hvb1 |].
+        split; [exact Hvb2 |].
+        split; [exact Hvrel'' |].
+        exact Hstore''. }
       (* n' = S n'': use val_rel_n_prod_decompose since n' > 0 *)
       destruct (val_rel_n_prod_decompose (S n'') Σ' T1 T2 v v')
         as [a1 [b1 [a2 [b2 [Heqv [Heqv' [Hva1 [Hvb1 [Hva2 [Hvb2
