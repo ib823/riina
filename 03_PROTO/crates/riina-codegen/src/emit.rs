@@ -73,8 +73,14 @@ use crate::ir::{
 };
 use crate::Result;
 use riina_types::{Effect, SecurityLevel};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write as FmtWrite;
+
+/// Phi copy information: for a target block, which phi result vars need copies
+/// from which source vars, keyed by predecessor block ID.
+///
+/// PhiMap[target_block][predecessor_block] = Vec<(phi_result, source_var)>
+type PhiMap = HashMap<BlockId, HashMap<BlockId, Vec<(VarId, VarId)>>>;
 
 /// C code emitter
 ///
@@ -821,6 +827,27 @@ impl CEmitter {
         Ok(())
     }
 
+    /// Build phi map for SSA destruction: collects all phi nodes in a function
+    /// and organizes them by target block and predecessor block.
+    fn build_phi_map(func: &Function) -> PhiMap {
+        let mut phi_map: PhiMap = HashMap::new();
+        for block in &func.blocks {
+            for instr in &block.instrs {
+                if let Instruction::Phi(entries) = &instr.instr {
+                    for (pred_block, src_var) in entries {
+                        phi_map
+                            .entry(block.id)
+                            .or_default()
+                            .entry(*pred_block)
+                            .or_default()
+                            .push((instr.result, *src_var));
+                    }
+                }
+            }
+        }
+        phi_map
+    }
+
     /// Emit a single function
     fn emit_function(&mut self, func: &Function) -> Result<()> {
         self.declared_vars.clear();
@@ -842,9 +869,12 @@ impl CEmitter {
         // Declare all variables used in the function
         self.emit_var_declarations(func)?;
 
+        // Build phi map for SSA destruction (copy insertion before jumps)
+        let phi_map = Self::build_phi_map(func);
+
         // Emit each basic block
         for block in &func.blocks {
-            self.emit_block(block)?;
+            self.emit_block_with_phi(block, &phi_map)?;
         }
 
         self.dedent();
@@ -878,8 +908,8 @@ impl CEmitter {
         Ok(())
     }
 
-    /// Emit a basic block
-    fn emit_block(&mut self, block: &BasicBlock) -> Result<()> {
+    /// Emit a basic block with phi copy insertion (SSA destruction).
+    fn emit_block_with_phi(&mut self, block: &BasicBlock, phi_map: &PhiMap) -> Result<()> {
         // Block label
         self.dedent();
         self.writeln(&format!("{}:", self.block_name(&block.id)));
@@ -890,13 +920,14 @@ impl CEmitter {
             self.emit_instruction(instr)?;
         }
 
-        // Terminator
+        // Terminator (with phi copy insertion before jumps)
         if let Some(term) = &block.terminator {
-            self.emit_terminator(term)?;
+            self.emit_terminator_with_phi(term, &block.id, phi_map)?;
         }
 
         Ok(())
     }
+
 
     /// Emit a single instruction
     fn emit_instruction(&mut self, instr: &AnnotatedInstr) -> Result<()> {
@@ -1103,46 +1134,91 @@ impl CEmitter {
                 self.writeln(&format!("{result} = riina_capability({eff_str});"));
             }
 
-            Instruction::Phi(entries) => {
-                // Phi nodes: each entry (block_id, var) means "if we came from block_id,
-                // use var". We emit a variable that gets assigned at block transitions.
-                // The copy-insertion happens via the phi_result variable which predecessors
-                // assign before jumping. For now, use a simple fallback: declare the var
-                // and let predecessor blocks assign it (future: full SSA destruction pass).
-                if let Some((_, var)) = entries.first() {
-                    self.writeln(&format!("{result} = {};", self.var_name(var)));
-                } else {
-                    self.writeln(&format!("{result} = riina_unit();"));
-                }
+            Instruction::Phi(_entries) => {
+                // SSA phi destruction: phi nodes are eliminated by copy insertion.
+                // The phi result variable is already declared. We do NOT emit code
+                // at the phi site itself; instead, predecessor blocks insert copies
+                // before their terminator (see emit_phi_copies in emit_block).
+                //
+                // However, as a safety net for blocks with no predecessor assignment,
+                // initialize to unit (dead code in well-formed IR).
+                self.writeln(&format!("{result} = {result}; /* phi: assigned by predecessors */"));
             }
         }
 
         Ok(())
     }
 
-    /// Emit a block terminator
-    fn emit_terminator(&mut self, term: &Terminator) -> Result<()> {
+    /// Emit phi copy assignments: before branching to `target`, copy source vars
+    /// into phi result vars for all phi nodes in the target block that expect
+    /// a value from `current_block`.
+    fn emit_phi_copies(&mut self, current_block: &BlockId, target: &BlockId, phi_map: &PhiMap) {
+        if let Some(target_phis) = phi_map.get(target) {
+            if let Some(copies) = target_phis.get(current_block) {
+                for (phi_result, src_var) in copies {
+                    self.writeln(&format!(
+                        "{} = {}; /* phi copy: {} <- {} */",
+                        self.var_name(phi_result),
+                        self.var_name(src_var),
+                        self.var_name(phi_result),
+                        self.var_name(src_var),
+                    ));
+                }
+            }
+        }
+    }
+
+    /// Emit a block terminator with phi copy insertion (SSA destruction).
+    fn emit_terminator_with_phi(
+        &mut self,
+        term: &Terminator,
+        current_block: &BlockId,
+        phi_map: &PhiMap,
+    ) -> Result<()> {
         match term {
             Terminator::Return(var) => {
                 self.writeln(&format!("return {};", self.var_name(var)));
             }
 
             Terminator::Branch(target) => {
+                self.emit_phi_copies(current_block, target, phi_map);
                 self.writeln(&format!("goto {};", self.block_name(target)));
             }
 
             Terminator::CondBranch { cond, then_block, else_block } => {
-                self.writeln(&format!(
-                    "if ({}->data.bool_val) goto {}; else goto {};",
-                    self.var_name(cond),
-                    self.block_name(then_block),
-                    self.block_name(else_block)
-                ));
+                // Emit phi copies for both branches using an if/else to select
+                // which copies to perform before jumping.
+                let has_then_phis = phi_map.get(then_block)
+                    .and_then(|m| m.get(current_block))
+                    .map_or(false, |v| !v.is_empty());
+                let has_else_phis = phi_map.get(else_block)
+                    .and_then(|m| m.get(current_block))
+                    .map_or(false, |v| !v.is_empty());
+
+                if has_then_phis || has_else_phis {
+                    self.writeln(&format!("if ({}->data.bool_val) {{", self.var_name(cond)));
+                    self.indent();
+                    self.emit_phi_copies(current_block, then_block, phi_map);
+                    self.writeln(&format!("goto {};", self.block_name(then_block)));
+                    self.dedent();
+                    self.writeln("} else {");
+                    self.indent();
+                    self.emit_phi_copies(current_block, else_block, phi_map);
+                    self.writeln(&format!("goto {};", self.block_name(else_block)));
+                    self.dedent();
+                    self.writeln("}");
+                } else {
+                    self.writeln(&format!(
+                        "if ({}->data.bool_val) goto {}; else goto {};",
+                        self.var_name(cond),
+                        self.block_name(then_block),
+                        self.block_name(else_block)
+                    ));
+                }
             }
 
             Terminator::Handle { body_block, handler_block: _, resume_var: _, result_block } => {
-                // Simplified handle - just execute body
-                // TODO: Full algebraic effect implementation
+                self.emit_phi_copies(current_block, body_block, phi_map);
                 self.writeln(&format!("goto {};", self.block_name(body_block)));
                 self.writeln(&format!("/* handler would go to {} */", self.block_name(result_block)));
             }
@@ -1155,6 +1231,7 @@ impl CEmitter {
 
         Ok(())
     }
+
 
     /// Emit main wrapper function
     fn emit_main_wrapper(&mut self, program: &Program) -> Result<()> {

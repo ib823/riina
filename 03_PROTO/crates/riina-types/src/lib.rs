@@ -508,6 +508,10 @@ pub enum Expr {
     /// grant ε to e
     Grant(Effect, Box<Expr>),
 
+    // Locations (runtime only — corresponds to Coq `ELoc : nat -> expr`)
+    /// Store location (not in source; created during evaluation)
+    Loc(u64),
+
     // Binary operations
     /// e1 op e2
     BinOp(BinOp, Box<Expr>, Box<Expr>),

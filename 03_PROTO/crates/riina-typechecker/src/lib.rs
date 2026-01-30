@@ -341,6 +341,13 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
              Ok((t, e_eff)) // Does it remove the effect from the context?
         },
 
+        // Locations (runtime-only — corresponds to Coq ELoc)
+        Expr::Loc(_) => {
+            // Store locations are runtime values; typing requires store typing context.
+            // Without store context, we return Ref(Unit, Public) as a conservative type.
+            Ok((Ty::Ref(Box::new(Ty::Unit), SecurityLevel::Public), Effect::Pure))
+        },
+
         // Binary operations
         Expr::BinOp(op, e1, e2) => {
             let (t1, eff1) = type_check(ctx, e1)?;
