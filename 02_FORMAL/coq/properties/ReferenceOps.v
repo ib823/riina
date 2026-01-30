@@ -66,7 +66,7 @@ Proof.
   - subst. destruct cfg2 as [[e2 st2] ctx2].
     assert (Hctx : ctx2 = ctx0) by (eapply step_preserves_ctx; exact Hstep).
     subst ctx2.
-    apply (IH _ _ _ _ _ _ eq_refl Heq2).
+    eapply IH; eauto.
 Qed.
 
 Lemma value_multi_step_refl : forall v st ctx cfg,
@@ -379,10 +379,9 @@ Proof.
   injection Heql1 as Heql1. injection Heql2 as Heql2. subst l1 l2.
   (* Use store_rel_le to look up related values at location l *)
   destruct k as [|k'].
-  { (* k = 0: val_rel_le 0 is True *)
+  { (* k = 0: val_rel_le 0 is True, discharged by repeat split *)
     exists Σ_mid. repeat split.
     - exact Hext_mid.
-    - simpl. exact I.
     - unfold store_rel_simple.
       destruct Hstore_mid as [Hmax _]. exact Hmax. }
   (* k = S k' *)
@@ -392,11 +391,10 @@ Proof.
   rewrite Hlook_w1 in Hlook1. injection Hlook1 as Hlook1. subst w1.
   rewrite Hlook_w2 in Hlook2. injection Hlook2 as Hlook2. subst w2.
   exists Σ_mid.
-  repeat split.
-  - exact Hext_mid.
-  - exact Hval_w.
-  - unfold store_rel_simple.
-    destruct Hstore_mid as [Hmax _]. exact Hmax.
+  split. { exact Hext_mid. }
+  split. { exact Hval_w. }
+  unfold store_rel_simple.
+  destruct Hstore_mid as [Hmax _]. exact Hmax.
 Qed.
 
 (** ** Axiom 18: Assignment (EAssign) *)

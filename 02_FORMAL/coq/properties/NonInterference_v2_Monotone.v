@@ -105,22 +105,21 @@ Lemma val_rel_n_mono_store_fo : forall n Σ Σ' T v1 v2,
 Proof.
   induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hfo Hext Hrel.
   - (* n = 0 *)
-    rewrite val_rel_n_0_unfold in Hrel.
-    rewrite val_rel_n_0_unfold.
-    (* Simplify the conditional using Hfo *)
-    rewrite Hfo in Hrel. rewrite Hfo.
-    exact Hrel.
-  - (* n = S n' *)
-    rewrite val_rel_n_S_unfold in Hrel.
-    rewrite Hfo in Hrel.
-    destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Htyping Hrat]]]]]].
-    rewrite val_rel_n_S_unfold.
-    rewrite Hfo.
+    rewrite val_rel_n_0_unfold in *.
+    destruct Hrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]].
     repeat split; try assumption.
-    + apply IHn with Σ; assumption.
-    + apply (val_rel_at_type_fo_equiv T Σ' (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
-      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
-      exact Hrat.
+    + apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
+    + apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
+    + rewrite Hfo in *. exact Hrat.
+  - (* n = S n' *)
+    rewrite val_rel_n_S_unfold in *.
+    destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]]].
+    split.
+    + apply IHn; assumption.
+    + repeat split; try assumption.
+      * apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
+      * apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
+      * apply val_rel_at_type_mono_store with Σ; assumption.
 Qed.
 
 (** Store-typing monotonicity (Kripke strengthening) *)
@@ -129,47 +128,21 @@ Lemma val_rel_n_mono_store : forall n Σ Σ' T v1 v2,
   val_rel_n n Σ T v1 v2 ->
   val_rel_n n Σ' T v1 v2.
 Proof.
-  intros n Σ Σ' T. revert n Σ Σ'.
-  apply ty_size_induction with (T := T).
-  intros T' IH_type.
-  induction n as [| n' IH_step]; intros Σ Σ' v1 v2 Hext Hrel.
+  induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hext Hrel.
   - (* n = 0 *)
-    rewrite val_rel_n_0_unfold in Hrel.
-    rewrite val_rel_n_0_unfold.
-    destruct (first_order_type T') eqn:Hfo.
-    + exact Hrel.
-    + (* HO type at step 0: need typing weakening *)
-      destruct Hrel as [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 Hty2]]]]].
-      repeat split; try assumption.
-      * apply has_type_store_weakening with Σ; assumption.
-      * apply has_type_store_weakening with Σ; assumption.
+    rewrite val_rel_n_0_unfold in *.
+    destruct Hrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]].
+    repeat split; try assumption.
+    + apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
+    + apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
+    + destruct (first_order_type T) eqn:Hfo; [exact Hrat | exact I].
   - (* n = S n' *)
-    destruct (first_order_decidable_local T') as [Hfo | Hho].
-    + apply val_rel_n_mono_store_fo with Σ; assumption.
-    + rewrite val_rel_n_S_unfold in Hrel.
-      rewrite Hho in Hrel.
-      destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [[Hty1 Hty2] Hrat]]]]]].
-      rewrite val_rel_n_S_unfold.
-      rewrite Hho.
-      repeat split; try assumption.
-      * apply (IH_step Σ Σ' v1 v2 Hext Hrec).
-      * apply has_type_store_weakening with Σ; assumption.
-      * apply has_type_store_weakening with Σ; assumption.
-      * destruct T'; simpl in *; try exact Hrat; try contradiction.
-        -- (* TFn *)
-           intros Σ_ext Hext' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore.
-           assert (Hext_Σ_Σext : store_ty_extends Σ Σ_ext).
-           { apply store_ty_extends_trans_early with Σ'; assumption. }
-           exact (Hrat Σ_ext Hext_Σ_Σext x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore).
-        -- (* TProd *)
-           destruct Hrat as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
-           exists x1, y1, x2, y2. repeat split; try assumption.
-           ++ apply val_rel_at_type_mono_store with Σ; assumption.
-           ++ apply val_rel_at_type_mono_store with Σ; assumption.
-        -- (* TSum *)
-           destruct Hrat as [[x1 [x2 [Heq1 [Heq2 Hrel1]]]] | [y1 [y2 [Heq1 [Heq2 Hrel2]]]]].
-           ++ left. exists x1, x2. repeat split; try assumption.
-              apply val_rel_at_type_mono_store with Σ; assumption.
-           ++ right. exists y1, y2. repeat split; try assumption.
-              apply val_rel_at_type_mono_store with Σ; assumption.
+    rewrite val_rel_n_S_unfold in *.
+    destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]]].
+    split.
+    + apply IHn; assumption.
+    + repeat split; try assumption.
+      * apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
+      * apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
+      * apply val_rel_at_type_mono_store with Σ; assumption.
 Qed.
