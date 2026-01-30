@@ -578,6 +578,31 @@ Proof.
   unfold store_wf. intros l v Hlook. simpl in Hlook. discriminate.
 Qed.
 
+(** Helper: store_lookup at the updated location returns the new value *)
+Lemma store_lookup_update_eq : forall l v st,
+  store_lookup l (store_update l v st) = Some v.
+Proof.
+  intros l v st. induction st as [| [l' v'] st' IH]; simpl.
+  - rewrite Nat.eqb_refl. reflexivity.
+  - destruct (Nat.eqb l l') eqn:Hll'; simpl.
+    + apply Nat.eqb_eq in Hll'. subst l'. rewrite Nat.eqb_refl. reflexivity.
+    + rewrite Hll'. exact IH.
+Qed.
+
+(** Helper: store_lookup at a different location is unchanged *)
+Lemma store_lookup_update_neq : forall l0 l v st,
+  l0 <> l ->
+  store_lookup l0 (store_update l v st) = store_lookup l0 st.
+Proof.
+  intros l0 l v st Hneq.
+  assert (Hneqb : Nat.eqb l0 l = false) by (apply Nat.eqb_neq; exact Hneq).
+  induction st as [| [l' v'] st' IH]; simpl.
+  - rewrite Hneqb. reflexivity.
+  - destruct (Nat.eqb l l') eqn:Hll'; simpl.
+    + apply Nat.eqb_eq in Hll'. subst l'. rewrite Hneqb. reflexivity.
+    + destruct (Nat.eqb l0 l') eqn:Hl0l'; [reflexivity | exact IH].
+Qed.
+
 (** store_update preserves store_wf when storing a value *)
 Lemma store_update_preserves_wf : forall st l v,
   store_wf st ->
@@ -585,27 +610,14 @@ Lemma store_update_preserves_wf : forall st l v,
   store_wf (store_update l v st).
 Proof.
   unfold store_wf.
-  induction st as [| [l' v'] st' IH]; intros l v Hwf Hval l0 v0 Hlook.
-  - (* nil *)
-    simpl in Hlook.
-    destruct (Nat.eqb l0 l) eqn:Heq; [inversion Hlook; subst; exact Hval | discriminate].
-  - (* cons *)
-    simpl in Hlook.
-    destruct (Nat.eqb l l') eqn:Hll'.
-    + (* l = l': replaced entry *)
-      simpl in Hlook.
-      destruct (Nat.eqb l0 l) eqn:Hl0l.
-      * inversion Hlook. subst. exact Hval.
-      * (* l0 <> l, so lookup goes into original st' *)
-        apply Nat.eqb_eq in Hll'. subst l'.
-        eapply Hwf. simpl. rewrite Hl0l. exact Hlook.
-    + (* l <> l': entry is (l', v') :: store_update l v st' *)
-      simpl in Hlook.
-      destruct (Nat.eqb l0 l') eqn:Hl0l'.
-      * inversion Hlook. subst. eapply Hwf. simpl. rewrite Hl0l'. reflexivity.
-      * eapply IH; [| exact Hval | exact Hlook].
-        intros l1 v1 Hlook1. eapply Hwf. simpl.
-        destruct (Nat.eqb l1 l'); assumption.
+  intros st l v Hwf Hval l0 v0 Hlook.
+  destruct (Nat.eqb l0 l) eqn:Hl0l.
+  - apply Nat.eqb_eq in Hl0l. subst l0.
+    rewrite store_lookup_update_eq in Hlook.
+    inversion Hlook. subst. exact Hval.
+  - apply Nat.eqb_neq in Hl0l.
+    rewrite store_lookup_update_neq in Hlook; [|exact Hl0l].
+    eapply Hwf. exact Hlook.
 Qed.
 
 (** step preserves store well-formedness *)
@@ -615,11 +627,13 @@ Lemma step_preserves_store_wf : forall e st ctx e' st' ctx',
   store_wf st'.
 Proof.
   intros e st ctx e' st' ctx' Hwf Hstep.
-  induction Hstep; try exact Hwf; try (apply IHHstep; exact Hwf).
-  - (* ST_RefValue: store_update l v st *)
-    apply store_update_preserves_wf; assumption.
-  - (* ST_AssignLoc: store_update l v2 st *)
-    apply store_update_preserves_wf; assumption.
+  remember (e, st, ctx) as cfg1.
+  remember (e', st', ctx') as cfg2.
+  revert e st ctx e' st' ctx' Heqcfg1 Heqcfg2 Hwf.
+  induction Hstep; intros; inversion Heqcfg1; inversion Heqcfg2; subst;
+    try exact Hwf;
+    try (apply store_update_preserves_wf; assumption);
+    eauto.
 Qed.
 
 Lemma SN_deref_aux : forall cfg,
