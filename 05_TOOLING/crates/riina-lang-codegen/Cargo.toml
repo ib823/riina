@@ -1,0 +1,12 @@
+[package]
+name = "riina-lang-codegen"
+version.workspace = true
+edition.workspace = true
+description = "RIINA code generator"
+
+[dependencies]
+riina-core.workspace = true
+riina-lang-types.workspace = true
+
+[lints]
+workspace = true

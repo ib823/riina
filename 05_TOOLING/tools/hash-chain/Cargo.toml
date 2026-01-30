@@ -1,19 +1,19 @@
 # tools/hash-chain/Cargo.toml
-# TERAS Hash Chain Tool
+# RIINA Hash Chain Tool
 # Version: 1.0.0
 
 [package]
-name = "teras-hash-chain"
+name = "riina-hash-chain"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 
-description = "TERAS document hash chain management tool"
+description = "RIINA document hash chain management tool"
 
 [[bin]]
-name = "teras-hash-chain"
+name = "riina-hash-chain"
 path = "src/main.rs"
 
 [dependencies]

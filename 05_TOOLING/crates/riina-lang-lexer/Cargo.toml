@@ -1,0 +1,11 @@
+[package]
+name = "riina-lang-lexer"
+version.workspace = true
+edition.workspace = true
+description = "RIINA lexer"
+
+[dependencies]
+riina-core.workspace = true
+
+[lints]
+workspace = true

@@ -1,5 +1,5 @@
-# teras/Cargo.toml
-# TERAS Workspace Root Configuration
+# riina/Cargo.toml
+# RIINA Workspace Root Configuration
 # Version: 1.0.0
 # 
 # CRITICAL: This file defines the ENTIRE Rust workspace.
@@ -10,15 +10,15 @@
 resolver = "2"
 
 members = [
-    "crates/teras-core",
-    "crates/teras-effect",
-    "crates/teras-lang-lexer",
-    "crates/teras-lang-parser",
-    "crates/teras-lang-types",
-    "crates/teras-lang-codegen",
-    "crates/terasc",
-    "crates/teras-build",
-    "crates/teras-verify",
+    "crates/riina-core",
+    "crates/riina-effect",
+    "crates/riina-lang-lexer",
+    "crates/riina-lang-parser",
+    "crates/riina-lang-types",
+    "crates/riina-lang-codegen",
+    "crates/riinac",
+    "crates/riina-build",
+    "crates/riina-verify",
     "tools/hash-chain",
     "tools/build-manifest",
     "tools/artifact-sign",
@@ -34,19 +34,19 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.84.0"
 license = "PROPRIETARY"
-repository = "https://internal.teras.my/git/teras"
-authors = ["TERAS Team <security@teras.my>"]
+repository = "https://internal.riina.my/git/riina"
+authors = ["RIINA Team <security@riina.my>"]
 
 [workspace.dependencies]
 # =============================================================================
 # INTERNAL DEPENDENCIES (from workspace)
 # =============================================================================
-teras-core = { path = "crates/teras-core" }
-teras-effect = { path = "crates/teras-effect" }
-teras-lang-lexer = { path = "crates/teras-lang-lexer" }
-teras-lang-parser = { path = "crates/teras-lang-parser" }
-teras-lang-types = { path = "crates/teras-lang-types" }
-teras-lang-codegen = { path = "crates/teras-lang-codegen" }
+riina-core = { path = "crates/riina-core" }
+riina-effect = { path = "crates/riina-effect" }
+riina-lang-lexer = { path = "crates/riina-lang-lexer" }
+riina-lang-parser = { path = "crates/riina-lang-parser" }
+riina-lang-types = { path = "crates/riina-lang-types" }
+riina-lang-codegen = { path = "crates/riina-lang-codegen" }
 
 # =============================================================================
 # BUILD-TIME ONLY DEPENDENCIES

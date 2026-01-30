@@ -1,4 +1,4 @@
-//! TERAS Build Manifest Generator
+//! RIINA Build Manifest Generator
 //! ═══════════════════════════════════════════════════════════════════════════════
 //! Track F Deliverable: TRACK_F-TOOL-BUILD_v1_0_0
 //! ═══════════════════════════════════════════════════════════════════════════════
@@ -31,9 +31,9 @@ use clap::{Parser, Subcommand};
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[derive(Parser)]
-#[command(name = "teras-build-manifest")]
+#[command(name = "riina-build-manifest")]
 #[command(version = "1.0.0")]
-#[command(about = "TERAS Build Manifest Generator - Reproducibility Tracking")]
+#[command(about = "RIINA Build Manifest Generator - Reproducibility Tracking")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -208,7 +208,7 @@ fn hash_file(path: &Path) -> io::Result<String> {
     use std::hash::Hasher;
 
     // Simple hash for now - in production, use proper SHA-256
-    // This is a placeholder until teras-core crypto is available
+    // This is a placeholder until riina-core crypto is available
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     let mut contents = Vec::new();
@@ -350,7 +350,7 @@ fn generate_manifest(
     let target_dir = root.join("target").join(profile);
 
     if target_dir.exists() {
-        let binaries = ["terasc", "teras-build", "teras-verify", "teras-hash-chain"];
+        let binaries = ["riinac", "riina-build", "riina-verify", "riina-hash-chain"];
         for binary in binaries {
             let bin_path = target_dir.join(binary);
             if bin_path.exists() {
@@ -472,7 +472,7 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
 
     println!("═══════════════════════════════════════════════════════════════");
-    println!("        TERAS BUILD MANIFEST GENERATOR v1.0.0");
+    println!("        RIINA BUILD MANIFEST GENERATOR v1.0.0");
     println!("  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST");
     println!("═══════════════════════════════════════════════════════════════");
     println!();
@@ -480,7 +480,7 @@ fn main() -> ExitCode {
     let root = cli
         .root
         .clone()
-        .or_else(|| env::var("TERAS_ROOT").ok().map(PathBuf::from))
+        .or_else(|| env::var("RIINA_ROOT").ok().map(PathBuf::from))
         .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
 
     let result = match &cli.command {

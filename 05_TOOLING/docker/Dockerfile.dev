@@ -1,15 +1,15 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# TERAS DEVELOPMENT CONTAINER
+# RIINA DEVELOPMENT CONTAINER
 # Track F Deliverable: TRACK_F-TOOL-DEVENV_v1_0_0
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 #
 # This container provides a complete, reproducible development environment
-# for TERAS development. All tools pre-installed. No excuses.
+# for RIINA development. All tools pre-installed. No excuses.
 #
-# Build: docker build -t teras-dev -f docker/Dockerfile.dev .
-# Run:   docker run -it --rm -v $(pwd):/workspace teras-dev
+# Build: docker build -t riina-dev -f docker/Dockerfile.dev .
+# Run:   docker run -it --rm -v $(pwd):/workspace riina-dev
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -134,8 +134,8 @@ ENV SOURCE_DATE_EPOCH=0 \
 WORKDIR /workspace
 
 # Create non-root user (for better security)
-RUN useradd -m -s /bin/bash teras \
-    && chown -R teras:teras /workspace
+RUN useradd -m -s /bin/bash riina \
+    && chown -R riina:riina /workspace
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ENTRYPOINT
@@ -148,7 +148,7 @@ CMD ["/bin/bash"]
 # LABELS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-LABEL maintainer="TERAS Team"
-LABEL description="TERAS Development Container - Complete development environment"
+LABEL maintainer="RIINA Team"
+LABEL description="RIINA Development Container - Complete development environment"
 LABEL version="1.0.0"
 LABEL mode="ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS"

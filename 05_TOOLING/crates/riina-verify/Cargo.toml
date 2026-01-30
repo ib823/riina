@@ -1,11 +1,11 @@
 [package]
-name = "riina-artifact-sign"
+name = "riina-verify"
 version.workspace = true
 edition.workspace = true
-description = "RIINA artifact signing tool"
+description = "RIINA verification orchestrator"
 
 [[bin]]
-name = "riina-artifact-sign"
+name = "riina-verify"
 path = "src/main.rs"
 
 [dependencies]

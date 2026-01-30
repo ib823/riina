@@ -1,6 +1,6 @@
-//! TERAS Hash Chain Tool
+//! RIINA Hash Chain Tool
 //!
-//! Maintains cryptographic integrity chain for all TERAS documents.
+//! Maintains cryptographic integrity chain for all RIINA documents.
 //! This tool is critical for inter-track coordination and document
 //! integrity verification.
 //!
@@ -8,16 +8,16 @@
 //!
 //! ```bash
 //! # Initialize a new hash chain
-//! teras-hash-chain init --chain-name teras-main
+//! riina-hash-chain init --chain-name riina-main
 //!
 //! # Add a document to the chain
-//! teras-hash-chain add --file TRACK_F-TOOL-BUILD_v1_0_0.md
+//! riina-hash-chain add --file TRACK_F-TOOL-BUILD_v1_0_0.md
 //!
 //! # Verify chain integrity
-//! teras-hash-chain verify --deep
+//! riina-hash-chain verify --deep
 //!
 //! # Show chain status
-//! teras-hash-chain show --format json
+//! riina-hash-chain show --format json
 //! ```
 
 use clap::{Parser, Subcommand};
@@ -27,12 +27,12 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 
-/// TERAS Hash Chain Tool - Document integrity management
+/// RIINA Hash Chain Tool - Document integrity management
 #[derive(Parser)]
-#[command(name = "teras-hash-chain")]
+#[command(name = "riina-hash-chain")]
 #[command(version = "1.0.0")]
-#[command(about = "TERAS document hash chain management")]
-#[command(author = "TERAS Team <security@teras.my>")]
+#[command(about = "RIINA document hash chain management")]
+#[command(author = "RIINA Team <security@riina.my>")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -47,7 +47,7 @@ enum Commands {
         chain_name: String,
         
         /// Output file path
-        #[arg(long, default_value = "teras-hash-chain.json")]
+        #[arg(long, default_value = "riina-hash-chain.json")]
         output: PathBuf,
     },
     
@@ -66,7 +66,7 @@ enum Commands {
         author: String,
         
         /// Hash chain file
-        #[arg(long, default_value = "teras-hash-chain.json")]
+        #[arg(long, default_value = "riina-hash-chain.json")]
         chain: PathBuf,
     },
     
@@ -81,7 +81,7 @@ enum Commands {
         base_dir: Option<PathBuf>,
         
         /// Hash chain file
-        #[arg(long, default_value = "teras-hash-chain.json")]
+        #[arg(long, default_value = "riina-hash-chain.json")]
         chain: PathBuf,
     },
     
@@ -92,7 +92,7 @@ enum Commands {
         format: String,
         
         /// Hash chain file
-        #[arg(long, default_value = "teras-hash-chain.json")]
+        #[arg(long, default_value = "riina-hash-chain.json")]
         chain: PathBuf,
     },
     
@@ -103,7 +103,7 @@ enum Commands {
         output: PathBuf,
         
         /// Hash chain file
-        #[arg(long, default_value = "teras-hash-chain.json")]
+        #[arg(long, default_value = "riina-hash-chain.json")]
         chain: PathBuf,
     },
     
@@ -114,7 +114,7 @@ enum Commands {
         input: PathBuf,
         
         /// Output hash chain file
-        #[arg(long, default_value = "teras-hash-chain.json")]
+        #[arg(long, default_value = "riina-hash-chain.json")]
         output: PathBuf,
     },
     
@@ -338,7 +338,7 @@ fn main() {
     
     match cli.command {
         Commands::Init { chain_name, output } => {
-            println!("=== TERAS Hash Chain Initialization ===");
+            println!("=== RIINA Hash Chain Initialization ===");
             println!("Chain name: {}", chain_name);
             println!("Output file: {:?}", output);
             
@@ -357,7 +357,7 @@ fn main() {
         }
         
         Commands::Add { file, predecessor, author, chain: chain_path } => {
-            println!("=== TERAS Hash Chain Add ===");
+            println!("=== RIINA Hash Chain Add ===");
             println!("File: {:?}", file);
             println!("Author: {}", author);
             
@@ -409,7 +409,7 @@ fn main() {
         }
         
         Commands::Verify { deep, base_dir, chain: chain_path } => {
-            println!("=== TERAS Hash Chain Verification ===");
+            println!("=== RIINA Hash Chain Verification ===");
             println!("Deep verification: {}", deep);
             
             let chain = match load_chain(&chain_path) {
@@ -449,7 +449,7 @@ fn main() {
                     }
                 }
             } else {
-                println!("=== TERAS Hash Chain ===");
+                println!("=== RIINA Hash Chain ===");
                 println!("Name: {}", chain.name);
                 println!("Version: {}", chain.version);
                 println!("Created: {}", chain.created);
