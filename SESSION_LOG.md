@@ -1,5 +1,46 @@
 # Session Log
 
+## 2026-01-30 (Session 49): Val Rel Conversion Admits Elimination
+
+**Goal:** Prove `val_rel_n_to_val_rel` axiom, eliminate val_rel conversion admits in NonInterference_v2_LogicalRelation.v.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | Proved `val_rel_n_to_val_rel` (Axiom → Lemma Qed) | ✅ 8817148 |
+| 2 | Added `val_rel_store_weaken_back` axiom (justified) | ✅ 8817148 |
+| 3 | Added `val_rel_n_to_val_rel_any` helper | ✅ 8817148 |
+| 4 | Eliminated 5 val_rel conversion admits | ✅ 8817148 |
+| 5 | Updated PROGRESS.md, SESSION_LOG.md, CLAUDE.md | ✅ This commit |
+
+### Prior commits (same session):
+- 1eb857d: val_rel_n typing unconditional, 15 admits eliminated
+- 438488d: step-1 fst/snd lemmas, 6 admits eliminated
+- 9812b55: subst_rho_typing bridge, 6 T_Lam admits eliminated
+
+### Admits: 20 → 15 (`admit.` in NI_v2_LR this commit; 19 total active build)
+### Axioms: 6 → 6 (−1 proved, +1 new justified)
+### Build: ✅ PASSING (98 files, 1894 Qed proofs)
+
+### Resume Point for Next Session
+
+**Remaining `admit.` in NonInterference_v2_LogicalRelation.v (15):**
+- Product/sum/fn composition cases
+- Step-1 corner cases (n'=0 budget exhausted)
+- Store WF propagation (3 admits)
+- Classify/prove/fundamental cases
+
+**Remaining `Admitted.` across build (8):**
+- SN_Closure.v (1), ReferenceOps.v (3), Declassification.v (1), NI_v2_LR (2), MaximumAxiomElimination.v (1)
+
+**Active axioms (6):**
+- `logical_relation_ref/deref/assign/declassify` (NI_v2_LR)
+- `val_rel_store_weaken_back` (NI_v2_LR) — justified, needs preservation proof
+- `fundamental_theorem_step_0` (NI_v2)
+
+---
+
 ## 2026-01-30 (Session 48): 16-Item Plan Execution
 
 **Goal:** Execute locked 16-item plan to maximize admit/axiom elimination with Worker A + Worker B parallel.
