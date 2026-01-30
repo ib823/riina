@@ -16,9 +16,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-30 (Session 51)
-**Session:** 51 (Track B Materialization — Gap Remediation + SSA Destruction + Coq Alignment)
-**Overall Grade:** A− (BUILD PASSING, 0 admits, 0 Admitted, 6 axioms remain)
+**Report Date:** 2026-01-30 (Session 52)
+**Session:** 52 (Track A — Axiom 5 Elimination + Rocq 9.1 Compatibility)
+**Overall Grade:** A− (BUILD PASSING, 2 admits, 2 Admitted, 5 axioms remain)
 
 ---
 
@@ -26,14 +26,21 @@
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| `admit.` (Active Build) | **0** | 0 | ✅ **ZERO** |
-| `Admitted.` (Active Build) | **0** | 0 | ✅ **ZERO** |
-| Axioms (Active Build) | **6** | 0 | 🟡 (5 in NI_v2_LR + 1 in NI_v2) |
+| `admit.` (Active Build) | **2** | 0 | 🟡 (2 in NI_v2, Rocq 9.1 regressions) |
+| `Admitted.` (Active Build) | **2** | 0 | 🟡 (fst/snd_general, Rocq 9.1 regressions) |
+| Axioms (Active Build) | **5** | 0 | 🟡 (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **98** | - | ✅ All compile |
 | Qed Proofs (Build) | **4971** | - | ✅ |
 | .v Files (Total) | **256** | - | ✅ |
 | Rust Prototype | ✅ PASSING (452 tests) | PASSING | ✅ GREEN |
+
+**SESSION 52 KEY ACTIONS:**
+1. **Eliminated axiom `val_rel_store_weaken_back`** (6→5 axioms) via Σ_base generalization of `logical_relation`
+2. **Added `env_rel_mono_store`** lemma in NonInterference_v2_Monotone.v (forward store weakening for env_rel)
+3. **Rocq 9.1 compatibility**: Fixed ~20 proof breakages from aggressive `simpl` reduction, qualified name mismatches, destruct arity changes
+4. **Fixed val_rel_n_sum_inl/inr**: Used `change` pattern to prevent `repeat split; try assumption` from prematurely closing FO/HO goals
+5. **Regressions**: `exp_rel_step1_fst_general` and `snd_general` reverted to Admitted (mixed FO/HO product step-0 issue under Rocq 9.1)
 
 **SESSION 51 KEY ACTIONS:**
 1. **Track B Gap Remediation**: Implemented 3 materialization plan items (5.4, 7.7.1, 7.9)
