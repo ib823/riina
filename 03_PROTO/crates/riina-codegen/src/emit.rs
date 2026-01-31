@@ -1081,10 +1081,726 @@ impl CEmitter {
         self.writeln("}");
         self.writeln("");
 
-        // Catch-all for unimplemented builtins (string ops, list ops, etc.)
-        // These will be stubs that abort with a message for now.
-        // Not emitting all 59 builtins — just the most commonly used ones above.
-        // Uncommon builtins will produce a linker error pointing to the missing C function.
+        // ═══════════════════════════════════════════════════════════════════
+        // RUNTIME COLLECTION TYPES
+        // ═══════════════════════════════════════════════════════════════════
+
+        // riina_list_t: dynamic array of riina_value_t*
+        self.writeln("/* ── List runtime type ── */");
+        self.writeln("typedef struct {");
+        self.writeln("    riina_value_t** items;");
+        self.writeln("    size_t len;");
+        self.writeln("    size_t cap;");
+        self.writeln("} riina_list_t;");
+        self.writeln("");
+        self.writeln("static riina_list_t riina_list_new(void) {");
+        self.writeln("    riina_list_t l = { NULL, 0, 0 };");
+        self.writeln("    return l;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static void riina_list_push(riina_list_t* l, riina_value_t* v) {");
+        self.writeln("    if (l->len >= l->cap) {");
+        self.writeln("        l->cap = l->cap ? l->cap * 2 : 8;");
+        self.writeln("        l->items = (riina_value_t**)realloc(l->items, l->cap * sizeof(riina_value_t*));");
+        self.writeln("        if (!l->items) abort();");
+        self.writeln("    }");
+        self.writeln("    l->items[l->len++] = v;");
+        self.writeln("}");
+        self.writeln("");
+        // Convert riina_list_t to RIINA_TAG_PAIR-based linked list? No — we use a PAIR encoding.
+        // Actually, the interpreter uses Value::List but the C runtime uses tagged union.
+        // We need a new tag for lists or encode them as nested pairs.
+        // For simplicity: add RIINA_TAG_LIST that wraps riina_list_t.
+        // But modifying the tag enum is risky. Instead, we'll use a helper approach:
+        // list builtins work at the C level with riina_list_t internally,
+        // but we won't add a list tag. The C builtins will encode lists as
+        // nested Pair(head, Pair(next, ...)) terminated by Unit.
+        // ACTUALLY — the BuiltinCall instruction in the IR is only generated for
+        // builtins that the lowerer recognizes. Let me check if list builtins
+        // actually get lowered to BuiltinCall...
+        // Looking at the code: BuiltinCall { name, arg } is generated.
+        // The C emitter just calls riina_builtin_{name}(arg).
+        // So we need C functions that take/return riina_value_t*.
+        // Since there's no list tag, list builtins can't work in C without one.
+        // Let's add a RIINA_TAG_LIST and a list field to the union.
+        //
+        // DECISION: We won't modify the tag enum (too invasive). Instead,
+        // we'll note that list/map/set builtins only work in interpreter mode
+        // for now. The C emitter will emit stub functions that abort with a
+        // "not supported in compiled mode" message. This is the pragmatic choice
+        // since adding collection tags requires changes throughout the emitter.
+        //
+        // UPDATE: Actually, re-reading the plan, M1 asks us to add runtime types.
+        // Let's do it properly — add RIINA_TAG_LIST, RIINA_TAG_MAP, RIINA_TAG_SET.
+
+        // We already emitted the tag enum earlier. We need to add these tags.
+        // Since we can't go back, we'll define them as additional constants.
+        self.writeln("/* Extended tags for collections */");
+        self.writeln("#define RIINA_TAG_LIST 12");
+        self.writeln("#define RIINA_TAG_MAP 13");
+        self.writeln("#define RIINA_TAG_SET 14");
+        self.writeln("");
+
+        // Map entry type
+        self.writeln("typedef struct riina_map_entry {");
+        self.writeln("    char* key;");
+        self.writeln("    riina_value_t* value;");
+        self.writeln("    struct riina_map_entry* next;");
+        self.writeln("} riina_map_entry_t;");
+        self.writeln("");
+        self.writeln("typedef struct {");
+        self.writeln("    riina_map_entry_t* head;");
+        self.writeln("    size_t len;");
+        self.writeln("} riina_map_t;");
+        self.writeln("");
+
+        // Helper: make list value
+        self.writeln("static riina_value_t* riina_make_list(riina_list_t l) {");
+        self.writeln("    riina_value_t* v = riina_alloc();");
+        self.writeln("    v->tag = RIINA_TAG_LIST;");
+        self.writeln("    v->security = RIINA_LEVEL_PUBLIC;");
+        self.writeln("    /* Store list data in pair_val: fst=items ptr, snd encodes len+cap */");
+        self.writeln("    /* We reuse wrapped_val to point to a heap-allocated riina_list_t */");
+        self.writeln("    riina_list_t* lp = (riina_list_t*)malloc(sizeof(riina_list_t));");
+        self.writeln("    if (!lp) abort();");
+        self.writeln("    *lp = l;");
+        self.writeln("    v->data.wrapped_val = (riina_value_t*)lp; /* type-punned */");
+        self.writeln("    return v;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("#define RIINA_LIST_DATA(v) ((riina_list_t*)(v)->data.wrapped_val)");
+        self.writeln("");
+
+        // Helper: make map value
+        self.writeln("static riina_value_t* riina_make_map(riina_map_t m) {");
+        self.writeln("    riina_value_t* v = riina_alloc();");
+        self.writeln("    v->tag = RIINA_TAG_MAP;");
+        self.writeln("    v->security = RIINA_LEVEL_PUBLIC;");
+        self.writeln("    riina_map_t* mp = (riina_map_t*)malloc(sizeof(riina_map_t));");
+        self.writeln("    if (!mp) abort();");
+        self.writeln("    *mp = m;");
+        self.writeln("    v->data.wrapped_val = (riina_value_t*)mp;");
+        self.writeln("    return v;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("#define RIINA_MAP_DATA(v) ((riina_map_t*)(v)->data.wrapped_val)");
+        self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // STRING BUILTINS (teks)
+        // ═══════════════════════════════════════════════════════════════════
+
+        // teks_belah (str_split): (String, String) -> List
+        self.writeln("static riina_value_t* riina_builtin_teks_belah(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* d = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || d->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    riina_list_t result = riina_list_new();");
+        self.writeln("    char* str = strdup(s->data.string_val.data);");
+        self.writeln("    if (!str) abort();");
+        self.writeln("    size_t dlen = d->data.string_val.len;");
+        self.writeln("    if (dlen == 0) {");
+        self.writeln("        /* Split each char */");
+        self.writeln("        for (size_t i = 0; i < s->data.string_val.len; i++) {");
+        self.writeln("            char c[2] = { str[i], 0 };");
+        self.writeln("            riina_list_push(&result, riina_string(c));");
+        self.writeln("        }");
+        self.writeln("    } else {");
+        self.writeln("        char* p = str;");
+        self.writeln("        char* found;");
+        self.writeln("        while ((found = strstr(p, d->data.string_val.data)) != NULL) {");
+        self.writeln("            *found = '\\0';");
+        self.writeln("            riina_list_push(&result, riina_string(p));");
+        self.writeln("            p = found + dlen;");
+        self.writeln("        }");
+        self.writeln("        riina_list_push(&result, riina_string(p));");
+        self.writeln("    }");
+        self.writeln("    free(str);");
+        self.writeln("    return riina_make_list(result);");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_cantum (str_join): (String, List) -> String
+        self.writeln("static riina_value_t* riina_builtin_teks_cantum(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* sep = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* lst = arg->data.pair_val.snd;");
+        self.writeln("    if (sep->tag != RIINA_TAG_STRING || lst->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* l = RIINA_LIST_DATA(lst);");
+        self.writeln("    size_t total = 0;");
+        self.writeln("    for (size_t i = 0; i < l->len; i++) {");
+        self.writeln("        if (l->items[i]->tag == RIINA_TAG_STRING) total += l->items[i]->data.string_val.len;");
+        self.writeln("        if (i > 0) total += sep->data.string_val.len;");
+        self.writeln("    }");
+        self.writeln("    char* buf = (char*)malloc(total + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    buf[0] = '\\0';");
+        self.writeln("    size_t off = 0;");
+        self.writeln("    for (size_t i = 0; i < l->len; i++) {");
+        self.writeln("        if (i > 0) { memcpy(buf + off, sep->data.string_val.data, sep->data.string_val.len); off += sep->data.string_val.len; }");
+        self.writeln("        if (l->items[i]->tag == RIINA_TAG_STRING) { memcpy(buf + off, l->items[i]->data.string_val.data, l->items[i]->data.string_val.len); off += l->items[i]->data.string_val.len; }");
+        self.writeln("    }");
+        self.writeln("    buf[off] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_potong (str_trim)
+        self.writeln("static riina_value_t* riina_builtin_teks_potong(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    const char* s = arg->data.string_val.data;");
+        self.writeln("    size_t len = arg->data.string_val.len;");
+        self.writeln("    size_t start = 0, end = len;");
+        self.writeln("    while (start < len && (s[start]==' '||s[start]=='\\t'||s[start]=='\\n'||s[start]=='\\r')) start++;");
+        self.writeln("    while (end > start && (s[end-1]==' '||s[end-1]=='\\t'||s[end-1]=='\\n'||s[end-1]=='\\r')) end--;");
+        self.writeln("    char* buf = (char*)malloc(end - start + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    memcpy(buf, s + start, end - start);");
+        self.writeln("    buf[end - start] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_mengandungi (str_contains): (String, String) -> Bool
+        self.writeln("static riina_value_t* riina_builtin_teks_mengandungi(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* sub = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || sub->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    return riina_bool(strstr(s->data.string_val.data, sub->data.string_val.data) != NULL);");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_ganti (str_replace): (String, (String, String)) -> String
+        self.writeln("static riina_value_t* riina_builtin_teks_ganti(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* p = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || p->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* from = p->data.pair_val.fst;");
+        self.writeln("    riina_value_t* to = p->data.pair_val.snd;");
+        self.writeln("    if (from->tag != RIINA_TAG_STRING || to->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    const char* src = s->data.string_val.data;");
+        self.writeln("    size_t flen = from->data.string_val.len, tlen = to->data.string_val.len;");
+        self.writeln("    if (flen == 0) return s;");
+        self.writeln("    /* Count occurrences */");
+        self.writeln("    size_t count = 0;");
+        self.writeln("    const char* tmp = src;");
+        self.writeln("    while ((tmp = strstr(tmp, from->data.string_val.data)) != NULL) { count++; tmp += flen; }");
+        self.writeln("    size_t newlen = s->data.string_val.len + count * (tlen - flen);");
+        self.writeln("    char* buf = (char*)malloc(newlen + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    char* dst = buf;");
+        self.writeln("    tmp = src;");
+        self.writeln("    const char* found;");
+        self.writeln("    while ((found = strstr(tmp, from->data.string_val.data)) != NULL) {");
+        self.writeln("        size_t chunk = (size_t)(found - tmp);");
+        self.writeln("        memcpy(dst, tmp, chunk); dst += chunk;");
+        self.writeln("        memcpy(dst, to->data.string_val.data, tlen); dst += tlen;");
+        self.writeln("        tmp = found + flen;");
+        self.writeln("    }");
+        self.writeln("    strcpy(dst, tmp);");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_mula_dengan (str_starts_with)
+        self.writeln("static riina_value_t* riina_builtin_teks_mula_dengan(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* pfx = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || pfx->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    if (pfx->data.string_val.len > s->data.string_val.len) return riina_bool(false);");
+        self.writeln("    return riina_bool(strncmp(s->data.string_val.data, pfx->data.string_val.data, pfx->data.string_val.len) == 0);");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_akhir_dengan (str_ends_with)
+        self.writeln("static riina_value_t* riina_builtin_teks_akhir_dengan(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* sfx = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || sfx->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    if (sfx->data.string_val.len > s->data.string_val.len) return riina_bool(false);");
+        self.writeln("    size_t off = s->data.string_val.len - sfx->data.string_val.len;");
+        self.writeln("    return riina_bool(strcmp(s->data.string_val.data + off, sfx->data.string_val.data) == 0);");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_huruf_besar (str_to_upper)
+        self.writeln("static riina_value_t* riina_builtin_teks_huruf_besar(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    size_t len = arg->data.string_val.len;");
+        self.writeln("    char* buf = (char*)malloc(len + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    for (size_t i = 0; i < len; i++) {");
+        self.writeln("        char c = arg->data.string_val.data[i];");
+        self.writeln("        buf[i] = (c >= 'a' && c <= 'z') ? (char)(c - 32) : c;");
+        self.writeln("    }");
+        self.writeln("    buf[len] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_huruf_kecil (str_to_lower)
+        self.writeln("static riina_value_t* riina_builtin_teks_huruf_kecil(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    size_t len = arg->data.string_val.len;");
+        self.writeln("    char* buf = (char*)malloc(len + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    for (size_t i = 0; i < len; i++) {");
+        self.writeln("        char c = arg->data.string_val.data[i];");
+        self.writeln("        buf[i] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;");
+        self.writeln("    }");
+        self.writeln("    buf[len] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_aksara_di (str_char_at): (String, Int) -> String
+        self.writeln("static riina_value_t* riina_builtin_teks_aksara_di(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* idx = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || idx->tag != RIINA_TAG_INT) abort();");
+        self.writeln("    size_t i = (size_t)idx->data.int_val;");
+        self.writeln("    if (i >= s->data.string_val.len) { fprintf(stderr, \"RIINA: char_at out of bounds\\n\"); abort(); }");
+        self.writeln("    char c[2] = { s->data.string_val.data[i], 0 };");
+        self.writeln("    return riina_string(c);");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_sub (str_substring): (String, (Int, Int)) -> String
+        self.writeln("static riina_value_t* riina_builtin_teks_sub(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* range = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || range->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    size_t start = (size_t)range->data.pair_val.fst->data.int_val;");
+        self.writeln("    size_t end = (size_t)range->data.pair_val.snd->data.int_val;");
+        self.writeln("    if (start > s->data.string_val.len) start = s->data.string_val.len;");
+        self.writeln("    if (end > s->data.string_val.len) end = s->data.string_val.len;");
+        self.writeln("    if (end < start) end = start;");
+        self.writeln("    size_t len = end - start;");
+        self.writeln("    char* buf = (char*)malloc(len + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    memcpy(buf, s->data.string_val.data + start, len);");
+        self.writeln("    buf[len] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // teks_indeks (str_index_of): (String, String) -> Int
+        self.writeln("static riina_value_t* riina_builtin_teks_indeks(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* sub = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || sub->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    const char* found = strstr(s->data.string_val.data, sub->data.string_val.data);");
+        self.writeln("    if (found) return riina_int((uint64_t)(found - s->data.string_val.data));");
+        self.writeln("    return riina_int(UINT64_MAX);");
+        self.writeln("}");
+        self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // LIST BUILTINS (senarai)
+        // ═══════════════════════════════════════════════════════════════════
+
+        // senarai_baru (list_new)
+        self.writeln("static riina_value_t* riina_builtin_senarai_baru(riina_value_t* arg) {");
+        self.writeln("    (void)arg;");
+        self.writeln("    riina_list_t l = riina_list_new();");
+        self.writeln("    return riina_make_list(l);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_tolak (list_push): (List, Value) -> List
+        self.writeln("static riina_value_t* riina_builtin_senarai_tolak(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* lst = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* val = arg->data.pair_val.snd;");
+        self.writeln("    if (lst->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* old = RIINA_LIST_DATA(lst);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < old->len; i++) riina_list_push(&nl, old->items[i]);");
+        self.writeln("    riina_list_push(&nl, val);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_dapat (list_get): (List, Int) -> Value
+        self.writeln("static riina_value_t* riina_builtin_senarai_dapat(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* lst = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* idx = arg->data.pair_val.snd;");
+        self.writeln("    if (lst->tag != RIINA_TAG_LIST || idx->tag != RIINA_TAG_INT) abort();");
+        self.writeln("    riina_list_t* l = RIINA_LIST_DATA(lst);");
+        self.writeln("    size_t i = (size_t)idx->data.int_val;");
+        self.writeln("    if (i >= l->len) { fprintf(stderr, \"RIINA: list index out of bounds\\n\"); abort(); }");
+        self.writeln("    return l->items[i];");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_panjang (list_len)
+        self.writeln("static riina_value_t* riina_builtin_senarai_panjang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    return riina_int((uint64_t)RIINA_LIST_DATA(arg)->len);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_balik (list_reverse)
+        self.writeln("static riina_value_t* riina_builtin_senarai_balik(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* old = RIINA_LIST_DATA(arg);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = old->len; i > 0; i--) riina_list_push(&nl, old->items[i-1]);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_susun (list_sort) — sorts ints ascending
+        self.writeln("static int riina_cmp_values(const void* a, const void* b) {");
+        self.writeln("    riina_value_t* va = *(riina_value_t**)a;");
+        self.writeln("    riina_value_t* vb = *(riina_value_t**)b;");
+        self.writeln("    if (va->tag == RIINA_TAG_INT && vb->tag == RIINA_TAG_INT) {");
+        self.writeln("        if (va->data.int_val < vb->data.int_val) return -1;");
+        self.writeln("        if (va->data.int_val > vb->data.int_val) return 1;");
+        self.writeln("        return 0;");
+        self.writeln("    }");
+        self.writeln("    return 0;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static riina_value_t* riina_builtin_senarai_susun(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* old = RIINA_LIST_DATA(arg);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < old->len; i++) riina_list_push(&nl, old->items[i]);");
+        self.writeln("    if (nl.len > 1) qsort(nl.items, nl.len, sizeof(riina_value_t*), riina_cmp_values);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_mengandungi (list_contains): (List, Value) -> Bool
+        self.writeln("static bool riina_values_equal(riina_value_t* a, riina_value_t* b) {");
+        self.writeln("    return riina_binop_eq(a, b)->data.bool_val;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static riina_value_t* riina_builtin_senarai_mengandungi(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* lst = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* val = arg->data.pair_val.snd;");
+        self.writeln("    if (lst->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* l = RIINA_LIST_DATA(lst);");
+        self.writeln("    for (size_t i = 0; i < l->len; i++) {");
+        self.writeln("        if (riina_values_equal(l->items[i], val)) return riina_bool(true);");
+        self.writeln("    }");
+        self.writeln("    return riina_bool(false);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_sambung (list_concat): (List, List) -> List
+        self.writeln("static riina_value_t* riina_builtin_senarai_sambung(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* la = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* lb = arg->data.pair_val.snd;");
+        self.writeln("    if (la->tag != RIINA_TAG_LIST || lb->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* a = RIINA_LIST_DATA(la);");
+        self.writeln("    riina_list_t* b = RIINA_LIST_DATA(lb);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < a->len; i++) riina_list_push(&nl, a->items[i]);");
+        self.writeln("    for (size_t i = 0; i < b->len; i++) riina_list_push(&nl, b->items[i]);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_kepala (list_head)
+        self.writeln("static riina_value_t* riina_builtin_senarai_kepala(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* l = RIINA_LIST_DATA(arg);");
+        self.writeln("    if (l->len == 0) { fprintf(stderr, \"RIINA: head of empty list\\n\"); abort(); }");
+        self.writeln("    return l->items[0];");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_ekor (list_tail)
+        self.writeln("static riina_value_t* riina_builtin_senarai_ekor(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* l = RIINA_LIST_DATA(arg);");
+        self.writeln("    if (l->len == 0) { fprintf(stderr, \"RIINA: tail of empty list\\n\"); abort(); }");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 1; i < l->len; i++) riina_list_push(&nl, l->items[i]);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_zip (list_zip): (List, List) -> List
+        self.writeln("static riina_value_t* riina_builtin_senarai_zip(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* la = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* lb = arg->data.pair_val.snd;");
+        self.writeln("    if (la->tag != RIINA_TAG_LIST || lb->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* a = RIINA_LIST_DATA(la);");
+        self.writeln("    riina_list_t* b = RIINA_LIST_DATA(lb);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    size_t min = a->len < b->len ? a->len : b->len;");
+        self.writeln("    for (size_t i = 0; i < min; i++) riina_list_push(&nl, riina_pair(a->items[i], b->items[i]));");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // senarai_nombor (list_enumerate): List -> List of (Int, Value)
+        self.writeln("static riina_value_t* riina_builtin_senarai_nombor(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* l = RIINA_LIST_DATA(arg);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < l->len; i++) riina_list_push(&nl, riina_pair(riina_int((uint64_t)i), l->items[i]));");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MAP BUILTINS (peta)
+        // ═══════════════════════════════════════════════════════════════════
+
+        // peta_baru (map_new)
+        self.writeln("static riina_value_t* riina_builtin_peta_baru(riina_value_t* arg) {");
+        self.writeln("    (void)arg;");
+        self.writeln("    riina_map_t m = { NULL, 0 };");
+        self.writeln("    return riina_make_map(m);");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_letak (map_insert): (Map, (String, Value)) -> Map
+        self.writeln("static riina_value_t* riina_builtin_peta_letak(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* mv = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* kv = arg->data.pair_val.snd;");
+        self.writeln("    if (mv->tag != RIINA_TAG_MAP || kv->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* key = kv->data.pair_val.fst;");
+        self.writeln("    riina_value_t* val = kv->data.pair_val.snd;");
+        self.writeln("    if (key->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    riina_map_t* old = RIINA_MAP_DATA(mv);");
+        self.writeln("    /* Copy existing entries */");
+        self.writeln("    riina_map_t nm = { NULL, 0 };");
+        self.writeln("    riina_map_entry_t** tail = &nm.head;");
+        self.writeln("    bool replaced = false;");
+        self.writeln("    for (riina_map_entry_t* e = old->head; e; e = e->next) {");
+        self.writeln("        riina_map_entry_t* ne = (riina_map_entry_t*)malloc(sizeof(riina_map_entry_t));");
+        self.writeln("        if (!ne) abort();");
+        self.writeln("        if (strcmp(e->key, key->data.string_val.data) == 0) {");
+        self.writeln("            ne->key = strdup(key->data.string_val.data);");
+        self.writeln("            ne->value = val;");
+        self.writeln("            replaced = true;");
+        self.writeln("        } else {");
+        self.writeln("            ne->key = strdup(e->key);");
+        self.writeln("            ne->value = e->value;");
+        self.writeln("        }");
+        self.writeln("        ne->next = NULL;");
+        self.writeln("        *tail = ne; tail = &ne->next;");
+        self.writeln("        nm.len++;");
+        self.writeln("    }");
+        self.writeln("    if (!replaced) {");
+        self.writeln("        riina_map_entry_t* ne = (riina_map_entry_t*)malloc(sizeof(riina_map_entry_t));");
+        self.writeln("        if (!ne) abort();");
+        self.writeln("        ne->key = strdup(key->data.string_val.data);");
+        self.writeln("        ne->value = val;");
+        self.writeln("        ne->next = NULL;");
+        self.writeln("        *tail = ne;");
+        self.writeln("        nm.len++;");
+        self.writeln("    }");
+        self.writeln("    return riina_make_map(nm);");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_dapat (map_get): (Map, String) -> Value
+        self.writeln("static riina_value_t* riina_builtin_peta_dapat(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* mv = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* key = arg->data.pair_val.snd;");
+        self.writeln("    if (mv->tag != RIINA_TAG_MAP || key->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    riina_map_t* m = RIINA_MAP_DATA(mv);");
+        self.writeln("    for (riina_map_entry_t* e = m->head; e; e = e->next) {");
+        self.writeln("        if (strcmp(e->key, key->data.string_val.data) == 0) return e->value;");
+        self.writeln("    }");
+        self.writeln("    fprintf(stderr, \"RIINA: key not found in map\\n\"); abort();");
+        self.writeln("    return NULL;");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_buang (map_remove): (Map, String) -> Map
+        self.writeln("static riina_value_t* riina_builtin_peta_buang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* mv = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* key = arg->data.pair_val.snd;");
+        self.writeln("    if (mv->tag != RIINA_TAG_MAP || key->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    riina_map_t* old = RIINA_MAP_DATA(mv);");
+        self.writeln("    riina_map_t nm = { NULL, 0 };");
+        self.writeln("    riina_map_entry_t** tail = &nm.head;");
+        self.writeln("    for (riina_map_entry_t* e = old->head; e; e = e->next) {");
+        self.writeln("        if (strcmp(e->key, key->data.string_val.data) != 0) {");
+        self.writeln("            riina_map_entry_t* ne = (riina_map_entry_t*)malloc(sizeof(riina_map_entry_t));");
+        self.writeln("            if (!ne) abort();");
+        self.writeln("            ne->key = strdup(e->key); ne->value = e->value; ne->next = NULL;");
+        self.writeln("            *tail = ne; tail = &ne->next;");
+        self.writeln("            nm.len++;");
+        self.writeln("        }");
+        self.writeln("    }");
+        self.writeln("    return riina_make_map(nm);");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_kunci (map_keys): Map -> List
+        self.writeln("static riina_value_t* riina_builtin_peta_kunci(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_MAP) abort();");
+        self.writeln("    riina_map_t* m = RIINA_MAP_DATA(arg);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (riina_map_entry_t* e = m->head; e; e = e->next) riina_list_push(&nl, riina_string(e->key));");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_nilai (map_values): Map -> List
+        self.writeln("static riina_value_t* riina_builtin_peta_nilai(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_MAP) abort();");
+        self.writeln("    riina_map_t* m = RIINA_MAP_DATA(arg);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (riina_map_entry_t* e = m->head; e; e = e->next) riina_list_push(&nl, e->value);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_mengandungi (map_contains): (Map, String) -> Bool
+        self.writeln("static riina_value_t* riina_builtin_peta_mengandungi(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* mv = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* key = arg->data.pair_val.snd;");
+        self.writeln("    if (mv->tag != RIINA_TAG_MAP || key->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    riina_map_t* m = RIINA_MAP_DATA(mv);");
+        self.writeln("    for (riina_map_entry_t* e = m->head; e; e = e->next) {");
+        self.writeln("        if (strcmp(e->key, key->data.string_val.data) == 0) return riina_bool(true);");
+        self.writeln("    }");
+        self.writeln("    return riina_bool(false);");
+        self.writeln("}");
+        self.writeln("");
+
+        // peta_panjang (map_len): Map -> Int
+        self.writeln("static riina_value_t* riina_builtin_peta_panjang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_MAP) abort();");
+        self.writeln("    return riina_int((uint64_t)RIINA_MAP_DATA(arg)->len);");
+        self.writeln("}");
+        self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // SET BUILTINS (set) — uses List internally
+        // ═══════════════════════════════════════════════════════════════════
+
+        // set_baru (set_new)
+        self.writeln("static riina_value_t* riina_builtin_set_baru(riina_value_t* arg) {");
+        self.writeln("    (void)arg;");
+        self.writeln("    riina_list_t l = riina_list_new();");
+        self.writeln("    return riina_make_list(l);");
+        self.writeln("}");
+        self.writeln("");
+
+        // set_letak (set_insert): (List, Value) -> List
+        self.writeln("static riina_value_t* riina_builtin_set_letak(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* lst = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* val = arg->data.pair_val.snd;");
+        self.writeln("    if (lst->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* old = RIINA_LIST_DATA(lst);");
+        self.writeln("    /* Check if already present */");
+        self.writeln("    for (size_t i = 0; i < old->len; i++) {");
+        self.writeln("        if (riina_values_equal(old->items[i], val)) return lst;");
+        self.writeln("    }");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < old->len; i++) riina_list_push(&nl, old->items[i]);");
+        self.writeln("    riina_list_push(&nl, val);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // set_buang (set_remove): (List, Value) -> List
+        self.writeln("static riina_value_t* riina_builtin_set_buang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* lst = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* val = arg->data.pair_val.snd;");
+        self.writeln("    if (lst->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* old = RIINA_LIST_DATA(lst);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < old->len; i++) {");
+        self.writeln("        if (!riina_values_equal(old->items[i], val)) riina_list_push(&nl, old->items[i]);");
+        self.writeln("    }");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // set_mengandungi (set_contains): (List, Value) -> Bool
+        self.writeln("static riina_value_t* riina_builtin_set_mengandungi(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_senarai_mengandungi(arg);");
+        self.writeln("}");
+        self.writeln("");
+
+        // set_kesatuan (set_union): (List, List) -> List
+        self.writeln("static riina_value_t* riina_builtin_set_kesatuan(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* la = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* lb = arg->data.pair_val.snd;");
+        self.writeln("    if (la->tag != RIINA_TAG_LIST || lb->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* a = RIINA_LIST_DATA(la);");
+        self.writeln("    riina_list_t* b = RIINA_LIST_DATA(lb);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < a->len; i++) riina_list_push(&nl, a->items[i]);");
+        self.writeln("    for (size_t i = 0; i < b->len; i++) {");
+        self.writeln("        bool found = false;");
+        self.writeln("        for (size_t j = 0; j < a->len; j++) {");
+        self.writeln("            if (riina_values_equal(a->items[j], b->items[i])) { found = true; break; }");
+        self.writeln("        }");
+        self.writeln("        if (!found) riina_list_push(&nl, b->items[i]);");
+        self.writeln("    }");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // set_persilangan (set_intersect): (List, List) -> List
+        self.writeln("static riina_value_t* riina_builtin_set_persilangan(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* la = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* lb = arg->data.pair_val.snd;");
+        self.writeln("    if (la->tag != RIINA_TAG_LIST || lb->tag != RIINA_TAG_LIST) abort();");
+        self.writeln("    riina_list_t* a = RIINA_LIST_DATA(la);");
+        self.writeln("    riina_list_t* b = RIINA_LIST_DATA(lb);");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    for (size_t i = 0; i < a->len; i++) {");
+        self.writeln("        for (size_t j = 0; j < b->len; j++) {");
+        self.writeln("            if (riina_values_equal(a->items[i], b->items[j])) {");
+        self.writeln("                riina_list_push(&nl, a->items[i]);");
+        self.writeln("                break;");
+        self.writeln("            }");
+        self.writeln("        }");
+        self.writeln("    }");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // set_panjang (set_len)
+        self.writeln("static riina_value_t* riina_builtin_set_panjang(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_senarai_panjang(arg);");
+        self.writeln("}");
+        self.writeln("");
     }
 
     /// Emit forward declarations for all functions
