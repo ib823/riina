@@ -177,3 +177,20 @@ domains/SingaporeCybersecurityAct.v
 domains/SingaporeHealthInfo.v
 domains/SingaporeCyberTrustMark.v
 domains/SingaporeMTCS.v
+
+# Phase 12: Extended Track Domain Proofs (R-Z, Σ, Π, Δ, Ω, Ψ)
+# Zero admits, zero axioms — standalone domain proofs
+domains/TranslationValidation.v
+domains/S001_HardwareContracts.v
+domains/T001_HermeticBuild.v
+domains/U001_RuntimeGuardian.v
+domains/V001_TerminationGuarantees.v
+domains/W001_VerifiedMemory.v
+domains/X001_ConcurrencyModel.v
+domains/Y001_VerifiedStdlib.v
+domains/Z001_DeclassificationPolicy.v
+domains/SIGMA001_VerifiedStorage.v
+domains/PI001_VerifiedPerformance.v
+domains/DELTA001_VerifiedDistribution.v
+domains/OMEGA001_NetworkDefense.v
+domains/PSI001_OperationalSecurity.v
