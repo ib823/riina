@@ -1,0 +1,202 @@
+/// data_pipeline.rii
+/// ETL (Extract-Transform-Load) data pipeline
+/// Demonstrates data transformation and effect composition
+///
+/// Features:
+/// - Source data reading
+/// - Transformation stages
+/// - Filtering and mapping
+/// - Result writing
+
+modul saluran_data;
+
+guna std::fail;
+guna std::teks;
+guna std::senarai;
+
+jenis RekodSumber = {
+    id: Nombor,
+    nama: Teks,
+    umur: Nombor,
+    jabatan: Teks,
+    gaji: Nombor,
+};
+
+jenis RekodTransformasi = {
+    id: Nombor,
+    nama_huruf_besar: Teks,
+    umur: Nombor,
+    kategori_jabatan: Teks,
+    gaji_tahunan: Nombor,
+    gaji_bulanan: Nombor,
+};
+
+jenis Saringan =
+    | SaringanJabatan(Teks)
+    | SaringanGaji(Nombor, Nombor)
+    | SaringanUmur(Nombor, Nombor);
+
+/// Stage 1: Extract from source
+/// Kesan: SistemFail (reads from file)
+fungsi ekstrak_sumber(fail_sumber: Teks) -> Mungkin<Senarai<RekodSumber>> kesan SistemFail {
+    biar hasil_baca = coba SistemFail::baca_fail(fail_sumber);
+
+    padan hasil_baca {
+        Berjaya(kandungan) => {
+            biar rekod = huraikan_csv(kandungan);
+            pulang Ada(rekod);
+        },
+        Kegagalan(_) => {
+            pulang Tiada;
+        },
+    };
+}
+
+/// Stage 2: Transform data
+fungsi transformasi_rekod(sumber: RekodSumber) -> RekodTransformasi kesan Bersih {
+    pulang {
+        id: sumber.id,
+        nama_huruf_besar: huruf_besar(sumber.nama),
+        umur: sumber.umur,
+        kategori_jabatan: kategorikan_jabatan(sumber.jabatan),
+        gaji_tahunan: sumber.gaji,
+        gaji_bulanan: sumber.gaji / 12,
+    };
+}
+
+/// Stage 3: Filter records
+fungsi saringi_rekod(rekod: RekodTransformasi, saringan: Saringan) -> Benar kesan Bersih {
+    padan saringan {
+        SaringanJabatan(jabatan) => {
+            pulang rekod.kategori_jabatan == jabatan;
+        },
+        SaringanGaji(min, max) => {
+            pulang rekod.gaji_tahunan >= min && rekod.gaji_tahunan <= max;
+        },
+        SaringanUmur(min, max) => {
+            pulang rekod.umur >= min && rekod.umur <= max;
+        },
+    };
+}
+
+/// Stage 4: Load results
+/// Kesan: SistemFail (writes to file)
+fungsi muatkan_hasil(
+    fail_keluaran: Teks,
+    rekod_transformasi: Senarai<RekodTransformasi>
+) -> kesan SistemFail {
+    biar csv_keluaran = jana_csv_transformasi(rekod_transformasi);
+
+    biar hasil_tulis = coba SistemFail::tulis_fail(fail_keluaran, csv_keluaran);
+
+    padan hasil_tulis {
+        Berjaya(_) => {
+            cetak_baris(format!("Hasil ditulis ke {}", fail_keluaran));
+        },
+        Kegagalan(ralat) => {
+            cetak_baris(format!("Gagal menulis hasil: {}", ralat));
+        },
+    };
+}
+
+/// Complete pipeline execution
+/// Kesan: SistemFail (composition of I/O operations)
+fungsi jalankan_saluran(
+    fail_sumber: Teks,
+    fail_keluaran: Teks,
+    saringan_senarai: Senarai<Saringan>
+) -> kesan SistemFail {
+    cetak_baris("=== MEMULAKAN SALURAN DATA ===");
+    cetak_baris("Tahap 1: Ekstrak");
+
+    // Extract
+    biar hasil_ekstrak = ekstrak_sumber(fail_sumber);
+
+    padan hasil_ekstrak {
+        Ada(rekod_sumber) => {
+            cetak_baris(format!("Diekstrak {} rekod", panjang(rekod_sumber)));
+
+            cetak_baris("Tahap 2: Transformasi");
+            // Transform
+            biar rekod_transformasi = [];
+            untuk rekod dalam rekod_sumber {
+                rekod_transformasi = rekod_transformasi + [transformasi_rekod(rekod)];
+            }
+
+            cetak_baris("Tahap 3: Saringi");
+            // Filter with all conditions
+            biar rekod_tersaring = [];
+            untuk rekod dalam rekod_transformasi {
+                biar tersaring = betul;
+
+                untuk saringan dalam saringan_senarai {
+                    kalau !saringi_rekod(rekod, saringan) {
+                        tersaring = salah;
+                    }
+                }
+
+                kalau tersaring {
+                    rekod_tersaring = rekod_tersaring + [rekod];
+                }
+            }
+
+            cetak_baris(format!("Selepas penyaringan: {} rekod", panjang(rekod_tersaring)));
+
+            cetak_baris("Tahap 4: Muatkan");
+            // Load
+            muatkan_hasil(fail_keluaran, rekod_tersaring);
+
+            cetak_baris("=== SALURAN SELESAI ===");
+        },
+        Tiada => {
+            cetak_baris("Gagal mengekstrak data sumber");
+        },
+    };
+}
+
+/// Example pipeline with multiple stages
+awam fungsi utama() -> kesan SistemFail {
+    biar saringan = [
+        SaringanGaji(30000, 100000),
+        SaringanUmur(25, 55),
+    ];
+
+    jalankan_saluran(
+        "sumber.csv",
+        "keluaran_tersaring.csv",
+        saringan
+    );
+}
+
+// Helper functions
+fungsi huraikan_csv(kandungan: Teks) -> Senarai<RekodSumber> kesan Bersih {
+    pulang [];
+}
+
+fungsi jana_csv_transformasi(rekod: Senarai<RekodTransformasi>) -> Teks kesan Bersih {
+    pulang "";
+}
+
+fungsi huruf_besar(teks: Teks) -> Teks kesan Bersih {
+    pulang teks;
+}
+
+fungsi kategorikan_jabatan(jabatan: Teks) -> Teks kesan Bersih {
+    kalau teks::mengandungi(jabatan, "Manajer") {
+        pulang "Pengurusan";
+    } lain kalau teks::mengandungi(jabatan, "Jurutera") {
+        pulang "Teknikal";
+    } lain {
+        pulang "Umum";
+    }
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+modul teks {
+    fungsi mengandungi(teks: Teks, cari: Teks) -> Benar kesan Bersih {
+        pulang betul;
+    }
+}

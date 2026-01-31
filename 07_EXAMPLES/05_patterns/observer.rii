@@ -1,0 +1,60 @@
+/// observer.rii
+/// Observer pattern for event-driven updates
+/// Demonstrates publish-subscribe mechanism
+
+modul corak_pemerhati;
+
+guna std::teks;
+guna std::senarai;
+
+/// Observer callback type
+jenis PemerhatiPerubahan = {
+    nama: Teks,
+    fungsi_update: Teks,
+};
+
+/// Subject that notifies observers
+jenis SubjekPerubahan = {
+    keadaan: Teks,
+    pemerhati: Senarai<PemerhatiPerubahan>,
+};
+
+biar ubah subjek: SubjekPerubahan = {
+    keadaan: "awal",
+    pemerhati: [],
+};
+
+fungsi daftarkan_pemerhati(nama: Teks) -> kesan Bersih {
+    biar pemerhati_baru = {
+        nama: nama,
+        fungsi_update: "update_" + nama,
+    };
+
+    subjek.pemerhati = subjek.pemerhati + [pemerhati_baru];
+    cetak_baris(format!("Pemerhati {} didaftarkan", nama));
+}
+
+fungsi ubah_keadaan(keadaan_baru: Teks) -> kesan Bersih {
+    subjek.keadaan = keadaan_baru;
+    cetak_baris(format!("Keadaan berubah ke: {}", keadaan_baru));
+
+    // Notify all observers
+    untuk pemerhati dalam subjek.pemerhati {
+        cetak_baris(format!("Memaklumi {}: {}", pemerhati.nama, keadaan_baru));
+    }
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK PEMERHATI ===\n");
+
+    daftarkan_pemerhati("Logger");
+    daftarkan_pemerhati("AlertingSystem");
+    daftarkan_pemerhati("Dashboard");
+
+    ubah_keadaan("sedang memproses");
+    ubah_keadaan("siap");
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

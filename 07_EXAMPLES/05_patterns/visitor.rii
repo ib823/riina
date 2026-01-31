@@ -1,0 +1,59 @@
+/// visitor.rii
+/// Visitor pattern for separate operations on object structures
+/// Demonstrates double dispatch
+
+modul corak_pelawat;
+
+guna std::teks;
+
+jenis NodesPokok =
+    | Nombor(Nombor)
+    | Penambahan(NodesPokok, NodesPokok)
+    | Pendaraban(NodesPokok, NodesPokok);
+
+/// Visitor interface
+jenis PelawatOperasi = {
+    nama: Teks,
+};
+
+/// Evaluate the expression
+fungsi nilaikan(node: NodesPokok) -> Nombor kesan Bersih {
+    padan node {
+        Nombor(n) => n,
+        Penambahan(kiri, kanan) => nilaikan(kiri) + nilaikan(kanan),
+        Pendaraban(kiri, kanan) => nilaikan(kiri) * nilaikan(kanan),
+    };
+}
+
+/// Print the expression
+fungsi cetak_ungkapan(node: NodesPokok) -> Teks kesan Bersih {
+    padan node {
+        Nombor(n) => format!("{}", n),
+        Penambahan(kiri, kanan) => {
+            format!("({} + {})", cetak_ungkapan(kiri), cetak_ungkapan(kanan))
+        },
+        Pendaraban(kiri, kanan) => {
+            format!("({} * {})", cetak_ungkapan(kiri), cetak_ungkapan(kanan))
+        },
+    };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK PELAWAT ===\n");
+
+    // Build expression: (3 + 4) * 5
+    biar ekspresi = Pendaraban(
+        Penambahan(Nombor(3), Nombor(4)),
+        Nombor(5)
+    );
+
+    biar teks_ekspresi = cetak_ungkapan(ekspresi);
+    cetak_baris(format!("Ungkapan: {}", teks_ekspresi));
+
+    biar hasil = nilaikan(ekspresi);
+    cetak_baris(format!("Nilai: {}", hasil));
+}
+
+fungsi format(s: Teks, arg: T) -> Teks kesan Bersih {
+    pulang s;
+}

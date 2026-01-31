@@ -1,0 +1,80 @@
+/// command.rii
+/// Command pattern with undo/redo capability
+/// Demonstrates encapsulating requests as objects
+
+modul corak_arahan;
+
+guna std::teks;
+guna std::senarai;
+
+jenis Arahan =
+    | TAMBAH(Nombor)
+    | TOLAK(Nombor)
+    | DARAB(Nombor)
+    | BAHAGI(Nombor);
+
+jenis RekodArah = {
+    arahan: Arahan,
+    nilai_lama: Nombor,
+    nilai_baru: Nombor,
+};
+
+biar ubah nilai_semasa: Nombor = 0;
+biar ubah sejarah_arahan: Senarai<RekodArah> = [];
+
+fungsi jalankan(arahan: Arahan) -> kesan Bersih {
+    biar nilai_awal = nilai_semasa;
+
+    padan arahan {
+        TAMBAH(n) => nilai_semasa = nilai_semasa + n,
+        TOLAK(n) => nilai_semasa = nilai_semasa - n,
+        DARAB(n) => nilai_semasa = nilai_semasa * n,
+        BAHAGI(n) => kalau n != 0 { nilai_semasa = nilai_semasa / n },
+    };
+
+    biar rekod = {
+        arahan: arahan,
+        nilai_lama: nilai_awal,
+        nilai_baru: nilai_semasa,
+    };
+
+    sejarah_arahan = sejarah_arahan + [rekod];
+    cetak_baris(format!("Arahan dijalankan: {} -> {}", nilai_awal, nilai_semasa));
+}
+
+fungsi buat_semula() -> kesan Bersih {
+    kalau panjang(sejarah_arahan) > 0 {
+        biar indeks_akhir = panjang(sejarah_arahan) - 1;
+        biar rekod_akhir = sejarah_arahan[indeks_akhir];
+
+        nilai_semasa = rekod_akhir.nilai_lama;
+        sejarah_arahan = buang_akhir(sejarah_arahan);
+
+        cetak_baris(format!("Buat semula: {} <- {}", nilai_semasa, rekod_akhir.nilai_baru));
+    }
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK ARAHAN ===\n");
+
+    jalankan(TAMBAH(10));
+    jalankan(DARAB(2));
+    jalankan(TOLAK(5));
+
+    cetak_baris(format!("Nilai akhir: {}", nilai_semasa));
+
+    buat_semula();
+    cetak_baris(format!("Selepas buat semula: {}", nilai_semasa));
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi buang_akhir(senarai: Senarai<T>) -> Senarai<T> kesan Bersih {
+    pulang [];
+}
+
+fungsi format(s: Teks, arg: T) -> Teks kesan Bersih {
+    pulang s;
+}

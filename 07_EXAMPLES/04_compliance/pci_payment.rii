@@ -1,0 +1,268 @@
+/// pci_payment.rii
+/// PCI-DSS (Payment Card Industry Data Security Standard) compliance
+/// Demonstrates secure payment processing
+///
+/// Security Level: Rahsia
+/// Compliance: PCI-DSS 3.2.1
+
+modul pemprosesan_pembayaran_pci;
+
+guna std::kripto;
+guna std::teks;
+guna std::senarai;
+
+/// Card data (simplified, real implementations use HSM)
+jenis DataKartu = {
+    pemilik_kartu: Teks,
+    nomor_kartu: Rahsia<Teks>,
+    bulan_tamat: Nombor,
+    tahun_tamat: Nombor,
+    cvv: Rahsia<Teks>,
+};
+
+/// Tokenized card representation
+jenis TokenKartu = {
+    token_id: Teks,
+    empat_digit_akhir: Teks,
+    pemilik_kartu: Teks,
+    bulan_tamat: Nombor,
+    tahun_tamat: Nombor,
+};
+
+/// Transaction record (card data never stored)
+jenis TransaksiPembayaran = {
+    id_transaksi: Teks,
+    token_kartu: TokenKartu,
+    jumlah: Nombor,
+    mata_wang: Teks,
+    masa_transaksi: Nombor,
+    pengguna_merchant: Teks,
+    status: Teks,
+};
+
+biar ubah transaksi_rekam: Senarai<TransaksiPembayaran> = [];
+
+/// Tokenize card - replace with token, never store raw data
+/// Kesan: Kripto
+fungsi tokenisasi_kartu(data_kartu: DataKartu) -> TokenKartu kesan Kripto {
+    biar token_id = Kripto::jana_rawak_hex(16);
+
+    // Extract last 4 digits
+    biar nomor_teks = dedah(data_kartu.nomor_kartu, "tokenisasi");
+    biar empat_digit = teks::ambil_akhir(nomor_teks, 4);
+
+    cetak_baris("PERATURAN: Nomor kartu TIDAK disimpan setelah tokenisasi");
+
+    pulang {
+        token_id: token_id,
+        empat_digit_akhir: empat_digit,
+        pemilik_kartu: data_kartu.pemilik_kartu,
+        bulan_tamat: data_kartu.bulan_tamat,
+        tahun_tamat: data_kartu.tahun_tamat,
+    };
+}
+
+/// Check card expiration
+fungsi semak_tamat_kartu(token: TokenKartu) -> Benar kesan Bersih {
+    biar bulan_sekarang = Masa::dapat_bulan();
+    biar tahun_sekarang = Masa::dapat_tahun();
+
+    kalau token.tahun_tamat < tahun_sekarang {
+        pulang salah;
+    }
+
+    kalau token.tahun_tamat == tahun_sekarang && token.bulan_tamat < bulan_sekarang {
+        pulang salah;
+    }
+
+    pulang betul;
+}
+
+/// Process payment with secure transmission
+/// Kesan: Kripto (uses TLS/encryption)
+fungsi proses_pembayaran(
+    token_kartu: TokenKartu,
+    jumlah: Nombor,
+    mata_uang: Teks,
+    kunci_enkripsi: Rahsia<Teks>
+) -> (Benar, Teks) kesan Kripto {
+    // Check expiration
+    kalau !semak_tamat_kartu(token_kartu) {
+        cetak_baris("Kartu telah tamat");
+        pulang (salah, "Card Expired");
+    }
+
+    // Validate amount
+    kalau jumlah <= 0 {
+        pulang (salah, "Invalid Amount");
+    }
+
+    // Generate transaction ID
+    biar id_transaksi = Kripto::jana_rawak_hex(16);
+
+    // Encrypt transaction for transmission
+    biar data_transaksi = format!("{},{},{}", id_transaksi, token_kartu.token_id, jumlah);
+    biar transaksi_terenkripsi = Kripto::enkripsi_aes_256_gcm(data_transaksi, kunci_enkripsi);
+
+    cetak_baris("Transaksi dienkripsi dan dikirim ke processor");
+
+    // Log transaction (with token, never raw card data)
+    biar transaksi_log = {
+        id_transaksi: id_transaksi,
+        token_kartu: token_kartu,
+        jumlah: jumlah,
+        mata_uang: mata_uang,
+        masa_transaksi: Masa::masa_unix(),
+        pengguna_merchant: "merchant_123",
+        status: "tertunda",
+    };
+
+    transaksi_rekam = transaksi_rekam + [transaksi_log];
+
+    pulang (betul, id_transaksi);
+}
+
+/// Validate card security code without storing
+fungsi sahkan_cvv(cvv: Rahsia<Teks>, token: TokenKartu) -> Benar kesan Kripto {
+    // Never store CVV
+    // Only transmit securely and validate immediately
+    // In real implementation, send to payment processor only
+
+    cetak_baris("PERATURAN: CVV tidak boleh disimpan selepas transaksi");
+
+    // Mock validation (real implementation would call processor)
+    biar cvv_sah = Kripto::sahkan_hmac(
+        dedah(cvv, "validasi_cvv"),
+        dedah(cvv, "validasi_cvv") // Mock secret
+    );
+
+    pulang cvv_sah;
+}
+
+/// PCI-DSS Requirement 3.2.1: Never store sensitive authentication data
+fungsi semak_data_tidak_disimpan() -> Benar kesan Bersih {
+    // This is verified by code inspection
+    // Ensure no full card numbers in logs
+    // Ensure no CVV in storage
+    // Ensure no PINs anywhere
+
+    cetak_baris("Pemeriksaan PCI-DSS 3.2.1: Data autentikasi sensitif tidak disimpan");
+    pulang betul;
+}
+
+/// PCI-DSS Requirement 4: Encrypt cardholder data in transit
+fungsi sahkan_enkripsi_penghantaran(protokol: Teks) -> Benar kesan Bersih {
+    kalau protokol == "TLS_1_3" || protokol == "TLS_1_2" {
+        cetak_baris(format!("Enkripsi transit OK: {}", protokol));
+        pulang betul;
+    }
+
+    cetak_baris("AMARAN: Protokol enkripsi tidak memenuhi standard");
+    pulang salah;
+}
+
+/// PCI-DSS Requirement 6.5: Code review for injection attacks
+fungsi semak_injection_vulnerabilities(kod_sumber: Teks) -> Senarai<Teks> kesan Bersih {
+    biar vulnerabiliti = [];
+
+    // Check for SQL injection patterns
+    kalau teks::mengandungi(kod_sumber, "concat kartu_data") {
+        vulnerabiliti = vulnerabiliti + ["SQL Injection risk detected"];
+    }
+
+    // Check for XSS patterns
+    kalau teks::mengandungi(kod_sumber, "html_escape() diperlukan") {
+        vulnerabiliti = vulnerabiliti + ["XSS risk detected"];
+    }
+
+    pulang vulnerabiliti;
+}
+
+/// PCI-DSS Requirement 10: Maintain audit trail
+fungsi eksport_audit_trail(dari_masa: Nombor, hingga_masa: Nombor) -> Teks kesan Bersih {
+    biar transaksi_dalam_julat = [];
+
+    untuk transaksi dalam transaksi_rekam {
+        kalau transaksi.masa_transaksi >= dari_masa && transaksi.masa_transaksi <= hingga_masa {
+            transaksi_dalam_julat = transaksi_dalam_julat + [transaksi];
+        }
+    }
+
+    pulang format!("Total transaksi: {}", panjang(transaksi_dalam_julat));
+}
+
+/// Quarterly vulnerability scanning
+fungsi jalankan_scan_kerentanan() -> (Benar, Senarai<Teks>) kesan Bersih {
+    biar kerentanan = [];
+
+    // In real implementation: automated scanning
+    cetak_baris("Menjalankan scan kerentanan berkala (diperlukan PCI-DSS)");
+
+    // Mock results
+    kalau Masa::dapat_hari_bulan() == 1 {
+        cetak_baris("Laporan kerentanan bulanan dibuat");
+    }
+
+    pulang (betul, kerentanan);
+}
+
+awam fungsi utama() -> kesan (Kripto | Bersih) {
+    cetak_baris("=== PEMERIKSAAN PEMATUHAN PCI-DSS ===");
+
+    // Create test token
+    biar token_contoh = {
+        token_id: "tok_123456789",
+        empat_digit_akhir: "4242",
+        pemilik_kartu: "Ahmad",
+        bulan_tamat: 12,
+        tahun_tamat: 2025,
+    };
+
+    // Process payment
+    biar (berjaya, id_txn) = proses_pembayaran(token_contoh, 50, "MYR", dedah("kunci", ""));
+
+    kalau berjaya {
+        cetak_baris(format!("Transaksi berjaya: {}", id_txn));
+    }
+
+    // Verify compliance
+    semak_data_tidak_disimpan();
+    sahkan_enkripsi_penghantaran("TLS_1_3");
+}
+
+// Helper functions
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+modul teks {
+    fungsi mengandungi(teks: Teks, cari: Teks) -> Benar kesan Bersih {
+        pulang betul;
+    }
+
+    fungsi ambil_akhir(teks: Teks, n: Nombor) -> Teks kesan Bersih {
+        pulang teks;
+    }
+}
+
+modul Masa {
+    fungsi masa_unix() -> Nombor kesan Bersih {
+        pulang 0;
+    }
+
+    fungsi dapat_bulan() -> Nombor kesan Bersih {
+        pulang 1;
+    }
+
+    fungsi dapat_tahun() -> Nombor kesan Bersih {
+        pulang 2024;
+    }
+
+    fungsi dapat_hari_bulan() -> Nombor kesan Bersih {
+        pulang 1;
+    }
+}

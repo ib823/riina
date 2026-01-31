@@ -1,0 +1,101 @@
+/// repository.rii
+/// Repository pattern for data access abstraction
+/// Demonstrates separation of data access from business logic
+
+modul corak_repositori;
+
+guna std::teks;
+guna std::senarai;
+guna std::fail;
+
+jenis Pengguna = {
+    id: Teks,
+    nama: Teks,
+    emel: Teks,
+};
+
+/// Repository interface
+jenis Repositori = {
+    cari_semua: () -> Senarai<Pengguna>,
+    cari_mengikut_id: (Teks) -> Mungkin<Pengguna>,
+    simpan: (Pengguna) -> Benar,
+    padam: (Teks) -> Benar,
+};
+
+/// In-memory repository
+biar ubah stor_memori: Senarai<Pengguna> = [];
+
+fungsiRepositoriMemori() -> Repositori kesan Bersih {
+    pulang {
+        cari_semua: fungi() -> Senarai<Pengguna> {
+            stor_memori
+        },
+
+        cari_mengikut_id: fungi(id: Teks) -> Mungkin<Pengguna> {
+            untuk pengguna dalam stor_memori {
+                kalau pengguna.id == id {
+                    pulang Ada(pengguna);
+                }
+            }
+            pulang Tiada;
+        },
+
+        simpan: fungi(pengguna: Pengguna) -> Benar {
+            stor_memori = stor_memori + [pengguna];
+            cetak_baris(format!("Menyimpan pengguna: {}", pengguna.nama));
+            pulang betul;
+        },
+
+        padam: fungi(id: Teks) -> Benar {
+            biar panjang_asal = panjang(stor_memori);
+            stor_memori = saring(stor_memori, id);
+            biar dihapus = panjang(stor_memori) < panjang_asal;
+            kalau dihapus {
+                cetak_baris(format!("Memadam pengguna: {}", id));
+            }
+            pulang dihapus;
+        },
+    };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK REPOSITORI ===\n");
+
+    biar repo = RepositoriMemori();
+
+    // Create
+    biar p1 = { id: "1", nama: "Ahmad", emel: "ahmad@contoh.my" };
+    repo.simpan(p1);
+
+    // Retrieve
+    biar semua = repo.cari_semua();
+    cetak_baris(format!("Jumlah pengguna: {}", panjang(semua)));
+
+    // Find by ID
+    biar mungkin_p = repo.cari_mengikut_id("1");
+    padan mungkin_p {
+        Ada(pengguna) => cetak_baris(format!("Ditemui: {}", pengguna.nama)),
+        Tiada => cetak_baris("Tidak ditemui"),
+    };
+
+    // Delete
+    repo.padam("1");
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi saring(senarai: Senarai<Pengguna>, id_buang: Teks) -> Senarai<Pengguna> kesan Bersih {
+    biar hasil = [];
+    untuk pengguna dalam senarai {
+        kalau pengguna.id != id_buang {
+            hasil = hasil + [pengguna];
+        }
+    }
+    pulang hasil;
+}
+
+fungsi format(s: Teks, arg: T) -> Teks kesan Bersih {
+    pulang s;
+}

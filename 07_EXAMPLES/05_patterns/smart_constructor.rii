@@ -1,0 +1,101 @@
+/// smart_constructor.rii
+/// Smart constructor pattern for validated object creation
+/// Demonstrates validation at construction time
+
+modul pembina_pintar;
+
+guna std::teks;
+guna std::senarai;
+
+/// Email type (validated)
+jenis Emel = Emel(Teks);
+
+/// Age type (range validated)
+jenis Umur = Umur(Nombor);
+
+/// User with validated fields
+jenis PenggunaTersahkan = {
+    nama: Teks,
+    emel: Emel,
+    umur: Umur,
+};
+
+/// Safe email constructor
+fungsi cipta_emel(teks: Teks) -> Mungkin<Emel> kesan Bersih {
+    kalau !mengandungi(teks, "@") || !mengandungi(teks, ".") {
+        cetak_baris("Ralat: Emel tidak sah");
+        pulang Tiada;
+    }
+
+    cetak_baris(format!("Emel sah: {}", teks));
+    pulang Ada(Emel(teks));
+}
+
+/// Safe age constructor
+fungsi cipta_umur(nombor: Nombor) -> Mungkin<Umur> kesan Bersih {
+    kalau nombor < 0 || nombor > 150 {
+        cetak_baris("Ralat: Umur tidak sah (0-150)");
+        pulang Tiada;
+    }
+
+    cetak_baris(format!("Umur sah: {}", nombor));
+    pulang Ada(Umur(nombor));
+}
+
+/// Safe user constructor
+fungsi cipta_pengguna(
+    nama: Teks,
+    emel_teks: Teks,
+    umur_nombor: Nombor
+) -> Mungkin<PenggunaTersahkan> kesan Bersih {
+    biar mungkin_emel = cipta_emel(emel_teks);
+    biar mungkin_umur = cipta_umur(umur_nombor);
+
+    padan (mungkin_emel, mungkin_umur) {
+        (Ada(emel), Ada(umur)) => {
+            cetak_baris("Pengguna dicipta berjaya");
+            pulang Ada({
+                nama: nama,
+                emel: emel,
+                umur: umur,
+            });
+        },
+        _ => {
+            cetak_baris("Gagal mencipta pengguna");
+            pulang Tiada;
+        },
+    };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== PEMBINA PINTAR ===\n");
+
+    // Valid user
+    biar mungkin_p1 = cipta_pengguna("Ahmad", "ahmad@contoh.my", 30);
+    padan mungkin_p1 {
+        Ada(_) => cetak_baris("Pengguna 1: OK"),
+        Tiada => cetak_baris("Pengguna 1: GAGAL"),
+    };
+
+    // Invalid email
+    biar mungkin_p2 = cipta_pengguna("Nurul", "emel_tidak_sah", 25);
+    padan mungkin_p2 {
+        Ada(_) => cetak_baris("Pengguna 2: OK"),
+        Tiada => cetak_baris("Pengguna 2: GAGAL"),
+    };
+
+    // Invalid age
+    biar mungkin_p3 = cipta_pengguna("Fatima", "fatima@contoh.my", 200);
+    padan mungkin_p3 {
+        Ada(_) => cetak_baris("Pengguna 3: OK"),
+        Tiada => cetak_baris("Pengguna 3: GAGAL"),
+    };
+}
+
+fungsi mengandungi(teks: Teks, cari: Teks) -> Benar kesan Bersih {
+    pulang betul;
+}
+
+fungsi format(s: Teks, arg: T) -> Teks kesan Bersih {
+    pulang s;
+}

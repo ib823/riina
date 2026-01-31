@@ -1,0 +1,80 @@
+/// monad_result.rii
+/// Monad Result pattern for composing fallible computations
+/// Demonstrates Result type and chaining operations
+
+modul monad_hasil;
+
+guna std::teks;
+
+/// Result monad with binding
+jenis Hasil<T> =
+    | Berjaya(T)
+    | Gagal(Teks);
+
+/// Return successful value
+fungsi balik<T>(nilai: T) -> Hasil<T> kesan Bersih {
+    pulang Berjaya(nilai);
+}
+
+/// Return error
+fungsi ralat<T>(mesej: Teks) -> Hasil<T> kesan Bersih {
+    pulang Gagal(mesej);
+}
+
+/// Chain Result computations (bind/flatMap)
+fungsi ikat<T, U>(
+    hasil: Hasil<T>,
+    f: T -> Hasil<U>
+) -> Hasil<U> kesan Bersih {
+    padan hasil {
+        Berjaya(nilai) => f(nilai),
+        Gagal(mesej) => Gagal(mesej),
+    };
+}
+
+/// Map over Result
+fungsi peta<T, U>(hasil: Hasil<T>, f: T -> U) -> Hasil<U> kesan Bersih {
+    padan hasil {
+        Berjaya(nilai) => Berjaya(f(nilai)),
+        Gagal(mesej) => Gagal(mesej),
+    };
+}
+
+/// Safe integer parsing
+fungsi huraikan_int(teks: Teks) -> Hasil<Nombor> kesan Bersih {
+    padan teks::ke_nombor(teks) {
+        Ada(n) => Berjaya(n),
+        Tiada => Gagal("Bukan nombor sah"),
+    };
+}
+
+/// Demonstrate monad chaining
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== MONAD HASIL ===\n");
+
+    // Success case: "42" -> 42 -> 42*2 = 84
+    biar hasil_1 = huraikan_int("42");
+    biar hasil_2 = peta(hasil_1, fungi(n: Nombor) -> Nombor { pulang n * 2; });
+
+    padan hasil_2 {
+        Berjaya(n) => cetak_baris(format!("Berjaya: {}", n)),
+        Gagal(m) => cetak_baris(format!("Ralat: {}", m)),
+    };
+
+    // Failure case: "abc" -> Gagal
+    biar hasil_3 = huraikan_int("abc");
+    padan hasil_3 {
+        Berjaya(n) => cetak_baris(format!("Berjaya: {}", n)),
+        Gagal(m) => cetak_baris(format!("Ralat: {}", m)),
+    };
+}
+
+modul teks {
+    fungsi ke_nombor(t: Teks) -> Mungkin<Nombor> kesan Bersih {
+        pulang Tiada;
+    }
+}
+
+fungsi format(s: Teks, arg: T) -> Teks kesan Bersih {
+    pulang s;
+}

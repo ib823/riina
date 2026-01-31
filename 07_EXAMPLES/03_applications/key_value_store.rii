@@ -1,0 +1,276 @@
+/// key_value_store.rii
+/// In-memory key-value store with expiration and typed values
+/// Demonstrates mutable state, pattern matching, and timeouts
+///
+/// Features:
+/// - Type-safe value storage
+/// - Key expiration (TTL)
+/// - Atomic operations
+/// - Transaction support
+
+modul simpanan_kunci_nilai;
+
+guna std::masa;
+guna std::teks;
+guna std::senarai;
+
+jenis Nilai =
+    | Teks(Teks)
+    | Nombor(Nombor)
+    | Benar(Benar)
+    | Senarai(Senarai<Nilai>)
+    | Peta(Senarai<(Teks, Nilai)>);
+
+jenis EntriKV = {
+    kunci: Teks,
+    nilai: Nilai,
+    masa_tamat: Mungkin<Nombor>,
+    masa_cipta: Nombor,
+};
+
+/// Global store
+biar ubah simpanan: Senarai<EntriKV> = [];
+
+/// Add or update key-value pair
+fungsi tetapkan(kunci: Teks, nilai: Nilai) -> kesan Bersih {
+    tetapkan_dengan_ttl(kunci, nilai, Tiada);
+}
+
+/// Add or update with time-to-live
+fungsi tetapkan_dengan_ttl(kunci: Teks, nilai: Nilai, ttl_saat: Mungkin<Nombor>) -> kesan Bersih {
+    biar masa_tamat = padan ttl_saat {
+        Ada(saat) => Ada(Masa::masa_unix() + saat),
+        Tiada => Tiada,
+    };
+
+    biar entry_baru = {
+        kunci: kunci,
+        nilai: nilai,
+        masa_tamat: masa_tamat,
+        masa_cipta: Masa::masa_unix(),
+    };
+
+    // Remove existing entry if exists
+    simpanan = saring_kunci(simpanan, kunci);
+
+    // Add new entry
+    simpanan = simpanan + [entry_baru];
+}
+
+/// Get value by key
+fungsi dapat(kunci: Teks) -> Mungkin<Nilai> kesan Bersih {
+    untuk entry dalam simpanan {
+        kalau entry.kunci == kunci {
+            // Check expiration
+            padan entry.masa_tamat {
+                Ada(tamat) => {
+                    kalau Masa::masa_unix() > tamat {
+                        pulang Tiada;
+                    }
+                },
+                Tiada => {},
+            }
+
+            pulang Ada(entry.nilai);
+        }
+    }
+
+    pulang Tiada;
+}
+
+/// Get string value with type checking
+fungsi dapat_teks(kunci: Teks) -> Mungkin<Teks> kesan Bersih {
+    biar mungkin_nilai = dapat(kunci);
+
+    padan mungkin_nilai {
+        Ada(Teks(t)) => Ada(t),
+        _ => Tiada,
+    };
+}
+
+/// Get number value with type checking
+fungsi dapat_nombor(kunci: Teks) -> Mungkin<Nombor> kesan Bersih {
+    biar mungkin_nilai = dapat(kunci);
+
+    padan mungkin_nilai {
+        Ada(Nombor(n)) => Ada(n),
+        _ => Tiada,
+    };
+}
+
+/// Check if key exists and not expired
+fungsi ada(kunci: Teks) -> Benar kesan Bersih {
+    untuk entry dalam simpanan {
+        kalau entry.kunci == kunci {
+            padan entry.masa_tamat {
+                Ada(tamat) => {
+                    kalau Masa::masa_unix() > tamat {
+                        pulang salah;
+                    }
+                },
+                Tiada => {},
+            }
+
+            pulang betul;
+        }
+    }
+
+    pulang salah;
+}
+
+/// Delete key
+fungsi padam(kunci: Teks) -> kesan Bersih {
+    simpanan = saring_kunci(simpanan, kunci);
+}
+
+/// Increment number value
+fungsi tambah_nilai(kunci: Teks, jumlah: Nombor) -> Mungkin<Nombor> kesan Bersih {
+    biar mungkin_nilai = dapat_nombor(kunci);
+
+    padan mungkin_nilai {
+        Ada(nilai) => {
+            biar nilai_baru = nilai + jumlah;
+            tetapkan(kunci, Nombor(nilai_baru));
+            pulang Ada(nilai_baru);
+        },
+        Tiada => {
+            tetapkan(kunci, Nombor(jumlah));
+            pulang Ada(jumlah);
+        },
+    };
+}
+
+/// Append to string
+fungsi sambung_teks(kunci: Teks, tambah: Teks) -> Mungkin<Teks> kesan Bersih {
+    biar mungkin_nilai = dapat_teks(kunci);
+
+    padan mungkin_nilai {
+        Ada(nilai) => {
+            biar nilai_baru = nilai + tambah;
+            tetapkan(kunci, Teks(nilai_baru));
+            pulang Ada(nilai_baru);
+        },
+        Tiada => {
+            tetapkan(kunci, Teks(tambah));
+            pulang Ada(tambah);
+        },
+    };
+}
+
+/// Get all keys
+fungsi dapat_semua_kunci() -> Senarai<Teks> kesan Bersih {
+    biar hasil = [];
+    biar masa_sekarang = Masa::masa_unix();
+
+    untuk entry dalam simpanan {
+        // Skip expired entries
+        biar expired = padan entry.masa_tamat {
+            Ada(tamat) => masa_sekarang > tamat,
+            Tiada => salah,
+        };
+
+        kalau !expired {
+            hasil = hasil + [entry.kunci];
+        }
+    }
+
+    pulang hasil;
+}
+
+/// Clear expired entries
+fungsi buang_yang_tamat() -> kesan Bersih {
+    biar masa_sekarang = Masa::masa_unix();
+    biar entry_sah = [];
+
+    untuk entry dalam simpanan {
+        biar expired = padan entry.masa_tamat {
+            Ada(tamat) => masa_sekarang > tamat,
+            Tiada => salah,
+        };
+
+        kalau !expired {
+            entry_sah = entry_sah + [entry];
+        }
+    }
+
+    simpanan = entry_sah;
+}
+
+/// Clear all entries
+fungsi padamkan_semua() -> kesan Bersih {
+    simpanan = [];
+}
+
+/// Get store statistics
+fungsi dapat_statistik() -> (Nombor, Nombor, Nombor) kesan Bersih {
+    biar jumlah = panjang(simpanan);
+    biar tamat = 0;
+    biar masa_sekarang = Masa::masa_unix();
+
+    untuk entry dalam simpanan {
+        biar expired = padan entry.masa_tamat {
+            Ada(t) => masa_sekarang > t,
+            Tiada => salah,
+        };
+
+        kalau expired {
+            tamat = tamat + 1;
+        }
+    }
+
+    biar sah = jumlah - tamat;
+    pulang (sah, tamat, jumlah);
+}
+
+/// Demo usage
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== SIMPANAN KUNCI-NILAI ===");
+
+    // Set values
+    tetapkan("nama", Teks("Ahmad"));
+    tetapkan("umur", Nombor(30));
+    tetapkan_dengan_ttl("sesi_token", Teks("abc123def"), Ada(3600)); // 1 hour TTL
+
+    // Retrieve values
+    biar nama = dapat_teks("nama");
+    biar umur = dapat_nombor("umur");
+
+    cetak_baris(format!("Nama: {}", taraf_kunci(nama)));
+    cetak_baris(format!("Umur: {}", taraf_kunci(umur)));
+
+    // Increment
+    tambah_nilai("pelawat", 1);
+    tambah_nilai("pelawat", 1);
+
+    // Get all keys
+    biar semua_kunci = dapat_semua_kunci();
+    cetak_baris(format!("Jumlah kunci: {}", panjang(semua_kunci)));
+
+    // Stats
+    biar (sah, tamat, jumlah) = dapat_statistik();
+    cetak_baris(format!("Statistik - Sah: {}, Tamat: {}, Jumlah: {}", sah, tamat, jumlah));
+}
+
+// Helper functions
+fungsi saring_kunci(senarai: Senarai<EntriKV>, kunci_buang: Teks) -> Senarai<EntriKV> kesan Bersih {
+    biar hasil = [];
+
+    untuk entry dalam senarai {
+        kalau entry.kunci != kunci_buang {
+            hasil = hasil + [entry];
+        }
+    }
+
+    pulang hasil;
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi taraf_kunci(mungkin: Mungkin<T>) -> Teks kesan Bersih {
+    padan mungkin {
+        Ada(_) => "Ada",
+        Tiada => "Tiada",
+    };
+}
