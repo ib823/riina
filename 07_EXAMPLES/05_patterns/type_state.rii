@@ -1,0 +1,65 @@
+/// type_state.rii
+/// Typestate pattern for compile-time protocol enforcement
+/// Demonstrates state-dependent valid operations
+
+modul keadaan_jenis;
+
+guna std::teks;
+
+/// Phantom state types
+jenis Tertutup;
+jenis Dibuka;
+jenis Dibaca;
+
+/// File with phantom state
+jenis File<State> = {
+    nama: Teks,
+    kandungan: Teks,
+};
+
+/// Open file (Tertutup -> Dibuka)
+fungsi buka_fail(fail: File<Tertutup>) -> File<Dibuka> kesan Bersih {
+    cetak_baris(format!("Membuka fail: {}", fail.nama));
+    pulang {
+        nama: fail.nama,
+        kandungan: fail.kandungan,
+    };
+}
+
+/// Read from open file (Dibuka -> Dibaca)
+fungsi baca_fail(fail: File<Dibuka>) -> (Teks, File<Dibaca>) kesan Bersih {
+    cetak_baris(format!("Membaca fail: {}", fail.nama));
+    pulang (fail.kandungan, {
+        nama: fail.nama,
+        kandungan: fail.kandungan,
+    });
+}
+
+/// Close file (Any open state -> Tertutup)
+fungsi tutup_fail(fail: File<Dibaca>) -> File<Tertutup> kesan Bersih {
+    cetak_baris(format!("Menutup fail: {}", fail.nama));
+    pulang {
+        nama: fail.nama,
+        kandungan: fail.kandungan,
+    };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== KEADAAN JENIS ===\n");
+
+    biar fail_tertutup: File<Tertutup> = {
+        nama: "data.txt",
+        kandungan: "Isi fail",
+    };
+
+    biar fail_dibuka = buka_fail(fail_tertutup);
+    biar (isi, fail_dibaca) = baca_fail(fail_dibuka);
+    cetak_baris(format!("Isi: {}", isi));
+
+    biar fail_tertutup_lagi = tutup_fail(fail_dibaca);
+    cetak_baris("Fail ditutup dengan selamat");
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

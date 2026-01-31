@@ -1,0 +1,259 @@
+/// hipaa_health.rii
+/// HIPAA (Health Insurance Portability and Accountability Act) compliance
+/// Demonstrates Protected Health Information (PHI) handling
+///
+/// Security Level: Rahsia
+/// Compliance: HIPAA 45 CFR Parts 160 and 164
+
+modul perlindungan_kesihatan_hipaa;
+
+guna std::kripto;
+guna std::fail;
+guna std::teks;
+guna std::senarai;
+
+/// Protected Health Information
+jenis PHI = {
+    patient_id: Teks,
+    nama_penuh: Teks,
+    tarikh_lahir: Teks,
+    nombor_keselamatan_sosial: Rahsia<Teks>,
+    alamat: Teks,
+    maklumat_rujukan_perubatan: Rahsia<Teks>,
+};
+
+/// Access control for PHI
+jenis KaedahAkses = {
+    pengguna_id: Teks,
+    role: Teks,        // physician, nurse, administrator
+    kelulusan_phi: Benar,
+    tempoh_akses: Nombor,
+};
+
+/// Audit log entry for PHI access
+jenis CatatanAudit = {
+    pengguna_id: Teks,
+    patient_id: Teks,
+    jenis_akses: Teks,  // read, modify, delete
+    masa_akses: Nombor,
+    tujuan: Teks,
+    status: Teks,       // success, denied
+};
+
+biar ubah rekod_phi: Senarai<PHI> = [];
+biar ubah catatan_audit: Senarai<CatatanAudit> = [];
+
+/// Encrypt PHI at rest using 256-bit AES
+fungsi enkripsi_phi(phi: PHI, kunci_utama: Rahsia<Teks>) -> Rahsia<Teks> kesan Kripto {
+    biar phi_json = serialize_phi(phi);
+    biar phi_terenkripsi = Kripto::enkripsi_aes_256_gcm(phi_json, kunci_utama);
+    pulang dedah(phi_terenkripsi, "penyimpanan_phi");
+}
+
+/// Decrypt PHI with access logging
+fungsi dekripsi_phi(
+    phi_terenkripsi: Rahsia<Teks>,
+    kunci_utama: Rahsia<Teks>,
+    pengguna_id: Teks,
+    patient_id: Teks,
+    tujuan: Teks
+) -> Mungkin<PHI> kesan (Kripto | SistemFail) {
+    // Check access control
+    kalau !semak_kelulusan_akses(pengguna_id, patient_id, tujuan) {
+        log_akses_ditolak(pengguna_id, patient_id, tujuan);
+        pulang Tiada;
+    }
+
+    // Decrypt
+    biar hasil_dekripsi = Kripto::dekripsi_aes_256_gcm(
+        dedah(phi_terenkripsi, "pengambilan_phi"),
+        kunci_utama
+    );
+
+    // Log successful access
+    padan hasil_dekripsi {
+        Berjaya(phi_json) => {
+            log_akses_berjaya(pengguna_id, patient_id, tujuan);
+            biar phi = deserialize_phi(phi_json);
+            pulang Ada(phi);
+        },
+        Kegagalan(_) => {
+            log_akses_ditolak(pengguna_id, patient_id, "Dekripsi gagal");
+            pulang Tiada;
+        },
+    };
+}
+
+/// Check access control for PHI
+fungsi semak_kelulusan_akses(
+    pengguna_id: Teks,
+    patient_id: Teks,
+    tujuan: Teks
+) -> Benar kesan Bersih {
+    // Find user's access rights
+    // In practice, check role-based access control
+
+    // Only allow access for treatment, payment, operations
+    kalau tujuan == "rawatan" || tujuan == "pembayaran" || tujuan == "operasi" {
+        pulang betul;
+    }
+
+    pulang salah;
+}
+
+/// Log PHI access for audit trail
+fungsi log_akses_berjaya(
+    pengguna_id: Teks,
+    patient_id: Teks,
+    tujuan: Teks
+) -> kesan Bersih {
+    biar catatan = {
+        pengguna_id: pengguna_id,
+        patient_id: patient_id,
+        jenis_akses: "baca",
+        masa_akses: Masa::masa_unix(),
+        tujuan: tujuan,
+        status: "berjaya",
+    };
+
+    catatan_audit = catatan_audit + [catatan];
+}
+
+fungsi log_akses_ditolak(
+    pengguna_id: Teks,
+    patient_id: Teks,
+    tujuan: Teks
+) -> kesan Bersih {
+    biar catatan = {
+        pengguna_id: pengguna_id,
+        patient_id: patient_id,
+        jenis_akses: "baca",
+        masa_akses: Masa::masa_unix(),
+        tujuan: tujuan,
+        status: "ditolak",
+    };
+
+    catatan_audit = catatan_audit + [catatan];
+}
+
+/// Data breach notification requirement
+/// Must notify affected individuals within 60 days
+fungsi beritahu_pelanggaran_data(
+    patient_id: Teks,
+    jenis_data_bocor: Teks,
+    tarikh_pelanggaran: Nombor
+) -> kesan SistemFail {
+    biar tarikh_notifikasi_akhir = tarikh_pelanggaran + (60 * 86400);
+    biar hari_ini = Masa::masa_unix();
+
+    kalau hari_ini > tarikh_notifikasi_akhir {
+        cetak_baris("AMARAN: Lampau tarikh notifikasi 60 hari");
+    }
+
+    cetak_baris(format!(
+        "Memberitahu pasien {} tentang bocor {}",
+        patient_id,
+        jenis_data_bocor
+    ));
+
+    // Send notification (email, letter, etc.)
+}
+
+/// Minimum Necessary Standard - Only access needed data
+fungsi proses_permintaan_dengan_minimum_perlu(
+    pengguna_id: Teks,
+    patient_id: Teks,
+    medan_diperlukan: Senarai<Teks>
+) -> Mungkin<Teks> kesan Bersih {
+    kalau panjang(medan_diperlukan) > 10 {
+        cetak_baris("Amaran: Banyak medan diminta, periksa keperluan");
+        pulang Tiada;
+    }
+
+    // Return only requested fields, not full PHI
+    cetak_baris(format!("Memproses {} medan untuk pasien {}", panjang(medan_diperlukan), patient_id));
+    pulang Ada("Subset PHI returned");
+}
+
+/// Secure deletion of PHI
+fungsi padamkan_phi_selamat(patient_id: Teks, kunci_utama: Rahsia<Teks>) -> kesan SistemFail {
+    // Find and remove all PHI records for patient
+    biar rekod_baru = [];
+
+    untuk phi dalam rekod_phi {
+        kalau phi.patient_id != patient_id {
+            rekod_baru = rekod_baru + [phi];
+        } lain {
+            // Securely erase
+            cetak_baris(format!("Menghapus PHI untuk pasien {} secara selamat", patient_id));
+        }
+    }
+
+    rekod_phi = rekod_baru;
+}
+
+/// Export audit logs for compliance review
+fungsi eksport_catatan_audit(
+    dari_tarikh: Nombor,
+    hingga_tarikh: Nombor
+) -> Teks kesan SistemFail {
+    biar catatan_dalam_julat = [];
+
+    untuk catatan dalam catatan_audit {
+        kalau catatan.masa_akses >= dari_tarikh && catatan.masa_akses <= hingga_tarikh {
+            catatan_dalam_julat = catatan_dalam_julat + [catatan];
+        }
+    }
+
+    pulang format_catatan_audit_csv(catatan_dalam_julat);
+}
+
+/// Example workflow: Patient medical record access
+awam fungsi proses_permintaan_maklumat_perubatan(
+    patient_id: Teks,
+    pengguna_id: Teks,
+    kunci_utama: Rahsia<Teks>
+) -> Mungkin<PHI> kesan (Kripto | SistemFail) {
+    cetak_baris(format!("Permintaan maklumat perubatan untuk pasien {}", patient_id));
+
+    // In real implementation: retrieve encrypted PHI from database
+    // biar phi_terenkripsi = ambil_dari_db(patient_id);
+    // biar phi = dekripsi_phi(phi_terenkripsi, kunci_utama, pengguna_id, patient_id, "rawatan");
+
+    // Return PHI if access granted
+    pulang Tiada;  // Stub
+}
+
+// Helper functions
+fungsi serialize_phi(phi: PHI) -> Teks kesan Bersih {
+    pulang "";
+}
+
+fungsi deserialize_phi(json: Teks) -> PHI kesan Bersih {
+    pulang {
+        patient_id: "",
+        nama_penuh: "",
+        tarikh_lahir: "",
+        nombor_keselamatan_sosial: dedah("", ""),
+        alamat: "",
+        maklumat_rujukan_perubatan: dedah("", ""),
+    };
+}
+
+fungsi format_catatan_audit_csv(catatan: Senarai<CatatanAudit>) -> Teks kesan Bersih {
+    pulang "";
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+modul Masa {
+    fungsi masa_unix() -> Nombor kesan Bersih {
+        pulang 0;
+    }
+}

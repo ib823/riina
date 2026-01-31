@@ -1,0 +1,220 @@
+/// config_parser.rii
+/// Configuration file parser for TOML/INI-like format
+/// Demonstrates parsing, validation, and data structure handling
+///
+/// Features:
+/// - Parse key=value configuration
+/// - Section support [section]
+/// - Type conversion and validation
+/// - Comment handling
+
+modul pengurai_konfigurasi;
+
+guna std::fail;
+guna std::teks;
+guna std::senarai;
+
+jenis NilaiKonfigurasi =
+    | Teks(Teks)
+    | Nombor(Nombor)
+    | Benar(Benar)
+    | Senarai(Senarai<NilaiKonfigurasi>);
+
+jenis Bahagian = {
+    nama: Teks,
+    kunci_nilai: Senarai<(Teks, NilaiKonfigurasi)>,
+};
+
+jenis Konfigurasi = {
+    bahagian: Senarai<Bahagian>,
+};
+
+/// Load and parse configuration file
+/// Kesan: SistemFail (file I/O)
+fungsi muat_konfigurasi(laluan: Teks) -> Mungkin<Konfigurasi> kesan SistemFail {
+    biar hasil_baca = coba SistemFail::baca_fail(laluan);
+
+    padan hasil_baca {
+        Berjaya(kandungan) => {
+            biar konfigurasi = huraikan_konfigurasi(kandungan);
+            pulang Ada(konfigurasi);
+        },
+        Kegagalan(_) => {
+            pulang Tiada;
+        },
+    };
+}
+
+/// Parse configuration text
+fungsi huraikan_konfigurasi(kandungan: Teks) -> Konfigurasi kesan Bersih {
+    biar baris_senarai = teks::pecah_oleh(kandungan, "\n");
+    biar bahagian_semasa = "umum";
+    biar kunci_nilai_semasa = [];
+    biar bahagian = [];
+
+    untuk baris dalam baris_senarai {
+        biar baris_rapi = teks::rapi(baris);
+
+        // Skip empty and comment lines
+        kalau baris_rapi == "" {
+            // Skip
+        } lain kalau teks::mula_dengan(baris_rapi, "#") {
+            // Skip comment
+        } lain kalau teks::mula_dengan(baris_rapi, "[") {
+            // New section
+            kalau panjang(kunci_nilai_semasa) > 0 {
+                bahagian = bahagian + [{
+                    nama: bahagian_semasa,
+                    kunci_nilai: kunci_nilai_semasa,
+                }];
+                kunci_nilai_semasa = [];
+            }
+
+            biar nama_bahagian = ekstrak_nama_bahagian(baris_rapi);
+            bahagian_semasa = nama_bahagian;
+        } lain {
+            // Key=value line
+            biar hasil_parse = parse_kunci_nilai(baris_rapi);
+            padan hasil_parse {
+                Ada((kunci, nilai)) => {
+                    kunci_nilai_semasa = kunci_nilai_semasa + [(kunci, nilai)];
+                },
+                Tiada => {
+                    // Skip invalid line
+                },
+            };
+        }
+    }
+
+    // Add final section
+    kalau panjang(kunci_nilai_semasa) > 0 {
+        bahagian = bahagian + [{
+            nama: bahagian_semasa,
+            kunci_nilai: kunci_nilai_semasa,
+        }];
+    }
+
+    pulang { bahagian: bahagian };
+}
+
+/// Extract section name from "[section]"
+fungsi ekstrak_nama_bahagian(baris: Teks) -> Teks kesan Bersih {
+    biar tanpa_kiri = teks::buang_prefiks(baris, "[");
+    biar tanpa_kanan = teks::buang_sufiks(tanpa_kiri, "]");
+    pulang teks::rapi(tanpa_kanan);
+}
+
+/// Parse key=value line
+fungsi parse_kunci_nilai(baris: Teks) -> Mungkin<(Teks, NilaiKonfigurasi)> kesan Bersih {
+    biar bahagian = teks::pecah_oleh(baris, "=");
+
+    kalau panjang(bahagian) != 2 {
+        pulang Tiada;
+    }
+
+    biar kunci = teks::rapi(bahagian[0]);
+    biar nilai_teks = teks::rapi(bahagian[1]);
+
+    biar nilai = parse_nilai(nilai_teks);
+
+    pulang Ada((kunci, nilai));
+}
+
+/// Parse value into appropriate type
+fungsi parse_nilai(teks: Teks) -> NilaiKonfigurasi kesan Bersih {
+    // Try as boolean
+    kalau teks == "benar" {
+        pulang Benar(betul);
+    } lain kalau teks == "salah" {
+        pulang Benar(salah);
+    }
+
+    // Try as number
+    biar mungkin_nombor = teks::ke_nombor(teks);
+    padan mungkin_nombor {
+        Ada(nom) => pulang Nombor(nom),
+        Tiada => {
+            // Treat as string (remove quotes if present)
+            kalau teks::mula_dengan(teks, "\"") {
+                biar tanpa_kiri = teks::buang_prefiks(teks, "\"");
+                biar tanpa_kanan = teks::buang_sufiks(tanpa_kiri, "\"");
+                pulang Teks(tanpa_kanan);
+            } lain {
+                pulang Teks(teks);
+            }
+        },
+    };
+}
+
+/// Get value from configuration by section and key
+fungsi dapat_nilai(
+    konfigurasi: Konfigurasi,
+    nama_bahagian: Teks,
+    kunci: Teks
+) -> Mungkin<NilaiKonfigurasi> kesan Bersih {
+    untuk bahagian dalam konfigurasi.bahagian {
+        kalau bahagian.nama == nama_bahagian {
+            untuk (k, v) dalam bahagian.kunci_nilai {
+                kalau k == kunci {
+                    pulang Ada(v);
+                }
+            }
+        }
+    }
+
+    pulang Tiada;
+}
+
+/// Get string value with default
+fungsi dapat_teks(
+    konfigurasi: Konfigurasi,
+    bahagian: Teks,
+    kunci: Teks,
+    lalai: Teks
+) -> Teks kesan Bersih {
+    biar mungkin_nilai = dapat_nilai(konfigurasi, bahagian, kunci);
+
+    padan mungkin_nilai {
+        Ada(Teks(t)) => pulang t,
+        Ada(_) => pulang lalai,
+        Tiada => pulang lalai,
+    };
+}
+
+/// Get number value with default
+fungsi dapat_nombor(
+    konfigurasi: Konfigurasi,
+    bahagian: Teks,
+    kunci: Teks,
+    lalai: Nombor
+) -> Nombor kesan Bersih {
+    biar mungkin_nilai = dapat_nilai(konfigurasi, bahagian, kunci);
+
+    padan mungkin_nilai {
+        Ada(Nombor(n)) => pulang n,
+        Ada(_) => pulang lalai,
+        Tiada => pulang lalai,
+    };
+}
+
+/// Main demo
+awam fungsi utama() -> kesan SistemFail {
+    cetak_baris("Pengurai Konfigurasi RIINA");
+
+    biar hasil_muat = muat_konfigurasi("config.ini");
+    padan hasil_muat {
+        Ada(config) => {
+            cetak_baris("Konfigurasi dimuat berjaya");
+
+            // Example: Get database config
+            biar db_host = dapat_teks(config, "pangkalan_data", "hos", "localhost");
+            biar db_port = dapat_nombor(config, "pangkalan_data", "pelabuhan", 5432);
+
+            cetak_baris(format!("DB Host: {}", db_host));
+            cetak_baris(format!("DB Port: {}", db_port));
+        },
+        Tiada => {
+            cetak_baris("Gagal memuat konfigurasi");
+        },
+    };
+}

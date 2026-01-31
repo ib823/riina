@@ -1,0 +1,144 @@
+/// web_server.rii
+/// Simple HTTP server implementation demonstrating Rangkaian effect
+/// Shows network socket handling with RIINA security properties
+///
+/// Features:
+/// - TCP server listening on localhost:8080
+/// - Request parsing and response generation
+/// - Demonstrates Rangkaian effect for network operations
+/// - Error handling with SistemFail effect
+
+modul pemserver_rangkaian;
+
+guna std::rangkaian;
+guna std::fail;
+guna std::senarai;
+guna std::teks;
+
+/// HTTP request type
+jenis Permintaan = {
+    kaedah: Teks,
+    laluan: Teks,
+    pengepala: Senarai<(Teks, Teks)>,
+};
+
+/// HTTP response type
+jenis Balasan = {
+    kod: Nombor,
+    jenis_kandungan: Teks,
+    jasad: Teks,
+};
+
+/// Parse incoming HTTP request
+/// Kesan: Baca (reads from socket buffer)
+fungsi huraikan_permintaan(data_mentah: Teks) -> Mungkin<Permintaan> kesan Bersih {
+    // Simple parsing - extract method, path, headers
+    biar baris = split_baris(data_mentah);
+    kalau panjang(baris) == 0 {
+        pulang Tiada;
+    }
+
+    biar baris_pertama = baris[0];
+    biar bahagian = split_ruang(baris_pertama);
+
+    kalau panjang(bahagian) >= 2 {
+        pulang Ada({
+            kaedah: bahagian[0],
+            laluan: bahagian[1],
+            pengepala: [],
+        });
+    } lain {
+        pulang Tiada;
+    }
+}
+
+/// Generate HTTP response
+/// Kesan: Bersih (pure computation)
+fungsi hasilkan_balasan(kod_status: Nombor, jasad: Teks) -> Balasan kesan Bersih {
+    pulang {
+        kod: kod_status,
+        jenis_kandungan: "text/plain",
+        jasad: jasad,
+    };
+}
+
+/// Encode response to HTTP format
+fungsi enkod_balasan(balasan: Balasan) -> Teks kesan Bersih {
+    biar baris_status = format!("HTTP/1.1 {} OK\r\n", balasan.kod);
+    biar pengepala_jenis = format!("Content-Type: {}\r\n", balasan.jenis_kandungan);
+    biar pengepala_panjang = format!("Content-Length: {}\r\n", panjang(balasan.jasad));
+
+    pulang baris_status + pengepala_jenis + pengepala_panjang + "\r\n" + balasan.jasad;
+}
+
+/// Handle single client connection
+/// Kesan: Rangkaian + SistemFail (network operations, I/O errors)
+fungsi uruskan_sambungan(sambungan_socket: Rangkaian::Socket) -> kesan (Rangkaian | SistemFail) {
+    // Read request from socket
+    biar hasil_baca = coba Rangkaian::baca(sambungan_socket, 4096);
+
+    padan hasil_baca {
+        Berjaya(data) => {
+            // Parse HTTP request
+            biar permintaan = huraikan_permintaan(data);
+            padan permintaan {
+                Ada(req) => {
+                    // Generate response based on path
+                    biar balasan = kalau req.laluan == "/" {
+                        hasilkan_balasan(200, "Selamat datang ke pemserver!")
+                    } lain kalau req.laluan == "/api/kesihatan" {
+                        hasilkan_balasan(200, "{\"status\":\"baik\"}")
+                    } lain {
+                        hasilkan_balasan(404, "Laluan tidak ditemui")
+                    };
+
+                    biar teks_balasan = enkod_balasan(balasan);
+                    laku Rangkaian::tulis(sambungan_socket, teks_balasan);
+                },
+                Tiada => {
+                    laku Rangkaian::tulis(sambungan_socket, "HTTP/1.1 400 Bad Request\r\n\r\n");
+                },
+            };
+        },
+        Kegagalan(_ralat) => {
+            laku SistemFail::log_ralat("Gagal membaca dari socket");
+        },
+    };
+}
+
+/// Main server loop
+/// Kesan: Rangkaian + SistemFail
+awam fungsi utama() -> kesan (Rangkaian | SistemFail) {
+    // Create server socket
+    biar socket_pelayan = Rangkaian::buat_pelayan("127.0.0.1", 8080);
+
+    cetak_baris("Pemserver berjalan di http://127.0.0.1:8080");
+
+    // Accept connections in loop
+    ulang {
+        biar hasil_terima = coba Rangkaian::terima_sambungan(socket_pelayan);
+        padan hasil_terima {
+            Berjaya(sambungan) => {
+                uruskan_sambungan(sambungan);
+                Rangkaian::tutup_sambungan(sambungan);
+            },
+            Kegagalan(ralat) => {
+                cetak_baris(format!("Ralat menerima sambungan: {}", ralat));
+                ulang_akhir;
+            },
+        };
+    };
+}
+
+// Helper functions
+fungsi split_baris(teks: Teks) -> Senarai<Teks> kesan Bersih {
+    pulang teks::pecah_oleh(teks, "\r\n");
+}
+
+fungsi split_ruang(teks: Teks) -> Senarai<Teks> kesan Bersih {
+    pulang teks::pecah_oleh(teks, " ");
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang senarai::panjang(senarai);
+}

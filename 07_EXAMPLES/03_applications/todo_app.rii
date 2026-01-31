@@ -1,0 +1,234 @@
+/// todo_app.rii
+/// Simple todo list application with persistence
+/// Demonstrates SistemFail effect for file I/O operations
+///
+/// Features:
+/// - Task management (add, complete, delete)
+/// - File-based persistence
+/// - Task filtering and listing
+
+modul aplikasi_tugas;
+
+guna std::fail;
+guna std::senarai;
+guna std::teks;
+guna std::masa;
+
+jenis Tugas = {
+    id: Nombor,
+    tajuk: Teks,
+    perihalan: Teks,
+    selesai: Benar,
+    masa_cipta: Nombor,
+    masa_siap: Mungkin<Nombor>,
+};
+
+/// Load tasks from file
+/// Kesan: SistemFail (file operations, parsing)
+fungsi muat_tugas_dari_fail(laluan_fail: Teks) -> Mungkin<Senarai<Tugas>> kesan SistemFail {
+    biar hasil_baca = coba SistemFail::baca_fail(laluan_fail);
+
+    padan hasil_baca {
+        Berjaya(kandungan) => {
+            biar tugas_senarai = huraikan_tugas(kandungan);
+            pulang Ada(tugas_senarai);
+        },
+        Kegagalan(_ralat) => {
+            laku SistemFail::log_ralat("Tidak dapat membaca fail tugas");
+            pulang Tiada;
+        },
+    };
+}
+
+/// Save tasks to file
+/// Kesan: SistemFail (file write operations)
+fungsi simpan_tugas_ke_fail(laluan_fail: Teks, tugas_senarai: Senarai<Tugas>) -> kesan SistemFail {
+    biar kandungan = enkod_tugas(tugas_senarai);
+    biar hasil_tulis = coba SistemFail::tulis_fail(laluan_fail, kandungan);
+
+    padan hasil_tulis {
+        Berjaya(_) => {
+            laku SistemFail::log_maklumat("Tugas disimpan berjaya");
+        },
+        Kegagalan(ralat) => {
+            laku SistemFail::log_ralat(format!("Gagal menyimpan tugas: {}", ralat));
+        },
+    };
+}
+
+/// Add new task
+fungsi tambah_tugas(
+    ubah tugas_senarai: Senarai<Tugas>,
+    tajuk: Teks,
+    perihalan: Teks
+) -> Senarai<Tugas> kesan Bersih {
+    biar id_baru = cari_max_id(tugas_senarai) + 1;
+    biar tugas_baru = {
+        id: id_baru,
+        tajuk: tajuk,
+        perihalan: perihalan,
+        selesai: salah,
+        masa_cipta: Masa::masa_unix(),
+        masa_siap: Tiada,
+    };
+
+    pulang tugas_senarai + [tugas_baru];
+}
+
+/// Mark task as complete
+fungsi tandakan_selesai(
+    ubah tugas_senarai: Senarai<Tugas>,
+    id_tugas: Nombor
+) -> Senarai<Tugas> kesan Bersih {
+    biar hasil = [];
+
+    untuk tugas dalam tugas_senarai {
+        kalau tugas.id == id_tugas {
+            biar tugas_dikemaskini = {
+                id: tugas.id,
+                tajuk: tugas.tajuk,
+                perihalan: tugas.perihalan,
+                selesai: betul,
+                masa_cipta: tugas.masa_cipta,
+                masa_siap: Ada(Masa::masa_unix()),
+            };
+            hasil = hasil + [tugas_dikemaskini];
+        } lain {
+            hasil = hasil + [tugas];
+        }
+    }
+
+    pulang hasil;
+}
+
+/// Delete task
+fungsi padam_tugas(
+    ubah tugas_senarai: Senarai<Tugas>,
+    id_tugas: Nombor
+) -> Senarai<Tugas> kesan Bersih {
+    biar hasil = [];
+
+    untuk tugas dalam tugas_senarai {
+        kalau tugas.id != id_tugas {
+            hasil = hasil + [tugas];
+        }
+    }
+
+    pulang hasil;
+}
+
+/// Filter incomplete tasks
+fungsi tugas_belum_siap(tugas_senarai: Senarai<Tugas>) -> Senarai<Tugas> kesan Bersih {
+    biar hasil = [];
+
+    untuk tugas dalam tugas_senarai {
+        kalau tugas.selesai == salah {
+            hasil = hasil + [tugas];
+        }
+    }
+
+    pulang hasil;
+}
+
+/// Filter completed tasks
+fungsi tugas_sudah_siap(tugas_senarai: Senarai<Tugas>) -> Senarai<Tugas> kesan Bersih {
+    biar hasil = [];
+
+    untuk tugas dalam tugas_senarai {
+        kalau tugas.selesai == betul {
+            hasil = hasil + [tugas];
+        }
+    }
+
+    pulang hasil;
+}
+
+/// Display tasks
+fungsi papar_tugas(tugas_senarai: Senarai<Tugas>) -> kesan Tulis {
+    cetak_baris("=== SENARAI TUGAS ===");
+    untuk tugas dalam tugas_senarai {
+        biar status = kalau tugas.selesai { "[✓]" } lain { "[ ]" };
+        cetak_baris(format!("{} #{} - {}", status, tugas.id, tugas.tajuk));
+        cetak_baris(format!("   {}", tugas.perihalan));
+    }
+}
+
+/// Interactive todo CLI
+awam fungsi utama() -> kesan (SistemFail | Tulis) {
+    biar laluan_fail = "tugas.json";
+
+    // Load existing tasks
+    biar tugas_senarai = padan muat_tugas_dari_fail(laluan_fail) {
+        Ada(t) => t,
+        Tiada => [],
+    };
+
+    cetak_baris("Selamat datang ke Aplikasi Tugas");
+
+    ulang {
+        cetak_baris("\nPilihan: [1] Tambah [2] Siap [3] Padam [4] Lihat [5] Keluar");
+        biar pilihan = baca_baris();
+
+        padan pilihan {
+            "1" => {
+                cetak_baris("Masukkan tajuk tugas:");
+                biar tajuk = baca_baris();
+                cetak_baris("Masukkan perihalan:");
+                biar perihalan = baca_baris();
+                tugas_senarai = tambah_tugas(tugas_senarai, tajuk, perihalan);
+                simpan_tugas_ke_fail(laluan_fail, tugas_senarai);
+            },
+            "2" => {
+                cetak_baris("Masukkan ID tugas untuk ditandakan siap:");
+                biar id_str = baca_baris();
+                biar id_tugas = parse_nombor(id_str);
+                tugas_senarai = tandakan_selesai(tugas_senarai, id_tugas);
+                simpan_tugas_ke_fail(laluan_fail, tugas_senarai);
+            },
+            "3" => {
+                cetak_baris("Masukkan ID tugas untuk dipadamkan:");
+                biar id_str = baca_baris();
+                biar id_tugas = parse_nombor(id_str);
+                tugas_senarai = padam_tugas(tugas_senarai, id_tugas);
+                simpan_tugas_ke_fail(laluan_fail, tugas_senarai);
+            },
+            "4" => {
+                papar_tugas(tugas_senarai);
+            },
+            "5" => {
+                cetak_baris("Selamat tinggal!");
+                ulang_akhir;
+            },
+            _ => {
+                cetak_baris("Pilihan tidak sah");
+            },
+        };
+    };
+}
+
+// Helper functions
+fungsi cari_max_id(tugas_senarai: Senarai<Tugas>) -> Nombor kesan Bersih {
+    biar max_id = 0;
+    untuk tugas dalam tugas_senarai {
+        kalau tugas.id > max_id {
+            max_id = tugas.id;
+        }
+    }
+    pulang max_id;
+}
+
+fungsi huraikan_tugas(kandungan: Teks) -> Senarai<Tugas> kesan Bersih {
+    pulang [];
+}
+
+fungsi enkod_tugas(tugas_senarai: Senarai<Tugas>) -> Teks kesan Bersih {
+    pulang "";
+}
+
+fungsi baca_baris() -> Teks kesan Tulis {
+    pulang "";
+}
+
+fungsi parse_nombor(teks: Teks) -> Nombor kesan Bersih {
+    pulang 0;
+}

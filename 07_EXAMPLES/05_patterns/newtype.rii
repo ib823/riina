@@ -1,0 +1,52 @@
+/// newtype.rii
+/// Newtype pattern for wrapping types with semantic meaning
+/// Demonstrates type-safe wrapper around primitives
+
+modul jenis_baru;
+
+guna std::teks;
+
+/// Semantic wrappers
+jenis ID = ID(Teks);
+jenis Emel = Emel(Teks);
+jenis Senggatan = Senggatan(Nombor);
+
+/// Extract value
+fungsi ambil_id(ID(nilai): ID) -> Teks kesan Bersih {
+    pulang nilai;
+}
+
+fungsi ambil_emel(Emel(nilai): Emel) -> Teks kesan Bersih {
+    pulang nilai;
+}
+
+fungsi ambil_senggatan(Senggatan(nilai): Senggatan) -> Nombor kesan Bersih {
+    pulang nilai;
+}
+
+/// Safe operations only accept correct types
+fungsi hantar_emel(emel: Emel, mesej: Teks) -> kesan Bersih {
+    biar alamat = ambil_emel(emel);
+    cetak_baris(format!("Menghantar ke {}: {}", alamat, mesej));
+}
+
+fungsi terapkan_senggatan(ubah senarai: Senarai<Teks>, senggatan: Senggatan) -> kesan Bersih {
+    biar jumlah = ambil_senggatan(senggatan);
+    cetak_baris(format!("Menerapkan senggatan {} elemen pertama", jumlah));
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== JENIS BARU ===\n");
+
+    biar id_pengguna = ID("user_12345");
+    biar emel_pengguna = Emel("ahmad@contoh.my");
+    biar senggatan = Senggatan(10);
+
+    cetak_baris(format!("ID: {}", ambil_id(id_pengguna)));
+    hantar_emel(emel_pengguna, "Selamat datang");
+    terapkan_senggatan([], senggatan);
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
