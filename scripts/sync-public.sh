@@ -79,10 +79,9 @@ if [ -n "$DIRTY_FILES" ]; then
     echo "$DIRTY_FILES"
     exit 1
 fi
-# Stash the manifest if it was auto-modified by pre-push hook
-if git diff --name-only HEAD | grep -q "^VERIFICATION_MANIFEST.md$"; then
-    git checkout -- VERIFICATION_MANIFEST.md 2>/dev/null || true
-fi
+# Restore the manifest if it was auto-modified by pre-push hook
+git reset HEAD VERIFICATION_MANIFEST.md 2>/dev/null || true
+git checkout -- VERIFICATION_MANIFEST.md 2>/dev/null || true
 echo -e "${GREEN}[✓] Working tree clean${NC}"
 
 # Step 3: Verify main has been pushed (commits are validated by pre-push hook)
