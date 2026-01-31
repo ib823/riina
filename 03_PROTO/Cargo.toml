@@ -16,6 +16,7 @@ members = [
     "crates/riina-symbols",
     "crates/riina-typechecker",
     "crates/riina-types",
+    "crates/riina-pkg",
     "crates/riinac",
 ]
 
@@ -40,6 +41,7 @@ riina-codegen = { path = "crates/riina-codegen" }
 riina-doc = { path = "crates/riina-doc" }
 riina-fmt = { path = "crates/riina-fmt" }
 riina-lsp = { path = "crates/riina-lsp" }
+riina-pkg = { path = "crates/riina-pkg" }
 riina-typechecker = { path = "crates/riina-typechecker" }
 
 # No external dependencies (Law 8)

@@ -1,0 +1,12 @@
+[package]
+name = "riina-pkg"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA package manager"
+
+[dependencies]
+riina-types.workspace = true
+
+[dev-dependencies]
