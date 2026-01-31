@@ -1,6 +1,6 @@
 # RIINA
 
-**The world's first formally verified programming language.**
+**Formally verified programming language.**
 
 Security properties are not tested, not assumed — they are *mathematically proven* at compile time.
 
