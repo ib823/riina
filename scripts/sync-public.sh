@@ -114,7 +114,17 @@ else
     git cherry-pick "$COMMIT_ARG" --no-commit || true
 fi
 
-# Step 7: Remove internal files that may have been introduced
+# Step 7: Resolve any conflicts by removing conflicting internal files
+# (conflicts happen when main modifies a file that public has deleted)
+CONFLICTED=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+if [ -n "$CONFLICTED" ]; then
+    echo -e "${YELLOW}    Resolving conflicts (removing internal files)...${NC}"
+    echo "$CONFLICTED" | while read -r f; do
+        git rm -f --quiet "$f" 2>/dev/null || true
+    done
+fi
+
+# Step 8: Remove internal files that may have been introduced
 echo "Removing internal files from public..."
 REMOVED_COUNT=0
 for pattern in "${INTERNAL_PATHS[@]}"; do
@@ -162,7 +172,8 @@ echo "Pushing public..."
 git push origin public
 echo -e "${GREEN}[✓] Public branch pushed${NC}"
 
-# Step 11: Switch back to main
+# Step 11: Switch back to main (clean any conflict artifacts first)
+git reset --hard HEAD --quiet 2>/dev/null || true
 git checkout main --quiet
 echo -e "${GREEN}[✓] Back on main${NC}"
 
