@@ -1,5 +1,75 @@
 # Session Log
 
+## 2026-01-31 (Session 63): Rocq 9.1 Migration Sync + Doc Updates
+
+**Goal:** Fix all stale Coq 8.18.0 references after Rocq 9.1 migration (Session 53), update all doc files with accurate counts from live verification.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| Rocq 9.1 version sync | Updated 8 files still referencing Coq 8.18.0 | Done |
+| install_coq.sh | Rewrote: TERAS→RIINA, 8.18.0→Rocq 9.1 (coq.8.21.0) | Done |
+| Makefile | Updated comment + COQMAKEFILE_VERSION→8.21.0 | Done |
+| CLAUDE.md | Updated directory tree annotation | Done |
+| riina-website.jsx | Updated contributing instructions | Done |
+| DECISIONS.md | Updated D002 to Rocq 9.1 | Done |
+| MATERIALIZATION_PLAN | Updated assumptions section | Done |
+| DEFINITIVE_SCOPE | Updated directory tree | Done |
+| DELEGATION_PROMPT | Updated version + syntax requirement | Done |
+| Full codebase audit | 588 tests, 5,304 Qed, 278 .v, 108 examples, 5 axioms, 11 domain admits | Done |
+| PROGRESS.md | Session 63, updated Qed/test/example counts | Done |
+| README.md | Updated all counts (Qed→5,304, tests→588, examples→108), added Rocq 9.1 | Done |
+| COORDINATION_LOG.md | v3.13.0, Session 63 totals, added domain admits row | Done |
+| ATTACK_PROOF_MAP.md | Updated Qed count, timestamp | Done |
+
+### Files NOT updated (intentional)
+
+- `99_ARCHIVE/` — read-only archive
+- `01_RESEARCH/` — read-only reference per CLAUDE.md rules
+- `SESSION_LOG.md` historical entries — accurate for when written
+- `CLAUDE_WEB_PROMPT_*.md` — already say "8.18+ (also compiles with Rocq 9.1)"
+- `06_COORDINATION/llm_proof_pipeline_design.md` — historical design doc, update when next used
+
+---
+
+## 2026-01-31 (Session 62): Phase 6 — Demo Apps + Recursive Functions + FFI Wiring
+
+**Goal:** Create 5 demo apps that compile and run, adding recursive function support (LetRec) and FFI desugar wiring.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| LetRec (Expr) | Added `Expr::LetRec(Ident, Ty, Box<Expr>, Box<Expr>)` to AST | Done |
+| LetRec (desugar) | `fungsi` declarations now desugar to `LetRec` (recursive binding) | Done |
+| LetRec (interp) | Fix-point evaluation: lambda body wrapped in LetRec re-establishing self-binding | Done |
+| LetRec (typechecker) | Name pre-bound in scope for recursive body | Done |
+| LetRec (lower) | Pre-bind placeholder, lower lambda, emit `FixClosure` | Done |
+| FixClosure (IR) | New `Instruction::FixClosure { closure, capture_index }` | Done |
+| FixClosure (emit) | C emission patches `captures[i] = self` for recursive closures | Done |
+| LetRec (fmt) | Format as `biar ulang ...` | Done |
+| FFI desugar | `ExternBlock` decls desugar into `Let` bindings wrapping `FFICall` lambdas | Done |
+| Demo 1 | `selamat_datang.rii` — Hello Malaysia | Done |
+| Demo 2 | `rahsia_dijaga.rii` — Secret types | Done |
+| Demo 3 | `kalkulator_c.rii` — C FFI | Done |
+| Demo 4 | `pasangan.rii` — Safe pairs | Done |
+| Demo 5 | `faktorial.rii` — Recursive functions (flagship) | Done |
+| Demo script | `DEMO_SCRIPT.md` — Terminal commands + expected output | Done |
+| Tests | 590 → 592 (+2 LetRec tests) | Done |
+
+### Phase 6 Status
+
+| Item | Status |
+|------|--------|
+| C FFI (`luaran "C"` blocks) | ✅ Done (Session 61) |
+| Recursive functions (LetRec) | ✅ Done (Session 62) |
+| FFI desugar wiring | ✅ Done (Session 62) |
+| Demo applications (5) | ✅ Done (Session 62) |
+| Community building | ⬜ Pending |
+
+---
+
 ## 2026-01-31 (Session 61): Phase 6 P0 — C FFI Implementation
 
 **Goal:** Implement C Foreign Function Interface via `luaran "C"` extern blocks — Phase 6 P0.

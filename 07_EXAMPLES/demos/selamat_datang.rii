@@ -1,0 +1,9 @@
+/// Selamat Datang ke RIINA!
+/// Demo 1: Hello Malaysia — menunjukkan sintaks Bahasa Melayu
+///
+/// Jalankan: riinac run 07_EXAMPLES/demos/selamat_datang.rii
+/// Bina:     riinac build 07_EXAMPLES/demos/selamat_datang.rii
+
+biar nama = "Malaysia";
+biar salam = gabung_teks(("Selamat datang ke RIINA, ", gabung_teks((nama, "!"))));
+cetakln(salam)

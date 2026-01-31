@@ -141,7 +141,7 @@
 
 ```
 /02_FORMAL/
-├── coq/                    — PRIMARY (Coq 8.18.0)
+├── coq/                    — PRIMARY (Rocq 9.1 / Coq 8.21)
 │   ├── foundations/        — Syntax.v, Typing.v, Semantics.v
 │   ├── type_system/        — Progress.v, Preservation.v
 │   ├── effects/            — EffectSystem.v

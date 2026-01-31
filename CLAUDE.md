@@ -77,12 +77,13 @@ RIINA is the world's **first formally verified programming language** with:
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Axioms (Active Build)** | 5 (all justified) | 4 in NI_v2_LR + 1 in NI_v2 |
 | **Admits (Active Build)** | 0 | All fixed (Session 53) |
-| **Qed Proofs (Active Build)** | 4,763+ | Verified |
+| **Qed Proofs (Total)** | 5,304 | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
-| **Coq Compilation** | ✅ PASSING | 244 files compile clean |
-| **Rust Tests** | ✅ PASSING (590 tests) | All green |
+| **Prover** | Rocq 9.1 (Coq 8.21) | Migrated from 8.18.0 |
+| **Coq Compilation** | ✅ PASSING | 278 files (244 in active build) |
+| **Rust Tests** | ✅ PASSING (588 tests) | All green |
 | **Rust Crates** | 13 | +riina-pkg (Session 57) |
-| **Example .rii Files** | 103 | 8 categories (+FFI) |
+| **Example .rii Files** | 108 | 8 categories (+FFI, +demos) |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
@@ -118,7 +119,7 @@ are mathematically guaranteed at compile time.
 ├── 00_SETUP/                    ← Setup scripts and initialization
 │   ├── SETUP_COMPLETE.marker    ← Created after successful setup
 │   └── scripts/
-│       ├── install_coq.sh       ← Coq 8.18.0 installation
+│       ├── install_coq.sh       ← Rocq 9.1 (Coq 8.21) installation
 │       ├── install_lean.sh      ← Lean 4.x installation
 │       ├── install_rust.sh      ← Rust toolchain installation
 │       └── verify_setup.sh      ← Verification script
@@ -569,7 +570,7 @@ The older 6-phase system in `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` is arch
 
 ### Track A: Formal Proofs (02_FORMAL/coq/) — 🟢 STABLE
 
-**Build: 0 admits, 0 Admitted, 5 justified axioms, 4,763+ Qed proofs, 244 files**
+**Build: 0 admits, 0 Admitted, 5 justified axioms, 5,304 Qed proofs, 278 files (Rocq 9.1 / Coq 8.21)**
 
 Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic Completeness).
 
@@ -580,22 +581,23 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-### Track B: Rust Prototype (03_PROTO/) — 🟡 PHASE 5 IN PROGRESS
+### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 6 IN PROGRESS
 
 **Phase 1** (Compiler Completion): ✅ All items done.
 **Phase 2** (Standard Library): ✅ Done. 88 builtins, 9 modules.
-**Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 101 examples.
-**Phase 5** (Ecosystem): 🟡 ~60%. CI/CD done, package manager done; distribution/licensing pending.
+**Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 108 examples.
+**Phase 5** (Ecosystem): ✅ Done. CI/CD, pkg mgr, Docker, Nix, release scripts, installer, MPL-2.0.
+**Phase 6** (Adoption): 🟡 In progress. C FFI done, 5 demos done; community/enterprise pending.
 
-| Phase 5 Item | Description | Status |
+| Phase 6 Item | Description | Status |
 |--------------|-------------|--------|
-| CI/CD | `riinac verify [--fast|--full]` — zero-trust verification gate | ✅ Done (Session 56) |
-| Package manager | `riina-pkg` crate (14 modules, 39 tests) + `riinac pkg` CLI | ✅ Done (Session 57) |
-| Distribution | Binary releases, Docker, WASM, Nix flake | ⬜ Pending |
-| Licensing | MPL-2.0 for compiler/proofs/stdlib | ✅ Done (LICENSE file added) |
-| Website | `riina.my` / `riina.dev` | ⬜ Deferred to Phase 6+ |
+| C FFI | `luaran "C" { ... }` parse → typecheck → codegen → C emit | ✅ Done (Session 61) |
+| Demo apps | 5 demos in `07_EXAMPLES/demos/` | ✅ Done (Session 62) |
+| Recursive functions | `LetRec` + `FixClosure` IR | ✅ Done (Session 62) |
+| Community setup | Contributing guide, issue templates | ⬜ Pending |
+| Enterprise path | Compliance packaging, support model | ⬜ Pending |
 
-**Total: 590 Rust tests, 13 crates, 103 example files.** Phase 6 P0 (C FFI) done. Next: Phase 6 demos/community.
+**Total: 588 Rust tests, 13 crates, 108 example files.** Next: Phase 6 community/enterprise.
 
 ---
 
@@ -695,7 +697,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 61: Phase 6 P0 C FFI done, 0 admits, 5 justified axioms, 590 Rust tests, 13 crates, 103 examples, 244 Coq files)*
+*Last updated: 2026-01-31 (Session 63: Rocq 9.1 migration sync, 0 admits, 5 justified axioms, 588 Rust tests, 13 crates, 108 examples, 278 Coq files, 5,304 Qed proofs)*
 
 ---
 
