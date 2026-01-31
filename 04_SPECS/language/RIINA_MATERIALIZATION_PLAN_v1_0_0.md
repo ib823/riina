@@ -2173,6 +2173,10 @@ The final verification gate is empirical: **take an LLM that has never seen RIIN
 
 ### 9.1 CI/CD Pipeline
 
+> **Status (Session 57, 2026-01-31): ✅ DONE (zero-trust).** Instead of GitHub Actions, RIINA uses `riinac verify [--fast|--full]` — an internal verification gate that runs cargo test, clippy, Coq admit/axiom scanning, and generates `VERIFICATION_MANIFEST.md`. This is the zero-trust approach: own the verification instead of trusting third-party CI infrastructure. See `03_PROTO/crates/riinac/src/verify.rs`.
+
+**Reference design (GitHub Actions, NOT used — kept for documentation):**
+
 **File: `.github/workflows/ci.yml`**
 
 ```yaml
@@ -2235,9 +2239,11 @@ jobs:
 
 **Estimated:** ~200 lines YAML total.
 
-### 9.2 Package Manager (DEFERRED — Phase 5+)
+### 9.2 Package Manager
 
-Requires module system. Design outline:
+> **Status (Session 57, 2026-01-31): ✅ DONE.** `riina-pkg` crate implemented with 14 modules, 39 tests. Integrated into riinac as `riinac pkg <command>` (10 subcommands: init/add/remove/update/lock/build/publish/list/tree/clean). Features: hand-written TOML parser, SemVer resolution, SHA-256 integrity, effect escalation checking, workspace support. Zero external dependencies.
+
+Design (implemented):
 
 **Manifest: `riina.toml`**
 ```toml
@@ -2546,20 +2552,22 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 
 ### 13.4 Phase 5 Files (Ecosystem)
 
-| # | File | Action | Est. Lines |
-|---|------|--------|-----------|
-| 46 | `.github/workflows/ci.yml` | CREATE | ~80 |
-| 47 | `.github/workflows/release.yml` | CREATE | ~80 |
-| 48 | `.github/workflows/nightly.yml` | CREATE | ~40 |
+| # | File | Action | Est. Lines | Status |
+|---|------|--------|-----------|--------|
+| 46 | `03_PROTO/crates/riinac/src/verify.rs` | CREATE: verification gate | ~400 | ✅ Done (Session 56) |
+| 47 | `03_PROTO/crates/riina-pkg/` | CREATE: package manager (14 modules) | ~2,675 | ✅ Done (Session 57) |
+| 48 | `.github/workflows/ci.yml` | DEFERRED | ~80 | ⬜ Superseded by `riinac verify` |
+| 49 | `.github/workflows/release.yml` | DEFERRED | ~80 | ⬜ Pending (distribution) |
+| 50 | `.github/workflows/nightly.yml` | DEFERRED | ~40 | ⬜ Superseded by `riinac verify` |
 
 ### 13.5 Phase 6 Files (Adoption)
 
 | # | File | Action | Est. Lines |
 |---|------|--------|-----------|
-| 49 | `03_PROTO/crates/riina-codegen/src/ffi.rs` | CREATE: FFI support | ~200 |
-| 50 | `08_DEMOS/web-server/` | CREATE: demo 1 | ~800 |
-| 51 | `08_DEMOS/messenger/` | CREATE: demo 2 | ~800 |
-| 52 | `08_DEMOS/medical/` | CREATE: demo 3 | ~800 |
+| 51 | `03_PROTO/crates/riina-codegen/src/ffi.rs` | CREATE: FFI support | ~200 |
+| 52 | `08_DEMOS/web-server/` | CREATE: demo 1 | ~800 |
+| 53 | `08_DEMOS/messenger/` | CREATE: demo 2 | ~800 |
+| 54 | `08_DEMOS/medical/` | CREATE: demo 3 | ~800 |
 
 ---
 
