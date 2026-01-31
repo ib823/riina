@@ -449,6 +449,20 @@ impl<'a> Lexer<'a> {
             "inl" => TokenKind::KwInl,
             "inr" => TokenKind::KwInr,
 
+            // Projection keywords (English | Bahasa Melayu)
+            "fst" | "pertama" => TokenKind::KwFst,
+            "snd" | "kedua" => TokenKind::KwSnd,
+
+            // Capability requirement/grant (English | Bahasa Melayu)
+            "require" | "perlukan" => TokenKind::KwRequire,
+            "grant" | "beri" => TokenKind::KwGrant,
+
+            // Option/Result constructors (English | Bahasa Melayu)
+            "Some" | "Ada" => TokenKind::KwSome,
+            "None" | "Tiada" => TokenKind::KwNone,
+            "Ok" | "Jadi" => TokenKind::KwOk,
+            "Err" | "Gagal" => TokenKind::KwErr,
+
             // Session types (English | Bahasa Melayu)
             "session" | "sesi" => TokenKind::KwSession,
             "send" | "hantar" => TokenKind::KwSend,
