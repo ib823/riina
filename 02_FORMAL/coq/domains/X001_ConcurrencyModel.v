@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* ConcurrencyModel.v - RIINA Concurrency Verification *)
 (* Spec: 01_RESEARCH/24_DOMAIN_X_CONCURRENCY_MODEL/RESEARCH_X01_FOUNDATION.md *)
 (* Layer: Concurrency Primitives *)

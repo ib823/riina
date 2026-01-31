@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! AES-256-GCM Authenticated Encryption Implementation
 //!
 //! This module implements AES-256-GCM as specified in NIST SP 800-38D.

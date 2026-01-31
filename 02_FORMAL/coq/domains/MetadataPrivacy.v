@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MetadataPrivacy.v *)
 (* RIINA Metadata Privacy Proofs - Track Chi *)
 (* Proves META-001 through META-025 *)

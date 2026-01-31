@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* CrossLayerSecurity.v - Cross-Layer Verified Security Pipeline (Source -> Hardware)
    Strategic Item #4: Proves that non-interference is preserved across compilation
    from a simple source language to an assembly-like target language.

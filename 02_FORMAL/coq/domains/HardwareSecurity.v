@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* HardwareSecurity.v *)
 (* RIINA Hardware Security Proofs *)
 (* Proves HW-001 through HW-034 are mitigated *)

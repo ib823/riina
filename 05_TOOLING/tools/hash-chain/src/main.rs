@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! RIINA Hash Chain Tool
 //!
 //! Maintains cryptographic integrity chain for all RIINA documents.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! HKDF (HMAC-based Key Derivation Function) Implementation
 //!
 //! This module implements HKDF as specified in RFC 5869.

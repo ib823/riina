@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MalaysiaPDPA.v - Malaysia Personal Data Protection Act 2010 (Amended 2024) *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md §A1 *)
 (* Legal Requirement: PDPA 2010 (Act 709), Amendments effective June 1, 2025 *)

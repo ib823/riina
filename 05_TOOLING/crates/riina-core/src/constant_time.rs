@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Constant-Time Operations
 //!
 //! This module provides constant-time comparison operations to prevent

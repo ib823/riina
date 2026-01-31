@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* WCETBounds.v - Worst-Case Execution Time Bounds for RIINA *)
 (* Spec: 01_RESEARCH/17_DOMAIN_Π_PERFORMANCE/ *)
 (* Safety Property: Guaranteed timing bounds for real-time systems *)

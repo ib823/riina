@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* PCIDSSCompliance.v - PCI-DSS Compliance Proofs for RIINA *)
 (* Spec: 04_SPECS/industries/IND_C_FINANCIAL.md *)
 (* Requirement: PCI-DSS v4.0 *)

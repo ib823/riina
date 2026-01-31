@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! JSON-RPC message reader/writer over stdio.
 
 use std::io::{self, BufRead, Write};

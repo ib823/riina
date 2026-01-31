@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * LogicalRelationAssign_PROOF.v
     
     RIINA AXIOM ELIMINATION: AX-03 logical_relation_assign

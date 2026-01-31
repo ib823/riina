@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* OwnershipTypes.v - Ownership Types for RIINA *)
 (* Spec: 01_RESEARCH/23_DOMAIN_W_VERIFIED_MEMORY/ *)
 (* Model: Rust-style ownership and borrowing *)

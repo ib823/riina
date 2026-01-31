@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SingaporeMTCS.v - Multi-Tier Cloud Security (SS 584:2020) *)
 (* and GovTech IM8 (Instruction Manual 8) *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md *)

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** ============================================================================
     RIINA FORMAL VERIFICATION - VERIFIED NETWORK STACK
     File: VerifiedNetworkStack.v | Theorems: 35 | Zero admits/axioms

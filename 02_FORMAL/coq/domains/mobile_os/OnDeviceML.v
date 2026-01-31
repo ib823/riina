@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * RIINA Mobile OS - On-Device ML Verification
     
     Formal verification of on-device ML including:

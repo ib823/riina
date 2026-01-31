@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * IndustryGovernment.v - Government/Public Sector Security Theorems
 
     RIINA Formal Verification - Industry Track G

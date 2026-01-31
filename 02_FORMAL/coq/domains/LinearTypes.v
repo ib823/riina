@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* LinearTypes.v - Linear Type System for RIINA *)
 (* Spec: 01_RESEARCH/01_DOMAIN_A_TYPE_THEORY/linear_types/ *)
 (* Security Property: Resource used exactly once *)

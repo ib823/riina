@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Build orchestration: topological order build of resolved packages.
 
 use crate::error::{PkgError, Result};

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * First-Order Type Predicate Independence - COMPILATION PERFECT
     
     This file proves that for first-order types, val_rel_at_type

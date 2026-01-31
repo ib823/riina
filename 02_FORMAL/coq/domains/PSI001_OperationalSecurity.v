@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* PSI001_OperationalSecurity.v - RIINA Operational Security *)
 (* Spec: 01_RESEARCH/31_DOMAIN_PSI_OPERATIONAL_SECURITY/RESEARCH_PSI01_FOUNDATION.md *)
 (* Layer: Operational Security & Insider Threat Mitigation *)

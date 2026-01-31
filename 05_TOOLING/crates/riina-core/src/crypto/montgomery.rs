@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Montgomery Curve Arithmetic for Curve25519
 //!
 //! This module implements constant-time point operations on the Montgomery curve

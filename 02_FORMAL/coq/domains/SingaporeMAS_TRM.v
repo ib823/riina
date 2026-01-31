@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SingaporeMAS_TRM.v - MAS Technology Risk Management Guidelines *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md §B3 *)
 (* Legal Requirement: MAS TRM Guidelines (revised Jan 2021), *)

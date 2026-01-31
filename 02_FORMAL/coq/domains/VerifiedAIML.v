@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedAIML.v - Verified AI/ML for RIINA *)
 (* Spec: 01_RESEARCH/15_DOMAIN_ν_VERIFIED_AI/ *)
 (* Domain: Autonomous vehicles, medical AI, trading systems *)

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Field Arithmetic for GF(2^255-19)
 //!
 //! This module implements constant-time field arithmetic over the prime field

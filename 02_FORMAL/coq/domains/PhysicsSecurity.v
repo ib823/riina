@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* PhysicsSecurity.v - RIINA Physics & Physical System Security *)
 (* Spec: 01_RESEARCH/32_DOMAIN_RIINA_PHYSICS/ *)
 (* Zero admits, zero axioms *)

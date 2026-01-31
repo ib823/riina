@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * RIINA Mobile OS - Concurrency Framework Verification
     
     Formal verification of concurrency framework including:

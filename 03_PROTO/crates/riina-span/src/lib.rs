@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! # RIINA Source Spans
 //!
 //! Efficient source location tracking with 8-byte packed spans.

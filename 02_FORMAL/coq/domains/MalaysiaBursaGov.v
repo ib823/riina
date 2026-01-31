@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MalaysiaBursaGov.v - Bursa Malaysia IT Governance Requirements *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md *)
 (* Governing Body: Bursa Malaysia Berhad *)

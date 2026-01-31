@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedMicrokernel.v - RIINA-OS Microkernel Verification *)
 (* Spec: 01_RESEARCH/28_DOMAIN_RIINA_OS/RESEARCH_OS01_FOUNDATION.md *)
 (* Layer: L4 Operating System *)

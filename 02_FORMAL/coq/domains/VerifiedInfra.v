@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedInfra.v - RIINA-INFRA Cloud Infrastructure Verification *)
 (* Spec: 01_RESEARCH/33_DOMAIN_RIINA_INFRA/RESEARCH_INFRA01_FOUNDATION.md *)
 (* Layer: Cross-cutting Infrastructure *)

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* AnonymousComm.v *)
 (* RIINA Anonymous Communication Proofs - Track Iota *)
 (* Proves ANON-001 through ANON-025 *)

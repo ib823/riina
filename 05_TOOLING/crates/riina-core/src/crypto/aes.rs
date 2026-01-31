@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! AES-256 Block Cipher Implementation
 //!
 //! This module implements AES-256 (Rijndael with 256-bit key and 128-bit block).

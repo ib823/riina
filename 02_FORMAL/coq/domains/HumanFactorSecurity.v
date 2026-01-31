@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* ═══════════════════════════════════════════════════════════════════════════════════════════════
    HUMAN FACTOR SECURITY - FORMAL COQ PROOFS
    Task ID: WP-012-HUMAN-FACTOR-SECURITY-COQ-PROOFS

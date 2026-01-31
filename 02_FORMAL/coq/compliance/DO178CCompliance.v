@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* DO178CCompliance.v - DO-178C DAL A Compliance Proofs for RIINA *)
 (* Spec: 04_SPECS/industries/IND_D_AEROSPACE.md *)
 (* Standard: RTCA DO-178C + DO-333 Formal Methods Supplement *)

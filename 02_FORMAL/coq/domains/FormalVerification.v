@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* FormalVerification.v - Formal Verification Foundations for RIINA *)
 (* Spec: 01_RESEARCH/05_DOMAIN_E_FORMAL_VERIFICATION/RESEARCH_DOMAIN_E_COMPLETE.md *)
 (* Security Property: Verified correctness of security-critical code *)

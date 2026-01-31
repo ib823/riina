@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! GHASH Universal Hash Function Implementation
 //!
 //! This module implements GHASH as specified in NIST SP 800-38D.
