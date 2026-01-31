@@ -17,7 +17,7 @@ Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
 |--------|-------|
 | Total Threat Categories | 16 |
 | Total Individual Threats | 350+ |
-| Core Theorems (Qed) | 5,250+ |
+| Core Theorems (Qed) | 4,763+ |
 | Domain Property Lemmas (Qed) | 4,200+ |
 | Active Axioms | 5 |
 | Admits | 0 |
