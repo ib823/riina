@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 56)
-**Session:** 56 (Track B — Phase 4 Developer Experience)
+**Report Date:** 2026-01-31 (Session 57)
+**Session:** 57 (Track B — Phase 5 Ecosystem: riina-pkg)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -33,8 +33,15 @@
 | Files in Build | **98** | - | ✅ All compile |
 | Qed Proofs (Build) | **5117+** | - | ✅ |
 | .v Files (Total) | **256** | - | ✅ |
-| Rust Prototype | ✅ PASSING (529 tests) | PASSING | ✅ GREEN |
+| Rust Prototype | ✅ PASSING (568 tests) | PASSING | ✅ GREEN |
+| Rust Crates | **13** | - | ✅ (+riina-pkg) |
 | Example .rii Files | **100** | 100+ | ✅ |
+
+**SESSION 57 KEY ACTIONS (Phase 5 Ecosystem — riina-pkg):**
+1. **riina-pkg crate** — 14 modules, 39 tests, zero external deps: version.rs (SemVer), manifest.rs (TOML parser), integrity.rs (SHA-256 FIPS 180-4), effects.rs (escalation checking), resolve.rs (greedy+backtrack resolver), lockfile.rs, cache.rs, build.rs (Kahn's topo sort), workspace.rs, registry.rs, layout.rs, cli.rs (10 subcommands), error.rs, lib.rs
+2. **riinac pkg integration** — `riinac pkg init/add/remove/update/lock/build/publish/list/tree/clean`
+3. **Tests: 530 → 568** (+39 from riina-pkg, -1 dedup)
+4. **Phase 5 status**: CI/CD done (`riinac verify`), package manager done (`riina-pkg`). Remaining: distribution, licensing, website.
 
 **SESSION 56 KEY ACTIONS (Phase 4 Developer Experience):**
 1. **M1: Span-annotated AST** — Added `Span`, `SpannedDecl` to riina-types; parser records spans for all top-level decls
@@ -796,13 +803,13 @@ ReducibilityFull.v (2 admits)
 | **Total Incomplete Proofs** | **0** |
 | Total .v Files | 256 |
 
-### 2.2 Axioms by File (Active Build — Session 50b)
+### 2.2 Axioms by File (Active Build — Session 53+)
 
 | File | Axioms | Names |
 |------|--------|-------|
-| NonInterference_v2_LogicalRelation.v | 5 | logical_relation_ref/deref/assign/declassify, val_rel_store_weaken_back |
+| NonInterference_v2_LogicalRelation.v | 4 | logical_relation_ref/deref/assign/declassify |
 | NonInterference_v2.v | 1 | fundamental_theorem_step_0 |
-| **TOTAL** | **6** | All justified; `exp_rel_le_declassify` eliminated (dead code) |
+| **TOTAL** | **5** | All justified; `val_rel_store_weaken_back` eliminated (Session 52), `exp_rel_le_declassify` eliminated (Session 50b) |
 
 ### 2.3 Admits by File (Active Build — Session 50b)
 
@@ -878,9 +885,13 @@ The following remain and are NOT covered by delegation output:
 | riina-symbols | Symbol table | 6 | ✅ |
 | riina-typechecker | Type checking | 5 | ✅ |
 | riina-types | Type definitions (incl. `Expr::Loc`) | - | ✅ |
-| riinac | Compiler driver | - | 🟡 |
+| riina-doc | Documentation generator | 6 | ✅ |
+| riina-fmt | Code formatter | 6 | ✅ |
+| riina-lsp | Language server | 12 | ✅ |
+| riina-pkg | Package manager | 39 | ✅ |
+| riinac | Compiler driver | 11 | ✅ |
 
-**Total Tests:** 452 | **All Passing** ✅
+**Total Tests:** 568 | **All Passing** ✅
 
 **Materialization Plan:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` — 7-phase plan from prototype to production language. Phase 1 ~90% complete; gap remediation active in parallel with Track A.
 
@@ -899,31 +910,28 @@ The following remain and are NOT covered by delegation output:
 ## 6. SESSION CHECKPOINT
 
 ```
-Session      : 51 (Track B Materialization — Gap Remediation)
-Last Action  : Implemented Expr::Loc, SSA phi destruction, ATTACK_PROOF_MAP.md
-Build Status : ✅ PASSING (98 Coq files + 452 Rust tests)
-Axioms       : 6 (active build: 5 in NI_v2_LR + 1 in NI_v2)
+Session      : 57 (Track B — Phase 5 Ecosystem: riina-pkg)
+Last Action  : Implemented riina-pkg package manager (14 modules, 39 tests)
+Build Status : ✅ PASSING (98 Coq files + 568 Rust tests)
+Axioms       : 5 (active build: 4 in NI_v2_LR + 1 in NI_v2)
 Admits       : 0 admit. + 0 Admitted. = 0 total
-Rust Tests   : 452 (all passing)
+Rust Tests   : 568 (all passing)
+Rust Crates  : 13
 
-Session 51 Accomplishments:
-1. Added Expr::Loc(u64) to Rust AST — aligns with Coq ELoc : nat -> expr
-2. Implemented SSA phi destruction pass with proper copy-insertion in C emitter
-3. Created ATTACK_PROOF_MAP.md (490 lines, 350+ threats mapped to Coq theorems)
-4. Ran 4-agent exhaustive audit (build integrity, type enforcement, threats, Rust↔Coq)
-5. Updated materialization plan with 13-item gap remediation + Gates 5-9
-6. Track B Phase 1 now ~95% complete (CI/CD + traceability remaining)
+Session 57 Accomplishments:
+1. riina-pkg crate: 14 modules, 39 tests, zero external deps
+2. riinac pkg: 10 subcommands (init/add/remove/update/lock/build/publish/list/tree/clean)
+3. Phase 5 CI/CD done (riinac verify), package manager done (riina-pkg)
 
-Track A — Remaining Axioms (6, unchanged):
+Track A — Remaining Axioms (5, unchanged):
 - NI_v2_LR: logical_relation_ref, logical_relation_deref, logical_relation_assign,
-             logical_relation_declassify, val_rel_store_weaken_back
+             logical_relation_declassify
 - NI_v2: fundamental_theorem_step_0
 
-Track B — Next priorities:
-1. Phase 2 stdlib completion (remaining builtins)
-2. Phase 3 formal verification items (semantic evaluator, enforcement hardening)
-3. CI/CD pipeline setup
-4. Attack→proof traceability automation
+Track B — Phase 5 remaining:
+1. Distribution (binary releases, Docker, WASM, Nix)
+2. Licensing (MPL-2.0)
+3. PEG grammar + --output=json (deferred from Phase 4)
 
 Both tracks proceeding in parallel. Track B work does NOT affect Track A.
 ```
@@ -938,11 +946,11 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Mat. Plan Phase | Name | Status | Key Metric |
 |-----------------|------|--------|------------|
-| 1 | Compiler Completion | 🟢 ~98% | All 5.1-5.7 complete; 477 tests passing |
-| 2 | Standard Library | ⬜ | Blocked on Phase 1 |
-| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971+ Qed |
-| 4 | Developer Experience | ⬜ | LSP, VS Code, formatter |
-| 5 | Ecosystem & Distribution | ⬜ | CI/CD, package manager |
+| 1 | Compiler Completion | ✅ Done | All 5.1-5.7 complete; 477 tests |
+| 2 | Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
+| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5117+ Qed |
+| 4 | Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code, 100 examples |
+| 5 | Ecosystem & Distribution | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution/licensing pending |
 | 6 | Adoption & Community | ⬜ | FFI, demos |
 | 7 | Long-term Vision | ⬜ | Self-hosting, HW verification |
 
@@ -978,11 +986,11 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Priority | Track | Task |
 |----------|-------|------|
-| P0 | B | **5.3 Parser extension** — add `fungsi`, `bentuk`, `modul`, statement sequences |
-| P1 | B | **5.1 Wire codegen** — import riina-codegen, CLI subcommands, `build` pipeline |
-| P2 | B | **5.4 C emitter** — closures, phi copies, effect handler stubs |
-| P3 | A | **Axiom elimination** — Worker B store_rel_n rewrite (parallel) |
-| P4 | B | **Gate 3** — end-to-end: hello_dunia.rii → binary |
+| P0 | B | **Phase 5: Distribution** — binary releases, Docker image, WASM playground |
+| P1 | B | **Phase 5: Licensing** — MPL-2.0 for compiler/proofs/stdlib |
+| P2 | A | **Axiom elimination** — Worker B store_rel_n rewrite (parallel) |
+| P3 | B | **Phase 6: FFI** — C FFI via `luar "C"` syntax (~200 lines) |
+| P4 | B | **Phase 6: Demo apps** — secure web server, PQ messenger, HIPAA records |
 
 ---
 
@@ -1007,5 +1015,5 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 *RIINA: Rigorous Immutable Integrity No-attack Assured*
 *"Every line of code backed by mathematical proof."*
 
-*Report Generated: 2026-01-30 (Session 50b)*
-*"0 admit. + 0 Admitted. + 6 axioms remain. exp_rel_le_declassify ELIMINATED. QED Eternum."*
+*Report Generated: 2026-01-31 (Session 57)*
+*"0 admit. + 0 Admitted. + 5 axioms remain. 568 Rust tests. 13 crates. Phase 5 in progress. QED Eternum."*
