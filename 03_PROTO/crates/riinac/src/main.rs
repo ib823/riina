@@ -9,6 +9,7 @@
 
 mod diagnostics;
 mod repl;
+mod verify;
 
 use std::fs;
 use std::path::PathBuf;
@@ -28,6 +29,7 @@ enum Command {
     Fmt,
     Doc,
     Lsp,
+    Verify(verify::Mode),
 }
 
 fn usage() -> ! {
@@ -43,11 +45,30 @@ fn usage() -> ! {
     eprintln!("  fmt      Format a .rii file");
     eprintln!("  lsp      Start LSP server (stdio)");
     eprintln!("  repl     Interactive read-eval-print loop");
+    eprintln!("  verify   Run verification gate [--fast|--full]");
     process::exit(1);
 }
 
 fn parse_args() -> (Command, Option<PathBuf>) {
     let args: Vec<String> = std::env::args().collect();
+
+    // Handle verify early — it takes flags, not a file
+    if args.len() >= 2 && args[1] == "verify" {
+        let mode = if args.len() >= 3 {
+            match args[2].as_str() {
+                "--fast" => verify::Mode::Fast,
+                "--full" => verify::Mode::Full,
+                other => {
+                    eprintln!("Unknown verify flag: {other}");
+                    usage();
+                }
+            }
+        } else {
+            verify::Mode::Fast
+        };
+        return (Command::Verify(mode), None);
+    }
+
     match args.len() {
         2 => {
             if args[1] == "repl" {
@@ -101,6 +122,10 @@ fn main() {
             process::exit(1);
         }
         return;
+    }
+
+    if let Command::Verify(mode) = command {
+        process::exit(verify::run(mode));
     }
 
     let input = input.expect("file path required");
@@ -242,5 +267,6 @@ fn main() {
         }
         Command::Repl => unreachable!("handled above"),
         Command::Lsp => unreachable!("handled above"),
+        Command::Verify(_) => unreachable!("handled above"),
     }
 }
