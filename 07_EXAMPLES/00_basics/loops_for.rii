@@ -1,0 +1,100 @@
+/// LOOPS_FOR.RII - For Loop Over Collections
+/// Gelung untuk (for) untuk iterasi koleksi
+/// Demonstrates: for-in loops, ranges, iteration
+
+fungsi gelung_senarai() -> Nombor kesan Tulis {
+    /// Untuk-dalam gelung atas senarai
+    /// For-in loop over list
+    biar senarai = [1, 2, 3, 4, 5];
+
+    untuk item dalam senarai {
+        cetak("Item: ");
+        cetak(item);
+        cetak("\n");
+    }
+
+    pulang 0;
+}
+
+fungsi gelung_julat() -> Nombor kesan Tulis {
+    /// Gelung atas julat 0..10 (tidak termasuk 10)
+    /// Loop over range 0..10 (exclusive end)
+    untuk i dalam 0..10 {
+        cetak("Nombor: ");
+        cetak(i);
+        cetak("\n");
+    }
+
+    /// Gelung dengan julat termasuk (0..=10)
+    /// Loop with inclusive range 0..=10
+    untuk j dalam 0..=5 {
+        cetak("Inklusif: ");
+        cetak(j);
+        cetak("\n");
+    }
+
+    pulang 0;
+}
+
+fungsi hitung_jumlah_senarai() -> Nombor kesan Bersih {
+    /// Hitung jumlah elemen dalam senarai
+    /// Sum elements in list
+    biar senarai = [1, 2, 3, 4, 5];
+    biar ubah jumlah = 0;
+
+    untuk x dalam senarai {
+        jumlah = jumlah + x;
+    }
+
+    pulang jumlah;    /// Result: 15
+}
+
+fungsi format_senarai() -> Nombor kesan Tulis {
+    /// Format senarai dengan indeks
+    /// Format list with indices
+    biar nama_nama = ["Ahmad", "Siti", "Budi"];
+
+    untuk (indeks, nama) dalam nama_nama.indeks_dan_item() {
+        cetak("Indeks ");
+        cetak(indeks);
+        cetak(": ");
+        cetak(nama);
+        cetak("\n");
+    }
+
+    pulang 0;
+}
+
+fungsi gelung_bersarang() -> Nombor kesan Tulis {
+    /// Gelung bersarang (nested loops)
+    /// Nested loops
+    untuk i dalam 1..3 {
+        untuk j dalam 1..3 {
+            cetak("(");
+            cetak(i);
+            cetak(",");
+            cetak(j);
+            cetak(") ");
+        }
+        cetak("\n");
+    }
+
+    pulang 0;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    gelung_senarai();
+    cetak("---\n");
+    gelung_julat();
+    cetak("---\n");
+    hitung_jumlah_senarai();
+    cetak("---\n");
+    gelung_bersarang();
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: untuk (for) with dalam (in) keyword.
+/// Ranges: 0..10 (exclusive) or 0..=10 (inclusive).
+/// Collections are iterable: senarai, strings, ranges, etc.
+/// Destructuring in for loops: untuk (x, y) dalam ... {}

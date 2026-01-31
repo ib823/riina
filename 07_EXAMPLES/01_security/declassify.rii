@@ -1,0 +1,151 @@
+/// DECLASSIFY.RII - Declassification with Proofs
+/// Penurunan peringkat dengan bukti keamanan
+/// Demonstrates: dedah (declassify), proof obligations, trusted functions
+
+fungsi dedah_dengan_tujuan(
+    s: Rahsia<Teks>,
+    bukti: Teks
+) -> Teks kesan Bersih {
+    /// Dedah (declassify) nilai rahsia dengan bukti
+    /// Declassify secret value with proof
+    /// Bukti memastikan bahawa penurunan peringkat selamat
+    /// Proof ensures declassification is safe
+    dedah(s, bukti: "dibenarkan_untuk_log")
+}
+
+fungsi dedah_untuk_analitik(
+    data_sensitif: Rahsia<Teks>,
+    kebenaran: Teks
+) -> Mungkin<Teks> kesan Bersih {
+    /// Dedah untuk tujuan analitik tertentu
+    /// Declassify for specific analytics purpose
+    kalau kebenaran == "analitik_dibenarkan" {
+        biar nilai = dedah(data_sensitif, bukti: "analitik_sah");
+        pulang Ada(nilai);
+    }
+
+    pulang Tidak;
+}
+
+fungsi dedah_dengan_guardbanding(
+    kunci: Rahsia<Teks>,
+    sekatan: Teks
+) -> Hasil<Teks, Teks> kesan Bersih {
+    /// Dedah dengan guardbanding (constraint checking)
+    /// Declassify with guard band constraints
+    padan sekatan {
+        "enkripsi_sahaja" -> {
+            /// Hanya dedah untuk enkripsi
+            Ok(dedah(kunci, bukti: "enkripsi_sah"))
+        },
+        "log_sahaja" -> {
+            /// Hanya dedah untuk log
+            Ok(dedah(kunci, bukti: "log_sah"))
+        },
+        _ -> Ralat("Sekatan tidak sah"),
+    }
+}
+
+fungsi dedah_sementara<T>(
+    s: Rahsia<T>,
+    f: Fn(T) -> Benar
+) -> Benar kesan Bersih {
+    /// Dedah sementara untuk pemprosesan
+    /// Temporary declassification for processing
+    biar nilai_diturunkan = dedah(s, bukti: "pemprosesan_sah");
+    f(nilai_diturunkan)
+}
+
+fungsi enkripsi_aman(
+    plaintext: Teks,
+    kunci: Rahsia<Teks>
+) -> Rahsia<Teks> kesan (Kripto, MasaTetap) {
+    /// Enkripsi aman dengan pembukaan rahsia
+    /// Secure encryption with secret opening
+    biar kunci_buka = dedah(kunci, bukti: "enkripsi_sah");
+    biar ciphertext = aes_enkripsi(plaintext, kunci_buka);
+    Rahsia(ciphertext)
+}
+
+fungsi bandingkan_hash_aman(
+    rahsia_hash: Rahsia<Teks>,
+    input_hash: Teks
+) -> Benar kesan (MasaTetap, Kripto) {
+    /// Bandingkan hash dengan pembandingan masa tetap
+    /// Compare hash with constant-time comparison
+    biar diturunkan = dedah(rahsia_hash, bukti: "perbandingan_sah");
+    bandingkan_masa_tetap(diturunkan, input_hash)
+}
+
+fungsi dedah_dengan_audit(
+    data: Rahsia<Teks>,
+    pemohon: Teks
+) -> Hasil<Teks, Teks> kesan (Tulis, Bersih) {
+    /// Dedah dengan audit trail
+    /// Declassify with audit trail
+    biar diturunkan = dedah(data, bukti: "audit_diminta");
+
+    /// Catat audit
+    cetak("Dedah diminta oleh: ");
+    cetak(pemohon);
+    cetak("\n");
+
+    Ok(diturunkan)
+}
+
+fungsi bukti_keselamatan_dedah(
+    s: Rahsia<Teks>,
+    justifikasi: Teks
+) -> Mungkin<Teks> kesan Bersih {
+    /// Bukti keselamatan untuk dedah
+    /// Safety proof for declassification
+    padan justifikasi {
+        "log_awam" -> {
+            /// Log awam memerlukan bukti aliran tidak rahsia
+            biar diturunkan = dedah(s, bukti: "log_awam_terbukti");
+            Ada(diturunkan)
+        },
+        "output_pengguna" -> {
+            /// Output pengguna memerlukan bukti tiada kebocoran
+            biar diturunkan = dedah(s, bukti: "output_terbukti");
+            Ada(diturunkan)
+        },
+        _ -> Tidak,
+    }
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Kripto, MasaTetap) {
+    cetak("=== Contoh Dedah Aman ===\n");
+
+    /// Buat data rahsia
+    biar rahsia = Rahsia("kata_laluan_utama");
+
+    /// Dedah dengan tujuan spesifik
+    biar dibuka = dedah_dengan_tujuan(rahsia, "log");
+    cetak("Dibuka untuk log\n");
+
+    /// Enkripsi dengan pembukaan aman
+    biar terenkripsi = enkripsi_aman("maklumat_sensitif", Rahsia("kunci_enkripsi"));
+    cetak("Data terenkripsi dengan dedah aman\n");
+
+    /// Dedah dengan audit
+    padan dedah_dengan_audit(rahsia, "pemohon_aplikasi") {
+        Ok(nilai) -> {
+            cetak("Nilai: ");
+            cetak(nilai);
+            cetak("\n");
+        },
+        Ralat(e) -> {
+            cetak("Ralat: ");
+            cetak(e);
+            cetak("\n");
+        },
+    }
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: dedah (declassify) requires explicit proof justification.
+/// Compiler tracks all declassification points for audit.
+/// Proofs ensure information doesn't leak to untrusted code.
+/// bukti parameter documents why declassification is safe.

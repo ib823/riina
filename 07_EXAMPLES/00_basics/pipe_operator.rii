@@ -1,0 +1,147 @@
+/// PIPE_OPERATOR.RII - Pipe Operator for Function Chaining
+/// Pengendali paip (|>) untuk rantai fungsi
+/// Demonstrates: pipe operator, readability, functional composition
+
+fungsi darab_dua(x: Nombor) -> Nombor kesan Bersih {
+    pulang x * 2;
+}
+
+fungsi tambah_satu(x: Nombor) -> Nombor kesan Bersih {
+    pulang x + 1;
+}
+
+fungsi kurang_tiga(x: Nombor) -> Nombor kesan Bersih {
+    pulang x - 3;
+}
+
+fungsi format_teks(x: Nombor) -> Teks kesan Bersih {
+    pulang "Hasil: {x}";
+}
+
+fungsi operasi_bersarang() -> Teks kesan Bersih {
+    /// Cara tradisional - bersarang
+    /// Traditional way - nested
+    biar hasil = format_teks(kurang_tiga(tambah_satu(darab_dua(5))));
+    /// 5 * 2 = 10 -> 10 + 1 = 11 -> 11 - 3 = 8
+
+    pulang hasil;
+}
+
+fungsi operasi_dengan_paip() -> Teks kesan Bersih {
+    /// Menggunakan paip - lebih jelas
+    /// Using pipe - more readable
+    biar hasil = 5
+        |> darab_dua
+        |> tambah_satu
+        |> kurang_tiga
+        |> format_teks;
+
+    pulang hasil;
+}
+
+fungsi dengan_paip_dan_lambda() -> Teks kesan Bersih {
+    /// Paip dengan ungkapan lambda
+    /// Pipe with lambda expressions
+    biar hasil = 10
+        |> fungsi(x: Nombor) -> Nombor { x + 5 }
+        |> fungsi(x: Nombor) -> Nombor { x * 2 }
+        |> format_teks;
+
+    pulang hasil;
+}
+
+fungsi paip_pada_senarai() -> Senarai<Nombor> kesan Bersih {
+    /// Paip dengan operasi senarai
+    /// Pipe with list operations
+    biar hasil = [1, 2, 3, 4, 5]
+        |> fungsi(s: Senarai<Nombor>) -> Senarai<Nombor> {
+            s.peta(fungsi(x: Nombor) -> Nombor { x * 2 })
+        }
+        |> fungsi(s: Senarai<Nombor>) -> Senarai<Nombor> {
+            s.tapis(fungsi(x: Nombor) -> Benar { x > 4 })
+        };
+
+    pulang hasil;    /// [6, 8, 10]
+}
+
+fungsi paip_kompleks() -> Nombor kesan Bersih {
+    /// Paip dengan berbilang langkah dan terjemahan
+    /// Complex pipe with multiple steps
+    biar hasil = [1, 2, 3, 4, 5]
+        |> fungsi(s: Senarai<Nombor>) -> Senarai<Nombor> {
+            /// Gandakan setiap elemen
+            s.peta(fungsi(x: Nombor) -> Nombor { x * 2 })
+        }
+        |> fungsi(s: Senarai<Nombor>) -> Senarai<Nombor> {
+            /// Saring elemen ganjil
+            s.tapis(fungsi(x: Nombor) -> Benar { x % 2 == 1 })
+        }
+        |> fungsi(s: Senarai<Nombor>) -> Nombor {
+            /// Hitung jumlah
+            s.lipat(0, fungsi(a: Nombor, b: Nombor) -> Nombor { a + b })
+        };
+
+    pulang hasil;
+}
+
+fungsi paip_dengan_kesan() -> Nombor kesan (Tulis, Bersih) {
+    /// Paip dengan operasi yang mempunyai kesan samping
+    /// Pipe with side-effect operations
+    biar hasil = 42
+        |> fungsi(x: Nombor) -> Nombor {
+            cetak("Awal: ");
+            cetak(x);
+            cetak("\n");
+            pulang x;
+        }
+        |> darab_dua
+        |> fungsi(x: Nombor) -> Nombor {
+            cetak("Selepas darab: ");
+            cetak(x);
+            cetak("\n");
+            pulang x;
+        }
+        |> tambah_satu
+        |> fungsi(x: Nombor) -> Nombor {
+            cetak("Akhir: ");
+            cetak(x);
+            cetak("\n");
+            pulang x;
+        };
+
+    pulang hasil;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("=== Cara Tradisional ===\n");
+    biar hasil1 = operasi_bersarang();
+    cetak(hasil1);
+    cetak("\n\n");
+
+    cetak("=== Dengan Paip ===\n");
+    biar hasil2 = operasi_dengan_paip();
+    cetak(hasil2);
+    cetak("\n\n");
+
+    cetak("=== Paip pada Senarai ===\n");
+    biar hasil3 = paip_pada_senarai();
+    cetak(hasil3);
+    cetak("\n\n");
+
+    cetak("=== Paip Kompleks ===\n");
+    biar hasil4 = paip_kompleks();
+    cetak("Jumlah: ");
+    cetak(hasil4);
+    cetak("\n\n");
+
+    cetak("=== Paip dengan Kesan ===\n");
+    paip_dengan_kesan();
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: |> is the pipe operator.
+/// Pipes value from left expression into right function.
+/// Equivalent to function application but reads left-to-right.
+/// Improves readability of functional compositions.
+/// Works with any function: f |> g |> h is equivalent to h(g(f))

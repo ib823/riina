@@ -1,0 +1,142 @@
+/// TIME_EFFECT.RII - Time and Timing Operations
+/// Operasi masa dan masa tamat
+/// Demonstrates: Masa effect, delays, timing
+
+fungsi ambil_waktu_kini() -> Nombor kesan Masa {
+    /// Ambil waktu kini dalam saat (Unix timestamp)
+    0  /// Simulasi
+}
+
+fungsi tunda(bilangan_milisaat: Nombor) -> Nombor kesan Masa {
+    /// Tunggu bilangan milisaat
+    0
+}
+
+fungsi tunda_saat(bilangan_saat: Nombor) -> Nombor kesan Masa {
+    /// Tunggu bilangan saat
+    tunda(bilangan_saat * 1000)
+}
+
+fungsi cek_masa_tamat(masa_tamat: Nombor) -> Benar kesan Masa {
+    /// Periksa sama ada masa tamat telah berlalu
+    biar waktu_kini = ambil_waktu_kini();
+    waktu_kini >= masa_tamat
+}
+
+fungsi hitung_masa_berlalu(waktu_mula: Nombor) -> Nombor kesan Masa {
+    /// Hitung waktu berlalu sejak waktu_mula
+    biar waktu_kini = ambil_waktu_kini();
+    waktu_kini - waktu_mula
+}
+
+fungsi jalankan_dengan_masa_tamat<T>(
+    f: Fn() -> T,
+    masa_tamat_milisaat: Nombor
+) -> Hasil<T, Teks> kesan Masa {
+    /// Jalankan fungsi dengan masa tamat
+    biar mula = ambil_waktu_kini();
+    biar hasil = f();
+    biar berlalu = hitung_masa_berlalu(mula);
+
+    kalau berlalu <= masa_tamat_milisaat {
+        Ok(hasil)
+    } lain {
+        Ralat("Masa tamat")
+    }
+}
+
+fungsi ulang_dengan_selang(
+    f: Fn() -> Nombor,
+    selang_milisaat: Nombor
+) -> Hasil<Nombor, Teks> kesan (Masa, Tulis) {
+    /// Ulang fungsi dengan selang
+    biar ubah kiraan = 0;
+
+    ulang {
+        f();
+        kiraan = kiraan + 1;
+
+        kalau kiraan >= 5 {
+            putus;
+        }
+
+        tunda(selang_milisaat);
+    }
+
+    Ok(kiraan)
+}
+
+fungsi penepat_waktu(nama: Teks, f: Fn() -> Nombor) -> Hasil<Nombor, Teks> kesan (Masa, Tulis) {
+    /// Jalankan fungsi dan catat waktu yang diambil
+    cetak("Memulai ");
+    cetak(nama);
+    cetak("...\n");
+
+    biar mula = ambil_waktu_kini();
+    f();
+    biar berlalu = hitung_masa_berlalu(mula);
+
+    cetak("Selesai dalam ");
+    cetak(berlalu);
+    cetak(" milisaat\n");
+
+    Ok(berlalu)
+}
+
+fungsi tunggu_sehingga_keadaan(
+    keadaan: Fn() -> Benar,
+    masa_tamat_saat: Nombor
+) -> Hasil<Benar, Teks> kesan Masa {
+    /// Tunggu sehingga keadaan dipenuhi
+    biar mula = ambil_waktu_kini();
+    biar masa_tamat = mula + (masa_tamat_saat * 1000);
+
+    ulang {
+        kalau keadaan() {
+            pulang Ok(betul);
+        }
+
+        kalau cek_masa_tamat(masa_tamat) {
+            pulang Ralat("Masa tamat");
+        }
+
+        tunda(100);
+    }
+}
+
+fungsi utama() -> Nombor kesan (Masa, Tulis) {
+    cetak("=== Operasi Masa ===\n");
+
+    /// Ambil waktu kini
+    biar waktu = ambil_waktu_kini();
+    cetak("Waktu kini: ");
+    cetak(waktu);
+    cetak(" saat\n");
+
+    /// Tunda
+    cetak("Menunggu 2 saat...\n");
+    tunda_saat(2);
+    cetak("Selesai menunggu\n");
+
+    /// Penepat waktu
+    biar ubah ujian = fungsi() -> Nombor {
+        tunda_saat(1);
+        pulang 0;
+    };
+
+    padan penepat_waktu("ujian", ujian) {
+        Ok(ms) -> {
+            cetak("Ujian mengambil ");
+            cetak(ms);
+            cetak(" milisaat\n");
+        },
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Masa for time-sensitive operations.
+/// May have side effects on execution timing.
+/// Important for real-time applications.

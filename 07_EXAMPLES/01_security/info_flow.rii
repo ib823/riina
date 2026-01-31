@@ -1,0 +1,155 @@
+/// INFO_FLOW.RII - Information Flow Control
+/// Kawalan aliran maklumat (IFC) untuk mencegah kebocoran
+/// Demonstrates: taint tracking, information flow, declassification
+
+jenis ArarTaint {
+    Bersih,
+    Tercemar(Teks),   /// Tainted with source label
+}
+
+fungsi sumber_tercemar(label: Teks) -> Taint {
+    Tercemar(label)
+}
+
+fungsi adalah_bersih(t: Taint) -> Benar kesan Bersih {
+    padan t {
+        Taint.Bersih -> betul,
+        _ -> salah,
+    }
+}
+
+/// Data dengan jejak taint
+jenis DataTercemar<T> {
+    nilai: T,
+    taint: Taint,
+}
+
+fungsi baca_dari_pengguna(nama_sumber: Teks) -> DataTercemar<Teks> kesan Baca {
+    /// Data dari pengguna adalah tercemar
+    DataTercemar {
+        nilai: baca_garisan(),
+        taint: Tercemar(nama_sumber),
+    }
+}
+
+fungsi baca_dari_fail(nama_fail: Teks) -> DataTercemar<Teks> kesan Baca {
+    /// Data dari fail adalah tercemar
+    DataTercemar {
+        nilai: baca_fail(nama_fail),
+        taint: Tercemar(nama_fail),
+    }
+}
+
+fungsi penapis_taint<T>(
+    d: DataTercemar<T>,
+    f: Fn(T) -> T
+) -> DataTercemar<T> kesan Bersih {
+    /// Penapis mengekalkan taint
+    DataTercemar {
+        nilai: f(d.nilai),
+        taint: d.taint,
+    }
+}
+
+fungsi gabung_taint(t1: Taint, t2: Taint) -> Taint kesan Bersih {
+    /// Gabung taint - jika salah satu tercemar, semua tercemar
+    padan (t1, t2) {
+        (Taint.Bersih, Taint.Bersih) -> Taint.Bersih,
+        (Taint.Tercemar(s1), Taint.Bersih) -> Taint.Tercemar(s1),
+        (Taint.Bersih, Taint.Tercemar(s2)) -> Taint.Tercemar(s2),
+        (Taint.Tercemar(s1), Taint.Tercemar(s2)) -> Taint.Tercemar("{s1},{s2}"),
+    }
+}
+
+fungsi campurkan_data_tercemar(
+    d1: DataTercemar<Nombor>,
+    d2: DataTercemar<Nombor>
+) -> DataTercemar<Nombor> kesan Bersih {
+    /// Campurkan dua data tercemar
+    biar taint_baru = gabung_taint(d1.taint, d2.taint);
+    DataTercemar {
+        nilai: d1.nilai + d2.nilai,
+        taint: taint_baru,
+    }
+}
+
+fungsi cetak_data_tercemar(d: DataTercemar<Teks>) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Cetak data tercemar hanya jika bersih
+    padan d.taint {
+        Taint.Bersih -> {
+            cetak(d.nilai);
+            cetak("\n");
+            Ok(0)
+        },
+        Taint.Tercemar(label) -> {
+            Ralat("Tidak boleh cetak data tercemar dari {label}")
+        },
+    }
+}
+
+fungsi nyahcemar_dengan_validasi(
+    d: DataTercemar<Teks>,
+    pengesah: Fn(Teks) -> Benar
+) -> Hasil<DataTercemar<Teks>, Teks> kesan Bersih {
+    /// Nyahcemar melalui validasi
+    kalau pengesah(d.nilai) {
+        Ok(DataTercemar {
+            nilai: d.nilai,
+            taint: Taint.Bersih,
+        })
+    } lain {
+        Ralat("Validasi gagal")
+    }
+}
+
+fungsi nyahcemar_dengan_pembersihan(
+    d: DataTercemar<Teks>
+) -> DataTercemar<Teks> kesan Bersih {
+    /// Nyahcemar melalui pembersihan/sanitasi
+    DataTercemar {
+        nilai: d.nilai.buang_karakter_berbahaya(),
+        taint: Taint.Bersih,
+    }
+}
+
+fungsi sql_query_aman(
+    banyaran_tercemar: DataTercemar<Teks>,
+    banyaran_bersih: Teks
+) -> Hasil<Teks, Teks> kesan Baca {
+    /// Cegah SQL injection dengan taint
+    padan banyaran_tercemar.taint {
+        Taint.Bersih -> {
+            /// Boleh gunakan dalam query
+            Ok("SELECT * FROM jadual WHERE kondisi = {banyaran_tercemar.nilai}")
+        },
+        Taint.Tercemar(sumber) -> {
+            /// Tidak boleh gunakan tercemar dalam query
+            Ralat("Mencegah SQL injection dari {sumber}")
+        },
+    }
+}
+
+fungsi utama() -> Nombor kesan (Baca, Tulis) {
+    cetak("=== Kawalan Aliran Maklumat ===\n");
+
+    /// Baca input tercemar
+    biar input = baca_dari_pengguna("stdin");
+    cetak("Input tercemar dibaca\n");
+
+    /// Validasi input
+    biar hasil_validasi = nyahcemar_dengan_pembersihan(input);
+    cetak("Input dibersihkan\n");
+
+    /// Penggunaan yang aman
+    padan cetak_data_tercemar(hasil_validasi) {
+        Ok(_) -> cetak("Cetak berjaya\n"),
+        Ralat(e) -> cetak("Ralat: "),
+    }
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: Taint tracking prevents untrusted data flows.
+/// All data sources marked with origin labels.
+/// Sinks (like cetak) check taint before use.
+/// Sanitization/validation removes taint.

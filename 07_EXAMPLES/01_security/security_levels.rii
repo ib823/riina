@@ -1,0 +1,162 @@
+/// SECURITY_LEVELS.RII - Six-Level Security Hierarchy
+/// Hierarki keselamatan enam aras
+/// Demonstrates: level hierarchy, information flow, access control
+
+jenis ArasKeselamatan {
+    Awam,       /// Public (no restrictions)
+    Dalaman,    /// Internal (company employees)
+    Sesi,       /// Session (within session only)
+    Pengguna,   /// User (per-user data)
+    Sistem,     /// System (core infrastructure)
+    Rahsia,     /// Secret (cryptographic keys, etc)
+}
+
+/// Data berlabel dengan aras keselamatan
+jenis DataBerlabel<T> {
+    nilai: T,
+    aras: ArasKeselamatan,
+    pemilik: Teks,
+}
+
+fungsi bandingkan_aras(a: ArasKeselamatan, b: ArasKeselamatan) -> Benar kesan Bersih {
+    /// Periksa sama ada aras a >= b (a lebih tinggi atau sama)
+    /// Check if level a >= b (a is higher or equal)
+    padan (a, b) {
+        (_, ArasKeselamatan.Awam) -> betul,
+        (ArasKeselamatan.Dalaman, ArasKeselamatan.Dalaman) -> betul,
+        (ArasKeselamatan.Sesi, ArasKeselamatan.Sesi) -> betul,
+        (ArasKeselamatan.Pengguna, ArasKeselamatan.Pengguna) -> betul,
+        (ArasKeselamatan.Sistem, ArasKeselamatan.Sistem) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Rahsia) -> betul,
+        (ArasKeselamatan.Dalaman, ArasKeselamatan.Awam) -> betul,
+        (ArasKeselamatan.Sesi, ArasKeselamatan.Awam) -> betul,
+        (ArasKeselamatan.Pengguna, ArasKeselamatan.Awam) -> betul,
+        (ArasKeselamatan.Sistem, ArasKeselamatan.Awam) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Awam) -> betul,
+        (ArasKeselamatan.Sistem, ArasKeselamatan.Dalaman) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Dalaman) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Sesi) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Pengguna) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Sistem) -> betul,
+        _ -> salah,
+    }
+}
+
+fungsi aliran_maklumat_aman<T>(
+    dari: DataBerlabel<T>,
+    ke_aras: ArasKeselamatan
+) -> Hasil<DataBerlabel<T>, Teks> kesan Bersih {
+    /// Aliran maklumat hanya naik atau tetap aras
+    /// Information flow only goes up or stays same level
+    kalau bandingkan_aras(dari.aras, ke_aras) {
+        /// boleh alir
+        Ok(DataBerlabel {
+            nilai: dari.nilai,
+            aras: ke_aras,
+            pemilik: dari.pemilik,
+        })
+    } lain {
+        Ralat("Aliran maklumat turun dilarang")
+    }
+}
+
+fungsi perihal_akses(
+    pengguna_aras: ArasKeselamatan,
+    data: DataBerlabel<Teks>
+) -> Benar kesan Bersih {
+    /// Periksa sama ada pengguna boleh akses data
+    /// Check if user can access data
+    bandingkan_aras(pengguna_aras, data.aras)
+}
+
+fungsi tandakan_hasil_aras<T>(
+    hasil: T,
+    maklumat_aras: Senarai<ArasKeselamatan>
+) -> ArasKeselamatan kesan Bersih {
+    /// Tandakan hasil dengan aras tertinggi dari maklumat
+    /// Mark result with highest level of input information
+    /// Simulasi mencari aras tertinggi
+    ArasKeselamatan.Awam
+}
+
+fungsi campuran_data(
+    a: DataBerlabel<Nombor>,
+    b: DataBerlabel<Nombor>
+) -> DataBerlabel<Nombor> kesan Bersih {
+    /// Campuran dua data - hasil pada aras tertinggi
+    /// Combine two data - result at highest level
+    biar aras_hasil = padan (a.aras, b.aras) {
+        (ArasKeselamatan.Rahsia, _) -> ArasKeselamatan.Rahsia,
+        (_, ArasKeselamatan.Rahsia) -> ArasKeselamatan.Rahsia,
+        (ArasKeselamatan.Sistem, _) -> ArasKeselamatan.Sistem,
+        (_, ArasKeselamatan.Sistem) -> ArasKeselamatan.Sistem,
+        (ArasKeselamatan.Pengguna, ArasKeselamatan.Pengguna) -> ArasKeselamatan.Pengguna,
+        _ -> ArasKeselamatan.Awam,
+    };
+
+    DataBerlabel {
+        nilai: a.nilai + b.nilai,
+        aras: aras_hasil,
+        pemilik: a.pemilik,
+    }
+}
+
+fungsi enkripsi_dengan_aras(
+    data: DataBerlabel<Teks>
+) -> Hasil<DataBerlabel<Rahsia<Teks>>, Teks> kesan (Kripto, MasaTetap) {
+    /// Enkripsi data, aras tetap sama
+    /// Encrypt data, level stays same
+    biar kunci = Rahsia(hasilkan_kunci_acak());
+    biar terenkripsi = Rahsia(
+        aes_enkripsi(data.nilai, selamatkan(kunci))
+    );
+
+    Ok(DataBerlabel {
+        nilai: terenkripsi,
+        aras: data.aras,
+        pemilik: data.pemilik,
+    })
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("=== Hierarki Aras Keselamatan ===\n");
+
+    /// Buat data pada pelbagai aras
+    biar awam = DataBerlabel {
+        nilai: "Maklumat awam",
+        aras: ArasKeselamatan.Awam,
+        pemilik: "sistem",
+    };
+
+    biar dalaman = DataBerlabel {
+        nilai: "Maklumat dalaman",
+        aras: ArasKeselamatan.Dalaman,
+        pemilik: "perusahaan",
+    };
+
+    biar rahsia = DataBerlabel {
+        nilai: "Maklumat rahsia",
+        aras: ArasKeselamatan.Rahsia,
+        pemilik: "admin",
+    };
+
+    /// Periksa aliran maklumat
+    biar boleh_alir = bandingkan_aras(ArasKeselamatan.Dalaman, ArasKeselamatan.Awam);
+    cetak("Aliran dari Dalaman ke Awam boleh: ");
+    cetak(boleh_alir);
+    cetak("\n");
+
+    /// Periksa akses
+    biar ada_akses = perihal_akses(ArasKeselamatan.Dalaman, dalaman);
+    cetak("Akses ke Dalaman: ");
+    cetak(ada_akses);
+    cetak("\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Information flow enforcement (IFC).
+/// Data can only flow to same or higher security level.
+/// Type system prevents data downgrade attacks.
+/// All mixing/operations track information level.

@@ -6,7 +6,8 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 use riina_lexer::{Token, TokenKind, Lexer, Span};
-use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program, TaintSource, Sanitizer, CapabilityKind};
+use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program, TaintSource, Sanitizer, CapabilityKind, SpannedDecl};
+use riina_types::Span as AstSpan;
 use std::fmt;
 use std::iter::Peekable;
 
@@ -79,10 +80,26 @@ impl<'a> Parser<'a> {
     /// Parse a complete .rii file as a sequence of top-level declarations.
     pub fn parse_program(&mut self) -> Result<Program, ParseError> {
         let mut decls = Vec::new();
+        let mut spans = Vec::new();
         while self.peek().map(|t| &t.kind) != Some(&TokenKind::Eof) && self.peek().is_some() {
-            decls.push(self.parse_top_level_decl()?);
+            let start = self.peek().map(|t| t.span.start).unwrap_or(0);
+            let decl = self.parse_top_level_decl()?;
+            let end = self.current_span.end;
+            let name_span = match &decl {
+                TopLevelDecl::Function { .. } | TopLevelDecl::Binding { .. } => {
+                    // Name span recorded during parsing via current_span after ident
+                    None // Will be filled in by enhanced parse methods below
+                }
+                TopLevelDecl::Expr(_) => None,
+            };
+            spans.push(SpannedDecl {
+                decl: decl.clone(),
+                span: AstSpan::new(start, end),
+                name_span,
+            });
+            decls.push(decl);
         }
-        Ok(Program { decls })
+        Ok(Program::with_spans(decls, spans))
     }
 
     fn parse_top_level_decl(&mut self) -> Result<TopLevelDecl, ParseError> {

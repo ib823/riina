@@ -1,0 +1,94 @@
+/// PERFORM_CUSTOM.RII - Custom Effect Operations
+/// Kesan khusus dan operasi laku (perform)
+/// Demonstrates: custom effects, effect interpretation
+
+jenis Kesan_Bersesuaian {
+    TulisBersesuaian(Teks),
+    BacaBersesuaian(Teks),
+    Selesai,
+}
+
+fungsi buat_kesan_bersesuaian(operasi: Kesan_Bersesuaian) -> Nombor kesan Bersih {
+    /// Buat kesan bersesuaian
+    padan operasi {
+        Kesan_Bersesuaian.TulisBersesuaian(msg) -> {
+            cetak("Tulis Bersesuaian: ");
+            cetak(msg);
+            cetak("\n");
+            0
+        },
+        Kesan_Bersesuaian.BacaBersesuaian(nama) -> {
+            cetak("Baca Bersesuaian: ");
+            cetak(nama);
+            cetak("\n");
+            0
+        },
+        Kesan_Bersesuaian.Selesai -> {
+            cetak("Selesai\n");
+            0
+        },
+    }
+}
+
+fungsi laku_kesan_bersesuaian(
+    kesan: Kesan_Bersesuaian
+) -> Hasil<Nombor, Teks> kesan Bersih {
+    /// Laku kesan bersesuaian
+    Ok(buat_kesan_bersesuaian(kesan))
+}
+
+jenis LogLevel {
+    Debug,
+    Info,
+    Amaran,
+    Ralat,
+}
+
+fungsi log_bersesuaian(
+    tahap: LogLevel,
+    mesej: Teks
+) -> Nombor kesan Tulis {
+    /// Log dengan tahap bersesuaian
+    biar prefix = padan tahap {
+        LogLevel.Debug -> "[DEBUG]",
+        LogLevel.Info -> "[INFO]",
+        LogLevel.Amaran -> "[AMARAN]",
+        LogLevel.Ralat -> "[RALAT]",
+    };
+
+    cetak(prefix);
+    cetak(" ");
+    cetak(mesej);
+    cetak("\n");
+
+    0
+}
+
+fungsi tangani_kesan_bersesuaian<T>(
+    f: Fn() -> T
+) -> T kesan Bersih {
+    /// Tangani kesan bersesuaian
+    f()
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("=== Kesan Bersesuaian ===\n");
+
+    /// Laku kesan bersesuaian tulis
+    padan laku_kesan_bersesuaian(Kesan_Bersesuaian.TulisBersesuaian("Mesej khusus")) {
+        Ok(_) -> cetak("Laku berjaya\n"),
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    /// Log bersesuaian dengan pelbagai tahap
+    log_bersesuaian(LogLevel.Debug, "Maklumat debug");
+    log_bersesuaian(LogLevel.Info, "Maklumat umum");
+    log_bersesuaian(LogLevel.Amaran, "Ini adalah amaran");
+    log_bersesuaian(LogLevel.Ralat, "Ini adalah ralat");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Custom effects enable domain-specific abstractions.
+/// Type system tracks custom effects like builtin effects.

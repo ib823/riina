@@ -1,0 +1,178 @@
+/// CLOSURES.RII - Closures and Captured Variables
+/// Penutup (closure) yang menangkap pembolehubah
+/// Demonstrates: variable capture, lexical scope, closures in containers
+
+fungsi buat_pencacah() -> Fn() -> Nombor kesan Bersih {
+    /// Buat penutup yang menangkap ubah
+    /// Create closure capturing mutable variable
+    biar ubah kiraan = 0;
+
+    /// Kembalikan fungsi yang mengakses kiraan
+    /// Return function that accesses kiraan
+    fungsi cacah() -> Nombor {
+        kiraan = kiraan + 1;
+        pulang kiraan;
+    }
+
+    pulang cacah;
+}
+
+fungsi buat_pengganda(faktor: Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Buat penutup dengan parameter
+    /// Create closure with parameter
+    fungsi darab(x: Nombor) -> Nombor {
+        pulang x * faktor;
+    }
+
+    pulang darab;
+}
+
+fungsi penutup_berganda() -> Fn(Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Penutup yang mengembalikan penutup
+    /// Closure returning closure
+    fungsi pembuat_penambah(n: Nombor) -> Fn(Nombor) -> Nombor {
+        fungsi tambah(x: Nombor) -> Nombor {
+            pulang x + n;
+        }
+        pulang tambah;
+    }
+
+    pulang pembuat_penambah;
+}
+
+fungsi penutup_dalam_senarai() -> Senarai<Fn(Nombor) -> Nombor> kesan Bersih {
+    /// Buat senarai penutup
+    /// Create list of closures
+    biar ubah penutup_senarai: Senarai<Fn(Nombor) -> Nombor> = [];
+
+    untuk i dalam 0..5 {
+        /// Setiap penutup menangkap i yang berbeza
+        /// Each closure captures different i
+        fungsi kelipatan(x: Nombor) -> Nombor {
+            pulang x * i;
+        }
+        penutup_senarai = penutup_senarai.tambah(kelipatan);
+    }
+
+    pulang penutup_senarai;
+}
+
+fungsi penutup_dengan_peta() -> Senarai<Fn(Nombor) -> Nombor> kesan Bersih {
+    /// Gunakan peta untuk membuat penutup
+    /// Use map to create closures
+    biar faktor_senarai = [2, 3, 4, 5];
+
+    biar penutup = faktor_senarai.peta(fungsi(f: Nombor) -> Fn(Nombor) -> Nombor {
+        fungsi kelipatan(x: Nombor) -> Nombor {
+            pulang x * f;
+        }
+        pulang kelipatan;
+    });
+
+    pulang penutup;
+}
+
+fungsi penutup_kurang() -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Penutup yang menangkap rujukan
+    /// Closure capturing reference
+    biar ubah terhenti = salah;
+
+    fungsi kurangkan(x: Nombor) -> Nombor {
+        kalau !terhenti {
+            terhenti = betul;
+            pulang x - 1;
+        }
+        pulang x;
+    }
+
+    pulang kurangkan;
+}
+
+fungsi tutup_dengan_kadir() -> (Fn(Nombor) -> Nombor, Fn() -> Nombor) kesan Bersih {
+    /// Penutup yang berkongsi keadaan
+    /// Closure sharing state
+    biar ubah jumlah = 0;
+    biar ubah kiraan = 0;
+
+    fungsi tambah(x: Nombor) -> Nombor {
+        jumlah = jumlah + x;
+        kiraan = kiraan + 1;
+        pulang jumlah;
+    }
+
+    fungsi ambil_purata() -> Nombor {
+        kalau kiraan > 0 {
+            pulang jumlah / kiraan;
+        }
+        pulang 0;
+    }
+
+    pulang (tambah, ambil_purata);
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    /// Contoh 1: Pencacah
+    /// Example 1: Counter
+    biar pencacah = buat_pencacah();
+    cetak("Cacah 1: ");
+    cetak(pencacah());
+    cetak("\n");
+
+    cetak("Cacah 2: ");
+    cetak(pencacah());
+    cetak("\n");
+
+    cetak("Cacah 3: ");
+    cetak(pencacah());
+    cetak("\n\n");
+
+    /// Contoh 2: Pengganda
+    /// Example 2: Multiplier
+    biar darab_dua = buat_pengganda(2);
+    biar darab_tiga = buat_pengganda(3);
+
+    cetak("2 * 5 = ");
+    cetak(darab_dua(5));
+    cetak("\n");
+
+    cetak("3 * 5 = ");
+    cetak(darab_tiga(5));
+    cetak("\n\n");
+
+    /// Contoh 3: Penutup berganda
+    /// Example 3: Double closure
+    biar pembuat = penutup_berganda();
+    biar tambah_10 = pembuat(10);
+    biar tambah_20 = pembuat(20);
+
+    cetak("5 + 10 = ");
+    cetak(tambah_10(5));
+    cetak("\n");
+
+    cetak("5 + 20 = ");
+    cetak(tambah_20(5));
+    cetak("\n\n");
+
+    /// Contoh 4: Penutup berkongsi keadaan
+    /// Example 4: Closure sharing state
+    biar (tambah, ambil_purata) = tutup_dengan_kadir();
+
+    cetak("Jumlah: ");
+    cetak(tambah(10));
+    cetak("\n");
+
+    cetak("Jumlah: ");
+    cetak(tambah(20));
+    cetak("\n");
+
+    cetak("Purata: ");
+    cetak(ambil_purata());
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Closures capture variables from enclosing scope.
+/// Captured variables are moved into closure unless borrowed.
+/// Mutable captures allow modification visible to all closures.
+/// Closures are first-class values (can be stored, returned, passed).

@@ -1,0 +1,175 @@
+/// CLASSIFY.RII - Classification and Data Marking
+/// Penandaan dan pengklasifikasian data
+/// Demonstrates: sulit (classify), security levels, data categorization
+
+/// Jenis aras keselamatan
+/// Security level enumeration
+jenis ArasKeselamatan {
+    Awam,
+    Dalaman,
+    Sesi,
+    Pengguna,
+    Sistem,
+    Rahsia,
+}
+
+/// Jenis data yang diklasifikasikan
+/// Classified data type
+jenis DataDiklasifikasi<T> {
+    nilai: T,
+    aras: ArasKeselamatan,
+    pemilik: Teks,
+    masa_ciptaan: Nombor,
+}
+
+fungsi klasifikasi_data_awam(nilai: Teks) -> DataDiklasifikasi<Teks> kesan Bersih {
+    /// Klasifikasi data awam
+    /// Classify public data
+    pulang DataDiklasifikasi {
+        nilai: nilai,
+        aras: ArasKeselamatan.Awam,
+        pemilik: "sistem",
+        masa_ciptaan: 0,
+    };
+}
+
+fungsi klasifikasi_data_dalaman(nilai: Teks) -> DataDiklasifikasi<Teks> kesan Bersih {
+    /// Klasifikasi data dalaman perusahaan
+    /// Classify internal company data
+    pulang DataDiklasifikasi {
+        nilai: nilai,
+        aras: ArasKeselamatan.Dalaman,
+        pemilik: "perusahaan",
+        masa_ciptaan: 0,
+    };
+}
+
+fungsi klasifikasi_data_pengguna(
+    nama_pengguna: Teks,
+    nilai: Teks
+) -> DataDiklasifikasi<Teks> kesan Bersih {
+    /// Klasifikasi data peringkat pengguna
+    /// Classify user-level data
+    pulang DataDiklasifikasi {
+        nilai: nilai,
+        aras: ArasKeselamatan.Pengguna,
+        pemilik: nama_pengguna,
+        masa_ciptaan: 0,
+    };
+}
+
+fungsi klasifikasi_data_rahsia(
+    nilai: Teks,
+    pemohon: Teks
+) -> DataDiklasifikasi<Rahsia<Teks>> kesan Bersih {
+    /// Klasifikasi data rahsia dengan penutup
+    /// Classify secret data with wrapper
+    pulang DataDiklasifikasi {
+        nilai: Rahsia(nilai),
+        aras: ArasKeselamatan.Rahsia,
+        pemilik: pemohon,
+        masa_ciptaan: 0,
+    };
+}
+
+fungsi sulit_sebagai_sesi(
+    data: Teks,
+    id_sesi: Teks
+) -> DataDiklasifikasi<Teks> kesan Bersih {
+    /// Tandai data sebagai peringkat sesi
+    /// Mark data as session-level
+    biar diklasifikasi = DataDiklasifikasi {
+        nilai: data,
+        aras: ArasKeselamatan.Sesi,
+        pemilik: id_sesi,
+        masa_ciptaan: 0,
+    };
+
+    pulang diklasifikasi;
+}
+
+fungsi periksa_aras_akses(
+    data: DataDiklasifikasi<Teks>,
+    aras_pengguna: ArasKeselamatan
+) -> Benar kesan Bersih {
+    /// Periksa sama ada pengguna mempunyai akses
+    /// Check if user has access to data
+    padan (data.aras, aras_pengguna) {
+        (ArasKeselamatan.Awam, _) -> betul,
+        (ArasKeselamatan.Dalaman, ArasKeselamatan.Dalaman) -> betul,
+        (ArasKeselamatan.Dalaman, ArasKeselamatan.Sistem) -> betul,
+        (ArasKeselamatan.Pengguna, ArasKeselamatan.Pengguna) -> betul,
+        (ArasKeselamatan.Rahsia, ArasKeselamatan.Rahsia) -> betul,
+        _ -> salah,
+    }
+}
+
+fungsi enkripsi_mengikut_aras(
+    data: DataDiklasifikasi<Teks>,
+    kunci: Rahsia<Teks>
+) -> Hasil<DataDiklasifikasi<Rahsia<Teks>>, Teks> kesan (Kripto, MasaTetap) {
+    /// Enkripsi data mengikut aras keselamatan
+    /// Encrypt data according to classification level
+    padan data.aras {
+        ArasKeselamatan.Awam -> {
+            /// Data awam tidak perlu enkripsi
+            Ok(DataDiklasifikasi {
+                nilai: Rahsia(data.nilai),
+                aras: data.aras,
+                pemilik: data.pemilik,
+                masa_ciptaan: data.masa_ciptaan,
+            })
+        },
+        ArasKeselamatan.Dalaman -> {
+            /// Data dalaman perlu enkripsi asas
+            biar terenkripsi = aes_enkripsi(data.nilai, selamatkan(kunci));
+            Ok(DataDiklasifikasi {
+                nilai: Rahsia(terenkripsi),
+                aras: data.aras,
+                pemilik: data.pemilik,
+                masa_ciptaan: data.masa_ciptaan,
+            })
+        },
+        ArasKeselamatan.Rahsia -> {
+            /// Data rahsia perlu enkripsi kuat
+            biar terenkripsi = aes_256_enkripsi(data.nilai, selamatkan(kunci));
+            Ok(DataDiklasifikasi {
+                nilai: Rahsia(terenkripsi),
+                aras: data.aras,
+                pemilik: data.pemilik,
+                masa_ciptaan: data.masa_ciptaan,
+            })
+        },
+        _ -> Ralat("Aras tidak disokong"),
+    }
+}
+
+fungsi utama() -> Nombor kesan (Kripto, Tulis, MasaTetap) {
+    cetak("=== Klasifikasi Data ===\n");
+
+    /// Klasifikasi pelbagai jenis data
+    biar data_awam = klasifikasi_data_awam("Maklumat umum");
+    cetak("Data awam diklasifikasi\n");
+
+    biar data_dalaman = klasifikasi_data_dalaman("Strategi perusahaan");
+    cetak("Data dalaman diklasifikasi\n");
+
+    biar data_pengguna = klasifikasi_data_pengguna("ahmad123", "Profil pengguna");
+    cetak("Data pengguna diklasifikasi\n");
+
+    biar data_rahsia = klasifikasi_data_rahsia("Kunci privat", "admin");
+    cetak("Data rahsia diklasifikasi\n");
+
+    /// Periksa akses
+    biar boleh_akses = periksa_aras_akses(data_awam, ArasKeselamatan.Dalaman);
+    cetak("Boleh akses data awam: ");
+    cetak(boleh_akses);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: sulit (classify) marks data with security level.
+/// Compiler tracks level through type system.
+/// Information flow control prevents mixing levels.
+/// Declassification requires explicit proof of safety.

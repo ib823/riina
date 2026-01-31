@@ -11,8 +11,11 @@ name = "riinac"
 path = "src/main.rs"
 
 [dependencies]
+riina-codegen.workspace = true
+riina-doc.workspace = true
+riina-fmt.workspace = true
 riina-lexer.workspace = true
+riina-lsp.workspace = true
 riina-parser.workspace = true
 riina-types.workspace = true
 riina-typechecker.workspace = true
-riina-codegen.workspace = true

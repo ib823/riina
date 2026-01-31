@@ -25,6 +25,9 @@ enum Command {
     EmitC,
     EmitIR,
     Repl,
+    Fmt,
+    Doc,
+    Lsp,
 }
 
 fn usage() -> ! {
@@ -36,6 +39,9 @@ fn usage() -> ! {
     eprintln!("  build    Parse, typecheck, emit C, and compile");
     eprintln!("  emit-c   Parse, typecheck, and emit C to stdout");
     eprintln!("  emit-ir  Parse, typecheck, lower, and print IR");
+    eprintln!("  doc      Generate HTML documentation");
+    eprintln!("  fmt      Format a .rii file");
+    eprintln!("  lsp      Start LSP server (stdio)");
     eprintln!("  repl     Interactive read-eval-print loop");
     process::exit(1);
 }
@@ -47,6 +53,9 @@ fn parse_args() -> (Command, Option<PathBuf>) {
             if args[1] == "repl" {
                 return (Command::Repl, None);
             }
+            if args[1] == "lsp" {
+                return (Command::Lsp, None);
+            }
             // riinac <file.rii> — default to check (backwards compat)
             (Command::Check, Some(PathBuf::from(&args[1])))
         }
@@ -57,8 +66,14 @@ fn parse_args() -> (Command, Option<PathBuf>) {
                 "build" => Command::Build,
                 "emit-c" => Command::EmitC,
                 "emit-ir" => Command::EmitIR,
+                "doc" => Command::Doc,
+                "fmt" => Command::Fmt,
                 "repl" => {
                     eprintln!("repl does not take a file argument");
+                    usage();
+                }
+                "lsp" => {
+                    eprintln!("lsp does not take a file argument");
                     usage();
                 }
                 other => {
@@ -77,6 +92,14 @@ fn main() {
 
     if let Command::Repl = command {
         repl::run();
+        return;
+    }
+
+    if let Command::Lsp = command {
+        if let Err(e) = riina_lsp::server::run() {
+            eprintln!("LSP error: {e}");
+            process::exit(1);
+        }
         return;
     }
 
@@ -195,6 +218,29 @@ fn main() {
                 }
             }
         }
+        Command::Fmt => {
+            match riina_fmt::format_source(&source) {
+                Ok(formatted) => print!("{formatted}"),
+                Err(e) => {
+                    eprintln!("Format error: {e}");
+                    process::exit(1);
+                }
+            }
+        }
+        Command::Doc => {
+            let title = input
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("RIINA");
+            match riina_doc::generate_from_source(title, &source) {
+                Ok(html) => print!("{html}"),
+                Err(e) => {
+                    eprintln!("Doc error: {e}");
+                    process::exit(1);
+                }
+            }
+        }
         Command::Repl => unreachable!("handled above"),
+        Command::Lsp => unreachable!("handled above"),
     }
 }

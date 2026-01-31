@@ -1,0 +1,181 @@
+/// SECURE_CHANNEL.RII - Secure Communication Channels
+/// Saluran komunikasi aman menggunakan session types
+/// Demonstrates: protocol verification, session types, authenticated messaging
+
+jenis StateSaluran {
+    Awal,
+    Autentikasi,
+    Terenkripsi,
+    Ditutup,
+}
+
+jenis SaluranSelamat<T> {
+    keadaan: StateSaluran,
+    partner: Teks,
+    kunci_sesi: Rahsia<Teks>,
+    mesej_dikirim: Nombor,
+    mesej_diterima: Nombor,
+}
+
+fungsi buka_saluran(partner: Teks) -> Hasil<SaluranSelamat<()>, Teks> kesan (Rangkaian, Kripto) {
+    /// Buka saluran aman dengan partner
+    biar kunci = Rahsia(hasilkan_kunci_sesi_acak());
+
+    Ok(SaluranSelamat {
+        keadaan: StateSaluran.Awal,
+        partner: partner,
+        kunci_sesi: kunci,
+        mesej_dikirim: 0,
+        mesej_diterima: 0,
+    })
+}
+
+fungsi autentikasi_saluran(
+    ubah saluran: SaluranSelamat<()>,
+    bukti_identiti: Rahsia<Teks>
+) -> Hasil<SaluranSelamat<()>, Teks> kesan (Rangkaian, Kripto, MasaTetap) {
+    /// Autentikasi diri pada saluran
+    kalau saluran.keadaan == StateSaluran.Awal {
+        /// Hantar bukti identiti yang terenkripsi
+        biar bukti_terenkripsi = Rahsia(
+            aes_enkripsi(selamatkan(bukti_identiti), selamatkan(saluran.kunci_sesi))
+        );
+
+        saluran.keadaan = StateSaluran.Autentikasi;
+        saluran.mesej_dikirim = saluran.mesej_dikirim + 1;
+
+        Ok(saluran)
+    } lain {
+        Ralat("Keadaan saluran tidak sah untuk autentikasi")
+    }
+}
+
+fungsi aktivasi_enkripsi(
+    ubah saluran: SaluranSelamat<()>
+) -> Hasil<SaluranSelamat<()>, Teks> kesan Rangkaian {
+    /// Aktivasi enkripsi pada saluran
+    kalau saluran.keadaan == StateSaluran.Autentikasi {
+        saluran.keadaan = StateSaluran.Terenkripsi;
+        Ok(saluran)
+    } lain {
+        Ralat("Saluran tidak autentikasi")
+    }
+}
+
+fungsi hantar_mesej_aman(
+    ubah saluran: SaluranSelamat<()>,
+    mesej: Teks
+) -> Hasil<Nombor, Teks> kesan (Rangkaian, Kripto, MasaTetap) {
+    /// Hantar mesej melalui saluran aman
+    kalau saluran.keadaan == StateSaluran.Terenkripsi {
+        /// Enkripsi mesej
+        biar mesej_terenkripsi = aes_enkripsi(mesej, selamatkan(saluran.kunci_sesi));
+
+        /// Tanda tangan mesej
+        biar tanda = sha256(mesej_terenkripsi + selamatkan(saluran.kunci_sesi));
+
+        /// Hantar
+        saluran.mesej_dikirim = saluran.mesej_dikirim + 1;
+
+        Ok(saluran.mesej_dikirim)
+    } lain {
+        Ralat("Saluran tidak siap")
+    }
+}
+
+fungsi terima_mesej_aman(
+    ubah saluran: SaluranSelamat<()>
+) -> Hasil<Teks, Teks> kesan (Rangkaian, Kripto, MasaTetap) {
+    /// Terima mesej dari saluran aman
+    kalau saluran.keadaan == StateSaluran.Terenkripsi {
+        /// Simulasi penerimaan
+        biar mesej_terenkripsi = "mesej_dari_partner_terenkripsi";
+
+        /// Dekripsi
+        biar mesej = aes_dekripsi(mesej_terenkripsi, selamatkan(saluran.kunci_sesi));
+
+        padan mesej {
+            Ok(plaintext) -> {
+                saluran.mesej_diterima = saluran.mesej_diterima + 1;
+                Ok(plaintext)
+            },
+            Ralat(e) -> Ralat("Dekripsi gagal"),
+        }
+    } lain {
+        Ralat("Saluran tidak siap")
+    }
+}
+
+fungsi tutup_saluran(
+    ubah saluran: SaluranSelamat<()>
+) -> Hasil<Nombor, Teks> kesan (Rangkaian, MasaTetap) {
+    /// Tutup saluran dengan bersih
+    kalau saluran.keadaan != StateSaluran.Ditutup {
+        /// Sifar kunci sesi
+        sifar_segera(saluran.kunci_sesi);
+
+        saluran.keadaan = StateSaluran.Ditutup;
+        saluran.mesej_dikirim = 0;
+        saluran.mesej_diterima = 0;
+
+        Ok(0)
+    } lain {
+        Ralat("Saluran sudah ditutup")
+    }
+}
+
+fungsi keadaan_saluran(s: SaluranSelamat<()>) -> Teks kesan Bersih {
+    padan s.keadaan {
+        StateSaluran.Awal -> "Awal",
+        StateSaluran.Autentikasi -> "Autentikasi",
+        StateSaluran.Terenkripsi -> "Terenkripsi",
+        StateSaluran.Ditutup -> "Ditutup",
+    }
+}
+
+fungsi utama() -> Nombor kesan (Rangkaian, Tulis, Kripto, MasaTetap) {
+    cetak("=== Saluran Komunikasi Aman ===\n");
+
+    /// Buka saluran
+    padan buka_saluran("partner@server.com") {
+        Ok(ubah saluran) -> {
+            cetak("Saluran dibuka\n");
+
+            /// Autentikasi
+            padan autentikasi_saluran(saluran, Rahsia("bukti_identiti")) {
+                Ok(ubah saluran2) -> {
+                    cetak("Autentikasi selesai\n");
+
+                    /// Aktivasi enkripsi
+                    padan aktivasi_enkripsi(saluran2) {
+                        Ok(ubah saluran3) -> {
+                            cetak("Enkripsi aktif\n");
+
+                            /// Hantar mesej
+                            padan hantar_mesej_aman(saluran3, "Mesej rahsia") {
+                                Ok(id) -> cetak("Mesej dikirim\n"),
+                                Ralat(e) -> cetak("Ralat hantar\n"),
+                            }
+
+                            /// Tutup saluran
+                            padan tutup_saluran(saluran3) {
+                                Ok(_) -> cetak("Saluran ditutup\n"),
+                                Ralat(e) -> cetak("Ralat tutup\n"),
+                            }
+                        },
+                        Ralat(e) -> cetak("Ralat enkripsi\n"),
+                    }
+                },
+                Ralat(e) -> cetak("Ralat autentikasi\n"),
+            }
+        },
+        Ralat(e) -> cetak("Ralat buka saluran\n"),
+    }
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: SaluranSelamat uses state machine for protocol verification.
+/// Types enforce correct sequence: Awal -> Autentikasi -> Terenkripsi.
+/// Kunci sesi difasilitasi sejak awal dan disifar apabila tutup.
+/// Type system prevents misuse of unsealed channels.

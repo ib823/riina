@@ -14,8 +14,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "riina-doc"
+version = "0.1.0"
+dependencies = [
+ "riina-lexer",
+ "riina-parser",
+ "riina-types",
+]
+
+[[package]]
+name = "riina-fmt"
+version = "0.1.0"
+dependencies = [
+ "riina-lexer",
+ "riina-parser",
+ "riina-types",
+]
+
+[[package]]
 name = "riina-lexer"
 version = "0.1.0"
+
+[[package]]
+name = "riina-lsp"
+version = "0.1.0"
+dependencies = [
+ "riina-lexer",
+ "riina-parser",
+ "riina-typechecker",
+ "riina-types",
+]
 
 [[package]]
 name = "riina-parser"
@@ -52,7 +80,10 @@ name = "riinac"
 version = "0.1.0"
 dependencies = [
  "riina-codegen",
+ "riina-doc",
+ "riina-fmt",
  "riina-lexer",
+ "riina-lsp",
  "riina-parser",
  "riina-typechecker",
  "riina-types",

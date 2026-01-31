@@ -1,0 +1,125 @@
+/// PAIRS.RII - Tuples and Pair Operations
+/// Pasangan (tuple) dan operasi padanya
+/// Demonstrates: pair/tuple creation, destructuring, nested tuples
+
+fungsi buat_pasangan() -> (Nombor, Teks) kesan Bersih {
+    /// Buat pasangan (tuple) dengan dua elemen
+    /// Create a pair (2-tuple)
+    biar pasangan = (42, "Ahmad");
+
+    /// Akses elemen pasangan dengan indeks (dot notation)
+    /// Access tuple elements
+    biar pertama = pasangan.0;       /// 42
+    biar kedua = pasangan.1;         /// "Ahmad"
+
+    pulang pasangan;
+}
+
+fungsi struktur_pasangan() -> Nombor kesan Bersih {
+    /// Buat pasangan tiga elemen (triple)
+    /// Create a 3-tuple
+    biar triple = (1, 2, 3);
+
+    /// Nyahstruktur pasangan dalam let binding
+    /// Destructure tuple in let binding
+    biar (a, b, c) = triple;
+
+    pulang a + b + c;    /// 6
+}
+
+fungsi pasangan_bersarang() -> Nombor kesan Bersih {
+    /// Pasangan bersarang (nested tuples)
+    /// Nested tuples
+    biar bersarang = ((1, 2), (3, 4));
+
+    /// Nyahstruktur bersarang
+    /// Destructure nested
+    biar ((a, b), (c, d)) = bersarang;
+
+    pulang a + b + c + d;    /// 10
+}
+
+fungsi kembalikan_berbilang() -> (Teks, Nombor, Benar) kesan Bersih {
+    /// Kembalikan pasangan dengan berbilang nilai
+    /// Return multiple values as tuple
+    pulang ("Berjaya", 42, betul);
+}
+
+fungsi gunakan_kembalian() -> Nombor kesan Tulis {
+    /// Nyahstruktur hasil
+    /// Destructure the result
+    biar (mesej, nombor, ok) = kembalikan_berbilang();
+
+    cetak(mesej);
+    cetak(": ");
+    cetak(nombor);
+    cetak(" (");
+    cetak(ok);
+    cetak(")\n");
+
+    pulang nombor;
+}
+
+fungsi pasangan_dalam_padan() -> Teks kesan Bersih {
+    /// Gunakan pasangan dalam padan (match)
+    /// Use tuple in pattern matching
+    biar p = (10, 20);
+
+    padan p {
+        (0, 0) -> "Kedua kosong",
+        (x, 0) -> "Kedua kosong",
+        (x, y) kalau x == y -> "Sama",
+        (x, y) -> "Berbeza: {x} != {y}",
+    }
+}
+
+fungsi pertukaran_pasangan() -> (Teks, Nombor) kesan Bersih {
+    /// Pertukaran elemen pasangan
+    /// Swap elements of tuple
+    biar (nama, umur) = ("Ahmad", 25);
+
+    /// Buat pasangan baru dengan urutan terbalik
+    /// Create new tuple with swapped order
+    pulang (umur, nama);    /// (25, "Ahmad")
+}
+
+/// Struct dengan tiga medan
+/// Struct with three fields
+jenis Titik {
+    x: Nombor,
+    y: Nombor,
+    z: Nombor,
+}
+
+fungsi titik_ke_pasangan(t: Titik) -> (Nombor, Nombor, Nombor) kesan Bersih {
+    /// Tukar struct ke pasangan
+    /// Convert struct to tuple
+    pulang (t.x, t.y, t.z);
+}
+
+fungsi pasangan_ke_titik(p: (Nombor, Nombor, Nombor)) -> Titik kesan Bersih {
+    /// Tukar pasangan ke struct
+    /// Convert tuple to struct
+    biar (x, y, z) = p;
+    pulang Titik { x: x, y: y, z: z };
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar (teks, nombor, bol) = kembalikan_berbilang();
+    cetak("Tiga nilai: ");
+    cetak(teks);
+    cetak(", ");
+    cetak(nombor);
+    cetak(", ");
+    cetak(bol);
+    cetak("\n");
+
+    gunakan_kembalian();
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Tuples use (T1, T2, ..., Tn) syntax.
+/// Access with dot notation: tuple.0, tuple.1, etc.
+/// Destructuring with (a, b, c) = tuple_expr
+/// Empty tuple () is the unit type.

@@ -1,0 +1,210 @@
+/// CAPABILITY_DELEGATION.RII - Capability Delegation and Transfer
+/// Delegasi dan pemindahan keupayaan dengan keselamatan
+/// Demonstrates: delegation, attenuation, proxy capabilities
+
+jenis Keupayaan<T> {
+    hak: T,
+    pemberi: Teks,
+    penerima: Teks,
+    delegasi_dalam: Senarai<Teks>,
+}
+
+jenis HakFailRW {
+    nama_fail: Teks,
+    boleh_baca: Benar,
+    boleh_tulis: Benar,
+}
+
+fungsi delegasi_keupayaan<T>(
+    cap: Keupayaan<T>,
+    penerima_baru: Teks
+) -> Keupayaan<T> kesan Bersih {
+    /// Delegasi keupayaan kepada penerima baru
+    biar ubah delegasi = cap.delegasi_dalam;
+    delegasi = delegasi.tambah(penerima_baru);
+
+    Keupayaan {
+        hak: cap.hak,
+        pemberi: cap.pemberi,
+        penerima: penerima_baru,
+        delegasi_dalam: delegasi,
+    }
+}
+
+fungsi kurangkan_keupayaan_rw(
+    cap: Keupayaan<HakFailRW>
+) -> Keupayaan<HakFailRW> kesan Bersih {
+    /// Kurangkan keupayaan RW kepada R sahaja
+    biar hak_baru = HakFailRW {
+        nama_fail: cap.hak.nama_fail,
+        boleh_baca: betul,
+        boleh_tulis: salah,
+    };
+
+    Keupayaan {
+        hak: hak_baru,
+        pemberi: cap.pemberi,
+        penerima: cap.penerima,
+        delegasi_dalam: cap.delegasi_dalam,
+    }
+}
+
+fungsi proksikan_keupayaan<T>(
+    cap: Keupayaan<T>,
+    perantara: Teks,
+    tujuan: Teks
+) -> Keupayaan<T> kesan Bersih {
+    /// Proksikan keupayaan melalui perantara
+    biar ubah delegasi = cap.delegasi_dalam;
+    delegasi = delegasi.tambah(perantara);
+    delegasi = delegasi.tambah(tujuan);
+
+    Keupayaan {
+        hak: cap.hak,
+        pemberi: cap.pemberi,
+        penerima: tujuan,
+        delegasi_dalam: delegasi,
+    }
+}
+
+fungsi periksa_delegasi_sah(
+    cap: Keupayaan<HakFailRW>,
+    peminta: Teks
+) -> Benar kesan Bersih {
+    /// Periksa sama ada peminta dalam rantai delegasi
+    untuk pengguna dalam cap.delegasi_dalam {
+        kalau pengguna == peminta {
+            pulang betul;
+        }
+    }
+
+    cap.penerima == peminta
+}
+
+fungsi gunakan_keupayaan_delegasi(
+    cap: Keupayaan<HakFailRW>,
+    peminta: Teks
+) -> Hasil<Teks, Teks> kesan Baca {
+    /// Gunakan keupayaan delegasi dengan verifikasi
+    kalau !periksa_delegasi_sah(cap, peminta) {
+        pulang Ralat("Peminta tidak dalam rantai delegasi");
+    }
+
+    kalau !cap.hak.boleh_baca {
+        pulang Ralat("Tiada keupayaan baca");
+    }
+
+    Ok(baca_fail(cap.hak.nama_fail))
+}
+
+fungsi batalkan_delegasi(
+    ubah cap: Keupayaan<HakFailRW>,
+    peminta: Teks
+) -> Hasil<Benar, Teks> kesan Bersih {
+    /// Batalkan delegasi untuk peminta tertentu
+    biar ubah delegasi_baru: Senarai<Teks> = [];
+
+    untuk pengguna dalam cap.delegasi_dalam {
+        kalau pengguna != peminta {
+            delegasi_baru = delegasi_baru.tambah(pengguna);
+        }
+    }
+
+    cap.delegasi_dalam = delegasi_baru;
+    Ok(betul)
+}
+
+jenis RantaiDelegasi {
+    pemilik_asal: Teks,
+    pemegang_semasa: Teks,
+    rantai: Senarai<Teks>,
+}
+
+fungsi buat_rantai_delegasi(
+    pemilik: Teks,
+    pemegang: Teks
+) -> RantaiDelegasi kesan Bersih {
+    RantaiDelegasi {
+        pemilik_asal: pemilik,
+        pemegang_semasa: pemegang,
+        rantai: [pemilik, pemegang],
+    }
+}
+
+fungsi sambung_rantai_delegasi(
+    ubah rantai: RantaiDelegasi,
+    pemegang_seterusnya: Teks
+) -> Hasil<RantaiDelegasi, Teks> kesan Bersih {
+    /// Sambung pemegang seterusnya ke rantai
+    kalau rantai.rantai.panjang() > 10 {
+        pulang Ralat("Rantai delegasi terlalu panjang");
+    }
+
+    biar ubah rantai_baru = rantai.rantai;
+    rantai_baru = rantai_baru.tambah(pemegang_seterusnya);
+
+    rantai.pemegang_semasa = pemegang_seterusnya;
+    rantai.rantai = rantai_baru;
+
+    Ok(rantai)
+}
+
+fungsi cetak_rantai_delegasi(r: RantaiDelegasi) -> Nombor kesan Tulis {
+    cetak("Rantai delegasi: ");
+    cetak(r.pemilik_asal);
+    cetak(" -> ");
+
+    untuk pengguna dalam r.rantai.ekor() {
+        cetak(pengguna);
+        cetak(" -> ");
+    }
+
+    cetak("\n");
+    pulang 0;
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Bersih, Baca) {
+    cetak("=== Delegasi Keupayaan ===\n");
+
+    /// Buat keupayaan RW awal
+    biar cap_awal = Keupayaan {
+        hak: HakFailRW { nama_fail: "data.txt", boleh_baca: betul, boleh_tulis: betul },
+        pemberi: "pemilik",
+        penerima: "pemilik",
+        delegasi_dalam: ["pemilik"],
+    };
+
+    cetak("Keupayaan awal dibuat\n");
+
+    /// Delegasi kepada pengguna1
+    biar cap_pengguna1 = delegasi_keupayaan(cap_awal, "pengguna1");
+    cetak("Delegasi kepada pengguna1\n");
+
+    /// Kurangkan hak untuk pengguna2
+    biar cap_pengguna2 = kurangkan_keupayaan_rw(cap_pengguna1);
+    cap_pengguna2.penerima = "pengguna2";
+    cetak("Kurangkan hak untuk pengguna2 (R sahaja)\n");
+
+    /// Periksa delegasi
+    biar sah = periksa_delegasi_sah(cap_pengguna2, "pengguna2");
+    cetak("Delegasi sah: ");
+    cetak(sah);
+    cetak("\n");
+
+    /// Buat dan cetak rantai delegasi
+    biar ubah rantai = buat_rantai_delegasi("pemilik", "pengguna1");
+    padan sambung_rantai_delegasi(rantai, "pengguna2") {
+        Ok(rantai2) -> {
+            cetak_rantai_delegasi(rantai2);
+        },
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Delegasi creates immutable chain of authority.
+/// Attenuation removes rights (boleh_baca, boleh_tulis).
+/// Cannot re-grant rights once attenuated.
+/// Rantai tracks full delegation history for audit.

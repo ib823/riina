@@ -37,6 +37,7 @@
   - [7.10 Multi-Prover Verification](#710-multi-prover-verification)
   - [7.11 Compiler Correctness](#711-compiler-correctness)
 - [8. PHASE 4: DEVELOPER EXPERIENCE](#8-phase-4-developer-experience)
+  - [8.5 AI-Native Developer Experience](#85-ai-native-developer-experience)
 - [9. PHASE 5: ECOSYSTEM & DISTRIBUTION](#9-phase-5-ecosystem--distribution)
 - [10. PHASE 6: ADOPTION & COMMUNITY](#10-phase-6-adoption--community)
 - [11. PHASE 7: LONG-TERM VISION](#11-phase-7-long-term-vision)
@@ -1866,6 +1867,303 @@ riina-vscode/
 - `riinac doc` CLI command
 
 **Estimated:** ~1,500 lines.
+
+### 8.5 AI-Native Developer Experience
+
+**Objective:** Make RIINA the first programming language designed from the ground up to be equally usable by human developers and AI coding agents (LLMs, code assistants, autonomous agents). This is not about marketing — it is about concrete, measurable properties that determine whether an AI can correctly generate, analyze, and reason about RIINA code.
+
+**Why this matters:** Within 2-3 years, a significant portion of all code will be written or co-written by AI. A language that AI agents cannot fluently produce is a language that will not be adopted. RIINA's formal verification properties give it a unique advantage: AI-generated RIINA code can be *machine-checked for correctness*, closing the trust gap that plagues AI-generated code in other languages.
+
+#### 8.5.1 Example Corpus (P0 — Critical Path)
+
+**Goal:** 200+ annotated `.rii` example programs covering every language feature.
+
+LLMs learn programming languages primarily from code examples in their training data and in-context examples. RIINA currently has 3 example files. This is the single biggest blocker to AI adoption.
+
+**New directory:** `07_EXAMPLES/`
+
+```
+07_EXAMPLES/
+├── 00_basics/              (20 files)
+│   ├── hello_dunia.rii       — Hello World
+│   ├── pembolehubah.rii      — Variables and types
+│   ├── fungsi_mudah.rii      — Simple functions
+│   ├── kalau_lain.rii        — Conditionals
+│   ├── padan_corak.rii       — Pattern matching
+│   ├── gelung.rii            — Loops (untuk, selagi, ulang)
+│   ├── senarai.rii           — Lists
+│   ├── tuple.rii             — Tuples (fst/snd)
+│   ├── rekod.rii             — Records/structs
+│   ├── enum.rii              — Sum types
+│   ├── pilihan.rii           — Option type
+│   ├── keputusan.rii         — Result type
+│   ├── ralat.rii             — Error handling
+│   ├── modul.rii             — Module system
+│   ├── generik.rii           — Generics
+│   ├── rentetan.rii          — String operations
+│   ├── matematik.rii         — Math operations
+│   ├── penukaran.rii         — Type conversions
+│   ├── komen.rii             — Comments and documentation
+│   └── import_eksport.rii    — Import/export
+│
+├── 01_security/            (20 files)
+│   ├── rahsia_asas.rii       — Basic secret types
+│   ├── dedah_dasar.rii       — Declassification with policy
+│   ├── label_keselamatan.rii — Security labels
+│   ├── aliran_maklumat.rii   — Information flow basics
+│   ├── tiada_bocor.rii       — No-leak guarantees
+│   ├── tercemar.rii          — Taint tracking
+│   ├── bersih.rii            — Sanitization
+│   ├── masa_tetap.rii        — Constant-time operations
+│   ├── sifar_hapus.rii       — Zeroization
+│   ├── kebenaran.rii         — Capability-based access
+│   ├── require_grant.rii     — Effect permission model
+│   ├── tahap_pelbagai.rii    — Multi-level security
+│   ├── audit_trail.rii       — Audit logging
+│   ├── pengesahan_kata.rii   — Password validation
+│   ├── token_sesi.rii        — Session token handling
+│   ├── kunci_api.rii         — API key management
+│   ├── penyulitan.rii        — Encryption patterns
+│   ├── tandatangan.rii       — Digital signatures
+│   ├── sijil.rii             — Certificate handling
+│   └── rbac.rii              — Role-based access control
+│
+├── 02_effects/             (15 files)
+│   ├── kesan_io.rii          — IO effect basics
+│   ├── kesan_fail.rii        — File I/O effect
+│   ├── kesan_rangkaian.rii   — Network effect
+│   ├── kesan_kripto.rii      — Crypto effect
+│   ├── kesan_masa.rii        — Time effect
+│   ├── kesan_rawak.rii       — Random effect
+│   ├── kesan_berganda.rii    — Multiple effects
+│   ├── kesan_komposisi.rii   — Effect composition
+│   ├── pengendali.rii        — Effect handlers
+│   ├── bersih_fungsi.rii     — Pure functions
+│   ├── kesan_tersuai.rii     — Custom effects
+│   ├── kesan_bersarang.rii   — Nested handlers
+│   ├── kesan_resume.rii      — Resumptions
+│   ├── kesan_had.rii         — Effect boundaries
+│   └── kesan_modul.rii       — Module-level effect declarations
+│
+├── 03_applications/        (15 files)
+│   ├── pelayan_web.rii       — Secure web server
+│   ├── api_rest.rii          — REST API with security
+│   ├── pangkalan_data.rii    — Database access
+│   ├── mesej_kripto.rii      — Encrypted messaging
+│   ├── dompet_digital.rii    — Digital wallet
+│   ├── rekod_perubatan.rii   — Medical records (HIPAA)
+│   ├── pembayaran.rii        — Payment processing (PCI-DSS)
+│   ├── iot_sensor.rii        — IoT sensor data
+│   ├── log_audit.rii         — Audit logging system
+│   ├── pengesahan_2fa.rii    — Two-factor authentication
+│   ├── oauth_pelayan.rii     — OAuth server
+│   ├── cms_selamat.rii       — Secure CMS
+│   ├── ci_cd.rii             — CI/CD pipeline tool
+│   ├── cli_alat.rii          — CLI tool pattern
+│   └── mikroperkhidmatan.rii — Microservice pattern
+│
+├── 04_compliance/          (10 files)
+│   ├── pdpa_malaysia.rii     — Malaysia PDPA compliance
+│   ├── pdpa_singapura.rii    — Singapore PDPA compliance
+│   ├── hipaa.rii             — HIPAA compliance
+│   ├── pci_dss.rii           — PCI-DSS compliance
+│   ├── gdpr.rii              — GDPR compliance
+│   ├── sox.rii               — SOX compliance
+│   ├── do_178c.rii           — DO-178C aerospace
+│   ├── iso_27001.rii         — ISO 27001 patterns
+│   ├── cmmc.rii              — CMMC military compliance
+│   └── iec_62443.rii         — IEC 62443 industrial
+│
+├── 05_patterns/            (15 files)
+│   ├── pembina.rii           — Builder pattern
+│   ├── kilang.rii            — Factory pattern
+│   ├── pemerhati.rii         — Observer pattern
+│   ├── strategi.rii          — Strategy pattern
+│   ├── keadaan.rii           — State machine
+│   ├── arahan.rii            — Command pattern
+│   ├── pengulang.rii         — Iterator pattern
+│   ├── saluran_paip.rii      — Pipeline pattern
+│   ├── pengantara.rii        — Middleware pattern
+│   ├── cqrs.rii              — CQRS pattern
+│   ├── saga.rii              — Saga pattern (distributed tx)
+│   ├── bulkhead.rii          — Bulkhead isolation
+│   ├── pemutus_litar.rii     — Circuit breaker
+│   ├── cuba_semula.rii       — Retry with backoff
+│   └── kolam_sambungan.rii   — Connection pool
+│
+└── 06_ai_context/          (5 files)
+    ├── RIINA_CHEATSHEET.md   — Compact reference (see 8.5.4)
+    ├── RIINA_FOR_AI.md       — AI agent guide (see 8.5.4)
+    ├── all_examples.rii      — Concatenated examples for context window
+    ├── type_catalogue.rii    — Every type demonstrated
+    └── effect_catalogue.rii  — Every effect demonstrated
+```
+
+**Requirements for every example file:**
+1. Must compile with `riinac check` without errors
+2. Must include `///` doc comments explaining what the program demonstrates
+3. Must use Bahasa Melayu keywords (with English comments for clarity)
+4. Must demonstrate exactly ONE concept clearly (not a kitchen sink)
+5. Must be ≤ 80 lines (AI context window efficiency)
+
+**Estimated total:** ~8,000 lines across 100 files (start), growing to 200+.
+
+#### 8.5.2 Formal Grammar — Machine-Readable (P0)
+
+**Goal:** A PEG grammar that tools and AI agents can consume directly.
+
+**New file:** `04_SPECS/language/riina.peg`
+
+Current grammar exists only as prose in markdown docs. A machine-readable PEG grammar enables:
+- AI agents to validate their own generated code structure before compilation
+- Tool builders to auto-generate parsers for linters, formatters, editors
+- Precise, unambiguous syntax definition (prose specs have edge-case ambiguity)
+
+The PEG grammar must be:
+1. Derived directly from the Rust parser implementation (`03_PROTO/crates/riina-parser/`)
+2. Tested against all 200+ example files (every example must parse)
+3. Cross-referenced with Coq `Syntax.v` expression constructors
+4. Include Bahasa Melayu and English keyword alternatives
+
+**Format:** PEG (Parsing Expression Grammar) — widely supported by parser generators, unambiguous by definition, and trivially readable by LLMs.
+
+**Estimated:** ~400 lines.
+
+#### 8.5.3 Compiler Machine-Readable Output (P1)
+
+**Goal:** `riinac` outputs structured data that AI agents can parse programmatically.
+
+Current compiler output is human-readable text. AI agents work better with structured output.
+
+**New flag:** `riinac check --output=json <file.rii>`
+
+```json
+{
+  "file": "contoh.rii",
+  "status": "error",
+  "diagnostics": [
+    {
+      "severity": "error",
+      "code": "E0312",
+      "message": "type mismatch: expected Nombor, found Teks",
+      "span": { "file": "contoh.rii", "line": 7, "col": 12, "len": 5 },
+      "suggestions": [
+        { "message": "try converting with tukar_nombor()", "replacement": "tukar_nombor(x)" }
+      ]
+    }
+  ],
+  "types": [
+    { "name": "tambah", "type": "fungsi(Nombor, Nombor) -> Nombor", "effects": ["bersih"], "security": "Public" }
+  ]
+}
+```
+
+**New flag:** `riinac emit-ir --output=json <file.rii>` — structured IR for AI analysis.
+
+This enables AI agents to:
+- Parse errors programmatically and self-correct
+- Understand type information for the code they generated
+- Verify effect and security annotations
+
+**Estimated:** ~500 lines (JSON serialization of existing diagnostics + type info).
+
+#### 8.5.4 AI Context Files (P0)
+
+**Goal:** Compact reference documents that fit in a single LLM context window and give an AI agent everything it needs to write correct RIINA code.
+
+**File 1: `07_EXAMPLES/06_ai_context/RIINA_CHEATSHEET.md`** (~2,000 tokens)
+
+A dense, structured quick-reference covering:
+- All keywords (BM + English) with one-line examples
+- All types with syntax
+- All effects with usage
+- Security level hierarchy
+- Common patterns (3 lines each)
+- Error handling idioms
+
+This is what an AI agent reads before generating RIINA code. Every token must earn its place.
+
+**File 2: `07_EXAMPLES/06_ai_context/RIINA_FOR_AI.md`** (~5,000 tokens)
+
+An AI-agent-specific guide covering:
+- How to structure a `.rii` file (imports, functions, entry point)
+- The effect permission model (require/grant) with examples
+- The security type model (Rahsia/dedah) with examples
+- Common mistakes and how to avoid them
+- How to read `riinac` error output and self-correct
+- How to write code that the formal verifier can check
+
+**File 3: `07_EXAMPLES/06_ai_context/all_examples.rii`** (~15,000 tokens)
+
+Concatenation of the best 50 example files into a single file that an AI agent can load as context. Each section delimited with clear headers.
+
+**Design principle:** These files are optimized for *token efficiency*. Every line teaches the AI something. No filler, no philosophy, no marketing — pure syntax and semantics.
+
+#### 8.5.5 LSP as AI Agent Interface (P1)
+
+**Extends section 8.1.** The LSP server is not just for VS Code — it is the universal interface for AI coding tools.
+
+All major AI coding tools (GitHub Copilot, Cursor, Claude Code, Codeium, Windsurf) use LSP for:
+- Real-time diagnostics (the AI sees type errors as it writes)
+- Hover information (the AI queries types/effects/security levels)
+- Completion (the AI gets valid completion candidates)
+- Go-to-definition (the AI navigates the codebase)
+
+**Additional LSP capabilities for AI agents:**
+
+| LSP Method | AI Agent Use Case | Priority |
+|------------|-------------------|----------|
+| `textDocument/publishDiagnostics` | Self-correction loop: generate → check → fix | P0 |
+| `textDocument/hover` | Query type + effect + security of any expression | P0 |
+| `textDocument/completion` | Get valid completions in context | P1 |
+| `textDocument/semanticTokens` | Understand token categories for generation | P2 |
+| `riina/effectSummary` (custom) | Query full effect signature of a function | P2 |
+| `riina/securityFlow` (custom) | Query information flow for a code region | P3 |
+
+The custom RIINA LSP extensions (`riina/effectSummary`, `riina/securityFlow`) expose RIINA's unique formal verification capabilities to AI agents, enabling them to reason about security properties as they write code.
+
+#### 8.5.6 WASM Playground with API (P2)
+
+**Extends section 9.3 (Website).** Compile `riinac` to WebAssembly and expose it as an API.
+
+**Endpoint:** `POST https://play.riina.dev/api/check`
+```json
+{ "code": "fungsi utama() -> Nombor { pulang 42; }" }
+```
+**Response:** Diagnostics + type info + effect summary (same as 8.5.3 JSON output).
+
+This enables:
+- AI agents to verify generated RIINA code via API without local installation
+- Web-based tutorials and documentation with live code execution
+- Integration with LLM tool-use (an LLM can call the API as a tool to check its own code)
+
+#### 8.5.7 Why RIINA Has a Unique AI Advantage
+
+This section documents the strategic rationale — why RIINA's properties make it fundamentally better for AI-generated code than any existing language:
+
+1. **Formal verification closes the AI trust gap.** The #1 problem with AI-generated code is that humans cannot trust it. RIINA solves this: if `riinac check` passes, the code is *mathematically proven correct* for security properties. This makes AI-generated RIINA code trustworthy by construction.
+
+2. **The effect system constrains AI output.** LLMs hallucinate. In most languages, hallucinated code can do anything (delete files, send network requests, leak data). In RIINA, the effect system physically prevents unauthorized operations. An AI agent that generates RIINA code for a `bersih` (pure) context *cannot* produce code that performs I/O — the compiler rejects it.
+
+3. **Security types guide AI generation.** When an AI sees `Rahsia<Teks>` (secret string), it knows this value cannot be logged, printed, or sent over the network without explicit `dedah` (declassification). This is a structural constraint that makes correct code generation easier, not harder.
+
+4. **Bilingual keywords reduce ambiguity.** Bahasa Melayu keywords are domain-specific identifiers that cannot collide with variable names. `fungsi` is always a function keyword — never a variable. This reduces parse ambiguity for both humans and AI.
+
+5. **Regular syntax = predictable generation.** RIINA has 27 expression forms, a small orthogonal type system, and consistent syntax. This is far easier for an LLM to learn than languages with decades of accumulated syntax complexity.
+
+#### 8.5.8 Verification Gate
+
+Phase 4 AI-Native work is complete when:
+
+- [ ] 100+ example `.rii` files exist and compile cleanly
+- [ ] PEG grammar exists and parses all examples
+- [ ] `riinac check --output=json` works
+- [ ] `RIINA_CHEATSHEET.md` fits in 2,000 tokens
+- [ ] `RIINA_FOR_AI.md` fits in 5,000 tokens
+- [ ] LSP server handles `publishDiagnostics` and `hover`
+- [ ] An LLM given only the cheatsheet + 10 examples can generate a valid `.rii` program
+
+The final verification gate is empirical: **take an LLM that has never seen RIINA, provide it the AI context files, and ask it to write a program. If it compiles, the AI-native DX works.**
 
 ---
 

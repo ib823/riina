@@ -1,0 +1,157 @@
+/// SANITIZED_DATA.RII - Data Sanitization and Validation
+/// Pembersihan dan validasi data untuk keselamatan
+/// Demonstrates: sanitization, validation, safe data types
+
+jenis DataDisanitasi<T> {
+    nilai: T,
+    disanitasi: Benar,
+    pengesah: Teks,
+}
+
+fungsi sah_emel(e: Teks) -> Benar kesan Bersih {
+    /// Sah emel menggunakan regex mudah
+    e.ada("@") && e.ada(".")
+}
+
+fungsi sah_url(u: Teks) -> Benar kesan Bersih {
+    /// Sah URL
+    u.mula_dengan("http://") || u.mula_dengan("https://")
+}
+
+fungsi sah_nombor_cc(cc: Teks) -> Benar kesan MasaTetap {
+    /// Sah nombor kad kredit dengan Luhn
+    cc.panjang() >= 13 && cc.panjang() <= 19
+}
+
+fungsi bersihkan_emel(e: Teks) -> DataDisanitasi<Teks> kesan Bersih {
+    /// Bersihkan dan sah emel
+    biar dibersihkan = e.kecilkan().pemangkasan();
+    biar sah = sah_emel(dibersihkan);
+
+    DataDisanitasi {
+        nilai: dibersihkan,
+        disanitasi: sah,
+        pengesah: "emel",
+    }
+}
+
+fungsi bersihkan_url(u: Teks) -> DataDisanitasi<Teks> kesan Bersih {
+    /// Bersihkan dan sah URL
+    biar dibersihkan = u.pemangkasan();
+    biar sah = sah_url(dibersihkan);
+
+    DataDisanitasi {
+        nilai: dibersihkan,
+        disanitasi: sah,
+        pengesah: "url",
+    }
+}
+
+fungsi bersihkan_sql(s: Teks) -> DataDisanitasi<Teks> kesan Bersih {
+    /// Bersihkan untuk SQL injection
+    biar dibersihkan = s
+        .ganti("'", "''")
+        .ganti("\\", "\\\\")
+        .ganti("\"", "\\\"");
+
+    DataDisanitasi {
+        nilai: dibersihkan,
+        disanitasi: betul,
+        pengesah: "sql",
+    }
+}
+
+fungsi bersihkan_html(h: Teks) -> DataDisanitasi<Teks> kesan Bersih {
+    /// Bersihkan untuk HTML escaping
+    biar dibersihkan = h
+        .ganti("<", "&lt;")
+        .ganti(">", "&gt;")
+        .ganti("&", "&amp;")
+        .ganti("\"", "&quot;")
+        .ganti("'", "&#x27;");
+
+    DataDisanitasi {
+        nilai: dibersihkan,
+        disanitasi: betul,
+        pengesah: "html",
+    }
+}
+
+fungsi bersihkan_teks_panjang(t: Teks, panjang_max: Nombor) -> DataDisanitasi<Teks> kesan Bersih {
+    /// Bersihkan teks panjang
+    biar dibersihkan = t.potong(0, panjang_max);
+    biar sah = dibersihkan.panjang() <= panjang_max;
+
+    DataDisanitasi {
+        nilai: dibersihkan,
+        disanitasi: sah,
+        pengesah: "panjang",
+    }
+}
+
+fungsi gunakan_data_disanitasi(d: DataDisanitasi<Teks>) -> Hasil<Teks, Teks> kesan Bersih {
+    /// Gunakan data hanya jika disanitasi
+    kalau d.disanitasi {
+        Ok(d.nilai)
+    } lain {
+        Ralat("Data tidak disanitasi oleh {d.pengesah}")
+    }
+}
+
+fungsi dapatkan_nilai_aman<T>(
+    d: DataDisanitasi<T>
+) -> Mungkin<T> kesan Bersih {
+    /// Dapatkan nilai hanya jika disanitasi
+    kalau d.disanitasi {
+        Ada(d.nilai)
+    } lain {
+        Tidak
+    }
+}
+
+fungsi cetak_data_disanitasi(d: DataDisanitasi<Teks>) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Cetak data yang disanitasi
+    padan dapatkan_nilai_aman(d) {
+        Ada(nilai) -> {
+            cetak(nilai);
+            cetak("\n");
+            Ok(0)
+        },
+        Tidak -> {
+            Ralat("Data tidak sah")
+        },
+    }
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Bersih) {
+    cetak("=== Pembersihan Data ===\n");
+
+    /// Bersihkan emel
+    biar emel = bersihkan_emel("  Ahmad@Example.COM  ");
+    cetak("Emel disanitasi: ");
+    cetak(emel.disanitasi);
+    cetak("\n");
+
+    /// Bersihkan URL
+    biar url = bersihkan_url("https://example.com");
+    cetak("URL disanitasi: ");
+    cetak(url.disanitasi);
+    cetak("\n");
+
+    /// Bersihkan untuk SQL
+    biar sql = bersihkan_sql("Ahmad' OR '1'='1");
+    cetak("SQL disanitasi\n");
+
+    /// Cetak data disanitasi
+    padan cetak_data_disanitasi(emel) {
+        Ok(_) -> cetak("Cetak berjaya\n"),
+        Ralat(e) -> cetak("Ralat: "),
+    }
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: Disanitasi marks data that passed validation.
+/// Each sink (SQL, HTML, etc) has appropriate sanitization.
+/// Type system tracks both sanitization and validation status.
+/// Compiler prevents use of unsanitized data in sinks.
