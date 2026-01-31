@@ -1,0 +1,134 @@
+/// PURE_IO_BOUNDARY.RII - Pure/IO Boundary Management
+/// Sempadan antara fungsi tulen dan I/O
+/// Demonstrates: maintaining purity, IO at periphery, functional core
+
+/// Tulen - core logic
+fungsi kiira_gaji(
+    gaji_asas: Nombor,
+    jam_lebih_waktu: Nombor
+) -> Nombor {
+    biar gaji_biasa = gaji_asas;
+    biar gaji_lebih = jam_lebih_waktu * 50;
+    gaji_biasa + gaji_lebih
+}
+
+/// Tulen - core logic
+fungsi sahkan_emel(e: Teks) -> Benar {
+    e.ada("@") && e.ada(".")
+}
+
+/// Tulen - core logic
+fungsi wajar_kredit(skor: Nombor) -> Benar {
+    skor >= 700
+}
+
+/// I/O wrapper - ambil input dan panggil logic tulen
+fungsi ambil_gaji_dari_pengguna() -> Hasil<Nombor, Teks> kesan (Tulis, Baca) {
+    cetak("Masukkan gaji asas: ");
+    padan baca_nombor_dari_pengguna() {
+        Ok(gaji) -> {
+            cetak("Masukkan jam lebih waktu: ");
+            padan baca_nombor_dari_pengguna() {
+                Ok(lebih) -> {
+                    /// Panggil tulen logic
+                    Ok(kiira_gaji(gaji, lebih))
+                },
+                Ralat(e) -> Ralat(e),
+            }
+        },
+        Ralat(e) -> Ralat(e),
+    }
+}
+
+/// I/O wrapper - ambil emel dan validasi
+fungsi ambil_emel_terpilih() -> Hasil<Benar, Teks> kesan (Tulis, Baca) {
+    cetak("Masukkan emel: ");
+    biar e = baca_garisan();
+
+    /// Panggil tulen logic
+    Ok(sahkan_emel(e))
+}
+
+/// I/O wrapper - ambil skor dan periksa kelayakan
+fungsi periksa_kelayakan_kredit() -> Hasil<Benar, Teks> kesan (Tulis, Baca) {
+    cetak("Masukkan skor kredit: ");
+    padan baca_nombor_dari_pengguna() {
+        Ok(skor) -> {
+            /// Panggil tulen logic
+            Ok(wajar_kredit(skor))
+        },
+        Ralat(e) -> Ralat(e),
+    }
+}
+
+/// Wrapper yang menggabungkan tulen dan I/O
+fungsi proses_permohonan_gaji() -> Hasil<Nombor, Teks> kesan (Tulis, Baca) {
+    cetak("=== Permohonan Gaji ===\n");
+
+    padan ambil_gaji_dari_pengguna() {
+        Ok(gaji) -> {
+            cetak("Gaji dikira: ");
+            cetak(gaji);
+            cetak("\n");
+            Ok(gaji)
+        },
+        Ralat(e) -> Ralat(e),
+    }
+}
+
+/// Wrapper gabungan dengan pelbagai validasi
+fungsi proses_permohonan_lengkap() -> Hasil<Benar, Teks> kesan (Tulis, Baca) {
+    cetak("=== Permohonan Lengkap ===\n");
+
+    /// Validasi emel
+    padan ambil_emel_terpilih() {
+        Ok(emel_sah) kalau emel_sah -> {
+            cetak("Emel sah\n");
+
+            /// Periksa kredit
+            padan periksa_kelayakan_kredit() {
+                Ok(wajar) -> {
+                    kalau wajar {
+                        cetak("Kelayakan: LAYAK\n");
+                        Ok(betul)
+                    } lain {
+                        cetak("Kelayakan: TIDAK LAYAK\n");
+                        Ok(salah)
+                    }
+                },
+                Ralat(e) -> Ralat(e),
+            }
+        },
+        Ok(_) -> {
+            cetak("Emel tidak sah\n");
+            Ok(salah)
+        },
+        Ralat(e) -> Ralat(e),
+    }
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Baca) {
+    cetak("=== Sempadan Tulen/I/O ===\n");
+
+    padan proses_permohonan_gaji() {
+        Ok(gaji) -> {
+            cetak("Diproses: ");
+            cetak(gaji);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    padan proses_permohonan_lengkap() {
+        Ok(_) -> cetak("Permohonan lengkap\n"),
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// ARCHITECTURE NOTE: Pure functions at core, I/O at periphery.
+/// Makes functions testable and composable.
+/// Separates logic from side effects clearly.
+/// Type system enforces this separation.

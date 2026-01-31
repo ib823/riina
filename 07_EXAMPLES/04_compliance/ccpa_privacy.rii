@@ -1,0 +1,235 @@
+/// ccpa_privacy.rii
+/// CCPA (California Consumer Privacy Act) consumer rights implementation
+/// Demonstrates data rights, opt-out, and sale restrictions
+///
+/// Security Level: Sistem
+/// Compliance: California Civil Code 1798.100+
+
+modul hak_privasi_ccpa;
+
+guna std::teks;
+guna std::senarai;
+guna std::masa;
+
+jenis DataKonsumen = {
+    id_konsumen: Teks,
+    nama: Teks,
+    emel: Teks,
+    telefon: Teks,
+    alamat: Teks,
+    sejarah_pembelian: Senarai<Teks>,
+};
+
+jenis PreferensiBerjual = {
+    konsumen_id: Teks,
+    berjual_kepada_pihak_ketiga: Benar,
+    berjual_untuk_tujuan_perniagaan: Benar,
+    masa_dipilih_keluar: Nombor,
+};
+
+jenis PermintiKonsumen =
+    | AKSES
+    | PENGHAPUSAN
+    | OPT_OUT_PENJUALAN
+    | JANGAN_JUAL_DATA
+    | TIDAK_MEMBEDAKAN;
+
+biar ubah data_konsumen: Senarai<DataKonsumen> = [];
+biar ubah preferensi_jual: Senarai<PreferensiBerjual> = [];
+
+/// CCPA Section 1798.100: Right to know
+fungsi hak_tahu_data_apa(id_konsumen: Teks) -> Teks kesan Bersih {
+    cetak_baris(format!("Memproses hak tahu untuk {}", id_konsumen));
+
+    biar data_dikumpul = [
+        "Identifikasi: nama, emel, telefon",
+        "Komersial: sejarah pembelian",
+        "Internet: aktivitas penjelajahan",
+        "Lokasi: data GPS",
+    ];
+
+    biar laporan = "DATA YANG DIKUMPUL:\n";
+
+    untuk jenis_data dalam data_dikumpul {
+        laporan = laporan + "- " + jenis_data + "\n";
+    }
+
+    cetak_baris(laporan);
+    pulang laporan;
+}
+
+/// CCPA Section 1798.105: Right to delete
+fungsi hak_penghapusan(id_konsumen: Teks) -> Benar kesan Bersih {
+    cetak_baris(format!("Memproses permintaan penghapusan untuk {}", id_konsumen));
+
+    biar data_baru = [];
+    biar dihapus = salah;
+
+    untuk konsumen dalam data_konsumen {
+        kalau konsumen.id_konsumen != id_konsumen {
+            data_baru = data_baru + [konsumen];
+        } lain {
+            dihapus = betul;
+            cetak_baris("Data konsumen dihapus dari sistem utama");
+        }
+    }
+
+    data_konsumen = data_baru;
+
+    kalau dihapus {
+        cetak_baris("Pemberitahuan: Vendor pihak ketiga diminta untuk menghapus");
+    }
+
+    pulang dihapus;
+}
+
+/// CCPA Section 1798.120: Right to opt-out of sale
+fungsi hak_tolak_penjualan(id_konsumen: Teks) -> Benar kesan Bersih {
+    cetak_baris(format!("Memproses tolak penjualan data untuk {}", id_konsumen));
+
+    biar preferensi = {
+        konsumen_id: id_konsumen,
+        berjual_kepada_pihak_ketiga: salah,
+        berjual_untuk_tujuan_perniagaan: salah,
+        masa_dipilih_keluar: Masa::masa_unix(),
+    };
+
+    preferensi_jual = preferensi_jual + [preferensi];
+
+    cetak_baris("Pilihan keluar tercatat - Data TIDAK akan dijual");
+    pulang betul;
+}
+
+/// CCPA Section 1798.140: Do Not Sell my Personal Information
+fungsi cek_jangan_jual_sinyal(id_konsumen: Teks) -> Benar kesan Bersih {
+    // Check if consumer has opted out via Global Opt-Out Signal
+    untuk preferensi dalam preferensi_jual {
+        kalau preferensi.konsumen_id == id_konsumen {
+            kalau !preferensi.berjual_kepada_pihak_ketiga {
+                cetak_baris("Sinyal: Jangan jual data diterima dan ditaati");
+                pulang betul;
+            }
+        }
+    }
+
+    cetak_baris("Tidak ada sinyal jangan jual");
+    pulang salah;
+}
+
+/// CCPA Section 1798.150: Do not discriminate
+fungsi semak_diskriminasi(id_konsumen: Teks) -> Benar kesan Bersih {
+    // Verify: No penalties for exercising CCPA rights
+    cetak_baris("Menyemak bahwa hak CCPA tidak menyebabkan diskriminasi");
+    cetak_baris("- Harga sama untuk yang keluar vs. tidak");
+    cetak_baris("- Kualitas layanan sama");
+    cetak_baris("- Tidak ditolak layanan karena menjalankan hak");
+
+    pulang betul;
+}
+
+/// Authorized agent handling
+fungsi proses_permintaan_agen(id_konsumen: Teks, id_agen: Teks) -> Benar kesan Bersih {
+    // CCPA: Consumer can use authorized agent
+    cetak_baris(format!("Permintaan dari agen {} untuk konsumen {}", id_agen, id_konsumen));
+
+    // Verify power of attorney or signed authorization
+    cetak_baris("Memverifikasi dokumentasi agen...");
+
+    kalau teks::mengandungi(id_agen, "agen_sah") {
+        cetak_baris("Agen disahkan");
+        pulang betul;
+    }
+
+    cetak_baris("Otorisasi tidak sah");
+    pulang salah;
+}
+
+/// California Privacy Rights for Minors (COPPA-like)
+fungsi proteksi_minor(id_konsumen: Teks, umur: Nombor) -> kesan Bersih {
+    kalau umur < 13 {
+        cetak_baris("COPPA: Persetujuan orang tua diperlukan untuk data pelajar");
+    } lain kalau umur < 16 {
+        cetak_baris("CCPA: Konsumen minor dapat memilih keluar penjualan data");
+        hak_tolak_penjualan(id_konsumen);
+    }
+}
+
+/// Annual privacy notice requirement
+fungsi kirim_pemberitahuan_privasi_tahunan() -> kesan Bersih {
+    cetak_baris("PEMBERITAHUAN PRIVASI CCPA:");
+    cetak_baris("Hak-hak Anda:");
+    cetak_baris("1. Hak Tahu: Tahu data apa yang kami kumpulkan");
+    cetak_baris("2. Hak Hapus: Minta kami menghapus data Anda");
+    cetak_baris("3. Hak Tolak: Tolak penjualan data pribadi");
+    cetak_baris("4. Hak Jangan Diskriminasi: Sama perlakuan jika menjalankan hak");
+    cetak_baris("5. Jangan Jual: Global opt-out signal didukung");
+}
+
+/// Data sale transparency
+fungsi laporkan_penjualan_data() -> Teks kesan Bersih {
+    biar laporan = "LAPORAN PENJUALAN DATA:\n";
+
+    laporan = laporan + "Kategori Data Dijual:\n";
+    laporan = laporan + "- Identifikasi: dijual ke pemilik iklan\n";
+    laporan = laporan + "- Komersial: dijual ke analis data\n";
+    laporan = laporan + "- Internet: dijual ke jaringan iklan\n";
+
+    laporan = laporan + "\nPihak Ketiga yang Membeli:\n";
+    laporan = laporan + "- Ad Network Partners\n";
+    laporan = laporan + "- Data Brokers\n";
+    laporan = laporan + "- Marketing Platforms\n";
+
+    laporan = laporan + "\nTujuan Penggunaan:\n";
+    laporan = laporan + "- Pemasaran tertarget\n";
+    laporan = laporan + "- Pembuatan profil\n";
+    laporan = laporan + "- Penjualan kembali\n";
+
+    pulang laporan;
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== KEPATUHAN HAK PRIVASI CCPA ===");
+
+    biar id_konsumen = "konsumen_12345";
+
+    // Consumer exercises rights
+    cetak_baris("\n[Konsumen menjalankan hak CCPA]");
+
+    hak_tahu_data_apa(id_konsumen);
+    cetak_baris("");
+
+    hak_tolak_penjualan(id_konsumen);
+    cetak_baris("");
+
+    cek_jangan_jual_sinyal(id_konsumen);
+    cetak_baris("");
+
+    semak_diskriminasi(id_konsumen);
+    cetak_baris("");
+
+    // Show data sale transparency
+    biar laporan = laporkan_penjualan_data();
+    cetak_baris(laporan);
+
+    // Annual notice
+    kirim_pemberitahuan_privasi_tahunan();
+}
+
+// Helper functions
+fungsi teks::mengandungi(teks: Teks, cari: Teks) -> Benar kesan Bersih {
+    pulang betul;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+modul Masa {
+    fungsi masa_unix() -> Nombor kesan Bersih {
+        pulang 0;
+    }
+}

@@ -69,7 +69,7 @@ RIINA is the world's **first formally verified programming language** with:
 
 **Full syntax specification:** `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md`
 
-### 0.5 Current Project Status (2026-01-30)
+### 0.5 Current Project Status (2026-01-31)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
@@ -77,19 +77,20 @@ RIINA is the world's **first formally verified programming language** with:
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Axioms (Active Build)** | 5 (all justified) | 4 in NI_v2_LR + 1 in NI_v2 |
 | **Admits (Active Build)** | 0 | All fixed (Session 53) |
-| **Qed Proofs (Active Build)** | 4,971 | Verified |
+| **Qed Proofs (Active Build)** | 5,117+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (452 tests) | All green |
+| **Rust Tests** | ✅ PASSING (529 tests) | All green |
+| **Example .rii Files** | 100 | 6 directories |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
 | Materialization Phase | Status | Notes |
 |-----------------------|--------|-------|
-| Phase 1: Compiler Completion | 🟡 ~70% | Parser needs extension (5.3), codegen not wired (5.1) |
-| Phase 2: Standard Library | ⬜ | Blocked on Phase 1 |
+| Phase 1: Compiler Completion | ✅ ~98% | All 5.1-5.7 done; 477 tests passing |
+| Phase 2: Standard Library | ✅ ~90% | 3 new modules (masa/fail/json), 29 new builtins, 509 tests |
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971 Qed |
-| Phase 4: Developer Experience | ⬜ | LSP, VS Code, formatter |
+| Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 100 examples |
 | Phase 5: Ecosystem | ⬜ | CI/CD, package manager |
 | Phase 6: Adoption | ⬜ | FFI, demos, community |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
@@ -577,23 +578,24 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-### Track B: Rust Prototype (03_PROTO/) — 🟡 ACTIVE
+### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 4 DONE
 
-Corresponds to **Materialization Plan Phase 1** (Compiler Completion).
+**Phase 1** (Compiler Completion): ✅ All items done.
+**Phase 2** (Standard Library): ✅ Done. 88 builtins, 9 modules.
+**Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 100 examples.
 
-**Critical path:** 5.2 Lexer → 5.3 Parser → 5.1 Wire codegen → 5.4 C emitter → Gate 3 (end-to-end)
+| Phase 4 Milestone | Description | Status |
+|-------------------|-------------|--------|
+| M1 | Span-annotated AST (SpannedDecl, AstSpan) | ✅ Done |
+| M2 | riina-fmt formatter crate + `riinac fmt` | ✅ Done |
+| M3 | riina-lsp server with diagnostics (P0) | ✅ Done |
+| M4 | LSP hover + completion (P1) | ✅ Done |
+| M5 | VS Code extension (syntax + LSP client) | ✅ Done |
+| M6 | riina-doc generator crate + `riinac doc` | ✅ Done |
+| M7 | Example corpus (100 .rii files) + AI context | ✅ Done |
+| M8 | Update planning documents | ✅ Done |
 
-| Item | Description | Status |
-|------|-------------|--------|
-| 5.1 | Wire codegen into riinac | 🟡 Partial (driver exists, codegen not imported) |
-| 5.2 | Lexer changes | 🟢 ~90% (70+ keywords, some gaps) |
-| 5.3 | Parser extension | ❌ Critical gap (expressions only, no functions/modules) |
-| 5.4 | C emitter completion | 🟡 ~85% (missing closures, effect handlers) |
-| 5.5 | REPL | ❌ Stub |
-| 5.6 | Error diagnostics | ❌ Not started |
-| 5.7 | Built-in functions | ✅ Done (59 builtins) |
-
-**See materialization plan sections 5.1-5.7 for exact implementation instructions.**
+**Total: 529 Rust tests, 3 new crates (riina-fmt, riina-lsp, riina-doc), 100 example files.** Next: Phase 5 (Ecosystem).
 
 ---
 
@@ -693,7 +695,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-30 (Session 53: 0 admits, 0 Admitted, 5 justified axioms)*
+*Last updated: 2026-01-31 (Session 56: Phase 4 Dev Experience done, 0 admits, 5 justified axioms, 529 Rust tests, 100 examples)*
 
 ---
 

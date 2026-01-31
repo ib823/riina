@@ -1,0 +1,170 @@
+/// chat_app.rii
+/// Simple chat application with message routing
+/// Demonstrates Rangkaian effect for real-time messaging
+///
+/// Features:
+/// - User connection management
+/// - Message broadcasting
+/// - Connection lifecycle handling
+
+modul aplikasi_perbualan;
+
+guna std::rangkaian;
+guna std::senarai;
+guna std::teks;
+guna std::masa;
+
+jenis PenggunaPengguna = {
+    id: Nombor,
+    nama: Teks,
+    sambungan: Rangkaian::Socket,
+    masa_bersambung: Nombor,
+};
+
+jenis Pesanan = {
+    pengirim: Teks,
+    isi: Teks,
+    masa_hantar: Nombor,
+    jenis: Teks, // "teks" atau "notifikasi"
+};
+
+/// Store of connected users
+biar ubah pengguna_bersambung: Senarai<PenggunaPengguna> = [];
+
+/// Broadcast message to all connected users
+/// Kesan: Rangkaian (sends to all connections)
+fungsi siarkan_pesanan(pesanan: Pesanan) -> kesan Rangkaian {
+    biar teks_pesanan = enkod_pesanan(pesanan);
+
+    untuk pengguna dalam pengguna_bersambung {
+        laku Rangkaian::tulis(pengguna.sambungan, teks_pesanan);
+    }
+}
+
+/// Encode message for transmission
+fungsi enkod_pesanan(pesanan: Pesanan) -> Teks kesan Bersih {
+    biar masa_teks = Masa::format_unix(pesanan.masa_hantar);
+    pulang format!(
+        "[{}] {}: {}",
+        masa_teks,
+        pesanan.pengirim,
+        pesanan.isi
+    );
+}
+
+/// Handle incoming message from client
+/// Kesan: Rangkaian
+fungsi uruskan_pesanan(
+    pengguna_id: Nombor,
+    data_mentah: Teks
+) -> kesan Rangkaian {
+    biar masa_sekarang = Masa::masa_unix();
+    biar pesanan = {
+        pengirim: kari_nama_pengguna(pengguna_id),
+        isi: data_mentah,
+        masa_hantar: masa_sekarang,
+        jenis: "teks",
+    };
+
+    siarkan_pesanan(pesanan);
+}
+
+/// Register new user connection
+/// Kesan: Rangkaian (modified user list)
+fungsi daftar_pengguna(
+    nama: Teks,
+    sambungan: Rangkaian::Socket
+) -> Nombor kesan Rangkaian {
+    biar id_baru = panjang(pengguna_bersambung) + 1;
+    biar masa_sekarang = Masa::masa_unix();
+
+    biar pengguna_baru = {
+        id: id_baru,
+        nama: nama,
+        sambungan: sambungan,
+        masa_bersambung: masa_sekarang,
+    };
+
+    pengguna_bersambung = pengguna_bersambung + [pengguna_baru];
+
+    // Notify others about new user
+    biar pesanan_notif = {
+        pengirim: "SISTEM",
+        isi: format!("{} telah menyertai perbualan", nama),
+        masa_hantar: masa_sekarang,
+        jenis: "notifikasi",
+    };
+    siarkan_pesanan(pesanan_notif);
+
+    pulang id_baru;
+}
+
+/// Unregister user connection
+fungsi cabut_daftar_pengguna(id_pengguna: Nombor) -> kesan Rangkaian {
+    biar nama = kari_nama_pengguna(id_pengguna);
+    pengguna_bersambung = saring_pengguna(pengguna_bersambung, id_pengguna);
+
+    // Notify others about user leaving
+    biar pesanan_notif = {
+        pengirim: "SISTEM",
+        isi: format!("{} telah keluar dari perbualan", nama),
+        masa_hantar: Masa::masa_unix(),
+        jenis: "notifikasi",
+    };
+    siarkan_pesanan(pesanan_notif);
+}
+
+/// Retrieve username for user ID
+fungsi kari_nama_pengguna(id: Nombor) -> Teks kesan Bersih {
+    untuk pengguna dalam pengguna_bersambung {
+        kalau pengguna.id == id {
+            pulang pengguna.nama;
+        }
+    }
+    pulang "Pengguna Tidak Diketahui";
+}
+
+/// Filter out user from list
+fungsi saring_pengguna(senarai: Senarai<PenggunaPengguna>, id_kecuali: Nombor) -> Senarai<PenggunaPengguna> kesan Bersih {
+    biar hasil = [];
+    untuk pengguna dalam senarai {
+        kalau pengguna.id != id_kecuali {
+            hasil = hasil + [pengguna];
+        }
+    }
+    pulang hasil;
+}
+
+/// Main chat server handler
+awam fungsi utama_pelayan(pelabuhan: Nombor) -> kesan Rangkaian {
+    biar socket_pelayan = Rangkaian::buat_pelayan("0.0.0.0", pelabuhan);
+    cetak_baris(format!("Pemserver perbualan mendengarkan pada port {}", pelabuhan));
+
+    ulang {
+        biar hasil_terima = coba Rangkaian::terima_sambungan(socket_pelayan);
+        padan hasil_terima {
+            Berjaya(sambungan) => {
+                // Receive name from client
+                biar nama = Rangkaian::baca_teks(sambungan, 256);
+                biar id_pengguna = daftar_pengguna(nama, sambungan);
+
+                // Listen for messages
+                ulang {
+                    biar hasil_baca = coba Rangkaian::baca(sambungan, 1024);
+                    padan hasil_baca {
+                        Berjaya(data) => {
+                            uruskan_pesanan(id_pengguna, data);
+                        },
+                        Kegagalan(_) => {
+                            cabut_daftar_pengguna(id_pengguna);
+                            ulang_akhir;
+                        },
+                    };
+                };
+            },
+            Kegagalan(_) => {
+                cetak_baris("Ralat menerima sambungan");
+            },
+        };
+    };
+}

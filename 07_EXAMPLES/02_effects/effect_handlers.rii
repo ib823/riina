@@ -1,0 +1,161 @@
+/// EFFECT_HANDLERS.RII - Effect Handlers and Composition
+/// Pengendali kesan dan komposisi
+/// Demonstrates: composing effects, handling multiple effects
+
+fungsi dengan_kesan_bersih<T>(
+    f: Fn() -> T
+) -> T kesan Bersih {
+    /// Jalankan fungsi tulen
+    f()
+}
+
+fungsi dengan_kesan_tulis<T>(
+    f: Fn() -> T
+) -> T kesan Tulis {
+    /// Jalankan fungsi dengan kesan Tulis
+    f()
+}
+
+fungsi dengan_kesan_baca<T>(
+    f: Fn() -> T
+) -> T kesan Baca {
+    /// Jalankan fungsi dengan kesan Baca
+    f()
+}
+
+fungsi dengan_kesan_berganda<T>(
+    f: Fn() -> T
+) -> T kesan (Tulis, Baca) {
+    /// Jalankan fungsi dengan kesan berganda
+    f()
+}
+
+fungsi kompos_dengan_kesan<T>(
+    f1: Fn() -> T,
+    f2: Fn(T) -> T
+) -> T kesan (Tulis, Baca) {
+    /// Komposisi dua fungsi dengan kesan
+    biar hasil1 = f1();
+    f2(hasil1)
+}
+
+fungsi tangani_kesan_dengan_hasil<T>(
+    f: Fn() -> Hasil<T, Teks>
+) -> T kesan (Tulis, Baca) {
+    /// Tangani kesan dengan penanganan ralat
+    padan f() {
+        Ok(t) -> {
+            cetak("Berjaya\n");
+            t
+        },
+        Ralat(e) -> {
+            cetak("Ralat: ");
+            cetak(e);
+            cetak("\n");
+            /// Nilai lalai
+            padan ambil_nilai_lalai() {
+                Ok(v) -> v,
+                Ralat(_) -> {
+                    /// Nilai terakhir
+                    padan f() {
+                        Ok(t) -> t,
+                        Ralat(e) -> {
+                            cetak("Kegagalan berganda\n");
+                            /// Jangan dapat t di sini
+                            panic("Gagal mendapatkan nilai")
+                        },
+                    }
+                },
+            }
+        },
+    }
+}
+
+fungsi ambil_nilai_lalai<T>() -> Hasil<T, Teks> kesan Bersih {
+    Ok(0)  /// Simulasi
+}
+
+fungsi jalankan_dengan_konteks(
+    konteks: Teks,
+    f: Fn() -> Nombor
+) -> Nombor kesan (Tulis, Baca) {
+    cetak("Konteks: ");
+    cetak(konteks);
+    cetak("\n");
+
+    biar hasil = f();
+
+    cetak("Selesai\n");
+    hasil
+}
+
+fungsi pilin_kesan(
+    pilihan: Benar,
+    f_tulis: Fn() -> Nombor,
+    f_baca: Fn() -> Nombor
+) -> Nombor kesan (Tulis, Baca) {
+    /// Pilih kesan berdasarkan keadaan
+    kalau pilihan {
+        f_tulis()
+    } lain {
+        f_baca()
+    }
+}
+
+fungsi kesan_yang_disertakan<T>(
+    kesan_a: Fn() -> T,
+    kesan_b: Fn(T) -> T
+) -> T kesan (Tulis, Baca, Masa) {
+    /// Kesan yang disertakan
+    cetak("Mula\n");
+    biar hasil_a = kesan_a();
+    biar hasil_b = kesan_b(hasil_a);
+    cetak("Selesai\n");
+    hasil_b
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Baca) {
+    cetak("=== Pengendali Kesan ===\n");
+
+    /// Dengan kesan tulis
+    biar hasil1 = dengan_kesan_tulis(fungsi() -> Nombor {
+        cetak("Fungsi 1\n");
+        pulang 1;
+    });
+
+    cetak("Hasil 1: ");
+    cetak(hasil1);
+    cetak("\n");
+
+    /// Dengan kesan berganda
+    biar hasil2 = dengan_kesan_berganda(fungsi() -> Nombor {
+        cetak("Fungsi 2\n");
+        pulang 2;
+    });
+
+    cetak("Hasil 2: ");
+    cetak(hasil2);
+    cetak("\n");
+
+    /// Komposisi
+    biar hasil3 = kompos_dengan_kesan(
+        fungsi() -> Nombor { 5 },
+        fungsi(x: Nombor) -> Nombor {
+            cetak("Komposisi: ");
+            cetak(x);
+            cetak("\n");
+            x * 2
+        }
+    );
+
+    cetak("Hasil 3: ");
+    cetak(hasil3);
+    cetak("\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Effects compose by union (Tulis, Baca, Masa, etc).
+/// Handlers can modify execution context for effects.
+/// Type system enforces effect ordering and composition.

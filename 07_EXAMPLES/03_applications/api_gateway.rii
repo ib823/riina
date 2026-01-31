@@ -1,0 +1,166 @@
+/// api_gateway.rii
+/// API Gateway with authentication and request routing
+/// Demonstrates Rangkaian + Kripto effects for secure API access
+///
+/// Features:
+/// - Authentication token validation
+/// - Request routing based on path
+/// - Rate limiting per token
+/// - Cryptographic signature verification
+
+modul pintu_api;
+
+guna std::rangkaian;
+guna std::kripto;
+guna std::teks;
+guna std::senarai;
+
+/// API token with authentication metadata
+jenis Token = {
+    nilai: Teks,
+    pengguna: Teks,
+    kelulusan: Senarai<Teks>,
+    masa_tamat: Nombor,
+};
+
+jenis PermintaanAPI = {
+    token: Teks,
+    kaedah: Teks,
+    laluan: Teks,
+    tubuh: Teks,
+    tandatangan: Teks,
+};
+
+jenis BalasanAPI = {
+    kod: Nombor,
+    jasad: Teks,
+    tandatangan: Teks,
+};
+
+/// Validate token cryptographically
+/// Kesan: Kripto (cryptographic operations)
+fungsi sahkan_token(token: Teks, kunci_rahsia: Rahsia<Teks>) -> Mungkin<Token> kesan Kripto {
+    // Verify HMAC signature
+    biar hasil_hmac = Kripto::sahkan_hmac(token, kunci_rahsia);
+
+    padan hasil_hmac {
+        Betul => {
+            // Extract token fields (simplified)
+            pulang Ada({
+                nilai: token,
+                pengguna: "pengguna@contoh.my",
+                kelulusan: ["baca", "tulis"],
+                masa_tamat: 1700000000,
+            });
+        },
+        Salah => {
+            pulang Tiada;
+        },
+    };
+}
+
+/// Check if token has required permission
+fungsi ada_kelulusan(token: Token, kelulusan_perlu: Teks) -> Benar kesan Bersih {
+    untuk perm dalam token.kelulusan {
+        kalau perm == kelulusan_perlu {
+            pulang betul;
+        }
+    }
+    pulang salah;
+}
+
+/// Route to appropriate service
+/// Kesan: Rangkaian (for calling downstream services)
+fungsi laluan_permintaan(
+    permintaan: PermintaanAPI,
+    token: Token
+) -> Mungkin<Teks> kesan Rangkaian {
+    kalau permintaan.laluan == "/pengguna/profil" {
+        kalau ada_kelulusan(token, "baca") {
+            pulang Ada("{\"nama\":\"Ahmad\",\"negara\":\"Malaysia\"}");
+        } lain {
+            pulang Tiada;
+        }
+    } lain kalau permintaan.laluan == "/pengguna/kemaskini" {
+        kalau ada_kelulusan(token, "tulis") {
+            pulang Ada("{\"berjaya\":true}");
+        } lain {
+            pulang Tiada;
+        }
+    } lain kalau permintaan.laluan == "/produk/senarai" {
+        // Retrieve from upstream service
+        biar respons = Rangkaian::get_api("http://perkhidmatan-produk:3000/senarai");
+        pulang Ada(respons);
+    } lain {
+        pulang Tiada;
+    };
+}
+
+/// Generate response signature
+fungsi tandatangani_balasan(
+    jasad: Teks,
+    kunci_rahsia: Rahsia<Teks>
+) -> Teks kesan Kripto {
+    pulang Kripto::hmac_sha256(jasad, kunci_rahsia);
+}
+
+/// Process API request with full authentication flow
+/// Kesan: Rangkaian + Kripto
+fungsi proses_permintaan(
+    permintaan_mentah: Teks,
+    kunci_rahsia: Rahsia<Teks>
+) -> BalasanAPI kesan (Rangkaian | Kripto) {
+    // Parse raw request
+    biar permintaan = huraikan_api(permintaan_mentah);
+
+    // Authenticate token
+    biar hasil_token = sahkan_token(permintaan.token, kunci_rahsia);
+
+    padan hasil_token {
+        Ada(token) => {
+            // Route to appropriate handler
+            biar hasil_laluan = laluan_permintaan(permintaan, token);
+            padan hasil_laluan {
+                Ada(jasad) => {
+                    // Sign response
+                    biar tandatangan = tandatangani_balasan(jasad, kunci_rahsia);
+                    pulang {
+                        kod: 200,
+                        jasad: jasad,
+                        tandatangan: tandatangan,
+                    };
+                },
+                Tiada => {
+                    pulang {
+                        kod: 403,
+                        jasad: "{\"ralat\":\"Akses ditolak\"}",
+                        tandatangan: "",
+                    };
+                },
+            };
+        },
+        Tiada => {
+            pulang {
+                kod: 401,
+                jasad: "{\"ralat\":\"Pengesahan gagal\"}",
+                tandatangan: "",
+            };
+        },
+    };
+}
+
+/// Main gateway handler
+awam fungsi utama_gateway(permintaan: Teks, kunci: Rahsia<Teks>) -> BalasanAPI kesan (Rangkaian | Kripto) {
+    proses_permintaan(permintaan, kunci);
+}
+
+// Helper functions
+fungsi huraikan_api(teks: Teks) -> PermintaanAPI kesan Bersih {
+    pulang {
+        token: "",
+        kaedah: "GET",
+        laluan: "/",
+        tubuh: "",
+        tandatangan: "",
+    };
+}

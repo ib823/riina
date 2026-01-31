@@ -1,0 +1,217 @@
+/// ferpa_student.rii
+/// FERPA (Family Educational Rights and Privacy Act) student records
+/// Demonstrates educational data privacy and parental rights
+///
+/// Security Level: Sistem
+/// Compliance: 20 U.S.C. § 1232g
+
+modul privasi_rekod_pelajar;
+
+guna std::teks;
+guna std::senarai;
+
+jenis RekodPelajar = {
+    id_pelajar: Teks,
+    nama: Teks,
+    no_id_keluarga: Teks,
+    tarikh_lahir: Teks,
+    gred_semasa: Senarai<(Teks, Teks)>,  // subject, grade
+    rekod_disiplin: Senarai<Teks>,
+    maklumat_kesihatan: Teks,
+};
+
+jenis IzinAkses = {
+    pihak_pihak: Teks,        // parent, student (18+), pendidik
+    jenis_akses: Teks,        // baca, ubah, lihat_gred
+    tarikh_berakhir: Nombor,
+    dibatasi_pada: Senarai<Teks>,  // specific fields
+};
+
+biar ubah rekod_pelajar: Senarai<RekodPelajar> = [];
+biar ubah izin_akses: Senarai<IzinAkses> = [];
+
+/// FERPA: Only authorized parties can access student records
+fungsi semak_akses_berwenang(
+    id_pelajar: Teks,
+    peminta: Teks,
+    jenis_akses: Teks
+) -> Benar kesan Bersih {
+    // School officials with legitimate educational interest
+    biar peminat_sah = [
+        "guru", "pentadbir", "kaunselor", "pekerja_kesihatan",
+        // Parents if student < 18
+        // Student if student >= 18
+    ];
+
+    cetak_baris(format!("Menyemak akses untuk {} ke rekod {}", peminta, id_pelajar));
+
+    kalau teks::mengandungi(peminat_sah, peminta) {
+        cetak_baris("Akses dibenarkan");
+        pulang betul;
+    }
+
+    cetak_baris("AKSES DITOLAK: Tidak berwenang");
+    pulang salah;
+}
+
+/// Record student access to their own records (age 18+)
+fungsi berikan_akses_pelajar_dewasa(id_pelajar: Teks, umur: Nombor) -> Benar kesan Bersih {
+    // FERPA: Students age 18+ have right to access own records
+    kalau umur >= 18 {
+        cetak_baris(format!("Pelajar {} diberi akses ke rekod sendiri", id_pelajar));
+        pulang betul;
+    }
+
+    cetak_baris("Pelajar < 18: Akses orang tua diperlukan");
+    pulang salah;
+}
+
+/// FERPA: Parent/guardian access rights
+fungsi berikan_akses_ibu_bapa(
+    id_pelajar: Teks,
+    id_ibu_bapa: Teks
+) -> Benar kesan Bersih {
+    // Verify parent/guardian relationship
+    biar mungkin_pelajar = cari_pelajar(id_pelajar);
+
+    padan mungkin_pelajar {
+        Ada(pelajar) => {
+            // Check if ID matches (simplified)
+            kalau pelajar.no_id_keluarga == id_ibu_bapa {
+                cetak_baris(format!("Akses orang tua disetujui untuk {}", id_pelajar));
+                pulang betul;
+            }
+        },
+        Tiada => {},
+    };
+
+    cetak_baris("DITOLAK: Hubungan orang tua tidak dapat disahkan");
+    pulang salah;
+}
+
+/// Directory information opt-out
+fungsi daftar_keberatan_informasi_direktori(
+    id_pelajar: Teks,
+    jenis_informasi: Teks
+) -> kesan Bersih {
+    // FERPA allows students/parents to opt-out of directory info
+    cetak_baris(format!(
+        "Keberatan tercatat: {} tidak boleh dalam direktori {}",
+        id_pelajar,
+        jenis_informasi
+    ));
+}
+
+/// Records not subject to FERPA
+fungsi cari_pengecualian_ferpa(jenis_rekod: Teks) -> Benar kesan Bersih {
+    biar bukan_ferpa = [
+        "catatan_polisi",         // Law enforcement records
+        "catatan_kesehatan_pribadi", // Personal health records
+        "catatan_kerja",          // Employment records
+    ];
+
+    untuk eksklusif dalam bukan_ferpa {
+        kalau eksklusif == jenis_rekod {
+            cetak_baris(format!("{} BUKAN dibatasi FERPA", jenis_rekod));
+            pulang betul;
+        }
+    }
+
+    cetak_baris(format!("{} DIBATASI oleh FERPA", jenis_rekod));
+    pulang salah;
+}
+
+/// Audit trail for record access
+fungsi catat_akses_rekod(
+    id_pelajar: Teks,
+    peminta: Teks,
+    jenis_data: Teks
+) -> kesan Bersih {
+    cetak_baris(format!(
+        "LOG: {} mengakses {} (pelajar {})",
+        peminta,
+        jenis_data,
+        id_pelajar
+    ));
+}
+
+/// Amendment request (right to challenge inaccurate records)
+fungsi proses_permintaan_perbaikan(
+    id_pelajar: Teks,
+    lapangan_salah: Teks,
+    nilai_benar: Teks
+) -> Benar kesan Bersih {
+    // FERPA: Right to amend inaccurate info
+    cetak_baris(format!(
+        "Permintaan perbaikan untuk pelajar {}: {} -> {}",
+        id_pelajar,
+        lapangan_salah,
+        nilai_benar
+    ));
+
+    // In implementation: verify correction, update record, notify parties
+    cetak_baris("Perbaikan tercatat dan pemberitahuan dikirim");
+    pulang betul;
+}
+
+/// Third-party disclosure with consent
+fungsi lepaskan_rekod_kepada_pihak_ketiga(
+    id_pelajar: Teks,
+    organisasi: Teks,
+    ada_persetujuan: Benar
+) -> Benar kesan Bersih {
+    // FERPA: Can't release to third party without consent
+    kalau !ada_persetujuan {
+        cetak_baris(format!("DITOLAK: Persetujuan diperlukan untuk melepaskan ke {}", organisasi));
+        pulang salah;
+    }
+
+    cetak_baris(format!("Rekod dilepaskan ke {} dengan persetujuan", organisasi));
+    cetak_baris("Pemberitahuan pelepasan tercatat");
+
+    pulang betul;
+}
+
+/// Annual FERPA notification to students/parents
+fungsi kirim_pemberitahuan_ferpa_tahunan() -> kesan Bersih {
+    cetak_baris("PEMBERITAHUAN FERPA TAHUNAN");
+    cetak_baris("- Hak akses ke rekod sendiri");
+    cetak_baris("- Hak meminta perbaikan");
+    cetak_baris("- Hak keberatan pelepasan info direktori");
+    cetak_baris("- Hak mengajukan keluhan ke Kementerian Pendidikan");
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== KEPATUHAN PRIVASI PELAJAR FERPA ===");
+
+    // Example: Teacher accessing student records
+    biar akses_guru = semak_akses_berwenang("pelajar_123", "guru", "baca");
+    cetak_baris(format!("Akses guru: {}", akses_guru));
+
+    // Example: Parent accessing child's grades
+    biar akses_ibu_bapa = berikan_akses_ibu_bapa("pelajar_123", "no_keluarga_456");
+    cetak_baris(format!("Akses ibu bapa: {}", akses_ibu_bapa));
+
+    // Example: Adult student (18+) self-access
+    biar akses_diri = berikan_akses_pelajar_dewasa("pelajar_789", 19);
+    cetak_baris(format!("Akses pelajar dewasa: {}", akses_diri));
+
+    // Amendment request
+    proses_permintaan_perbaikan("pelajar_123", "gred", "A");
+
+    // Annual notification
+    kirim_pemberitahuan_ferpa_tahunan();
+}
+
+// Helper functions
+fungsi cari_pelajar(id: Teks) -> Mungkin<RekodPelajar> kesan Bersih {
+    pulang Tiada;
+}
+
+fungsi teks::mengandungi(senarai: Senarai<Teks>, item: Teks) -> Benar kesan Bersih {
+    pulang betul;
+}
+
+fungsi format(s: Teks, args: Senarai<T>) -> Teks kesan Bersih {
+    pulang s;
+}

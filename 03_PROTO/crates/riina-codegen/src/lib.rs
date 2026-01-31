@@ -208,10 +208,11 @@ pub fn compile(expr: &riina_types::Expr) -> Result<Program> {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// use riina_types::Expr;
 /// let expr = Expr::Int(42);
-/// let c_code = compile_to_c(&expr)?;
-/// // c_code is now a complete C program that evaluates to 42
+/// let c_code = riina_codegen::compile_to_c(&expr).unwrap();
+/// assert!(c_code.contains("42"));
 /// ```
 pub fn compile_to_c(expr: &riina_types::Expr) -> Result<String> {
     let program = compile(expr)?;

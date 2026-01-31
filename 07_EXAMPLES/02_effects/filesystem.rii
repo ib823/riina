@@ -1,0 +1,127 @@
+/// FILESYSTEM.RII - File System Operations
+/// Operasi sistem fail
+/// Demonstrates: SistemFail effect, file manipulation, directory ops
+
+fungsi buat_fail(nama: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Buat fail baru
+    padan buka_fail_untuk_tulis(nama) {
+        Ok(fail) -> {
+            tutup_fail(fail);
+            Ok(0)
+        },
+        Ralat(e) -> Ralat("Tidak dapat buat fail: {e}"),
+    }
+}
+
+fungsi padam_fail(nama: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Padam fail
+    Ok(0)  /// Simulasi
+}
+
+fungsi senaraikan_fail(direktori: Teks) -> Hasil<Senarai<Teks>, Teks> kesan SistemFail {
+    /// Senaraikan fail dalam direktori
+    Ok(["file1.txt", "file2.txt"])  /// Simulasi
+}
+
+fungsi salin_fail(sumber: Teks, destinasi: Teks) -> Hasil<Nombor, Teks> kesan (SistemFail, Baca, Tulis) {
+    /// Salin fail dari sumber ke destinasi
+    padan baca_fail_sepenuhnya(sumber) {
+        Ok(kandungan) -> {
+            padan tulis_ke_fail(destinasi, kandungan) {
+                Ok(_) -> Ok(0),
+                Ralat(e) -> Ralat("Salin gagal"),
+            }
+        },
+        Ralat(e) -> Ralat("Baca sumber gagal"),
+    }
+}
+
+fungsi pindah_fail(sumber: Teks, destinasi: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Pindah fail
+    Ok(0)  /// Simulasi
+}
+
+fungsi ada_fail(nama: Teks) -> Benar kesan SistemFail {
+    /// Periksa sama ada fail wujud
+    betul  /// Simulasi
+}
+
+fungsi ambil_saiz_fail(nama: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Ambil saiz fail dalam bait
+    Ok(1024)  /// Simulasi
+}
+
+fungsi buat_direktori(nama: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Buat direktori
+    Ok(0)
+}
+
+fungsi padam_direktori(nama: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Padam direktori kosong
+    Ok(0)
+}
+
+fungsi dapatkan_direktori_kerja() -> Hasil<Teks, Teks> kesan SistemFail {
+    /// Dapatkan direktori kerja semasa
+    Ok("/home/pengguna")
+}
+
+fungsi tukar_direktori_kerja(nama: Teks) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Tukar direktori kerja
+    Ok(0)
+}
+
+fungsi buat_struktur_direktori(
+    akar: Teks,
+    senarai_direktori: Senarai<Teks>
+) -> Hasil<Nombor, Teks> kesan SistemFail {
+    /// Buat struktur direktori bersarang
+    untuk dir dalam senarai_direktori {
+        biar nama_penuh = akar + "/" + dir;
+        padan buat_direktori(nama_penuh) {
+            Ok(_) -> { /* teruskan */ },
+            Ralat(e) -> pulang Ralat("Gagal buat direktori"),
+        }
+    }
+
+    Ok(0)
+}
+
+fungsi utama() -> Nombor kesan SistemFail {
+    cetak("=== Operasi Fail ===\n");
+
+    /// Buat direktori
+    padan buat_direktori("data") {
+        Ok(_) -> cetak("Direktori dibuat\n"),
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    /// Senaraikan fail
+    padan senaraikan_fail(".") {
+        Ok(fail_fail) -> {
+            cetak("Fail:\n");
+            untuk f dalam fail_fail {
+                cetak(f);
+                cetak("\n");
+            }
+        },
+        Ralat(e) -> cetak("Ralat senarai\n"),
+    }
+
+    /// Dapatkan direktori kerja
+    padan dapatkan_direktori_kerja() {
+        Ok(dir) -> {
+            cetak("Direktori kerja: ");
+            cetak(dir);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan SistemFail for file system operations.
+/// Operations may fail - return Hasil<T, E>.
+/// File handles properly managed (automatic close).

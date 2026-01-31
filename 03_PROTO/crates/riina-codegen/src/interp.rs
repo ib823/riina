@@ -576,6 +576,8 @@ impl Interpreter {
                     (BinOp::Le, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a <= b)),
                     (BinOp::Gt, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a > b)),
                     (BinOp::Ge, Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a >= b)),
+                    (BinOp::Eq, Value::String(a), Value::String(b)) => Ok(Value::Bool(a == b)),
+                    (BinOp::Ne, Value::String(a), Value::String(b)) => Ok(Value::Bool(a != b)),
                     (BinOp::Eq, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a == b)),
                     (BinOp::Ne, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a != b)),
                     (BinOp::And, Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(*a && *b)),

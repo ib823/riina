@@ -1,0 +1,253 @@
+/// pdpa_data.rii
+/// Malaysia Personal Data Protection Act (PDPA) compliance
+/// Demonstrates data protection principles and restrictions
+///
+/// Security Level: Sistem
+/// Compliance: PDPA 2010 (Act 709)
+
+modul perlindungan_data_pdpa;
+
+guna std::teks;
+guna std::senarai;
+guna std::fail;
+
+/// Personal data classifications
+jenis KategoriData =
+    | Data_Peribadi_Asas  // name, IC, address
+    | Data_Sensitif       // health, race, religion
+    | Data_Kewangan       // account, balance
+    | Data_Keselamatan    // police records
+    | Data_Navigasi;      // location history
+
+/// Processing purpose
+jenis Tujuan =
+    | PERKHIDMATAN_KONTRAK
+    | KEPATUHAN_UNDANG_UNDANG
+    | PERLINDUNGAN_KEPENTINGAN_VITAL
+    | TUGAS_AWAM
+    | KEPENTINGAN_SAH;
+
+/// Data subject consent
+jenis Persetujuan = {
+    pengguna_id: Teks,
+    kategori_data: KategoriData,
+    tujuan: Tujuan,
+    tarikh_persetujuan: Nombor,
+    tempoh_kesahan: Nombor,
+    boleh_ditarik_balik: Benar,
+};
+
+/// Data retention policy
+jenis PolisiPenyimpanan = {
+    kategori_data: KategoriData,
+    tempoh_maksimal: Nombor,  // seconds
+    sebab_retensi: Teks,
+    nisbah_penghapusan: Benar,
+};
+
+biar ubah rekod_persetujuan: Senarai<Persetujuan> = [];
+
+/// Check if data processing is lawful
+fungsi semak_dasar_sah(
+    kategori: KategoriData,
+    tujuan: Tujuan
+) -> Benar kesan Bersih {
+    padan (kategori, tujuan) {
+        // Sensitive data: only specific purposes allowed
+        (Data_Sensitif, PERKHIDMATAN_KONTRAK) => salah,
+        (Data_Sensitif, KEPATUHAN_UNDANG_UNDANG) => betul,
+        (Data_Sensitif, PERLINDUNGAN_KEPENTINGAN_VITAL) => betul,
+
+        // Financial data: contract and legal compliance
+        (Data_Kewangan, PERKHIDMATAN_KONTRAK) => betul,
+        (Data_Kewangan, KEPATUHAN_UNDANG_UNDANG) => betul,
+        (Data_Kewangan, TUGAS_AWAM) => betul,
+
+        // Personal data: multiple purposes
+        (Data_Peribadi_Asas, _) => betul,
+
+        // Navigation/tracking: consent required
+        (Data_Navigasi, _) => salah, // Requires explicit consent
+
+        _ => betul,
+    };
+}
+
+/// Register data processing consent
+fungsi daftar_persetujuan(
+    pengguna_id: Teks,
+    kategori_data: KategoriData,
+    tujuan: Tujuan,
+    tempoh_bulan: Nombor
+) -> Benar kesan Bersih {
+    // Check if lawful basis exists
+    kalau !semak_dasar_sah(kategori_data, tujuan) {
+        cetak_baris("Pemprosesan data tidak sesuai PDPA");
+        pulang salah;
+    }
+
+    biar persetujuan = {
+        pengguna_id: pengguna_id,
+        kategori_data: kategori_data,
+        tujuan: tujuan,
+        tarikh_persetujuan: Masa::masa_unix(),
+        tempoh_kesahan: tempoh_bulan * 30 * 24 * 3600,
+        boleh_ditarik_balik: betul,
+    };
+
+    rekod_persetujuan = rekod_persetujuan + [persetujuan];
+    cetak_baris(format!("Persetujuan didaftar untuk {}", pengguna_id));
+
+    pulang betul;
+}
+
+/// Withdraw consent
+fungsi tarik_balik_persetujuan(pengguna_id: Teks, kategori_data: KategoriData) -> kesan Bersih {
+    biar rekod_baru = [];
+
+    untuk persetujuan dalam rekod_persetujuan {
+        kalau persetujuan.pengguna_id != pengguna_id || persetujuan.kategori_data != kategori_data {
+            rekod_baru = rekod_baru + [persetujuan];
+        } lain {
+            cetak_baris(format!("Persetujuan ditarik balik untuk {}", pengguna_id));
+        }
+    }
+
+    rekod_persetujuan = rekod_baru;
+}
+
+/// Check if data retention period exceeded
+fungsi semak_tempoh_penyimpanan(
+    data: Teks,
+    kategori: KategoriData,
+    masa_dirakam: Nombor
+) -> (Benar, Nombor) kesan Bersih {
+    biar polisi = kari_polisi(kategori);
+
+    biar masa_kini = Masa::masa_unix();
+    biar umur_data = masa_kini - masa_dirakam;
+
+    kalau umur_data > polisi.tempoh_maksimal {
+        pulang (salah, 0);  // Exceed retention period
+    }
+
+    biar masa_tersisa = polisi.tempoh_maksimal - umur_data;
+    pulang (betul, masa_tersisa);
+}
+
+/// Get retention policy for data category
+fungsi kari_polisi(kategori: KategoriData) -> PolisiPenyimpanan kesan Bersih {
+    padan kategori {
+        Data_Peribadi_Asas => {
+            {
+                kategori_data: kategori,
+                tempoh_maksimal: 2592000,      // 30 hari
+                sebab_retensi: "Perkhidmatan",
+                nisbah_penghapusan: betul,
+            }
+        },
+        Data_Sensitif => {
+            {
+                kategori_data: kategori,
+                tempoh_maksimal: 604800,       // 7 hari
+                sebab_retensi: "Kepatuhan",
+                nisbah_penghapusan: betul,
+            }
+        },
+        Data_Kewangan => {
+            {
+                kategori_data: kategori,
+                tempoh_maksimal: 157680000,    // 5 tahun
+                sebab_retensi: "Audit",
+                nisbah_penghapusan: betul,
+            }
+        },
+        Data_Keselamatan => {
+            {
+                kategori_data: kategori,
+                tempoh_maksimal: 31536000,     // 1 tahun
+                sebab_retensi: "Keselamatan",
+                nisbah_penghapusan: betul,
+            }
+        },
+        Data_Navigasi => {
+            {
+                kategori_data: kategori,
+                tempoh_maksimal: 86400,        // 24 jam
+                sebab_retensi: "Perkhidmatan",
+                nisbah_penghapusan: betul,
+            }
+        },
+    };
+}
+
+/// Data subject access request (DSAR)
+fungsi proses_permintaan_akses_data(pengguna_id: Teks) -> (Benar, Teks) kesan SistemFail {
+    cetak_baris(format!("Memproses DSAR untuk {}", pengguna_id));
+
+    // Retrieve all personal data for subject
+    biar data_perihal_subjek = "";  // Aggregated records
+
+    // Must respond within 30 days
+    biar tarikh_akhir = Masa::masa_unix() + (30 * 86400);
+
+    cetak_baris(format!("Permintaan mesti dijawab sebelum {}", tarikh_akhir));
+
+    pulang (betul, data_perihal_subjek);
+}
+
+/// Ensure data minimization principle
+fungsi semak_meminimalkan_data(
+    kategori_data: KategoriData,
+    data_yang_dikumpul: Senarai<Teks>
+) -> Benar kesan Bersih {
+    // Only collect data necessary for stated purpose
+    biar jumlah_data = panjang(data_yang_dikumpul);
+
+    padan kategori_data {
+        Data_Peribadi_Asas => {
+            kalau jumlah_data <= 5 {
+                pulang betul;
+            }
+        },
+        Data_Sensitif => {
+            kalau jumlah_data <= 3 {
+                pulang betul;
+            }
+        },
+        _ => pulang betul,
+    };
+
+    pulang salah;
+}
+
+/// Main compliance checker
+awam fungsi utama() -> kesan (Bersih | SistemFail) {
+    cetak_baris("=== PEMERIKSAAN PEMATUHAN PDPA ===");
+
+    // Register consent for service provision
+    daftar_persetujuan("pengguna123", Data_Peribadi_Asas, PERKHIDMATAN_KONTRAK, 12);
+
+    // Check retention compliance
+    biar (sah, masa_tersisa) = semak_tempoh_penyimpanan("data_sensitif", Data_Sensitif, Masa::masa_unix());
+    cetak_baris(format!("Kepatuhan penyimpanan: {}", kalau sah { "OK" } lain { "LAMPAU TEMPOH" }));
+
+    // Process data access request
+    biar (berjaya, data) = proses_permintaan_akses_data("pengguna123");
+    cetak_baris(format!("DSAR diproses: {}", kalau berjaya { "OK" } lain { "GAGAL" }));
+}
+
+// Helper functions
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+modul Masa {
+    fungsi masa_unix() -> Nombor kesan Bersih {
+        pulang 0;
+    }
+}

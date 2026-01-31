@@ -11,6 +11,9 @@ pub static BUILTINS: &[(&str, &str, &str)] = &[
     ("punca", "sqrt", "punca"),
     ("gcd", "gcd", "gcd"),
     ("lcm", "lcm", "lcm"),
+    ("baki", "rem", "baki"),
+    ("log2", "log2", "log2"),
+    ("rawak", "random", "rawak"),
 ];
 
 pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
@@ -47,6 +50,39 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
             } else {
                 Ok(Some(Value::Int(a / gcd_impl(a, b) * b)))
             }
+        }
+        "baki" => {
+            let (a, b) = extract_pair_ints(arg, "baki")?;
+            if b == 0 {
+                return Err(Error::InvalidOperation("modulo by zero".to_string()));
+            }
+            Ok(Some(Value::Int(a % b)))
+        }
+        "log2" => {
+            let n = extract_int(arg, "log2")?;
+            if n == 0 {
+                return Err(Error::InvalidOperation("log2(0) is undefined".to_string()));
+            }
+            Ok(Some(Value::Int(63 - n.leading_zeros() as u64)))
+        }
+        "rawak" => {
+            // Int -> Int (0..n exclusive)
+            let n = extract_int(arg, "rawak")?;
+            if n == 0 {
+                return Err(Error::InvalidOperation("random(0) is undefined".to_string()));
+            }
+            // Simple PRNG using thread-local state
+            use std::collections::hash_map::DefaultHasher;
+            use std::hash::{Hash, Hasher};
+            use std::time::SystemTime;
+            let seed = SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            let mut h = DefaultHasher::new();
+            seed.hash(&mut h);
+            let r = h.finish() % n;
+            Ok(Some(Value::Int(r)))
         }
         _ => Ok(None),
     }
@@ -127,5 +163,29 @@ mod tests {
     fn test_lcm() {
         assert_eq!(apply("lcm", &pair_i(4, 6)).unwrap(), Some(Value::Int(12)));
         assert_eq!(apply("lcm", &pair_i(0, 0)).unwrap(), Some(Value::Int(0)));
+    }
+
+    #[test]
+    fn test_baki() {
+        assert_eq!(apply("baki", &pair_i(10, 3)).unwrap(), Some(Value::Int(1)));
+        assert_eq!(apply("baki", &pair_i(9, 3)).unwrap(), Some(Value::Int(0)));
+        assert!(apply("baki", &pair_i(5, 0)).is_err());
+    }
+
+    #[test]
+    fn test_log2() {
+        assert_eq!(apply("log2", &Value::Int(1)).unwrap(), Some(Value::Int(0)));
+        assert_eq!(apply("log2", &Value::Int(8)).unwrap(), Some(Value::Int(3)));
+        assert_eq!(apply("log2", &Value::Int(1024)).unwrap(), Some(Value::Int(10)));
+        assert!(apply("log2", &Value::Int(0)).is_err());
+    }
+
+    #[test]
+    fn test_rawak() {
+        let result = apply("rawak", &Value::Int(100)).unwrap().unwrap();
+        match result {
+            Value::Int(n) => assert!(n < 100),
+            _ => panic!("expected int"),
+        }
     }
 }

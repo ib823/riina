@@ -1,0 +1,152 @@
+/// IO_WRITE.RII - Writing Output Operations
+/// Operasi menulis output
+/// Demonstrates: Tulis effect, output operations, buffering
+
+fungsi tulis_teks(t: Teks) -> Nombor kesan Tulis {
+    /// Tulis teks ke stdout
+    cetak(t);
+    0
+}
+
+fungsi tulis_garisan(t: Teks) -> Nombor kesan Tulis {
+    /// Tulis garisan ke stdout
+    cetak(t);
+    cetak("\n");
+    0
+}
+
+fungsi tulis_ke_fail(nama_fail: Teks, kandungan: Teks) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Tulis kandungan ke fail
+    padan buka_fail_untuk_tulis(nama_fail) {
+        Ok(fail) -> {
+            tulis_ke_fail_handle(fail, kandungan);
+            tutup_fail(fail);
+            Ok(0)
+        },
+        Ralat(e) -> Ralat("Tidak dapat buka fail untuk tulis: {e}"),
+    }
+}
+
+fungsi sambung_ke_fail(nama_fail: Teks, kandungan: Teks) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Sambung kandungan ke fail sedia ada
+    padan buka_fail_untuk_sambung(nama_fail) {
+        Ok(fail) -> {
+            tulis_ke_fail_handle(fail, kandungan);
+            tutup_fail(fail);
+            Ok(0)
+        },
+        Ralat(e) -> Ralat("Tidak dapat buka fail: {e}"),
+    }
+}
+
+fungsi tulis_json_ke_fail(nama_fail: Teks, json: Teks) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Tulis JSON ke fail
+    padan tulis_ke_fail(nama_fail, json) {
+        Ok(_) -> Ok(0),
+        Ralat(e) -> Ralat("Tidak dapat tulis JSON: {e}"),
+    }
+}
+
+fungsi tulis_log(
+    tahap: Teks,
+    mesej: Teks
+) -> Nombor kesan (Tulis, Masa) {
+    /// Tulis ke log dengan tahap
+    biar masa = ambil_waktu_kini();
+    biar format = "[{tahap}] {masa}: {mesej}\n";
+    cetak(format);
+    0
+}
+
+fungsi tulis_maklumat(m: Teks) -> Nombor kesan Tulis {
+    tulis_log("INFO", m)
+}
+
+fungsi tulis_amaran(m: Teks) -> Nombor kesan Tulis {
+    tulis_log("AMARAN", m)
+}
+
+fungsi tulis_ralat(m: Teks) -> Nombor kesan Tulis {
+    tulis_log("RALAT", m)
+}
+
+fungsi tulis_ayat(
+    nama_fail: Teks,
+    garisan_garisan: Senarai<Teks>
+) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Tulis beberapa garisan ke fail
+    padan buka_fail_untuk_tulis(nama_fail) {
+        Ok(fail) -> {
+            untuk garisan dalam garisan_garisan {
+                tulis_ke_fail_handle(fail, garisan);
+                tulis_ke_fail_handle(fail, "\n");
+            }
+
+            tutup_fail(fail);
+            Ok(garisan_garisan.panjang())
+        },
+        Ralat(e) -> Ralat("Tidak dapat buka fail"),
+    }
+}
+
+fungsi tulis_dengan_buffer(
+    nama_fail: Teks,
+    f: Fn() -> Teks
+) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Tulis dengan buffer
+    padan buka_fail_untuk_tulis(nama_fail) {
+        Ok(fail) -> {
+            biar kandungan = f();
+            tulis_ke_fail_handle(fail, kandungan);
+            tutup_fail(fail);
+            Ok(0)
+        },
+        Ralat(e) -> Ralat("Fail gagal"),
+    }
+}
+
+fungsi tulis_csv(
+    nama_fail: Teks,
+    data: Senarai<(Teks, Teks, Nombor)>
+) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Tulis data CSV
+    padan buka_fail_untuk_tulis(nama_fail) {
+        Ok(fail) -> {
+            untuk (a, b, c) dalam data {
+                biar baris = "{a},{b},{c}\n";
+                tulis_ke_fail_handle(fail, baris);
+            }
+
+            tutup_fail(fail);
+            Ok(data.panjang())
+        },
+        Ralat(e) -> Ralat("Fail gagal"),
+    }
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("=== Operasi Tulis ===\n");
+
+    /// Tulis teks
+    tulis_teks("Hello");
+    tulis_garisan(" World");
+
+    /// Tulis maklumat
+    tulis_maklumat("Aplikasi dimulai");
+    tulis_amaran("Ini adalah amaran");
+    tulis_ralat("Ini adalah ralat");
+
+    /// Tulis ke fail
+    padan tulis_ke_fail("output.txt", "Kandungan fail test") {
+        Ok(_) -> cetak("Fail ditulis berjaya\n"),
+        Ralat(e) -> cetak("Ralat: "),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Tulis indicates output operations.
+/// Effect tracked in type system.
+/// Functions with Tulis can call other Tulis or Bersih functions.
+/// Cannot be called from pure contexts.

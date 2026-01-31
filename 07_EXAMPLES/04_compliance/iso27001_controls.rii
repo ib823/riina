@@ -1,0 +1,223 @@
+/// iso27001_controls.rii
+/// ISO 27001 information security management system controls
+/// Demonstrates security controls implementation and verification
+///
+/// Security Level: Sistem
+/// Compliance: ISO/IEC 27001:2022
+
+modul kawalan_keselamatan_iso27001;
+
+guna std::teks;
+guna std::senarai;
+
+jenis TarafKawalan =
+    | IMPLEMENTASI_PENUH
+    | IMPLEMENTASI_SEBAHAGIAN
+    | TIDAK_DIIMPLEMENTASI;
+
+jenis KawalanKeselamatan = {
+    id_kawalan: Teks,        // A.5.1.1, A.6.2.1, etc
+    nama: Teks,
+    pernyataan: Teks,
+    taraf_implementasi: TarafKawalan,
+    tarikh_implementasi: Nombor,
+    bukti_kepatuhan: Senarai<Teks>,
+};
+
+biar ubah kawalan_disediakan: Senarai<KawalanKeselamatan> = [];
+
+/// A.5: Organizational Controls
+fungsi implementasi_kawalan_organisasi() -> kesan Bersih {
+    cetak_baris("=== A.5: KAWALAN ORGANISASI ===");
+
+    // A.5.1.1: Policies for information security
+    cetak_baris("A.5.1.1: Dasar keselamatan maklumat - Implementasi Penuh");
+    cetak_baris("- Dasar diterbitkan dan dikomunikasikan");
+    cetak_baris("- Tinjauan tahunan dijadualkan");
+
+    // A.5.2.1: Information security roles and responsibilities
+    cetak_baris("A.5.2.1: Peranan keselamatan ditakrifkan");
+    cetak_baris("- CISO ditugaskan");
+    cetak_baris("- Tanggungjawab terdokumentasi");
+
+    // A.5.3.1: Segregation of duties
+    cetak_baris("A.5.3.1: Pemisahan tugas - Implementasi Penuh");
+    cetak_baris("- Pengguna admin berbeda dari pengembang");
+    cetak_baris("- Persetujuan memerlukan otorisasi terpisah");
+}
+
+/// A.6: People Controls
+fungsi implementasi_kawalan_orang() -> kesan Bersih {
+    cetak_baris("\n=== A.6: KAWALAN ORANG ===");
+
+    // A.6.1.1: Screening
+    cetak_baris("A.6.1.1: Pemeriksaan latar belakang - Implementasi Penuh");
+    cetak_baris("- Verifikasi identitas dilakukan");
+    cetak_baris("- Referensi kerja diperiksa");
+
+    // A.6.2.1: Terms and conditions
+    cetak_baris("A.6.2.1: Syarat kerahasiaan - Implementasi Penuh");
+    cetak_baris("- Perjanjian NDA ditandatangani");
+    cetak_baris("- Syarat disimpan dengan aman");
+
+    // A.6.3.1: Responsibilities
+    cetak_baris("A.6.3.1: Tanggung jawab karyawan - Implementasi Penuh");
+    cetak_baris("- Pelatihan keselamatan diberikan");
+    cetak_baris("- Pemahaman dievaluasi");
+
+    // A.6.7.1: Telecommuting
+    cetak_baris("A.6.7.1: Kerja jauh - Implementasi Sebahagian");
+    cetak_baris("- VPN diperlukan (✓)");
+    cetak_baris("- Enkripsi perangkat lokal (Sedang diimplementasi)");
+}
+
+/// A.7: Asset Controls
+fungsi implementasi_kawalan_aset() -> kesan Bersih {
+    cetak_baris("\n=== A.7: KAWALAN ASET ===");
+
+    // A.7.1.1: Asset inventory
+    cetak_baris("A.7.1.1: Inventori aset - Implementasi Penuh");
+    cetak_baris("- Sistem pelacakan aset aktif");
+    cetak_baris("- Audit kuartalan dijadwalkan");
+
+    // A.7.2.1: Classification
+    cetak_baris("A.7.2.1: Klasifikasi aset - Implementasi Penuh");
+    cetak_baris("- Tingkat rahasia diterapkan: Awam, Dalaman, Rahsia");
+    cetak_baris("- Etiketa diterapkan pada dokumen");
+
+    // A.7.3.1: Media handling
+    cetak_baris("A.7.3.1: Penanganan media - Implementasi Penuh");
+    cetak_baris("- Destruksi aman menggunakan penggiling kertas");
+    cetak_baris("- Hard drive dihapus dengan aman");
+}
+
+/// A.8: Access Controls
+fungsi implementasi_kawalan_akses() -> kesan Bersih {
+    cetak_baris("\n=== A.8: KAWALAN AKSES ===");
+
+    // A.8.1.1: Access control policy
+    cetak_baris("A.8.1.1: Dasar kontrol akses - Implementasi Penuh");
+    cetak_baris("- Prinsip privilege minimal diterapkan");
+    cetak_baris("- Tinjauan akses dilakukan setiap 6 bulan");
+
+    // A.8.2.1: User authentication
+    cetak_baris("A.8.2.1: Autentikasi pengguna - Implementasi Penuh");
+    cetak_baris("- Kata sandi memenuhi NIST: min 12 karakter");
+    cetak_baris("- MFA diterapkan untuk akses admin");
+
+    // A.8.3.1: Password management
+    cetak_baris("A.8.3.1: Pengelolaan kata sandi - Implementasi Penuh");
+    cetak_baris("- Riwayat kata sandi: 10 sebelumnya");
+    cetak_baris("- Waktu pemintas: 90 hari");
+
+    // A.8.6.1: Session management
+    cetak_baris("A.8.6.1: Pengelolaan sesi - Implementasi Penuh");
+    cetak_baris("- Batas waktu: 15 menit inaktivitas");
+    cetak_baris("- Penghapusan sesi saat logout");
+}
+
+/// A.9: Cryptography
+fungsi implementasi_kawalan_kriptografi() -> kesan Bersih {
+    cetak_baris("\n=== A.9: KRIPTOGRAFI ===");
+
+    // A.9.1.1: Encryption policy
+    cetak_baris("A.9.1.1: Dasar enkripsi - Implementasi Penuh");
+    cetak_baris("- Data istirahat: AES-256");
+    cetak_baris("- Data transit: TLS 1.3");
+
+    // A.9.2.1: Key management
+    cetak_baris("A.9.2.1: Manajemen kunci - Implementasi Penuh");
+    cetak_baris("- HSM digunakan untuk kunci utama");
+    cetak_baris("- Rotasi kunci: 12 bulan");
+
+    // A.9.4.1: Certificate management
+    cetak_baris("A.9.4.1: Manajemen sertifikat - Implementasi Penuh");
+    cetak_baris("- Pemantauan kedaluwarsa otomatis");
+    cetak_baris("- Sertifikat CA terpercaya");
+}
+
+/// A.12: Operations Controls
+fungsi implementasi_kawalan_operasi() -> kesan Bersih {
+    cetak_baris("\n=== A.12: OPERASI ===");
+
+    // A.12.1.1: Monitoring
+    cetak_baris("A.12.1.1: Pemantauan sistem - Implementasi Penuh");
+    cetak_baris("- Log terpusat: ELK Stack");
+    cetak_baris("- Penyimpanan log: 1 tahun");
+
+    // A.12.2.1: Logging
+    cetak_baris("A.12.2.1: Pencatatan log keamanan - Implementasi Penuh");
+    cetak_baris("- Akses admin dicatat");
+    cetak_baris("- Perubahan konfigurasi dicatat");
+
+    // A.12.3.1: Administrator separation
+    cetak_baris("A.12.3.1: Pemisahan admin - Implementasi Penuh");
+    cetak_baris("- Akun admin terpisah dari pengguna biasa");
+    cetak_baris("- Audit trail lengkap untuk admin");
+
+    // A.12.6.1: Backup and recovery
+    cetak_baris("A.12.6.1: Cadangan - Implementasi Penuh");
+    cetak_baris("- Cadangan harian ke lokasi terpisah");
+    cetak_baris("- Uji pemulihan kuartalan");
+}
+
+/// A.13: Communications Controls
+fungsi implementasi_kawalan_komunikasi() -> kesan Bersih {
+    cetak_baris("\n=== A.13: KOMUNIKASI ===");
+
+    // A.13.1.1: Network segregation
+    cetak_baris("A.13.1.1: Segregasi jaringan - Implementasi Penuh");
+    cetak_baris("- DMZ untuk server web");
+    cetak_baris("- VLAN untuk data sensitif");
+
+    // A.13.1.3: Segregation of networks
+    cetak_baris("A.13.1.3: Firewall - Implementasi Penuh");
+    cetak_baris("- Firewall stateful aktif");
+    cetak_baris("- Aturan diperiksa bulanan");
+
+    // A.13.2.1: Secure transmission
+    cetak_baris("A.13.2.1: Transmisi aman - Implementasi Penuh");
+    cetak_baris("- Email dienkripsi: TLS");
+    cetak_baris("- VPN untuk akses jarak jauh");
+}
+
+/// Generate compliance report
+fungsi laporan_kepatuhan_iso27001() -> Teks kesan Bersih {
+    biar laporan = "LAPORAN KEPATUHAN ISO 27001\n";
+    laporan = laporan + "==============================\n";
+
+    biar jumlah_penuh = 45;
+    biar jumlah_sebahagian = 8;
+    biar jumlah_tidak = 2;
+
+    laporan = laporan + format!("Implementasi Penuh: {} ({}%)\n", jumlah_penuh, (jumlah_penuh * 100) / 55);
+    laporan = laporan + format!("Implementasi Sebahagian: {} ({}%)\n", jumlah_sebahagian, (jumlah_sebahagian * 100) / 55);
+    laporan = laporan + format!("Tidak Diimplementasi: {} ({}%)\n", jumlah_tidak, (jumlah_tidak * 100) / 55);
+
+    laporan = laporan + "\nKawalan Penting:\n";
+    laporan = laporan + "✓ Dasar kebijakan\n";
+    laporan = laporan + "✓ Kontrol akses\n";
+    laporan = laporan + "✓ Enkripsi\n";
+    laporan = laporan + "✓ Pemantauan\n";
+
+    pulang laporan;
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== PEMERIKSA KAWALAN ISO 27001 ===\n");
+
+    implementasi_kawalan_organisasi();
+    implementasi_kawalan_orang();
+    implementasi_kawalan_aset();
+    implementasi_kawalan_akses();
+    implementasi_kawalan_kriptografi();
+    implementasi_kawalan_operasi();
+    implementasi_kawalan_komunikasi();
+
+    cetak_baris("\n" + laporan_kepatuhan_iso27001());
+}
+
+// Helper functions
+fungsi format(s: Teks, args: Senarai<T>) -> Teks kesan Bersih {
+    pulang s;
+}
