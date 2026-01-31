@@ -1,5 +1,75 @@
 # Session Log
 
+## 2026-01-31 (Session 60): Phase 5 Distribution Complete
+
+**Goal:** Complete Phase 5 Ecosystem & Distribution — Dockerfile, Nix flake, release scripts, installer, license fixes.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| License fix | MPL-2.0 in both Cargo.toml workspaces (was MIT/Apache-2.0 and PROPRIETARY) | Done |
+| Dockerfile | Multi-stage build: rust:1.84-bookworm → debian:bookworm-slim (~85MB) | Done |
+| .dockerignore | Excludes .git, target, research, formal, archives | Done |
+| Nix flake | `packages.default` (riinac) + `devShells.default` (Rust 1.84 + Coq) | Done |
+| Release script | `scripts/build-release.sh` — tarball + SHA256SUMS | Done |
+| Installer | `scripts/install.sh` — portable source installer → ~/.riina/bin/ | Done |
+| Verification | docker build OK (85MB), nix flake check OK, 576 tests, riinac verify --fast PASS | Done |
+| Doc sync | README, CLAUDE.md, PROGRESS.md, COORDINATION_LOG.md, SESSION_LOG.md, ATTACK_PROOF_MAP.md | Done |
+
+### Phase 5 Final Status
+
+| Item | Status |
+|------|--------|
+| CI/CD (`riinac verify`) | ✅ Done (Session 56) |
+| Package manager (`riina-pkg`) | ✅ Done (Session 57) |
+| Licensing (MPL-2.0) | ✅ Done (Session 60) |
+| Dockerfile | ✅ Done (Session 60) |
+| Nix flake | ✅ Done (Session 60) |
+| Release scripts | ✅ Done (Session 60) |
+| Portable installer | ✅ Done (Session 60) |
+
+**Phase 5: COMPLETE.** Next: Phase 6 (FFI, demo apps, community).
+
+---
+
+## 2026-01-31 (Session 59): Repository Protection + Documentation Sync
+
+**Goal:** Deploy comprehensive repository security hardening, align all documentation.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| REPO_PROTECTION_GUIDE.md v2.0.0 | 10-part guide + 3 appendices, 100% codebase-aligned | Done |
+| Pre-push hook | `00_SETUP/hooks/pre-push` — riinac verify --full + GPG + secrets + Trojan source | Done |
+| Hook installer update | `install_hooks.sh` now installs both pre-commit and pre-push | Done |
+| Hooks installed | Both `.git/hooks/pre-commit` and `.git/hooks/pre-push` active | Done |
+| Misaligned .githooks/ removed | Old hooks bypassed riinac verify; replaced with canonical system | Done |
+| Codebase audit | Full audit of repo structure, Coq build, Rust crates, existing tools | Done |
+| Original guide assessment | Found 13 misalignments in v1 guide; all corrected in v2 | Done |
+| Documentation sync | Updated PROGRESS.md, README.md, SESSION_LOG.md, COORDINATION_LOG.md | Done |
+
+### Verification Infrastructure (Final State)
+
+| Layer | Tool | Trigger |
+|-------|------|---------|
+| Pre-commit | `riinac verify --fast` | Automatic on `git commit` |
+| Pre-push | `riinac verify --full` + GPG + secrets + Trojan scan | Automatic on `git push` |
+| Manual deep | `05_TOOLING/scripts/verify.sh [0-6]` | On demand (7 levels) |
+| Integrity | `05_TOOLING/tools/verify_integrity.sh` | Weekly/on demand |
+| Artifacts | hash-chain, build-manifest, artifact-sign | On demand |
+
+### GitHub UI Actions Required (Manual)
+
+1. Branch protection on `main` (signed commits, no force push, no bypass)
+2. GPG key generation + upload + vigilant mode
+3. 2FA with authenticator app
+4. Secret scanning + push protection enabled
+5. See `REPO_PROTECTION_GUIDE.md` Part I-V for full details
+
+---
+
 ## 2026-01-31 (Session 58): Domain Integration + LinearTypes Fix + README Overhaul
 
 **Goal:** Complete domain file integration, fix all broken proofs, eliminate last Admitted, and synchronize all documentation.
