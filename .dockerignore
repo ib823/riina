@@ -1,0 +1,14 @@
+.git/
+target/
+01_RESEARCH/
+02_FORMAL/
+99_ARCHIVE/
+*.zip
+*.tar.gz
+dist/
+.dockerignore
+Dockerfile
+flake.nix
+flake.lock
+SESSION_LOG.md
+CLAUDE.md

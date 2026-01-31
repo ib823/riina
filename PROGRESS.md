@@ -51,7 +51,7 @@
 1. **riina-pkg crate** — 14 modules, 39 tests, zero external deps
 2. **riinac pkg integration** — `riinac pkg init/add/remove/update/lock/build/publish/list/tree/clean`
 3. **Tests: 530 → 568** (+39 from riina-pkg, -1 dedup)
-4. **Phase 5 status**: CI/CD done (`riinac verify`), package manager done (`riina-pkg`). Remaining: distribution, licensing, website.
+4. **Phase 5 status**: ✅ Done. CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 license.
 
 **SESSION 56 KEY ACTIONS (Phase 4 Developer Experience):**
 1. **M1: Span-annotated AST** — Added `Span`, `SpannedDecl` to riina-types; parser records spans for all top-level decls
@@ -962,7 +962,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 | 2 | Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
 | 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | 4 | Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code, 100 examples |
-| 5 | Ecosystem & Distribution | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution/licensing pending |
+| 5 | Ecosystem & Distribution | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 |
 | 6 | Adoption & Community | ⬜ | FFI, demos |
 | 7 | Long-term Vision | ⬜ | Self-hosting, HW verification |
 

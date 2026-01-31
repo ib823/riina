@@ -1,6 +1,6 @@
 # RIINA Prototype Workspace
 # Track B: Compiler Implementation
-# RIINA = Rigorous Immutable Invariant — Normalized Axiom
+# RIINA = Rigorous Immutable Invariant, No Assumptions
 
 [workspace]
 resolver = "2"
@@ -24,7 +24,7 @@ members = [
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.84.0"
-license = "MIT OR Apache-2.0"
+license = "MPL-2.0"
 repository = "https://github.com/ib823/proof"
 
 [workspace.dependencies]
