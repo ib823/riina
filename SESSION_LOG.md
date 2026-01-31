@@ -1,5 +1,43 @@
 # Session Log
 
+## 2026-01-31 (Session 57): Phase 5 Ecosystem — riina-pkg
+
+**Goal:** Implement Phase 5 package manager (`riina-pkg`) and update all documentation.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| riina-pkg crate | 14 modules: error, version, manifest, layout, integrity, effects, registry, resolve, lockfile, cache, build, workspace, cli, lib | ✅ |
+| riinac pkg | 10 subcommands: init/add/remove/update/lock/build/publish/list/tree/clean | ✅ |
+| Workspace integration | Cargo.toml + riinac Cargo.toml + riinac main.rs wired up | ✅ |
+| Clippy clean | Zero warnings on `cargo clippy -p riina-pkg -- -D warnings` | ✅ |
+| Tests | 39 new tests (568 total, all passing) | ✅ |
+| Documentation | Updated PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md, materialization plan | ✅ |
+
+### Key Design Decisions
+
+- **TOML parser from scratch** — only riina.toml subset, ~150 lines, zero deps
+- **SHA-256 FIPS 180-4 inline** — no external crypto deps
+- **Greedy + backtrack resolver** — picks highest compatible version, not full SAT
+- **Effect escalation = hard error** — deps cannot escalate forbidden effects
+- **Bahasa Melayu** — field names (nama, versi, pengarang), dirs (ujian, contoh, sasaran)
+
+### Final State
+
+- **Rust crates**: 13 (was 12)
+- **Rust tests**: 568 (was 530)
+- **Phase 5 status**: CI/CD done (riinac verify), package manager done (riina-pkg); distribution/licensing pending
+
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| b10b905 | [TRACK_B] IMPL: riina-pkg package manager (Phase 5) |
+| 49b65f4 | Merge branch 'track-a/store-rel-v3' to main |
+
+---
+
 ## 2026-01-31 (Session 56): Phase 4 Developer Experience
 
 **Goal:** Implement Phase 4 Developer Experience — 8 milestones (M1-M8): span AST, formatter, LSP, hover/completion, VS Code extension, doc generator, example corpus, docs update.
