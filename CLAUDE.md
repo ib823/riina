@@ -92,7 +92,7 @@ RIINA is the world's **first formally verified programming language** with:
 | Phase 2: Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
-| Phase 5: Ecosystem | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution pending |
+| Phase 5: Ecosystem | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 |
 | Phase 6: Adoption | ⬜ | FFI, demos, community |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
 
@@ -695,7 +695,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 58: Domain integration complete, 0 admits, 5 justified axioms, 576 Rust tests, 13 crates, 101 examples, 244 Coq files)*
+*Last updated: 2026-01-31 (Session 59: Repo protection deployed, pre-push hook, REPO_PROTECTION_GUIDE.md v2.0.0, 0 admits, 5 justified axioms, 576 Rust tests, 13 crates, 101 examples, 244 Coq files)*
 
 ---
 
