@@ -67,8 +67,6 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
         }
         "masa_jam" => {
             // () -> Int (monotonic clock in nanoseconds)
-            use std::time::Instant;
-            // We can't get absolute nanos from Instant, so use SystemTime
             use std::time::{SystemTime, UNIX_EPOCH};
             let ns = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
