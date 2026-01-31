@@ -80,7 +80,8 @@ RIINA is the world's **first formally verified programming language** with:
 | **Qed Proofs (Active Build)** | 5,117+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (509 tests) | All green |
+| **Rust Tests** | ✅ PASSING (529 tests) | All green |
+| **Example .rii Files** | 100 | 6 directories |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
@@ -89,7 +90,7 @@ RIINA is the world's **first formally verified programming language** with:
 | Phase 1: Compiler Completion | ✅ ~98% | All 5.1-5.7 done; 477 tests passing |
 | Phase 2: Standard Library | ✅ ~90% | 3 new modules (masa/fail/json), 29 new builtins, 509 tests |
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971 Qed |
-| Phase 4: Developer Experience | ⬜ | LSP, VS Code, formatter |
+| Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 100 examples |
 | Phase 5: Ecosystem | ⬜ | CI/CD, package manager |
 | Phase 6: Adoption | ⬜ | FFI, demos, community |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
@@ -577,21 +578,24 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 2 ~90%
+### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 4 DONE
 
 **Phase 1** (Compiler Completion): ✅ All items done.
-**Phase 2** (Standard Library): ✅ 5/6 milestones done (M1-M5). 29 new builtins, 3 new modules.
+**Phase 2** (Standard Library): ✅ Done. 88 builtins, 9 modules.
+**Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 100 examples.
 
-| Phase 2 Milestone | Description | Status |
+| Phase 4 Milestone | Description | Status |
 |-------------------|-------------|--------|
-| M1 | C runtime types + 39 builtin C implementations | ✅ Done |
-| M2 | masa (time) module — 6 builtins | ✅ Done |
-| M3 | fail (file I/O) module — 8 builtins | ✅ Done |
-| M4 | json module — 5 builtins (hand-written parser) | ✅ Done |
-| M5 | Expand teks/senarai/matematik — 10 new builtins | ✅ Done |
-| M6 | Update planning documents | ✅ Done |
+| M1 | Span-annotated AST (SpannedDecl, AstSpan) | ✅ Done |
+| M2 | riina-fmt formatter crate + `riinac fmt` | ✅ Done |
+| M3 | riina-lsp server with diagnostics (P0) | ✅ Done |
+| M4 | LSP hover + completion (P1) | ✅ Done |
+| M5 | VS Code extension (syntax + LSP client) | ✅ Done |
+| M6 | riina-doc generator crate + `riinac doc` | ✅ Done |
+| M7 | Example corpus (100 .rii files) + AI context | ✅ Done |
+| M8 | Update planning documents | ✅ Done |
 
-**Total: 88 builtins across 9 modules, 509 Rust tests passing.** Next: Phase 4 (Developer Experience).
+**Total: 529 Rust tests, 3 new crates (riina-fmt, riina-lsp, riina-doc), 100 example files.** Next: Phase 5 (Ecosystem).
 
 ---
 
@@ -691,7 +695,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-31 (Session 55: Phase 2 stdlib ~90%, 0 admits, 5 justified axioms, 509 Rust tests)*
+*Last updated: 2026-01-31 (Session 56: Phase 4 Dev Experience done, 0 admits, 5 justified axioms, 529 Rust tests, 100 examples)*
 
 ---
 

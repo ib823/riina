@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 55)
-**Session:** 55 (Track B — Phase 2 Standard Library)
+**Report Date:** 2026-01-31 (Session 56)
+**Session:** 56 (Track B — Phase 4 Developer Experience)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -33,7 +33,18 @@
 | Files in Build | **98** | - | ✅ All compile |
 | Qed Proofs (Build) | **5117+** | - | ✅ |
 | .v Files (Total) | **256** | - | ✅ |
-| Rust Prototype | ✅ PASSING (509 tests) | PASSING | ✅ GREEN |
+| Rust Prototype | ✅ PASSING (529 tests) | PASSING | ✅ GREEN |
+| Example .rii Files | **100** | 100+ | ✅ |
+
+**SESSION 56 KEY ACTIONS (Phase 4 Developer Experience):**
+1. **M1: Span-annotated AST** — Added `Span`, `SpannedDecl` to riina-types; parser records spans for all top-level decls
+2. **M2: riina-fmt formatter** — New crate; handles all 27 Expr variants + TopLevelDecl; `riinac fmt` subcommand
+3. **M3: riina-lsp server (P0)** — Hand-written JSON-RPC over stdio; diagnostics via textDocument/publishDiagnostics
+4. **M4: LSP hover + completion (P1)** — Hover returns type info; completion returns 26 BM keywords
+5. **M5: VS Code extension** — TextMate grammar, snippets, LSP client (`riina-vscode/`)
+6. **M6: riina-doc generator** — Extracts `///` doc comments; generates HTML docs; `riinac doc` subcommand
+7. **M7: Example corpus** — 100 .rii files across 6 directories + AI context docs (cheatsheet, guide, all_examples.rii)
+8. **Tests: 509 → 529** (+20 new tests from riina-fmt, riina-lsp, riina-doc)
 
 **SESSION 55 KEY ACTIONS (Phase 2 Standard Library):**
 1. **M1: C runtime types + 39 builtin C implementations** — riina_list_t, riina_map_t, riina_set_t; all teks/senarai/peta/set builtins now compile to C
