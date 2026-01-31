@@ -7,12 +7,19 @@
 
 use riina_lexer::{Token, TokenKind, Lexer, Span};
 use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program, TaintSource, Sanitizer, CapabilityKind};
+use std::fmt;
 use std::iter::Peekable;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseError {
     pub kind: ParseErrorKind,
     pub span: Span,
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} at {}..{}", self.kind, self.span.start, self.span.end)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +31,20 @@ pub enum ParseErrorKind {
     ExpectedExpression,
     InvalidSecurityLevel,
     InvalidEffect,
+}
+
+impl fmt::Display for ParseErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseErrorKind::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok),
+            ParseErrorKind::UnexpectedEof => write!(f, "Unexpected end of input"),
+            ParseErrorKind::ExpectedIdentifier => write!(f, "Expected identifier"),
+            ParseErrorKind::ExpectedType => write!(f, "Expected type"),
+            ParseErrorKind::ExpectedExpression => write!(f, "Expected expression"),
+            ParseErrorKind::InvalidSecurityLevel => write!(f, "Invalid security level"),
+            ParseErrorKind::InvalidEffect => write!(f, "Invalid effect"),
+        }
+    }
 }
 
 struct LexerIter<'a> {
