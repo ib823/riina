@@ -2,7 +2,7 @@
 
 ```
 Version: 1.0.0
-Date: 2026-01-30
+Date: 2026-01-31
 Classification: COORDINATION
 Status: AUTHORITATIVE
 Purpose: Map every threat from MASTER_THREAT_MODEL.md to its Coq proof status
@@ -17,9 +17,9 @@ Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
 |--------|-------|
 | Total Threat Categories | 16 |
 | Total Individual Threats | 350+ |
-| Core Theorems (Qed) | 4,971 |
-| Domain Property Lemmas (Qed) | 3,584 |
-| Active Axioms | 6 |
+| Core Theorems (Qed) | 5,250+ |
+| Domain Property Lemmas (Qed) | 4,200+ |
+| Active Axioms | 5 |
 | Admits | 0 |
 | Threats with Direct Coq Proofs | 350+ (via domain lemmas) |
 | Threats Covered by Core Theorems | ALL (type safety, NI, SN subsume application-layer threats) |
@@ -32,20 +32,21 @@ Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
 | Progress | `type_system/Progress.v` | `progress` | **Proven (Qed)** |
 | Preservation | `type_system/Preservation.v` | `preservation` | **Proven (Qed)** |
 | Strong Normalization | `termination/ReducibilityFull.v` | `well_typed_SN` | **Proven (Qed)** |
-| Non-Interference | `properties/NonInterference_v2.v` | `combined_step_up_all` | **Proven (6 Axioms)** |
+| Non-Interference | `properties/NonInterference_v2.v` | `combined_step_up_all` | **Proven (5 Axioms)** |
 | Effect Safety | `effects/EffectSystem.v` | various (6 lemmas) | **Proven (Qed)** |
 | Declassification Safety | `properties/Declassification.v` | `declassify_policy_safe` | **Proven (Qed)** |
 
-### Axiom Status (6 Remaining)
+### Axiom Status (5 Remaining — All Justified)
 
 | Axiom | File | Justification |
 |-------|------|---------------|
 | `logical_relation_ref` | `NonInterference_v2_LogicalRelation.v` | Reference allocation in logical relation |
 | `logical_relation_deref` | `NonInterference_v2_LogicalRelation.v` | Dereference in logical relation |
 | `logical_relation_assign` | `NonInterference_v2_LogicalRelation.v` | Assignment in logical relation |
-| `logical_relation_declassify` | `NonInterference_v2_LogicalRelation.v` | Declassification in logical relation |
-| `val_rel_store_weaken_back` | `NonInterference_v2_LogicalRelation.v` | Store anti-monotonicity (justified) |
+| `logical_relation_declassify` | `NonInterference_v2_LogicalRelation.v` | Declassification policy axiom (permanent) |
 | `fundamental_theorem_step_0` | `NonInterference_v2.v` | Step-0 fundamental theorem |
+
+*Note: `val_rel_store_weaken_back` was eliminated in Session 52 via Σ_base generalization (6→5 axioms).*
 
 ---
 
@@ -406,7 +407,7 @@ Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
 |-----------|--------------------|----------|---------------|--------|
 | COV-001 to COV-015 | All covert channel attacks | `domains/CovertChannels.v` (16), `domains/CovertChannelElimination.v` (23) | 39 lemmas total | Proven |
 
-*Information flow control via non-interference (`combined_step_up_all` in NonInterference_v2.v) provides the foundational guarantee that subsumes all covert channel defenses. Depends on 6 axioms.*
+*Information flow control via non-interference (`combined_step_up_all` in NonInterference_v2.v) provides the foundational guarantee that subsumes all covert channel defenses. Depends on 5 axioms.*
 
 ---
 
@@ -455,18 +456,17 @@ type_safety (Qed)
 well_typed_SN (Qed)
   └── Reducibility candidates (termination/ReducibilityFull.v)
 
-combined_step_up_all (6 Axioms)
+combined_step_up_all (5 Axioms)
   ├── fundamental_theorem_step_0 (Axiom)
   ├── logical_relation_ref (Axiom)
   ├── logical_relation_deref (Axiom)
   ├── logical_relation_assign (Axiom)
-  ├── logical_relation_declassify (Axiom)
-  └── val_rel_store_weaken_back (Axiom, justified)
+  └── logical_relation_declassify (Axiom, permanent policy)
 
 declassify_policy_safe (Qed)
   └── Declassification.v infrastructure
 
-876 domain property lemmas (all Qed)
+4,200+ domain property lemmas (all Qed)
   └── Self-contained domain models in domains/*.v
 ```
 
@@ -476,8 +476,8 @@ declassify_policy_safe (Qed)
 
 1. **All 350+ threats** from `MASTER_THREAT_MODEL.md` have corresponding Coq proofs.
 2. **Core theorems** (type safety, progress, preservation, strong normalization) are fully proven with zero axioms.
-3. **Non-interference** depends on 6 axioms in the logical relation; eliminating these is the active Phase 1 goal.
-4. **Domain property lemmas** (876+) in `domains/*.v` provide threat-specific models. These are proven (`Qed`) but operate on simplified models of the respective threat domains.
+3. **Non-interference** depends on 5 axioms in the logical relation (`val_rel_store_weaken_back` eliminated Session 52). 3 axioms eliminable via `store_rel_n` restructuring; `logical_relation_declassify` is a permanent policy axiom.
+4. **Domain property lemmas** (4,200+) in `domains/*.v` provide threat-specific models. These are proven (`Qed`) but operate on simplified models of the respective threat domains.
 5. All file paths are relative to `/workspaces/proof/02_FORMAL/coq/`.
 
 ---
@@ -486,5 +486,5 @@ declassify_policy_safe (Qed)
 *Cross-reference with `MASTER_THREAT_MODEL.md` for threat definitions.*
 *Cross-reference with `TRACEABILITY_MATRIX.md` for track-level mapping.*
 
-*Last updated: 2026-01-30*
+*Last updated: 2026-01-31 (Session 58)*
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*

@@ -43,7 +43,9 @@
 3. **6 broken domain files fixed** — AlgebraicEffects, All, CovertChannelElimination, PCIDSSCompliance, TimingSecurity, VerifiedAIML
 4. **4 new proof files** — PI001_VerifiedPerformance (34 Qed), DELTA001_VerifiedDistribution (31 Qed), OMEGA001_NetworkDefense (30 Qed), PSI001_OperationalSecurity (38 Qed)
 5. **LinearTypes.v Admitted eliminated** — Reformulated `weakening_invalid_for_linear` → Qed
-6. **Active build: 244 files, 0 Admitted, 0 admits, 5 justified axioms**
+6. **100% research track coverage** — All 55+ tracks in 01_RESEARCH/ have Coq proofs; 3 new gap-fill files (FFIAttackResearch, PhysicsSecurity, CapitalMarkets); 45 subdirectory files registered
+7. **ATTACK_PROOF_MAP.md updated** — 5 axioms (was 6; val_rel_store_weaken_back eliminated Session 52)
+8. **Active build: 244 files, 0 Admitted, 0 admits, 5 justified axioms**
 
 **SESSION 57 KEY ACTIONS (Phase 5 Ecosystem — riina-pkg):**
 1. **riina-pkg crate** — 14 modules, 39 tests, zero external deps
@@ -920,7 +922,7 @@ The following remain and are NOT covered by delegation output:
 ```
 Session      : 58 (Track A — Domain integration, LinearTypes fix, README overhaul)
 Last Action  : Eliminated last Admitted in active build (LinearTypes.v)
-Build Status : ✅ PASSING (269 Coq files + 572 Rust tests)
+Build Status : ✅ PASSING (244 Coq files + 572 Rust tests)
 Axioms       : 5 (active build: 4 in NI_v2_LR + 1 in NI_v2)
 Admits       : 0 admit. + 0 Admitted. = 0 total
 Rust Tests   : 572 (all passing)
@@ -1026,4 +1028,4 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 *"Every line of code backed by mathematical proof."*
 
 *Report Generated: 2026-01-31 (Session 58)*
-*"0 admits. 5 justified axioms. 269 Coq files. 572 Rust tests. 13 crates. Q.E.D. Aeternum."*
+*"0 admits. 5 justified axioms. 244 Coq files. 572 Rust tests. 13 crates. Q.E.D. Aeternum."*
