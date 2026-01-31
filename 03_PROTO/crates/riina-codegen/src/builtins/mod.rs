@@ -5,13 +5,13 @@
 //!
 //! Bilingual names: Bahasa Melayu and English.
 
-mod teks;
-mod senarai;
-mod peta;
-mod set;
-mod matematik;
-mod penukaran;
-mod ujian;
+pub(crate) mod teks;
+pub(crate) mod senarai;
+pub(crate) mod peta;
+pub(crate) mod set;
+pub(crate) mod matematik;
+pub(crate) mod penukaran;
+pub(crate) mod ujian;
 
 use crate::value::{Env, Value};
 use crate::{Error, Result};
