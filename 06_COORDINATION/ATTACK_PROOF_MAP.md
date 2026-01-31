@@ -472,6 +472,51 @@ declassify_policy_safe (Qed)
 
 ---
 
+## REPOSITORY-LEVEL THREATS (REPO_PROTECTION_GUIDE.md v2.0.0)
+
+These threats target the repository and development infrastructure itself, not the language runtime. They are addressed by `REPO_PROTECTION_GUIDE.md` and the deployed verification hooks.
+
+| Threat ID | Threat Description | Mitigation | Mechanism | Status |
+|-----------|--------------------|-----------|-----------|--------|
+| REPO-001 | Unauthorized commit | GPG signed commits + vigilant mode | Unsigned commits flagged "Unverified" | Deployed (requires GPG setup) |
+| REPO-002 | Account compromise | 2FA + hardware key + GPG signatures | Commits without GPG key appear unsigned | Deployed (requires GitHub UI) |
+| REPO-003 | Proof regression (Admitted snuck in) | `riinac verify --full` (pre-push hook) | Scans _CoqProject files for admits/axioms | **Active** |
+| REPO-004 | Test regression | `riinac verify --fast` (pre-commit hook) | `cargo test --all` blocks commit on failure | **Active** |
+| REPO-005 | Secret exposure | Pre-push secret scan + GitHub push protection | Regex + GitHub scanning | **Active** |
+| REPO-006 | Trojan source (CVE-2021-42574) | Pre-push bidi Unicode scan | Scans .v/.rs/.rii/.md for U+202A-U+202E, U+2066-U+2069 | **Active** |
+| REPO-007 | History manipulation | Branch protection (block force push) | GitHub branch rules | Deployed (requires GitHub UI) |
+| REPO-008 | Supply chain (dependencies) | Zero runtime deps (Law 8) + `cargo audit` | 03_PROTO: 0 external deps; 05_TOOLING: build-time only | **Enforced** |
+| REPO-009 | Non-reproducible builds | Level 6 verification + build-manifest tool | `SOURCE_DATE_EPOCH=0`, binary comparison | Available |
+| REPO-010 | GitHub infrastructure compromise | Local integrity verification | `verify_integrity.sh` — repo hash + signature check | Available |
+| REPO-011 | Insider threat | Code review + signed commits + audit trail | Branch protection PR requirement | Deployed (requires GitHub UI) |
+| REPO-012 | Build artifact tampering | Post-quantum artifact signing | `artifact-sign` tool (ML-DSA-65 + Ed25519 hybrid) | Available |
+
+**Verification hooks installed:**
+- `.git/hooks/pre-commit` — `riinac verify --fast` (REPO-003, REPO-004)
+- `.git/hooks/pre-push` — `riinac verify --full` + GPG + secrets + Trojan source (REPO-001, REPO-003, REPO-005, REPO-006)
+
+**Setup:** `./00_SETUP/scripts/install_hooks.sh`
+
+**Full guide:** `REPO_PROTECTION_GUIDE.md` (10 parts, 3 appendices)
+
+---
+
+## DISTRIBUTION-LEVEL THREATS (Phase 5)
+
+These threats target the distribution pipeline (Docker images, Nix packages, release tarballs, installer scripts).
+
+| Threat ID | Threat Description | Mitigation | Mechanism | Status |
+|-----------|--------------------|-----------|-----------|--------|
+| DIST-D01 | Tampered release tarball | SHA256SUMS generated at build time | `scripts/build-release.sh` computes checksums | **Active** |
+| DIST-D02 | Docker image supply chain | Multi-stage build from official images only | `rust:1.84-bookworm` + `debian:bookworm-slim`, no third-party layers | **Active** |
+| DIST-D03 | Docker image bloat/leak | `.dockerignore` excludes research, proofs, .git | Only compiler binary + ca-certificates in runtime image | **Active** |
+| DIST-D04 | Nix hash mismatch | `flake.lock` pins exact nixpkgs + rust-overlay revisions | `nix flake check` validates derivations | **Active** |
+| DIST-D05 | Installer script injection | Installer builds from source (no pre-built binaries downloaded) | `scripts/install.sh` requires local Rust toolchain | **Active** |
+| DIST-D06 | License misrepresentation | All Cargo.toml files declare MPL-2.0, matching LICENSE file | Verified in Session 60 | **Enforced** |
+| DIST-D07 | Binary without verification | Release script runs `riinac verify --fast` before packaging | Tarball only created after 576 tests pass | **Active** |
+
+---
+
 ## NOTES
 
 1. **All 350+ threats** from `MASTER_THREAT_MODEL.md` have corresponding Coq proofs.
@@ -486,5 +531,5 @@ declassify_policy_safe (Qed)
 *Cross-reference with `MASTER_THREAT_MODEL.md` for threat definitions.*
 *Cross-reference with `TRACEABILITY_MATRIX.md` for track-level mapping.*
 
-*Last updated: 2026-01-31 (Session 58)*
+*Last updated: 2026-01-31 (Session 60 — added DIST-D01 to DIST-D07 distribution-level threats)*
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*

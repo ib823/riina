@@ -73,6 +73,20 @@ cargo build --release
 
 The compiler binary is `riinac`. Zero external dependencies — everything is built from source.
 
+**Alternative install methods:**
+
+```bash
+# Docker
+docker pull riina
+docker run --rm riina check myfile.rii
+
+# Nix
+nix run github:ib823/proof
+
+# Portable installer (builds from source)
+bash scripts/install.sh
+```
+
 ### Hello World
 
 Create `hello.rii`:
@@ -224,6 +238,9 @@ This is not a whitepaper. This is working software.
 - **LSP server** — Diagnostics, hover info, keyword completion
 - **Package manager** — `riinac pkg init/add/remove/lock/build/publish/list/tree/clean`
 - **Verification gate** — `riinac verify --fast` (zero-trust: runs tests, clippy, Coq audit)
+- **Docker image** — Multi-stage build, ~85MB runtime image
+- **Nix flake** — `nix run github:ib823/proof` or `nix develop` for full dev shell
+- **Release scripts** — `scripts/build-release.sh` (tarball + SHA256SUMS), `scripts/install.sh` (portable installer)
 - **REPL** — Interactive mode for experimentation
 
 ### Example Programs
@@ -333,15 +350,35 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 2. Standard Library | 88 builtins across 9 modules | Done |
 | 3. Formal Verification | 4,763+ Qed proofs, 5 justified axioms, 0 admits | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 101 examples | Done |
-| 5. Ecosystem | CI/CD and package manager done; distribution pending | 60% |
+| 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release scripts, installer | Done |
 | 6. Adoption | FFI, demo applications, community | Planned |
 | 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
 
-- **Phase 5 completion:** Binary distribution (Linux/macOS/Windows), Docker image, Nix flake
 - **Phase 6:** C FFI (`luar "C" { ... }`), demo applications (web server, encrypted messenger, medical records system)
 - **Axiom elimination:** 3 of the 5 remaining axioms can be eliminated with `store_rel_n` restructuring; 2 are permanent (policy axiom + standard closure axiom from academic literature)
+
+---
+
+## Security & Verification
+
+RIINA uses **compiler-integrated verification** — no external CI/CD. Verification lives inside the compiler.
+
+```bash
+riinac verify --fast    # Tests + clippy (runs on every commit via pre-commit hook)
+riinac verify --full    # + Coq admits/axioms scan (runs on every push via pre-push hook)
+```
+
+**Git hooks** enforce verification automatically:
+- **Pre-commit:** `riinac verify --fast` blocks commits with failing tests
+- **Pre-push:** `riinac verify --full` + GPG signature check + secret detection + Trojan source scan
+
+Install hooks: `./00_SETUP/scripts/install_hooks.sh`
+
+**Deep verification** (manual, 7 levels): `bash 05_TOOLING/scripts/verify.sh [0-6]`
+
+See [`REPO_PROTECTION_GUIDE.md`](REPO_PROTECTION_GUIDE.md) for the full repository security hardening specification.
 
 ---
 
@@ -350,20 +387,30 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 RIINA is open source under the [Mozilla Public License 2.0](LICENSE).
 
 ```bash
-# Build everything
-cd 03_PROTO && cargo build --all
+# Clone and set up
+git clone https://github.com/ib823/proof.git
+cd proof
+
+# Verify environment
+bash 00_SETUP/scripts/verify_setup.sh
+
+# Build compiler
+cd 03_PROTO && cargo build --release -p riinac && cd ..
 
 # Run all tests
-cargo test --all
+cd 03_PROTO && cargo test --all && cd ..
 
 # Check a .rii file
-cargo run --bin riinac -- check ../07_EXAMPLES/hello_dunia.rii
+./03_PROTO/target/release/riinac check 07_EXAMPLES/hello_dunia.rii
 
 # Run the REPL
-cargo run --bin riinac -- repl
+./03_PROTO/target/release/riinac repl
 
 # Run the verification gate
-cargo run --bin riinac -- verify --fast
+./03_PROTO/target/release/riinac verify --fast
+
+# Install git hooks (recommended for contributors)
+./00_SETUP/scripts/install_hooks.sh
 ```
 
 Read [`CLAUDE.md`](CLAUDE.md) for detailed development instructions.
@@ -373,7 +420,7 @@ Read [`CLAUDE.md`](CLAUDE.md) for detailed development instructions.
 ## FAQ
 
 **Is RIINA production-ready?**
-The compiler, proofs, and toolchain are functional. Phase 5 (distribution) and Phase 6 (FFI, demos) are in progress. You can write, compile, and run RIINA programs today.
+The compiler, proofs, and toolchain are functional. Phases 1-5 (compiler, stdlib, proofs, developer tools, ecosystem) are complete. Phase 6 (FFI, demos) is next. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
 
 **Do I need to know Bahasa Melayu?**
 No. The keywords are short and consistent — `fungsi` (function), `biar` (let), `kalau` (if), `pulang` (return). You'll learn them in minutes. A [cheatsheet](07_EXAMPLES/06_ai_context/RIINA_CHEATSHEET.md) is included.
