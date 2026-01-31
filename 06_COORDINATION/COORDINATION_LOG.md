@@ -56,7 +56,7 @@
 | Materialization plan document | ✅ COMPLETE | `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` |
 | Syntax improvement spec | ✅ ESTABLISHED | `04_SPECS/language/SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` |
 | Authoritative doc updates | ✅ COMPLETE | CLAUDE.md, PROGRESS.md, SESSION_LOG.md, DECISIONS.md |
-| Execution start | 🟢 **IN PROGRESS** | Phase 1 ~95% complete, gap remediation active |
+| Execution start | ✅ **PHASE 1 COMPLETE** | All 5.1-5.7 done; 477 tests; Phase 2 unblocked |
 | Gap remediation | ✅ ACTIVE | 13-item plan in materialization doc Section 7 |
 | ATTACK_PROOF_MAP.md | ✅ COMPLETE | `06_COORDINATION/ATTACK_PROOF_MAP.md` (490 lines) |
 
