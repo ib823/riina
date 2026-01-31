@@ -1,0 +1,188 @@
+/// TYPE_ANNOTATIONS.RII - Explicit Type Annotations
+/// Anotasi jenis eksplisit untuk kejelasan
+/// Demonstrates: function signatures, variable types, generic types
+
+/// Fungsi dengan anotasi lengkap
+/// Function with complete type annotations
+fungsi tambah_dua_nombor(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    pulang x + y;
+}
+
+/// Fungsi dengan banyak parameter
+/// Function with multiple parameters
+fungsi gabung_teks(a: Teks, b: Teks, c: Teks) -> Teks kesan Bersih {
+    pulang a + " " + b + " " + c;
+}
+
+/// Fungsi yang mengembalikan boolean
+/// Function returning boolean
+fungsi sama_tak(a: Nombor, b: Nombor) -> Benar kesan Bersih {
+    pulang a == b;
+}
+
+/// Fungsi dengan jenis generic
+/// Function with generic type
+fungsi identiti<T>(x: T) -> T kesan Bersih {
+    pulang x;
+}
+
+/// Fungsi dengan senarai
+/// Function with list
+fungsi panjang_senarai(s: Senarai<Nombor>) -> Nombor kesan Bersih {
+    pulang s.panjang();
+}
+
+/// Fungsi dengan Mungkin (Option)
+/// Function with Maybe/Option
+fungsi ambil_atau_lalai(m: Mungkin<Nombor>, lalai: Nombor) -> Nombor kesan Bersih {
+    padan m {
+        Ada(n) -> n,
+        Tidak -> lalai,
+    }
+}
+
+/// Fungsi dengan Hasil (Result)
+/// Function with Result type
+fungsi buka_fail(nama: Teks) -> Hasil<Teks, Teks> kesan Baca {
+    /// Simulasi buka fail
+    pulang Ok("kandungan fail");
+}
+
+/// Fungsi dengan ujung (closure/function type)
+/// Function with function type
+fungsi gunakan_pada_senarai(
+    senarai: Senarai<Nombor>,
+    f: Fn(Nombor) -> Nombor
+) -> Senarai<Nombor> kesan Bersih {
+    senarai.peta(f)
+}
+
+/// Fungsi dengan Rujukan (Reference)
+/// Function with Reference type
+fungsi ubah_ruj(r: Ruj<Nombor>@Dalaman) -> Nombor kesan Bersih {
+    padan r {
+        ruj(n) -> n,
+    }
+}
+
+/// Fungsi dengan jenis Rahsia (Secret)
+/// Function with Secret type
+fungsi simpan_rahsia(s: Rahsia<Teks>) -> Nombor kesan Bersih {
+    /// Operasi pada data rahsia
+    pulang 0;
+}
+
+/// Jenis yang ditakrifkan pengguna
+/// User-defined type
+jenis Titik {
+    x: Nombor,
+    y: Nombor,
+    z: Nombor,
+}
+
+/// Fungsi dengan jenis tersuai
+/// Function with custom type
+fungsi jarak_dari_asal(p: Titik) -> Nombor kesan Bersih {
+    /// Jarak = sqrt(x^2 + y^2 + z^2)
+    pulang 0;
+}
+
+/// Enum jenis
+/// Enum type
+jenis Keputusan {
+    Berjaya(Teks),
+    Ralat(Teks),
+    Belum(Teks),
+}
+
+/// Fungsi dengan enum
+/// Function with enum
+fungsi tulis_keputusan(k: Keputusan) -> Nombor kesan Tulis {
+    padan k {
+        Berjaya(msg) -> {
+            cetak("Berjaya: ");
+            cetak(msg);
+            cetak("\n");
+        },
+        Ralat(msg) -> {
+            cetak("Ralat: ");
+            cetak(msg);
+            cetak("\n");
+        },
+        Belum(msg) -> {
+            cetak("Belum: ");
+            cetak(msg);
+            cetak("\n");
+        },
+    }
+
+    pulang 0;
+}
+
+/// Fungsi dengan kesan berbilang
+/// Function with multiple effects
+fungsi operasi_kompleks(
+    nama: Teks,
+    nilai: Nombor
+) -> Hasil<Nombor, Teks> kesan (Tulis, Baca, Bersih) {
+    cetak("Memproses: ");
+    cetak(nama);
+    cetak("\n");
+
+    kalau nilai < 0 {
+        pulang Ralat("Nilai negatif");
+    }
+
+    pulang Ok(nilai * 2);
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    /// Pembolehubah dengan anotasi jenis eksplisit
+    /// Variables with explicit type annotations
+    biar x: Nombor = 42;
+    biar nama: Teks = "Ahmad";
+    biar sah: Benar = betul;
+
+    /// Senarai dengan jenis eksplisit
+    /// List with explicit type
+    biar senarai: Senarai<Nombor> = [1, 2, 3, 4, 5];
+
+    /// Mungkin dengan jenis eksplisit
+    /// Maybe with explicit type
+    biar m: Mungkin<Teks> = Ada("nilai");
+
+    /// Panggil fungsi
+    biar hasil = tambah_dua_nombor(10, 20);
+    cetak("Hasil: ");
+    cetak(hasil);
+    cetak("\n");
+
+    /// Gunakan fungsi generic
+    biar i = identiti(42);
+    cetak("Identiti: ");
+    cetak(i);
+    cetak("\n");
+
+    /// Gunakan fungsi dengan Hasil
+    padan buka_fail("test.txt") {
+        Ok(kandungan) -> {
+            cetak("Kandungan: ");
+            cetak(kandungan);
+            cetak("\n");
+        },
+        Ralat(e) -> {
+            cetak("Ralat: ");
+            cetak(e);
+            cetak("\n");
+        },
+    }
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Type annotations use `:` syntax.
+/// Generic types: T, U, V for type parameters.
+/// Function types: Fn(T1, T2, ...) -> ReturnType
+/// Complex types: Senarai<T>, Mungkin<T>, Hasil<T, E>, Ruj<T>@Level
+/// Custom types: jenis and enum declarations.
+/// Multiple effects in kesan: (Effect1, Effect2, ...)

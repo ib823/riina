@@ -1,0 +1,144 @@
+/// CAPABILITY_BASIC.RII - Capability-Based Security
+/// Keselamatan berasaskan keupayaan (capability)
+/// Demonstrates: capabilities, rights, delegation, revocation
+
+jenis Keupayaan<T> {
+    hak: T,
+    pemilik: Teks,
+    diguna: Nombor,
+}
+
+jenis HakBaca {
+    nama_fail: Teks,
+}
+
+jenis HakTulis {
+    nama_fail: Teks,
+}
+
+jenis HakLaksana {
+    nama_program: Teks,
+}
+
+fungsi buat_keupayaan_baca(fail: Teks, pemilik: Teks) -> Keupayaan<HakBaca> kesan Bersih {
+    /// Buat keupayaan baca fail
+    Keupayaan {
+        hak: HakBaca { nama_fail: fail },
+        pemilik: pemilik,
+        diguna: 0,
+    }
+}
+
+fungsi buat_keupayaan_tulis(fail: Teks, pemilik: Teks) -> Keupayaan<HakTulis> kesan Bersih {
+    /// Buat keupayaan tulis fail
+    Keupayaan {
+        hak: HakTulis { nama_fail: fail },
+        pemilik: pemilik,
+        diguna: 0,
+    }
+}
+
+fungsi baca_dengan_keupayaan(
+    cap: Keupayaan<HakBaca>
+) -> Hasil<Teks, Teks> kesan (Baca, MasaTetap) {
+    /// Baca fail menggunakan keupayaan
+    biar fail = cap.hak.nama_fail;
+    Ok(baca_fail(fail))
+}
+
+fungsi tulis_dengan_keupayaan(
+    ubah cap: Keupayaan<HakTulis>,
+    data: Teks
+) -> Hasil<Nombor, Teks> kesan (Tulis, MasaTetap) {
+    /// Tulis fail menggunakan keupayaan
+    biar fail = cap.hak.nama_fail;
+    cap.diguna = cap.diguna + 1;
+    Ok(tulis_fail(fail, data))
+}
+
+fungsi delegasi_keupayaan<T>(
+    cap: Keupayaan<T>,
+    penerima: Teks
+) -> Keupayaan<T> kesan Bersih {
+    /// Delegasi keupayaan kepada penerima
+    Keupayaan {
+        hak: cap.hak,
+        pemilik: penerima,
+        diguna: cap.diguna,
+    }
+}
+
+fungsi batal_keupayaan<T>(
+    ubah cap: Keupayaan<T>
+) -> Benar kesan Bersih {
+    /// Batalkan keupayaan dengan penetapan flag
+    /// (Dalam implementasi sebenar, gunakan lebih baik mekanisme)
+    betul
+}
+
+fungsi periksa_keupayaan<T>(
+    cap: Keupayaan<T>,
+    hak_diperlukan: Teks
+) -> Benar kesan Bersih {
+    /// Periksa sama ada keupayaan memiliki hak
+    betul  /// Simulasi
+}
+
+fungsi keupayaan_bersyarat<T>(
+    cap: Keupayaan<T>,
+    syarat: Fn(Keupayaan<T>) -> Benar
+) -> Hasil<Keupayaan<T>, Teks> kesan Bersih {
+    /// Keupayaan dengan syarat
+    kalau syarat(cap) {
+        Ok(cap)
+    } lain {
+        Ralat("Syarat tidak penuhi")
+    }
+}
+
+fungsi kadar_keupayaan(
+    cap: Keupayaan<HakBaca>,
+    had_maksimal: Nombor
+) -> Benar kesan Bersih {
+    /// Kadar (rate limit) penggunaan keupayaan
+    cap.diguna < had_maksimal
+}
+
+fungsi utama() -> Nombor kesan (Baca, Tulis, Tulis) {
+    cetak("=== Keupayaan Berasaskan Keselamatan ===\n");
+
+    /// Buat keupayaan
+    biar cap_baca = buat_keupayaan_baca("data.txt", "pengguna1");
+    cetak("Keupayaan baca dibuat\n");
+
+    /// Gunakan keupayaan
+    padan baca_dengan_keupayaan(cap_baca) {
+        Ok(kandungan) -> {
+            cetak("Kandungan: ");
+            cetak(kandungan);
+            cetak("\n");
+        },
+        Ralat(e) -> {
+            cetak("Ralat: ");
+            cetak(e);
+            cetak("\n");
+        },
+    }
+
+    /// Delegasi keupayaan
+    biar cap_didelegasi = delegasi_keupayaan(cap_baca, "pengguna2");
+    cetak("Keupayaan didelegasi kepada pengguna2\n");
+
+    /// Kadar keupayaan
+    biar dikadar = kadar_keupayaan(cap_baca, 100);
+    cetak("Keupayaan dalam had: ");
+    cetak(dikadar);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: Keupayaan is a proof of rights.
+/// Cannot be forged or copied without proper delegation.
+/// Each use can be tracked (diguna counter).
+/// Type system enforces capability checking.

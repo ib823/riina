@@ -1,0 +1,58 @@
+/// STRINGS.RII - String Operations and Manipulation
+/// Operasi pada rentetan (teks) dalam RIINA
+/// Demonstrates: string literals, concatenation, interpolation, methods
+
+fungsi operasiTeks() -> Teks kesan Bersih {
+    /// Rentetan literal
+    /// String literal
+    biar nama = "Ahmad";
+
+    /// Rentetan multi-baris
+    /// Multi-line string
+    biar panjang = "Ini adalah
+    rentetan dengan
+    banyak baris";
+
+    /// Gabung string dengan +
+    /// Concatenate strings with +
+    biar gabung = "Selamat " + "pagi " + nama;
+
+    /// Interpolasi string (template string)
+    /// String interpolation
+    biar umur = 25;
+    biar dipoles = "Saya {nama} berumur {umur} tahun";
+
+    /// Panjang string
+    /// String length (method call)
+    biar panjang_nama = nama.panjang();
+
+    /// Ubah ke huruf besar
+    /// Convert to uppercase
+    biar besar = nama.besarkan();
+
+    /// Ubah ke huruf kecil
+    /// Convert to lowercase
+    biar kecil = nama.kecilkan();
+
+    /// Potong string
+    /// Slice string
+    biar potongan = nama.potong(0, 2);  /// "Ah"
+
+    /// Cari substring
+    /// Find substring
+    biar ada = nama.ada("mah");         /// true
+
+    pulang gabung;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar teks = operasiTeks();
+    cetak(teks);
+    cetak("\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Teks is the immutable string type.
+/// String literals use double quotes: "..."
+/// String interpolation with {expr} inside literal strings.
+/// All string methods return new strings (immutable).

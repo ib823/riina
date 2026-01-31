@@ -1,0 +1,43 @@
+{
+    "name": "riina-lang",
+    "displayName": "RIINA Language",
+    "description": "Language support for RIINA — Rigorous Immutable Invariant, Normalized Axiom",
+    "version": "0.1.0",
+    "publisher": "ib823",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ib823/proof"
+    },
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": ["Programming Languages"],
+    "activationEvents": ["onLanguage:riina"],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [{
+            "id": "riina",
+            "aliases": ["RIINA", "riina"],
+            "extensions": [".rii", ".riih"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "riina",
+            "scopeName": "source.riina",
+            "path": "./syntaxes/riina.tmLanguage.json"
+        }],
+        "snippets": [{
+            "language": "riina",
+            "path": "./snippets/riina.json"
+        }]
+    },
+    "scripts": {
+        "compile": "tsc -p ./tsconfig.json",
+        "watch": "tsc -watch -p ./tsconfig.json"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "typescript": "^5.3.0"
+    }
+}

@@ -1,0 +1,46 @@
+/// ARITHMETIC.RII - Arithmetic Operations
+/// Operasi matematik dalam RIINA
+/// Demonstrates: +, -, *, /, %, operator precedence
+
+fungsi operasiMatematik() -> Nombor kesan Bersih {
+    /// Penambahan
+    biar penambahan = 5 + 3;        /// Addition: 8
+
+    /// Penolakan
+    biar penolakan = 10 - 4;         /// Subtraction: 6
+
+    /// Pendaraban
+    biar pendaraban = 6 * 7;         /// Multiplication: 42
+
+    /// Pembahagian
+    biar pembahagian = 20 / 4;       /// Division: 5
+
+    /// Modulo (sisa)
+    biar sisa = 17 % 5;              /// Modulo: 2
+
+    /// Gabung operasi dengan preseden
+    /// Combine operations with precedence
+    biar gabung = 2 + 3 * 4;         /// 2 + (3*4) = 14
+
+    /// Gunakan kurungan untuk ubah preseden
+    /// Use parentheses to change precedence
+    biar ubahPreseden = (2 + 3) * 4; /// (2+3)*4 = 20
+
+    /// Operasi rantaian
+    /// Chained operations
+    biar rantai = 100 - 25 + 15 / 3;
+
+    pulang gabung + ubahPreseden;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil = operasiMatematik();
+    cetak("Hasil: ");
+    cetak(hasil);
+    cetak("\n");
+    pulang 0;
+}
+
+/// NUMERIC TYPES: Nombor is a fixed-width integer type.
+/// All operations are on machine integers with defined overflow semantics.
+/// For arbitrary precision, use the Nombor.Besar type (future).

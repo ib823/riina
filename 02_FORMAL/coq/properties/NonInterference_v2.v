@@ -2696,7 +2696,7 @@ Proof.
 Qed.
 
 (** Store-typing monotonicity (Kripke strengthening) *)
-Lemma val_rel_n_mono_store_local_local : forall n Σ Σ' T v1 v2,
+Lemma val_rel_n_mono_store_local : forall n Σ Σ' T v1 v2,
   store_ty_extends Σ Σ' ->
   val_rel_n n Σ T v1 v2 ->
   val_rel_n n Σ' T v1 v2.
@@ -2858,7 +2858,7 @@ Proof.
            apply val_rel_n_mono_store_local with Σ.
            ++ apply store_ty_extends_update_fresh. rewrite <- Heq_fresh. exact Hfresh.
            ++ exact Hvrel_w.
-        -- rewrite <- Heq_fresh. exact Hneql.
+        -- rewrite <- Heq_fresh. exact Hneql'.
 Qed.
 
 (** store_rel_n preserved after update at existing location *)
@@ -2882,10 +2882,14 @@ Proof.
         subst l'.
         rewrite Hlook in Hlook'. injection Hlook' as HT Hsl. subst T0 sl0.
         rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
-        exists v1, v2. repeat split; try reflexivity.
         rewrite val_rel_n_0_unfold in Hvrel.
         destruct Hvrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hfo]]]]]].
-        repeat split; assumption.
+        exists v1, v2.
+        split; [reflexivity|]. split; [reflexivity|].
+        split; [exact Hv1|]. split; [exact Hv2|].
+        split; [exact Hc1|]. split; [exact Hc2|].
+        split; [exact Ht1|]. split; [exact Ht2|].
+        exact Hfo.
       * (* l <> l': unchanged location *)
         rewrite store_lookup_update_neq; auto.
         rewrite store_lookup_update_neq; auto.

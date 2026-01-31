@@ -1,0 +1,80 @@
+/// EFFECT_POLYMORPHISM.RII - Polymorphic Effects
+/// Kesan polimorfik untuk fleksibilitas
+/// Demonstrates: effect parameters, generic effects
+
+fungsi laku<E, T>(
+    f: Fn() -> T
+) -> T kesan E {
+    /// Fungsi polimorfik dalam kesan
+    /// (Pseudocode - actual syntax may vary)
+    f()
+}
+
+fungsi peta_dengan_kesan<E, T1, T2>(
+    senarai: Senarai<T1>,
+    f: Fn(T1) -> T2
+) -> Senarai<T2> kesan E {
+    /// Peta yang mengekalkan kesan
+    senarai.peta(f)
+}
+
+fungsi tapis_dengan_kesan<E, T>(
+    senarai: Senarai<T>,
+    f: Fn(T) -> Benar
+) -> Senarai<T> kesan E {
+    /// Tapis yang mengekalkan kesan
+    senarai.tapis(f)
+}
+
+fungsi lipat_dengan_kesan<E, T, Akum>(
+    senarai: Senarai<T>,
+    f: Fn(Akum, T) -> Akum,
+    awal: Akum
+) -> Akum kesan E {
+    /// Lipat yang mengekalkan kesan
+    senarai.lipat(awal, f)
+}
+
+fungsi ubah_dengan_kesan<E, T>(
+    f: Fn() -> T,
+    g: Fn(T) -> T
+) -> T kesan E {
+    /// Gabung dua operasi dengan kesan yang sama
+    biar hasil1 = f();
+    g(hasil1)
+}
+
+fungsi tangani_kesan_atau_sulit(
+    dengan_kesan: Fn() -> Nombor
+) -> Hasil<Nombor, Teks> kesan Bersih {
+    /// Tangani kesan atau sulit (restrict)
+    Ok(0)
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Baca) {
+    cetak("=== Kesan Polimorfik ===\n");
+
+    /// Gunakan peta dengan kesan
+    biar senarai = [1, 2, 3, 4, 5];
+
+    cetak("Senarai asal: ");
+    cetak(senarai);
+    cetak("\n");
+
+    /// Tapis dengan cetak
+    biar tapis = tapis_dengan_kesan(senarai, fungsi(x: Nombor) -> Benar {
+        cetak("Memeriksa: ");
+        cetak(x);
+        cetak("\n");
+        x > 2
+    });
+
+    cetak("Selepas tapis\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Effect parameters make functions reusable across effects.
+/// Functions can be called in contexts with superset of required effects.
+/// Enables abstract effect-polymorphic libraries.

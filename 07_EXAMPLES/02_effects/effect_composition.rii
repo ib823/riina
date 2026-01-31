@@ -1,0 +1,177 @@
+/// EFFECT_COMPOSITION.RII - Composing Multiple Effects
+/// Penggabungan berbilang kesan
+/// Demonstrates: effect unions, effect stacking, pure + side effects
+
+fungsi baca_dan_tulis(
+    nama_input: Teks,
+    nama_output: Teks
+) -> Hasil<Nombor, Teks> kesan (Baca, Tulis) {
+    /// Menggabungkan Baca dan Tulis
+    cetak("Membaca dari ");
+    cetak(nama_input);
+    cetak("\n");
+
+    padan baca_fail_sepenuhnya(nama_input) {
+        Ok(kandungan) -> {
+            cetak("Menulis ke ");
+            cetak(nama_output);
+            cetak("\n");
+
+            padan tulis_ke_fail(nama_output, kandungan) {
+                Ok(_) -> Ok(0),
+                Ralat(e) -> Ralat("Tulis gagal"),
+            }
+        },
+        Ralat(e) -> Ralat("Baca gagal"),
+    }
+}
+
+fungsi pengiraan_dengan_kesan(
+    x: Nombor,
+    y: Nombor
+) -> Nombor kesan (Tulis, Bersih) {
+    /// Penggabungan Tulis dan Bersih
+    cetak("Mengira: ");
+    cetak(x);
+    cetak(" + ");
+    cetak(y);
+    cetak(" = ");
+
+    biar hasil = x + y;
+    cetak(hasil);
+    cetak("\n");
+
+    hasil
+}
+
+fungsi operasi_lengkap(
+    fail_input: Teks,
+    fail_output: Teks
+) -> Hasil<Teks, Teks> kesan (Baca, Tulis, Kripto, Masa) {
+    /// Menggabungkan empat kesan
+    cetak("Operasi lengkap dimulai\n");
+
+    /// Baca
+    padan baca_fail_sepenuhnya(fail_input) {
+        Ok(kandungan) -> {
+            /// Kripto - hash kandungan
+            biar hash = hash_sha256(kandungan);
+            cetak("Hash: ");
+            cetak(hash);
+            cetak("\n");
+
+            /// Tulis output
+            biar output_format = "Hash: {hash}\nKandungan: {kandungan}";
+
+            padan tulis_ke_fail(fail_output, output_format) {
+                Ok(_) -> {
+                    cetak("Operasi lengkap selesai\n");
+                    Ok(hash)
+                },
+                Ralat(e) -> Ralat("Tulis gagal"),
+            }
+        },
+        Ralat(e) -> Ralat("Baca gagal"),
+    }
+}
+
+fungsi laku_beberapa_kesan(
+    nama_fail: Teks
+) -> Hasil<Senarai<Teks>, Teks> kesan (Baca, Tulis, SistemFail) {
+    /// Laku (perform) beberapa kesan secara bersamaan
+    cetak("Memulai operasi fail\n");
+
+    /// Periksa fail wujud
+    kalau !ada_fail(nama_fail) {
+        cetak("Fail tidak wujud, membuat...\n");
+        padan buat_fail(nama_fail) {
+            Ok(_) -> { /* teruskan */ },
+            Ralat(e) -> pulang Ralat("Tidak dapat buat fail"),
+        }
+    }
+
+    /// Baca fail
+    padan baca_fail_sepenuhnya(nama_fail) {
+        Ok(kandungan) -> {
+            /// Tulis log
+            cetak("Fail dibaca: ");
+            cetak(nama_fail);
+            cetak("\n");
+
+            /// Senaraikan direktori
+            padan senaraikan_fail(".") {
+                Ok(fail_fail) -> {
+                    Ok(fail_fail)
+                },
+                Ralat(e) -> Ralat("Senarai gagal"),
+            }
+        },
+        Ralat(e) -> Ralat("Baca gagal"),
+    }
+}
+
+fungsi efek_bersarang() -> Nombor kesan (Tulis, Baca, Masa) {
+    /// Kesan bersarang dalam berbilang aras
+    cetak("Level 1 - Tulis\n");
+
+    biar masukan = minta_input("Masukkan nilai");
+
+    cetak("Level 2 - Baca\n");
+    cetak("Anda masukkan: ");
+    cetak(masukan);
+    cetak("\n");
+
+    biar masa = ambil_waktu_kini();
+    cetak("Level 3 - Masa\n");
+    cetak("Waktu: ");
+    cetak(masa);
+    cetak("\n");
+
+    0
+}
+
+fungsi pengecualian_kesan() -> Hasil<Nombor, Teks> kesan (Tulis, Baca, Bersih) {
+    /// Penanganan kesan dengan pengecualian
+    cetak("Mencuba operasi kesan\n");
+
+    padan baca_nombor_dari_pengguna() {
+        Ok(n) -> {
+            cetak("Anda masukkan: ");
+            cetak(n);
+            cetak("\n");
+
+            kalau n < 0 {
+                Ralat("Nombor negatif")
+            } lain {
+                Ok(n * 2)
+            }
+        },
+        Ralat(e) -> Ralat(e),
+    }
+}
+
+fungsi utama() -> Nombor kesan (Baca, Tulis, Kripto, Masa, SistemFail) {
+    cetak("=== Komposisi Kesan ===\n");
+
+    /// Baca dan Tulis
+    padan baca_dan_tulis("input.txt", "output.txt") {
+        Ok(_) -> cetak("Baca-Tulis berjaya\n"),
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    /// Pengiraan dengan Tulis
+    biar hasil = pengiraan_dengan_kesan(10, 20);
+    cetak("Hasil: ");
+    cetak(hasil);
+    cetak("\n");
+
+    /// Kesan bersarang
+    efek_bersarang();
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Multiple effects compose with comma syntax: (E1, E2, E3)
+/// Order of effects doesn't matter for typing but may matter for execution.
+/// Pure (Bersih) functions can only call pure functions.

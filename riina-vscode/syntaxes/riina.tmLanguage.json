@@ -1,0 +1,172 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "RIINA",
+    "scopeName": "source.riina",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#characters" },
+        { "include": "#numbers" },
+        { "include": "#keywords" },
+        { "include": "#security" },
+        { "include": "#effects" },
+        { "include": "#types" },
+        { "include": "#operators" },
+        { "include": "#functions" },
+        { "include": "#identifiers" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.riina",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.riina",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                },
+                {
+                    "name": "comment.line.documentation.riina",
+                    "match": "///.*$"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.riina",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.riina",
+                            "match": "\\\\[nrt\\\\\"0]"
+                        }
+                    ]
+                }
+            ]
+        },
+        "characters": {
+            "patterns": [
+                {
+                    "name": "string.quoted.single.riina",
+                    "match": "'(\\\\[nrt\\\\'\\'0]|[^'\\\\])'"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.riina",
+                    "match": "\\b0x[0-9a-fA-F_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.octal.riina",
+                    "match": "\\b0o[0-7_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.binary.riina",
+                    "match": "\\b0b[01_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.float.riina",
+                    "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.riina",
+                    "match": "\\b[0-9][0-9_]*\\b"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.riina",
+                    "match": "\\b(kalau|lain|untuk|selagi|ulang|pulang|padan|dengan|keluar|terus|pastikan|if|else|for|while|loop|return|match|with|break|continue|guard)\\b"
+                },
+                {
+                    "name": "keyword.declaration.riina",
+                    "match": "\\b(fungsi|biar|ubah|tetap|statik|modul|awam|guna|luaran|bentuk|pilihan|jenis|sifat|laksana|fn|let|mut|const|static|mod|pub|use|extern|struct|enum|type|trait|impl)\\b"
+                },
+                {
+                    "name": "constant.language.boolean.riina",
+                    "match": "\\b(betul|salah|true|false)\\b"
+                },
+                {
+                    "name": "keyword.other.riina",
+                    "match": "\\b(sebagai|ruj|pindah|diri|Diri|peti|bahaya|as|ref|move|self|Self|super|crate|unsafe|dalam|in)\\b"
+                }
+            ]
+        },
+        "security": {
+            "patterns": [
+                {
+                    "name": "keyword.security.riina",
+                    "match": "\\b(rahsia|dedah|sulit|terbuka|bukti|secret|declassify|classify|public|prove)\\b"
+                },
+                {
+                    "name": "entity.name.type.security-level.riina",
+                    "match": "\\b(Awam|Dalaman|Sesi|Pengguna|Sistem|Rahsia|Public|Internal|Session|User|System|Secret)\\b"
+                }
+            ]
+        },
+        "effects": {
+            "patterns": [
+                {
+                    "name": "keyword.effect.riina",
+                    "match": "\\b(kesan|laku|kendali|sambung|batal|effect|perform|handle|resume|abort|bersih|perlukan|beri)\\b"
+                },
+                {
+                    "name": "entity.name.type.effect.riina",
+                    "match": "\\b(Bersih|Baca|Tulis|SistemFail|Rangkaian|RangkaianSelamat|Kripto|Rawak|Masa|Proses|Pure|Read|Write|FileSystem|Network|NetworkSecure|Crypto|Random|Time|Process)\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "entity.name.type.primitive.riina",
+                    "match": "\\b(Nombor|Benar|Teks|Bait|Int|Bool|String|Bytes)\\b"
+                },
+                {
+                    "name": "entity.name.type.compound.riina",
+                    "match": "\\b(Senarai|Mungkin|Ruj|Berlabel|Tercemar|Disanitasi|Bukti|Keupayaan|MasaTetap|Sifar|List|Option|Ref|Labeled|Tainted|Sanitized|Proof|Capability|ConstantTime|Zeroizing|Sum|Fn|Chan|SecureChan)\\b"
+                },
+                {
+                    "name": "entity.name.type.constructor.riina",
+                    "match": "\\b(Ada|Tiada|Jadi|Gagal|Some|None|Ok|Err|inl|inr)\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.riina",
+                    "match": "(\\|>|->|=>|:=|::|\\.\\.=|\\.\\.|&&|\\|\\||==|!=|<=|>=|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=)"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.riina",
+                    "match": "\\b([a-z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+                }
+            ]
+        },
+        "identifiers": {
+            "patterns": [
+                {
+                    "name": "variable.other.riina",
+                    "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+                },
+                {
+                    "name": "entity.name.type.riina",
+                    "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        }
+    }
+}

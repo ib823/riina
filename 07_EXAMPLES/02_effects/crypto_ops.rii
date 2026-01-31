@@ -1,0 +1,135 @@
+/// CRYPTO_OPS.RII - Cryptographic Operations
+/// Operasi kriptografi
+/// Demonstrates: Kripto effect, encryption, hashing
+
+fungsi hash_sha256(data: Teks) -> Teks kesan Kripto {
+    /// Hash menggunakan SHA-256
+    /// Simulasi
+    "hash_sha256_result"
+}
+
+fungsi hash_sha512(data: Teks) -> Teks kesan Kripto {
+    /// Hash menggunakan SHA-512
+    "hash_sha512_result"
+}
+
+fungsi enkripsi_aes256(
+    plaintext: Teks,
+    kunci: Teks
+) -> Teks kesan (Kripto, MasaTetap) {
+    /// Enkripsi AES-256
+    "ciphertext_aes256"
+}
+
+fungsi dekripsi_aes256(
+    ciphertext: Teks,
+    kunci: Teks
+) -> Hasil<Teks, Teks> kesan (Kripto, MasaTetap) {
+    /// Dekripsi AES-256
+    Ok("plaintext")
+}
+
+fungsi hasilkan_kunci_rawak(panjang: Nombor) -> Teks kesan (Kripto, Rawak) {
+    /// Hasilkan kunci rawak
+    "random_key_"
+}
+
+fungsi tandatangan_rsa(
+    data: Teks,
+    kunci_privat: Teks
+) -> Teks kesan (Kripto, MasaTetap) {
+    /// Tandatangani menggunakan RSA
+    "rsa_signature"
+}
+
+fungsi verifikasi_tandatangan_rsa(
+    data: Teks,
+    tandatangan: Teks,
+    kunci_publik: Teks
+) -> Benar kesan (Kripto, MasaTetap) {
+    /// Verifikasi tandatangan RSA
+    betul
+}
+
+fungsi tukar_base64(data: Teks) -> Teks kesan Kripto {
+    /// Enkod ke Base64
+    "base64_encoded"
+}
+
+fungsi buka_base64(data_b64: Teks) -> Hasil<Teks, Teks> kesan Kripto {
+    /// Dekod dari Base64
+    Ok("decoded_data")
+}
+
+fungsi hmac_sha256(
+    data: Teks,
+    kunci: Teks
+) -> Teks kesan (Kripto, MasaTetap) {
+    /// Hasilkan HMAC-SHA256
+    "hmac_result"
+}
+
+fungsi hasilkan_salt_rawak() -> Teks kesan (Kripto, Rawak) {
+    /// Hasilkan salt rawak untuk password hashing
+    "salt_"
+}
+
+fungsi hash_kata_laluan_argon2(
+    kata_laluan: Teks,
+    salt: Teks
+) -> Teks kesan (Kripto, MasaTetap) {
+    /// Hash kata laluan menggunakan Argon2
+    "argon2_hash"
+}
+
+fungsi utama() -> Nombor kesan (Kripto, Tulis, Rawak, MasaTetap) {
+    cetak("=== Operasi Kriptografi ===\n");
+
+    /// Hash data
+    biar data = "data sensitif";
+    biar hash = hash_sha256(data);
+    cetak("SHA-256: ");
+    cetak(hash);
+    cetak("\n");
+
+    /// Hasilkan kunci rawak
+    biar kunci = hasilkan_kunci_rawak(32);
+    cetak("Kunci: ");
+    cetak(kunci);
+    cetak("\n");
+
+    /// Enkripsi
+    biar plaintext = "Maklumat rahsia";
+    biar ciphertext = enkripsi_aes256(plaintext, kunci);
+    cetak("Ciphertext: ");
+    cetak(ciphertext);
+    cetak("\n");
+
+    /// Dekripsi
+    padan dekripsi_aes256(ciphertext, kunci) {
+        Ok(decrypted) -> {
+            cetak("Decrypted: ");
+            cetak(decrypted);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Dekripsi gagal\n"),
+    }
+
+    /// HMAC
+    biar hmac = hmac_sha256("data", "secret");
+    cetak("HMAC: ");
+    cetak(hmac);
+    cetak("\n");
+
+    /// Hash kata laluan
+    biar salt = hasilkan_salt_rawak();
+    biar kata_laluan_hash = hash_kata_laluan_argon2("kata_laluan_pengguna", salt);
+    cetak("Kata laluan di-hash\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Kripto for cryptographic operations.
+/// Often combined with MasaTetap for constant-time execution.
+/// Often combined with Rawak for key/salt generation.
