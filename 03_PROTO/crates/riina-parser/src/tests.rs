@@ -1579,3 +1579,111 @@ fn test_parse_program_binding() {
         other => panic!("Expected Expr, got {:?}", other),
     }
 }
+
+// =============================================================================
+// BM EFFECT NAME TESTS
+// =============================================================================
+
+#[test]
+fn test_parse_bm_effect_tulis() {
+    let mut p = Parser::new("fungsi cetak() -> Unit kesan Tulis { 0 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Write),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_bm_effect_bersih() {
+    let mut p = Parser::new("fungsi murni() -> Int kesan Bersih { 42 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Pure),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_bm_effect_baca() {
+    let mut p = Parser::new("fungsi baca() -> Int kesan Baca { 0 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Read),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_bm_effect_rangkaian() {
+    let mut p = Parser::new("fungsi net_test() -> Unit kesan Rangkaian { 0 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Network),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+// =============================================================================
+// BM SECURITY LEVEL TESTS
+// =============================================================================
+
+#[test]
+fn test_parse_bm_security_level_awam() {
+    let mut p = Parser::new("Ref<Int>@Awam");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Ref(Box::new(Ty::Int), SecurityLevel::Public));
+}
+
+#[test]
+fn test_parse_bm_security_level_rahsia() {
+    let mut p = Parser::new("Ref<Bool>@Rahsia");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Ref(Box::new(Ty::Bool), SecurityLevel::Secret));
+}
+
+// =============================================================================
+// NEW TYPE VARIANT TESTS
+// =============================================================================
+
+#[test]
+fn test_parse_fn_type() {
+    let mut p = Parser::new("Fn(Int, Bool)");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Pure));
+}
+
+#[test]
+fn test_parse_fn_type_with_effect() {
+    let mut p = Parser::new("Fn(Int, Bool, Write)");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Write));
+}
+
+#[test]
+fn test_parse_labeled_type() {
+    let mut p = Parser::new("Labeled<Int, Secret>");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Labeled(Box::new(Ty::Int), SecurityLevel::Secret));
+}
+
+#[test]
+fn test_parse_berlabel_type() {
+    let mut p = Parser::new("Berlabel<Teks, Awam>");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Labeled(Box::new(Ty::String), SecurityLevel::Public));
+}
+
+#[test]
+fn test_parse_capability_type() {
+    let mut p = Parser::new("Capability<FileRead>");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Capability(riina_types::CapabilityKind::FileRead));
+}
+
+#[test]
+fn test_parse_unknown_type_errors() {
+    let mut p = Parser::new("FooBarBaz");
+    let result = p.parse_ty();
+    assert!(result.is_err(), "Unknown type name should return error, not Unit");
+}
