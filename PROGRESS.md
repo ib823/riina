@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 61)
-**Session:** 61 (Phase 6 P0 — C FFI Implementation)
+**Report Date:** 2026-01-31 (Session 63)
+**Session:** 63 (Rocq 9.1 Migration Sync + Doc Updates)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -31,11 +31,26 @@
 | Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **244** | - | ✅ All compile |
-| Qed Proofs (Build) | **4,763+** | - | ✅ |
+| Qed Proofs (Total) | **5,304** | - | ✅ |
 | .v Files (Total) | **278** | - | ✅ |
-| Rust Prototype | ✅ PASSING (590 tests) | PASSING | ✅ GREEN |
+| Rust Prototype | ✅ PASSING (588 tests) | PASSING | ✅ GREEN |
 | Rust Crates | **13** | - | ✅ (+riina-pkg) |
-| Example .rii Files | **103** | 100+ | ✅ (+2 FFI examples) |
+| Example .rii Files | **108** | 100+ | ✅ (+5 demo files) |
+| Prover | **Rocq 9.1 (Coq 8.21)** | - | ✅ Migrated from 8.18 |
+
+**SESSION 63 KEY ACTIONS (Rocq 9.1 Migration Sync + Doc Updates):**
+1. **Rocq 9.1 version sync** — Updated 8 stale files still referencing Coq 8.18.0: install_coq.sh, Makefile, CLAUDE.md, riina-website.jsx, DECISIONS.md, MATERIALIZATION_PLAN, DEFINITIVE_SCOPE, DELEGATION_PROMPT
+2. **Full codebase audit** — Verified 588 Rust tests passing, 5,304 Qed proofs, 278 .v files, 108 examples, 11 domain admits (non-critical), 5 justified axioms
+3. **Doc sync** — PROGRESS.md, SESSION_LOG.md, COORDINATION_LOG.md, README.md, ATTACK_PROOF_MAP.md updated with accurate counts
+4. **TERAS→RIINA migration** — install_coq.sh header fixed (was still "TERAS")
+
+**SESSION 62 KEY ACTIONS (Phase 6 — Demo Apps + Recursive Functions + FFI Wiring):**
+1. **Recursive functions (`LetRec`)** — `Expr::LetRec` variant; `fungsi` now desugars to recursive binding; fix-point evaluation in interpreter; `FixClosure` IR instruction for C codegen self-capture patching
+2. **FFI desugar wiring** — `ExternBlock` decls now desugar into `Let` bindings wrapping `FFICall` lambdas (previously silently dropped)
+3. **5 demo files** — `07_EXAMPLES/demos/`: selamat_datang (Hello Malaysia), rahsia_dijaga (secret types), kalkulator_c (C FFI), pasangan (safe pairs), faktorial (recursive functions)
+4. **Demo script** — `07_EXAMPLES/demos/DEMO_SCRIPT.md` with terminal commands and expected output
+5. **Tests: 590 → 592** (+2 LetRec interpreter tests: factorial, countdown)
+6. **Files modified**: riina-types (LetRec + desugar), riina-codegen (interp, lower, emit, ir), riina-typechecker, riina-fmt, riina-parser/tests
 
 **SESSION 61 KEY ACTIONS (Phase 6 P0 — C FFI Implementation):**
 1. **C FFI via `luaran "C"` blocks** — Full pipeline: parse → typecheck → lower → IR → C emit

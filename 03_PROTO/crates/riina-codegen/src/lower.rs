@@ -183,6 +183,14 @@ fn free_vars(expr: &Expr) -> HashSet<Ident> {
             fv.extend(fv2);
             fv
         }
+        Expr::LetRec(name, _, e1, e2) => {
+            let mut fv1 = free_vars(e1);
+            fv1.remove(name); // name is in scope in its own binding
+            let mut fv2 = free_vars(e2);
+            fv2.remove(name);
+            fv1.extend(fv2);
+            fv1
+        }
         Expr::If(c, t, f) => {
             let mut fv = free_vars(c);
             fv.extend(free_vars(t));
@@ -358,7 +366,7 @@ impl Lower {
                 }
             }
             Expr::Assign(_, _) => Ty::Unit,
-            Expr::If(_, t, _) | Expr::Let(_, _, t) | Expr::Case(_, _, t, _, _) => self.infer_type(t),
+            Expr::If(_, t, _) | Expr::Let(_, _, t) | Expr::LetRec(_, _, _, t) | Expr::Case(_, _, t, _, _) => self.infer_type(t),
             Expr::App(e1, _) => {
                 if let Ty::Fn(_, ret, _) = self.infer_type(e1) {
                     *ret
@@ -387,6 +395,7 @@ impl Lower {
                 Effect::Pure
             }
             Expr::Lam(_, _, _) => Effect::Pure,
+            Expr::LetRec(_, _, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
             Expr::Pair(e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
             Expr::Fst(e) | Expr::Snd(e) => self.infer_effect(e),
             Expr::Inl(e, _) | Expr::Inr(e, _) => self.infer_effect(e),
@@ -928,6 +937,41 @@ impl Lower {
                 let bind_ty = self.infer_type(binding);
 
                 let saved_env = self.env.clone();
+                self.env.bind(name.clone(), bind_var, bind_ty, SecurityLevel::Public);
+                let result = self.lower_expr(body)?;
+                self.env = saved_env;
+
+                Ok(result)
+            }
+
+            Expr::LetRec(name, ty_ann, binding, body) => {
+                // For LetRec, we pre-bind name so the lambda body can reference it.
+                // The lambda captures the placeholder VarId. After the closure is
+                // created, we emit FixClosure to patch the self-capture.
+                let bind_ty = ty_ann.clone();
+                let placeholder = self.fresh_var();
+
+                let saved_env = self.env.clone();
+                self.env.bind(name.clone(), placeholder, bind_ty.clone(), SecurityLevel::Public);
+
+                // Lower the binding (lambda). This creates a closure that captures
+                // placeholder as the self-reference.
+                let bind_var = self.lower_expr(binding)?;
+
+                // Find which capture index corresponds to placeholder
+                // and emit FixClosure to patch it to point to itself.
+                // The placeholder was captured by the lambda's free_vars analysis.
+                self.emit(
+                    Instruction::FixClosure {
+                        closure: bind_var,
+                        capture_index: 0, // placeholder is first free var (sorted)
+                    },
+                    Ty::Unit,
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                );
+
+                // For the body, use bind_var as the resolved name
                 self.env.bind(name.clone(), bind_var, bind_ty, SecurityLevel::Public);
                 let result = self.lower_expr(body)?;
                 self.env = saved_env;

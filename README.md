@@ -56,7 +56,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (4,763+ Qed theorems) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (5,304 Qed theorems) | No | No | Partial |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
 ---
@@ -179,12 +179,12 @@ You don't need to speak Malay to use RIINA. The keywords are consistent, short, 
 
 This is not a whitepaper. This is working software.
 
-### Formal Proofs (Coq)
+### Formal Proofs (Rocq 9.1 / Coq 8.21)
 
 | Metric | Value |
 |--------|-------|
-| Coq proof files | 278 (244 in active build) |
-| Proven theorems (Qed) | 4,763+ |
+| Proof files (.v) | 278 (244 in active build) |
+| Proven theorems (Qed) | 5,304 |
 | Unfinished proofs (admit/Admitted) | 0 (entire active build) |
 | Axioms | 5 (all justified, documented) |
 | Lines of proof | 125,186 |
@@ -207,7 +207,7 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Rust crates | 13 |
-| Test count | 590 (all passing) |
+| Test count | 588 (all passing) |
 | External dependencies | **0** |
 | Lines of Rust | 24,614 |
 | Standard library builtins | 88 across 9 modules |
@@ -245,7 +245,7 @@ This is not a whitepaper. This is working software.
 
 ### Example Programs
 
-103 example `.rii` files across 8 categories:
+108 example `.rii` files across 8 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -283,7 +283,7 @@ proof/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 03_PROTO/               Rust compiler (13 crates, 590 tests, 0 deps)
+├── 03_PROTO/               Rust compiler (13 crates, 588 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
@@ -349,8 +349,8 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 4,763+ Qed proofs, 5 justified axioms, 0 admits | Stable |
-| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 103 examples | Done |
+| 3. Formal Verification | 5,304 Qed proofs, 5 justified axioms, 0 admits | Stable |
+| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 108 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release scripts, installer | Done |
 | 6. Adoption | C FFI done; demo applications, community next | In Progress |
 | 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |

@@ -17,8 +17,8 @@ Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
 |--------|-------|
 | Total Threat Categories | 16 |
 | Total Individual Threats | 350+ |
-| Core Theorems (Qed) | 4,763+ |
-| Domain Property Lemmas (Qed) | 4,200+ |
+| Core Theorems (Qed) | 5,304 |
+| Domain Property Lemmas (Qed) | 4,700+ |
 | Active Axioms | 5 |
 | Admits | 0 |
 | Threats with Direct Coq Proofs | 350+ (via domain lemmas) |
@@ -531,5 +531,5 @@ These threats target the distribution pipeline (Docker images, Nix packages, rel
 *Cross-reference with `MASTER_THREAT_MODEL.md` for threat definitions.*
 *Cross-reference with `TRACEABILITY_MATRIX.md` for track-level mapping.*
 
-*Last updated: 2026-01-31 (Session 60 — added DIST-D01 to DIST-D07 distribution-level threats)*
+*Last updated: 2026-01-31 (Session 63 — Qed count updated to 5,304; Rocq 9.1 migration confirmed)*
 *Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE*

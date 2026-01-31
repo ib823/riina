@@ -2580,6 +2580,9 @@ impl CEmitter {
                             vars.insert(*a);
                         }
                     }
+                    Instruction::FixClosure { closure, .. } => {
+                        vars.insert(*closure);
+                    }
                     Instruction::Const(_) | Instruction::RequireCap(_) | Instruction::GrantCap(_) => {}
                 }
             }
@@ -2715,6 +2718,15 @@ impl CEmitter {
                         ));
                     }
                 }
+            }
+
+            Instruction::FixClosure { closure, capture_index } => {
+                // Patch a closure's capture to point to itself (recursive closure).
+                let closure_name = self.var_name(closure);
+                self.writeln(&format!(
+                    "{}->data.closure_val.captures[{}] = {}; /* fix recursive self-capture */",
+                    closure_name, capture_index, closure_name
+                ));
             }
 
             Instruction::Call(func_var, arg) => {

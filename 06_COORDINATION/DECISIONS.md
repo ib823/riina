@@ -12,7 +12,7 @@
 ### D002: Coq as Primary Proof Assistant
 
 **Date**: 2026-01-11
-**Decision**: Use Coq 8.18.0 as primary, Lean 4 as secondary
+**Decision**: Use Rocq 9.1 (Coq 8.21) as primary, Lean 4 as secondary
 **Rationale**: Better library support for PL proofs, mature ecosystem
 **Status**: IMPLEMENTED
 

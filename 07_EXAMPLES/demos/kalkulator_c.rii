@@ -1,0 +1,14 @@
+/// Kalkulator C FFI — C Interop Demo
+/// Demo 3: Menunjukkan blok luaran "C" untuk interop FFI
+///
+/// Jalankan: riinac run 07_EXAMPLES/demos/kalkulator_c.rii
+/// Nota: Deklarasi luaran "C" diwayarkan melalui desugaring.
+///       Fungsi C sebenar hanya tersedia melalui `riinac build`.
+
+luaran "C" {
+    fungsi abs(n: CInt) -> CInt;
+}
+
+biar x = 42;
+biar hasil = mutlak(x);
+cetakln(gabung_teks(("mutlak(42) = ", ke_teks(hasil))))

@@ -281,6 +281,17 @@ pub enum Instruction {
         captures: Vec<VarId>,
     },
 
+    /// Fix a recursive closure: patches capture at `index` to point to
+    /// the closure itself, enabling self-reference.
+    ///
+    /// ```text
+    /// fix_closure closure_var index
+    /// ```
+    FixClosure {
+        closure: VarId,
+        capture_index: usize,
+    },
+
     /// Call a function
     ///
     /// ```text
@@ -493,6 +504,7 @@ impl std::fmt::Display for Instruction {
                 }
                 Ok(())
             }
+            Self::FixClosure { closure, capture_index } => write!(f, "fix_closure {closure} [{capture_index}]"),
             Self::Call(func, arg) => write!(f, "call {func} {arg}"),
             Self::BuiltinCall { name, arg } => write!(f, "builtin_call \"{name}\" {arg}"),
             Self::Pair(l, r) => write!(f, "pair {l} {r}"),
