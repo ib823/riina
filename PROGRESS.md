@@ -31,9 +31,16 @@
 | Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **98** | - | ✅ All compile |
-| Qed Proofs (Build) | **4971** | - | ✅ |
+| Qed Proofs (Build) | **5117+** | - | ✅ |
 | .v Files (Total) | **256** | - | ✅ |
 | Rust Prototype | ✅ PASSING (452 tests) | PASSING | ✅ GREEN |
+
+**SESSION 54 KEY ACTIONS (Worker C):**
+1. **Phase 11: 15 MY/SG compliance proofs** (146 Qed, 0 admits) — Malaysia PDPA/BNM/MCMC/MAMPU/Bursa/KKM/CyberAct/DigSig/SCGTRM + Singapore PDPA/MAS-TRM/CyberAct/HealthInfo/MTCS/CyberTrust
+2. **Section 11: store allocation/update infrastructure** — `store_rel_n_alloc`, `store_rel_n_update`, `val_rel_n_fo_alloc_irrelevant` in NI_v2.v
+3. **WIP: logical_relation_ref proof** — replaced 1 broad admit with 3 targeted admits (store_wf, stores_agree_low_fo after allocation)
+4. **Track B: BuiltinCall IR instruction** — emit-c/build now handles builtins (cetakln, ke_teks, tegaskan, etc.) end-to-end
+5. **Updated Qed count: 4,971 → 5,117+**
 
 **SESSION 53 KEY ACTIONS:**
 1. **Fixed `exp_rel_step1_fst_general` and `snd_general`** (Admitted→Qed) — used `fundamental_theorem_step_0` axiom to extract `val_rel_at_type` for TProd, project FO components via `val_rel_at_type_fo_equiv`

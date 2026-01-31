@@ -2662,3 +2662,156 @@ Qed.
 
     Additional cases (TProd, TSum with HO components) follow similar patterns.
 *)
+
+(** ========================================================================
+    SECTION 11: STORE ALLOCATION AND UPDATE INFRASTRUCTURE
+    ========================================================================
+
+    These lemmas support proving logical_relation_ref and logical_relation_assign
+    by showing store_rel_n is preserved under allocation and update.
+*)
+
+(** store_rel_n preserved after allocation at fresh location *)
+Lemma store_rel_n_alloc : forall n Σ st1 st2 T sl v1 v2,
+  store_rel_n n Σ st1 st2 ->
+  val_rel_n n Σ T v1 v2 ->
+  store_ty_lookup (fresh_loc st1) Σ = None ->
+  fresh_loc st1 = fresh_loc st2 ->
+  let loc := fresh_loc st1 in
+  let Σ' := store_ty_update loc T sl Σ in
+  store_rel_n n Σ' (store_update loc v1 st1) (store_update loc v2 st2).
+Proof.
+  induction n as [| n' IHn]; intros Σ st1 st2 T sl v1 v2 Hsrel Hvrel Hfresh Heq_fresh.
+  - (* n = 0 *)
+    rewrite store_rel_n_0_unfold in Hsrel.
+    destruct Hsrel as [Hmax Hlocs].
+    rewrite store_rel_n_0_unfold. split.
+    + (* store_max equality *)
+      apply store_max_update_eq. exact Hmax.
+    + (* val_rel_n 0 content for all locations in Σ' *)
+      intros l T0 sl0 Hlook.
+      destruct (Nat.eq_dec (fresh_loc st1) l) as [Heql | Hneql].
+      * (* l = fresh_loc: newly allocated location *)
+        subst l.
+        rewrite store_ty_lookup_update_eq in Hlook.
+        injection Hlook as HT Hsl. subst T0 sl0.
+        rewrite Heq_fresh.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        exists v1, v2. repeat split.
+        -- reflexivity.
+        -- reflexivity.
+        -- (* val_rel_n 0 content for v1, v2 under Σ' *)
+           rewrite val_rel_n_0_unfold in Hvrel.
+           destruct Hvrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hfo]]]]]].
+           repeat split; try assumption.
+           ++ apply has_type_store_weakening with Σ.
+              ** apply store_ty_extends_alloc. exact Hfresh.
+              ** exact Ht1.
+           ++ apply has_type_store_weakening with Σ.
+              ** apply store_ty_extends_alloc. exact Hfresh.
+              ** exact Ht2.
+      * (* l <> fresh_loc: existing location *)
+        rewrite store_ty_lookup_update_neq in Hlook; auto.
+        rewrite store_lookup_update_neq; auto.
+        rewrite Heq_fresh. rewrite store_lookup_update_neq.
+        -- specialize (Hlocs l T0 sl0 Hlook) as [w1 [w2 [Hw1 [Hw2 Hcontent]]]].
+           exists w1, w2. repeat split; try assumption.
+           ++ exact Hw1.
+           ++ exact Hw2.
+           ++ destruct Hcontent as [Hvw1 [Hvw2 [Hcw1 [Hcw2 [Htw1 [Htw2 Hfo_w]]]]]].
+              repeat split; try assumption.
+              ** apply has_type_store_weakening with Σ.
+                 { apply store_ty_extends_alloc. exact Hfresh. }
+                 exact Htw1.
+              ** apply has_type_store_weakening with Σ.
+                 { apply store_ty_extends_alloc. exact Hfresh. }
+                 exact Htw2.
+        -- rewrite <- Heq_fresh. exact Hneql.
+  - (* n = S n' *)
+    rewrite store_rel_n_S_unfold in Hsrel.
+    destruct Hsrel as [Hsrel_prev [Hmax Hlocs]].
+    rewrite store_rel_n_S_unfold. split; [| split].
+    + (* Recursive: store_rel_n n' Σ' for updated stores *)
+      apply IHn.
+      * exact Hsrel_prev.
+      * apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * exact Hfresh.
+      * exact Heq_fresh.
+    + (* store_max equality *)
+      apply store_max_update_eq. exact Hmax.
+    + (* val_rel_n n' for all locations in Σ' *)
+      intros l T0 sl0 Hlook.
+      destruct (Nat.eq_dec (fresh_loc st1) l) as [Heql | Hneql].
+      * (* l = fresh_loc: newly allocated *)
+        subst l.
+        rewrite store_ty_lookup_update_eq in Hlook.
+        injection Hlook as HT Hsl. subst T0 sl0.
+        rewrite Heq_fresh.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        exists v1, v2. repeat split; try reflexivity.
+        apply val_rel_n_mono_store with Σ.
+        -- apply store_ty_extends_alloc. exact Hfresh.
+        -- apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * (* l <> fresh_loc: existing *)
+        rewrite store_ty_lookup_update_neq in Hlook; auto.
+        rewrite store_lookup_update_neq; auto.
+        rewrite Heq_fresh. rewrite store_lookup_update_neq.
+        -- specialize (Hlocs l T0 sl0 Hlook) as [w1 [w2 [Hw1 [Hw2 Hvrel_w]]]].
+           exists w1, w2. split; [exact Hw1|]. split; [exact Hw2|].
+           apply val_rel_n_mono_store with Σ.
+           ++ apply store_ty_extends_alloc. exact Hfresh.
+           ++ exact Hvrel_w.
+        -- rewrite <- Heq_fresh. exact Hneql.
+Qed.
+
+(** store_rel_n preserved after update at existing location *)
+Lemma store_rel_n_update : forall n Σ st1 st2 l T sl v1 v2,
+  store_rel_n n Σ st1 st2 ->
+  val_rel_n n Σ T v1 v2 ->
+  store_ty_lookup l Σ = Some (T, sl) ->
+  store_lookup l st1 <> None ->
+  store_lookup l st2 <> None ->
+  store_rel_n n Σ (store_update l v1 st1) (store_update l v2 st2).
+Proof.
+  induction n as [| n' IHn]; intros Σ st1 st2 l T sl v1 v2 Hsrel Hvrel Hlook Hsome1 Hsome2.
+  - (* n = 0 *)
+    rewrite store_rel_n_0_unfold in Hsrel |- *.
+    destruct Hsrel as [Hmax Hlocs].
+    split.
+    + apply store_max_update_eq. exact Hmax.
+    + intros l' T0 sl0 Hlook'.
+      destruct (Nat.eq_dec l l') as [Heql | Hneql].
+      * (* l = l': updated location *)
+        subst l'.
+        rewrite Hlook in Hlook'. injection Hlook' as HT Hsl. subst T0 sl0.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        exists v1, v2. repeat split; try reflexivity.
+        rewrite val_rel_n_0_unfold in Hvrel.
+        destruct Hvrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hfo]]]]]].
+        repeat split; assumption.
+      * (* l <> l': unchanged location *)
+        rewrite store_lookup_update_neq; auto.
+        rewrite store_lookup_update_neq; auto.
+        exact (Hlocs l' T0 sl0 Hlook').
+  - (* n = S n' *)
+    rewrite store_rel_n_S_unfold in Hsrel |- *.
+    destruct Hsrel as [Hsrel_prev [Hmax Hlocs]].
+    split; [| split].
+    + apply IHn with T sl.
+      * exact Hsrel_prev.
+      * apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * exact Hlook.
+      * exact Hsome1.
+      * exact Hsome2.
+    + apply store_max_update_eq. exact Hmax.
+    + intros l' T0 sl0 Hlook'.
+      destruct (Nat.eq_dec l l') as [Heql | Hneql].
+      * subst l'.
+        rewrite Hlook in Hlook'. injection Hlook' as HT Hsl. subst T0 sl0.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        exists v1, v2. repeat split; try reflexivity.
+        apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * rewrite store_lookup_update_neq; auto.
+        rewrite store_lookup_update_neq; auto.
+        exact (Hlocs l' T0 sl0 Hlook').
+Qed.
