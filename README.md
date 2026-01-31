@@ -12,7 +12,7 @@ Security properties are not tested, not assumed — they are *mathematically pro
   ██║  ██║██║██║██║ ╚████║██║  ██║
   ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
 
-  Rigorous Immutable Invariant — Normalized Axiom
+  Rigorous Immutable Invariant, No Assumptions
 ```
 
 ---
@@ -56,7 +56,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (3,758+ Qed theorems) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (5,250+ Qed theorems) | No | No | Partial |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
 ---
@@ -170,8 +170,8 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Coq proof files | 271 |
-| Proven theorems (Qed) | 3,758+ |
-| Unfinished proofs (admit/Admitted) | 0 in core, 1 in non-core domain |
+| Proven theorems (Qed) | 5,250+ |
+| Unfinished proofs (admit/Admitted) | 0 (entire active build) |
 | Axioms | 5 (all justified, documented) |
 | Lines of proof | 125,186 |
 | Build status | Passing |
@@ -265,7 +265,7 @@ proof/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 03_PROTO/               Rust compiler (13 crates, 572 tests, 0 external deps)
+├── 03_PROTO/               Rust compiler (13 crates, 572 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
@@ -310,7 +310,10 @@ RIINA's formal verification covers 20+ research tracks. Here is what has actual 
 | — | Industry compliance (15 jurisdictions) | 15 files (2K lines) | Proven |
 | — | Domain security (timing, protocols, hardware, ...) | 183 files (76K lines) | Proven |
 
-Tracks with research plans but no proofs yet: Π (verified performance), Δ (verified distribution), Ω (network defense), Ψ (operational security).
+| Π | Verified performance (WCET, SIMD, lock-free) | 1 file (470 lines) | Proven |
+| Δ | Verified distribution (Raft, BFT, CRDTs) | 1 file (500 lines) | Proven |
+| Ω | Network defense (rate limiting, SYN cookies) | 1 file (530 lines) | Proven |
+| Ψ | Operational security (Shamir, duress, dead man) | 1 file (560 lines) | Proven |
 
 ---
 
@@ -322,7 +325,7 @@ Tracks with research plans but no proofs yet: Π (verified performance), Δ (ver
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 3,758+ Qed proofs, 5 justified axioms, 0 admits | Stable |
+| 3. Formal Verification | 5,250+ Qed proofs, 5 justified axioms, 0 admits | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 101 examples | Done |
 | 5. Ecosystem | CI/CD and package manager done; distribution pending | 60% |
 | 6. Adoption | FFI, demo applications, community | Planned |
@@ -383,6 +386,6 @@ SPARK proves absence of runtime errors (overflow, division by zero) for a subset
 
 ---
 
-*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
+*RIINA — Rigorous Immutable Invariant, No Assumptions*
 
-*"QED Eternum."*
+*Q.E.D. Aeternum.*
