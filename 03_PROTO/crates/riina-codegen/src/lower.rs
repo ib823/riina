@@ -62,7 +62,7 @@ use crate::ir::{
 use crate::{Error, Result};
 use crate::ir::BinOp as IrBinOp;
 use riina_types::{BinOp, Effect, Expr, Ident, SecurityLevel, Ty};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// Variable environment during lowering
 #[derive(Debug, Clone, Default)]
@@ -94,6 +94,69 @@ impl VarEnv {
         self.bindings.get(name).copied()
     }
 
+}
+
+/// Compute the set of free variables in an expression.
+/// A variable is free if it is referenced but not bound within the expression.
+fn free_vars(expr: &Expr) -> HashSet<Ident> {
+    match expr {
+        Expr::Unit | Expr::Bool(_) | Expr::Int(_) | Expr::String(_) | Expr::Loc(_) => {
+            HashSet::new()
+        }
+        Expr::Var(name) => {
+            let mut s = HashSet::new();
+            s.insert(name.clone());
+            s
+        }
+        Expr::Lam(param, _, body) => {
+            let mut fv = free_vars(body);
+            fv.remove(param);
+            fv
+        }
+        Expr::App(e1, e2)
+        | Expr::Pair(e1, e2)
+        | Expr::Assign(e1, e2)
+        | Expr::Declassify(e1, e2)
+        | Expr::BinOp(_, e1, e2) => {
+            let mut fv = free_vars(e1);
+            fv.extend(free_vars(e2));
+            fv
+        }
+        Expr::Let(name, e1, e2) => {
+            let mut fv = free_vars(e1);
+            let mut fv2 = free_vars(e2);
+            fv2.remove(name);
+            fv.extend(fv2);
+            fv
+        }
+        Expr::If(c, t, f) => {
+            let mut fv = free_vars(c);
+            fv.extend(free_vars(t));
+            fv.extend(free_vars(f));
+            fv
+        }
+        Expr::Case(e, x, e1, y, e2) => {
+            let mut fv = free_vars(e);
+            let mut fv1 = free_vars(e1);
+            fv1.remove(x);
+            let mut fv2 = free_vars(e2);
+            fv2.remove(y);
+            fv.extend(fv1);
+            fv.extend(fv2);
+            fv
+        }
+        Expr::Fst(e) | Expr::Snd(e) | Expr::Inl(e, _) | Expr::Inr(e, _)
+        | Expr::Deref(e) | Expr::Classify(e) | Expr::Prove(e)
+        | Expr::Ref(e, _) => free_vars(e),
+        Expr::Perform(_, e) | Expr::Require(_, e) | Expr::Grant(_, e) => free_vars(e),
+        Expr::Handle(e, x, h) => {
+            let mut fv = free_vars(e);
+            let mut fvh = free_vars(h);
+            fvh.remove(x);
+            fv.extend(fvh);
+            fv
+        }
+    }
 }
 
 /// AST to IR lowering pass
@@ -365,7 +428,7 @@ impl Lower {
                 let body_effect = self.infer_effect(body);
                 let return_ty = self.infer_type(body);
 
-                let func = Function::new(
+                let mut func = Function::new(
                     func_id,
                     format!("lambda_{}", func_id.0),
                     param.clone(),
@@ -373,6 +436,27 @@ impl Lower {
                     return_ty.clone(),
                     body_effect,
                 );
+
+                // Compute free variables that need to be captured
+                let body_fv = free_vars(body);
+                let mut capture_names: Vec<Ident> = body_fv.into_iter()
+                    .filter(|name| name != param && self.env.lookup(name).is_some())
+                    .collect();
+                capture_names.sort(); // deterministic order
+
+                // Resolve captures to VarIds in the *current* environment
+                let capture_vars: Vec<VarId> = capture_names.iter()
+                    .filter_map(|name| self.env.lookup(name))
+                    .collect();
+
+                // Record capture metadata on the function for C emission
+                func.captures = capture_names.iter()
+                    .map(|name| {
+                        let var = self.env.lookup(name).unwrap();
+                        let ty = self.env.types.get(&var).cloned().unwrap_or(Ty::Unit);
+                        (name.clone(), ty)
+                    })
+                    .collect();
 
                 // Save current state
                 let saved_func = self.current_func;
@@ -385,6 +469,15 @@ impl Lower {
                 self.current_block = BlockId::ENTRY;
                 self.next_var = 0;
                 self.env = VarEnv::new();
+
+                // Bind captured variables in the new environment
+                for name in &capture_names {
+                    let old_var = saved_env.lookup(name).unwrap();
+                    let new_var = self.fresh_var();
+                    let ty = saved_env.types.get(&old_var).cloned().unwrap_or(Ty::Unit);
+                    let level = saved_env.levels.get(&old_var).copied().unwrap_or(SecurityLevel::Public);
+                    self.env.bind(name.clone(), new_var, ty, level);
+                }
 
                 // Bind parameter
                 let param_var = self.fresh_var();
@@ -414,7 +507,7 @@ impl Lower {
                 self.env = saved_env;
                 self.next_var = saved_next_var;
 
-                // Emit closure creation
+                // Emit closure creation with captured variables
                 let fn_ty = Ty::Fn(
                     Box::new(param_ty.clone()),
                     Box::new(return_ty),
@@ -423,7 +516,7 @@ impl Lower {
                 Ok(self.emit(
                     Instruction::Closure {
                         func: func_id,
-                        captures: Vec::new(), // TODO: capture analysis
+                        captures: capture_vars,
                     },
                     fn_ty,
                     SecurityLevel::Public,

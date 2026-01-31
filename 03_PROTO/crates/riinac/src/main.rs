@@ -88,10 +88,10 @@ fn main() {
         }
     };
 
-    // 1. Parse
+    // 1. Parse program (top-level declarations) and desugar to expression
     let mut parser = Parser::new(&source);
-    let expr = match parser.parse_expr() {
-        Ok(e) => e,
+    let expr = match parser.parse_program() {
+        Ok(program) => program.desugar(),
         Err(e) => {
             eprintln!("Parse Error: {:?}", e);
             process::exit(1);
