@@ -294,7 +294,54 @@ Status: In progress
 Blockers: [if any]
 ```
 
-### 3.3 At Session End
+### 3.3 MANDATORY: main → public Sync Flow
+
+**This flow MUST be followed without exception in ALL sessions. NEVER commit directly to `public`.**
+
+The repository has two branches:
+- **`main`** — Full working branch (internal docs, research, coordination). All work happens here.
+- **`public`** — Clean public-facing branch (GitHub default). No internal files. Receives cherry-picks from `main` only.
+
+**The flow is:**
+
+```
+1. Work on main
+2. Commit on main → pre-commit hook runs riinac verify --fast
+3. Push main      → pre-push hook runs riinac verify --full
+4. Sync to public → bash scripts/sync-public.sh
+```
+
+**NEVER:**
+- Commit directly on the `public` branch
+- Push to `public` without first pushing to `main`
+- Skip the verification hooks
+
+**After pushing to main, sync to public:**
+
+```bash
+# Sync latest validated main commit to public
+bash scripts/sync-public.sh
+
+# Or sync a specific commit
+bash scripts/sync-public.sh <commit-hash>
+```
+
+The script:
+1. Verifies you are on `main` and it's clean
+2. Verifies `main` has been pushed (i.e., pre-push hook has validated)
+3. Cherry-picks to `public`
+4. Strips internal files (01_RESEARCH/, 06_COORDINATION/, CLAUDE.md, etc.)
+5. Pushes `public`
+6. Returns to `main`
+
+**Internal files excluded from public** (defined in `scripts/sync-public.sh`):
+- `01_RESEARCH/`, `06_COORDINATION/`, `99_ARCHIVE/`, `claude_ai_output/`, `dist/`
+- `CLAUDE.md`, `PROGRESS.md`, `SESSION_LOG.md`, `REPO_PROTECTION_GUIDE.md`
+- `WORKER_B_SPEC_STORE_REL_REWRITE.md`, `VERIFICATION_MANIFEST.md`
+- All `CLAUDE_*.md`, `DELEGATION_TASKS.md`, `TASK_PROMPTS.md` in `02_FORMAL/coq/`
+- `02_FORMAL/coq/properties/_archive_deprecated/`
+
+### 3.4 At Session End
 
 ALWAYS execute these steps before ending:
 
@@ -309,7 +356,10 @@ git add -A
 git commit -m "[SESSION END] Checkpoint at [specific location]"
 git push origin main
 
-# 4. Verify push succeeded
+# 4. Sync to public (if changes should be visible publicly)
+bash scripts/sync-public.sh
+
+# 5. Verify push succeeded
 git status
 ```
 
