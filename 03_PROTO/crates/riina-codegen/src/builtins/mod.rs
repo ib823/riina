@@ -12,6 +12,7 @@ pub(crate) mod set;
 pub(crate) mod matematik;
 pub(crate) mod penukaran;
 pub(crate) mod ujian;
+pub(crate) mod masa;
 
 use crate::value::{Env, Value};
 use crate::{Error, Result};
@@ -79,6 +80,12 @@ pub fn register_builtins(env: &Env) -> Env {
 
     // Test builtins (ujian)
     for (bm, en, canonical) in ujian::BUILTINS {
+        e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
+        e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
+    }
+
+    // Time builtins (masa)
+    for (bm, en, canonical) in masa::BUILTINS {
         e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
         e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
     }
@@ -157,6 +164,11 @@ pub fn apply_builtin(name: &str, arg: Value) -> Result<Value> {
 
     // Test
     if let Some(result) = ujian::apply(name, &arg)? {
+        return Ok(result);
+    }
+
+    // Time
+    if let Some(result) = masa::apply(name, &arg)? {
         return Ok(result);
     }
 
