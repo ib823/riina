@@ -207,6 +207,7 @@ impl CEmitter {
         self.writeln("#include <stdlib.h>");
         self.writeln("#include <string.h>");
         self.writeln("#include <stdio.h>");
+        self.writeln("#include <setjmp.h>");
         self.writeln("");
 
         // Security level enum
@@ -803,9 +804,42 @@ impl CEmitter {
         self.writeln("}");
         self.writeln("");
 
+        // Effect handler stack (setjmp/longjmp based)
+        self.writeln("#define RIINA_MAX_HANDLERS 64");
+        self.writeln("");
+        self.writeln("typedef struct {");
+        self.writeln("    jmp_buf env;");
+        self.writeln("    riina_effect_t effect;");
+        self.writeln("    riina_value_t* payload;  /* set by perform before longjmp */");
+        self.writeln("} riina_handler_frame_t;");
+        self.writeln("");
+        self.writeln("static riina_handler_frame_t riina_handler_stack[RIINA_MAX_HANDLERS];");
+        self.writeln("static int riina_handler_top = 0;");
+        self.writeln("");
+        self.writeln("static void riina_push_handler(riina_effect_t eff) {");
+        self.writeln("    if (riina_handler_top >= RIINA_MAX_HANDLERS) {");
+        self.writeln("        fprintf(stderr, \"RIINA: handler stack overflow\\n\");");
+        self.writeln("        abort();");
+        self.writeln("    }");
+        self.writeln("    riina_handler_stack[riina_handler_top].effect = eff;");
+        self.writeln("    riina_handler_stack[riina_handler_top].payload = NULL;");
+        self.writeln("    riina_handler_top++;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static void riina_pop_handler(void) {");
+        self.writeln("    if (riina_handler_top > 0) riina_handler_top--;");
+        self.writeln("}");
+        self.writeln("");
         self.writeln("static riina_value_t* riina_perform(riina_effect_t eff, riina_value_t* payload) {");
         self.writeln("    riina_require_cap(eff);");
-        self.writeln("    /* Effect performed - return payload */");
+        self.writeln("    /* Search handler stack for matching handler */");
+        self.writeln("    for (int i = riina_handler_top - 1; i >= 0; i--) {");
+        self.writeln("        if (riina_handler_stack[i].effect == eff) {");
+        self.writeln("            riina_handler_stack[i].payload = payload;");
+        self.writeln("            longjmp(riina_handler_stack[i].env, 1);");
+        self.writeln("        }");
+        self.writeln("    }");
+        self.writeln("    /* No handler installed — return payload (default behavior) */");
         self.writeln("    return payload;");
         self.writeln("}");
         self.writeln("");
@@ -1319,8 +1353,8 @@ impl CEmitter {
             }
 
             Instruction::Closure { func, captures } => {
-                // For now, emit a simple closure without captures
-                // TODO: Full closure support with captured variables
+                // Closure emission: captures array allocated and populated.
+                // Single-arg calling convention; multi-arg via currying.
                 if captures.is_empty() {
                     self.writeln(&format!(
                         "{result} = riina_alloc();",
@@ -1580,10 +1614,30 @@ impl CEmitter {
                 }
             }
 
-            Terminator::Handle { body_block, handler_block: _, resume_var: _, result_block } => {
+            Terminator::Handle { body_block, handler_block, resume_var, result_block } => {
+                // Push handler frame, setjmp for non-local return from perform
+                self.writeln("riina_push_handler(RIINA_EFFECT_PURE); /* handler frame */");
+                self.writeln(&format!(
+                    "if (setjmp(riina_handler_stack[riina_handler_top - 1].env) == 0) {{"
+                ));
+                self.indent();
+                // Normal path: execute body
                 self.emit_phi_copies(current_block, body_block, phi_map);
                 self.writeln(&format!("goto {};", self.block_name(body_block)));
-                self.writeln(&format!("/* handler would go to {} */", self.block_name(result_block)));
+                self.dedent();
+                self.writeln("} else {");
+                self.indent();
+                // Handler path: effect was performed, payload in handler frame
+                self.writeln(&format!(
+                    "riina_value_t* {} = riina_handler_stack[riina_handler_top].payload;",
+                    resume_var
+                ));
+                self.writeln("riina_pop_handler();");
+                self.emit_phi_copies(current_block, handler_block, phi_map);
+                self.writeln(&format!("goto {};", self.block_name(handler_block)));
+                self.dedent();
+                self.writeln("}");
+                let _ = result_block; // used by handler_block's continuation
             }
 
             Terminator::Unreachable => {
