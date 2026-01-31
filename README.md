@@ -15,6 +15,8 @@ Security properties are not tested, not assumed — they are *mathematically pro
   Rigorous Immutable Invariant, No Assumptions
 ```
 
+**[Bahasa Melayu](docs/i18n/README_ms.md)** | **[中文](docs/i18n/README_zh.md)**
+
 ---
 
 ## What is RIINA?
@@ -329,7 +331,6 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | Σ | Verified persistent storage | 1 file (712 lines) | Proven |
 | — | Industry compliance (15 jurisdictions) | 15 files (2K lines) | Proven |
 | — | Domain security (timing, protocols, hardware, ...) | 183 files (76K lines) | Proven |
-
 | Π | Verified performance (WCET, SIMD, lock-free) | 1 file (470 lines) | Proven |
 | Δ | Verified distribution (Raft, BFT, CRDTs) | 1 file (500 lines) | Proven |
 | Ω | Network defense (rate limiting, SYN cookies) | 1 file (530 lines) | Proven |
