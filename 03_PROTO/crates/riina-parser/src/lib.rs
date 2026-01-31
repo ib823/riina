@@ -9,7 +9,7 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 use riina_lexer::{Token, TokenKind, Lexer, Span};
-use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program, TaintSource, Sanitizer, CapabilityKind, SpannedDecl};
+use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, ExternDecl, Program, TaintSource, Sanitizer, CapabilityKind, SpannedDecl};
 use riina_types::Span as AstSpan;
 use std::fmt;
 use std::iter::Peekable;
@@ -93,7 +93,7 @@ impl<'a> Parser<'a> {
                     // Name span recorded during parsing via current_span after ident
                     None // Will be filled in by enhanced parse methods below
                 }
-                TopLevelDecl::Expr(_) => None,
+                TopLevelDecl::Expr(_) | TopLevelDecl::ExternBlock { .. } => None,
             };
             spans.push(SpannedDecl {
                 decl: decl.clone(),
@@ -140,6 +140,7 @@ impl<'a> Parser<'a> {
                 }
                 self.parse_top_level_decl()
             }
+            Some(TokenKind::KwExtern) => self.parse_extern_block(),
             Some(TokenKind::KwPub) => {
                 // awam fungsi ... — consume visibility, delegate
                 self.consume(TokenKind::KwPub)?;
@@ -192,6 +193,48 @@ impl<'a> Parser<'a> {
         Ok(TopLevelDecl::Function {
             name, params, return_ty, effect, body: Box::new(body),
         })
+    }
+
+    /// Parse: luaran "C" { fungsi name(params) -> ret_ty; ... }
+    fn parse_extern_block(&mut self) -> Result<TopLevelDecl, ParseError> {
+        self.consume(TokenKind::KwExtern)?;
+        // Expect ABI string literal "C"
+        let abi = match self.peek().map(|t| t.kind.clone()) {
+            Some(TokenKind::LiteralString(s)) => {
+                self.next();
+                s
+            }
+            _ => {
+                return Err(ParseError {
+                    kind: ParseErrorKind::ExpectedExpression,
+                    span: self.current_span,
+                });
+            }
+        };
+        self.consume(TokenKind::LBrace)?;
+        let mut decls = Vec::new();
+        while !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RBrace) | None) {
+            self.consume(TokenKind::KwFn)?;
+            let name = self.parse_ident()?;
+            self.consume(TokenKind::LParen)?;
+            let params = self.parse_param_list()?;
+            self.consume(TokenKind::RParen)?;
+            let ret_ty = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Arrow)) {
+                self.consume(TokenKind::Arrow)?;
+                self.parse_ty()?
+            } else {
+                Ty::Unit
+            };
+            self.consume(TokenKind::Semi)?;
+            decls.push(ExternDecl {
+                name,
+                params,
+                ret_ty,
+                effect: Effect::System,
+            });
+        }
+        self.consume(TokenKind::RBrace)?;
+        Ok(TopLevelDecl::ExternBlock { abi, decls })
     }
 
     fn parse_param_list(&mut self) -> Result<Vec<(Ident, Ty)>, ParseError> {
@@ -788,6 +831,12 @@ impl<'a> Parser<'a> {
     fn parse_ty(&mut self) -> Result<Ty, ParseError> {
         let kind = self.peek().map(|t| t.kind.clone());
         match kind {
+            Some(TokenKind::Star) => {
+                // *T = RawPtr(T) for FFI
+                self.next();
+                let inner = self.parse_ty()?;
+                return Ok(Ty::RawPtr(Box::new(inner)));
+            },
             Some(TokenKind::LParen) => {
                 self.next();
                 // () = Unit, or (T1, T2) = Prod
@@ -914,6 +963,10 @@ impl<'a> Parser<'a> {
                         self.consume(TokenKind::Gt)?;
                         Ok(Ty::Sanitized(Box::new(inner), san))
                     },
+                    // FFI C types
+                    "CInt" => Ok(Ty::CInt),
+                    "CChar" => Ok(Ty::CChar),
+                    "CVoid" => Ok(Ty::CVoid),
                     // Capability<Kind> / Keupayaan<Kind>
                     "Capability" | "Keupayaan" => {
                         self.consume(TokenKind::Lt)?;

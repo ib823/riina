@@ -74,6 +74,7 @@ pub mod lower;
 pub mod interp;
 pub mod emit;
 pub mod builtins;
+pub mod ffi;
 
 // Re-export primary interface
 pub use ir::{Instruction, BasicBlock, Function, Program};

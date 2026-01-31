@@ -2575,6 +2575,11 @@ impl CEmitter {
                     Instruction::BuiltinCall { arg, .. } => {
                         vars.insert(*arg);
                     }
+                    Instruction::FFICall { args, .. } => {
+                        for a in args {
+                            vars.insert(*a);
+                        }
+                    }
                     Instruction::Const(_) | Instruction::RequireCap(_) | Instruction::GrantCap(_) => {}
                 }
             }
@@ -2840,6 +2845,16 @@ impl CEmitter {
                 self.writeln(&format!(
                     "{result} = riina_builtin_{name}({});",
                     self.var_name(arg)
+                ));
+            }
+
+            Instruction::FFICall { name, args } => {
+                let arg_strs: Vec<String> = args.iter().map(|a| format!("{}.int_val", self.var_name(a))).collect();
+                self.writeln(&format!(
+                    "{result} = riina_int((int64_t){name}({args}));",
+                    result = result,
+                    name = name,
+                    args = arg_strs.join(", "),
                 ));
             }
 

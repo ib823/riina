@@ -351,6 +351,16 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
             Ok((Ty::Ref(Box::new(Ty::Unit), SecurityLevel::Public), Effect::Pure))
         },
 
+        // FFI call
+        Expr::FFICall { name: _, args, ret_ty } => {
+            let mut eff = Effect::System; // FFI is always effectful
+            for arg in args {
+                let (_t, e) = type_check(ctx, arg)?;
+                eff = eff.join(e);
+            }
+            Ok((ret_ty.clone(), eff))
+        },
+
         // Binary operations
         Expr::BinOp(op, e1, e2) => {
             let (t1, eff1) = type_check(ctx, e1)?;

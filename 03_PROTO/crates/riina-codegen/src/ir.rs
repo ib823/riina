@@ -456,6 +456,20 @@ pub enum Instruction {
     /// v = phi [(bb1, v1), (bb2, v2), ...]
     /// ```
     Phi(Vec<(BlockId, VarId)>),
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FFI (correspond to Expr::FFICall)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// Foreign function call
+    ///
+    /// ```text
+    /// v = ffi_call "name" [arg1, arg2, ...]
+    /// ```
+    FFICall {
+        name: String,
+        args: Vec<VarId>,
+    },
 }
 
 impl std::fmt::Display for Instruction {
@@ -507,6 +521,20 @@ impl std::fmt::Display for Instruction {
                     write!(f, "({bb}, {v})")?;
                 }
                 write!(f, "]")
+            }
+            Self::FFICall { name, args } => {
+                write!(f, "ffi_call \"{name}\"")?;
+                if !args.is_empty() {
+                    write!(f, " [")?;
+                    for (i, a) in args.iter().enumerate() {
+                        if i > 0 {
+                            write!(f, ", ")?;
+                        }
+                        write!(f, "{a}")?;
+                    }
+                    write!(f, "]")?;
+                }
+                Ok(())
             }
         }
     }
