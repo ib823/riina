@@ -245,7 +245,7 @@ This is not a whitepaper. This is working software.
 
 ### Example Programs
 
-108 example `.rii` files across 8 categories:
+111 example `.rii` files across 9 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -256,6 +256,7 @@ This is not a whitepaper. This is working software.
 | Compliance | 10 | GDPR, HIPAA, PCI-DSS, PDPA, SOX, NIST |
 | Design Patterns | 15 | Builder, state machine, visitor, monad, phantom types |
 | FFI | 2 | C function calls (puts, abs, rand) |
+| Showcase | 3 | Secure web server, PQ messenger, HIPAA medical records |
 | AI Context | 1 | Complete corpus for LLM training |
 
 ### Cryptographic Tooling
@@ -301,8 +302,9 @@ proof/
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            103 example .rii files
-├── 01_RESEARCH/            Research archive (349 documents, 276K lines)
+├── 07_EXAMPLES/            111 example .rii files
+├── docs/                   Enterprise docs, multilingual READMEs
+├── scripts/                Build, install, sync scripts
 └── riina-vscode/           VS Code extension
 ```
 
@@ -350,14 +352,14 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
 | 3. Formal Verification | 5,304 Qed proofs, 5 justified axioms, 0 admits | Stable |
-| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 108 examples | Done |
+| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 111 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release scripts, installer | Done |
-| 6. Adoption | C FFI done; demo applications, community next | In Progress |
+| 6. Adoption | C FFI, 8 demos, community setup, enterprise docs, public branch | Done |
 | 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
 
-- **Phase 6:** C FFI done (`luaran "C" { ... }` — parse, typecheck, codegen, C emission); demo applications next (web server, encrypted messenger, medical records system)
+- **Phase 7 (Long-term):** Self-hosting compiler, hardware verification, verified OS
 - **Axiom elimination:** 3 of the 5 remaining axioms can be eliminated with `store_rel_n` restructuring; 2 are permanent (policy axiom + standard closure axiom from academic literature)
 
 ---
@@ -379,7 +381,7 @@ Install hooks: `./00_SETUP/scripts/install_hooks.sh`
 
 **Deep verification** (manual, 7 levels): `bash 05_TOOLING/scripts/verify.sh [0-6]`
 
-See [`REPO_PROTECTION_GUIDE.md`](REPO_PROTECTION_GUIDE.md) for the full repository security hardening specification.
+Verification is enforced automatically via git hooks installed by `./00_SETUP/scripts/install_hooks.sh`.
 
 ---
 
@@ -414,14 +416,14 @@ cd 03_PROTO && cargo test --all && cd ..
 ./00_SETUP/scripts/install_hooks.sh
 ```
 
-Read [`CLAUDE.md`](CLAUDE.md) for detailed development instructions.
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for detailed development instructions and coding standards.
 
 ---
 
 ## FAQ
 
 **Is RIINA production-ready?**
-The compiler, proofs, and toolchain are functional. Phases 1-5 (compiler, stdlib, proofs, developer tools, ecosystem) are complete. Phase 6 is in progress — C FFI is done, demo applications are next. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
+The compiler, proofs, and toolchain are functional. Phases 1-6 (compiler, stdlib, proofs, developer tools, ecosystem, adoption) are complete. Phase 7 (self-hosting, hardware verification) is the long-term vision. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
 
 **Do I need to know Bahasa Melayu?**
 No. The keywords are short and consistent — `fungsi` (function), `biar` (let), `kalau` (if), `pulang` (return). You'll learn them in minutes. A [cheatsheet](07_EXAMPLES/06_ai_context/RIINA_CHEATSHEET.md) is included.

@@ -1,5 +1,34 @@
 # Session Log
 
+## 2026-01-31 (Session 64): Phase 6 Completion — Showcase, Community, Enterprise, Public Branch
+
+**Goal:** Complete all Phase 6 remaining items. Establish dual-branch strategy (main/public). Full doc sync.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| Public branch | Created `public` branch as GitHub default, stripped internal files | Done |
+| sync-public.sh | Automated cherry-pick from validated main with internal file stripping | Done |
+| CLAUDE.md §3.3 | Mandatory main→public sync flow documented | Done |
+| 3 showcase demos | pelayan_web_selamat.rii, utusan_pasca_kuantum.rii, rekod_perubatan_hipaa.rii | Done |
+| CONTRIBUTING.md | Contributing guide with coding standards and PR workflow | Done |
+| Issue templates | .github/ISSUE_TEMPLATE/{bug_report,feature_request}.md | Done |
+| PR template | .github/PULL_REQUEST_TEMPLATE.md | Done |
+| README_ms.md | Bahasa Melayu README (docs/i18n/) | Done |
+| README_zh.md | Chinese README (docs/i18n/) | Done |
+| COMPLIANCE_PACKAGING.md | 15 regulations, 150 compliance theorems (docs/enterprise/) | Done |
+| CERTIFICATION.md | Proof certificate specification (docs/enterprise/) | Done |
+| Website demos | 5 pre-recorded terminal demos added to ExamplesPage | Done |
+| Full doc sync | PROGRESS.md, CLAUDE.md, Materialization Plan, COORDINATION_LOG, SESSION_LOG, README | Done |
+| Example count | 108 → 111 (+3 showcase) | Done |
+
+### Mandatory Flow Established
+
+All future sessions MUST follow: main → commit (verify --fast) → push (verify --full) → `bash scripts/sync-public.sh`
+
+---
+
 ## 2026-01-31 (Session 63): Rocq 9.1 Migration Sync + Doc Updates
 
 **Goal:** Fix all stale Coq 8.18.0 references after Rocq 9.1 migration (Session 53), update all doc files with accurate counts from live verification.

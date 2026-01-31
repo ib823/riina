@@ -83,7 +83,7 @@ RIINA is the world's **first formally verified programming language** with:
 | **Coq Compilation** | ✅ PASSING | 278 files (244 in active build) |
 | **Rust Tests** | ✅ PASSING (588 tests) | All green |
 | **Rust Crates** | 13 | +riina-pkg (Session 57) |
-| **Example .rii Files** | 108 | 8 categories (+FFI, +demos) |
+| **Example .rii Files** | 111 | 9 categories (+FFI, +demos, +showcase) |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
@@ -94,7 +94,7 @@ RIINA is the world's **first formally verified programming language** with:
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
 | Phase 5: Ecosystem | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 |
-| Phase 6: Adoption | 🟡 In Progress | C FFI done (Session 61); demos, community next |
+| Phase 6: Adoption | ✅ Done | C FFI, 5 demos, 3 showcase, community, enterprise, public branch |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
 
 **See `PROGRESS.md` for detailed status.**
@@ -644,10 +644,13 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 | C FFI | `luaran "C" { ... }` parse → typecheck → codegen → C emit | ✅ Done (Session 61) |
 | Demo apps | 5 demos in `07_EXAMPLES/demos/` | ✅ Done (Session 62) |
 | Recursive functions | `LetRec` + `FixClosure` IR | ✅ Done (Session 62) |
-| Community setup | Contributing guide, issue templates | ⬜ Pending |
-| Enterprise path | Compliance packaging, support model | ⬜ Pending |
+| Showcase demos | 3 showcase apps in `07_EXAMPLES/showcase/` | ✅ Done (Session 64) |
+| Community setup | CONTRIBUTING.md, issue/PR templates, multilingual docs (BM, 中文) | ✅ Done (Session 64) |
+| Enterprise path | Compliance packaging (15 regulations), certification docs | ✅ Done (Session 64) |
+| Public branch | `public` branch (GitHub default), `scripts/sync-public.sh` | ✅ Done (Session 64) |
+| Website demos | 5 pre-recorded terminal demos on website | ✅ Done (Session 64) |
 
-**Total: 588 Rust tests, 13 crates, 108 example files.** Next: Phase 6 community/enterprise.
+**Total: 588 Rust tests, 13 crates, 111 example files. Phase 6 COMPLETE.**
 
 ---
 
@@ -747,7 +750,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 63: Rocq 9.1 migration sync, 0 admits, 5 justified axioms, 588 Rust tests, 13 crates, 108 examples, 278 Coq files, 5,304 Qed proofs)*
+*Last updated: 2026-01-31 (Session 64: Phase 6 complete, public branch, 0 admits, 5 justified axioms, 588 Rust tests, 13 crates, 111 examples, 278 Coq files, 5,304 Qed proofs)*
 
 ---
 

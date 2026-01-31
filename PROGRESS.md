@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 63)
-**Session:** 63 (Rocq 9.1 Migration Sync + Doc Updates)
+**Report Date:** 2026-01-31 (Session 64)
+**Session:** 64 (Phase 6 Completion — Showcase, Community, Enterprise, Public Branch)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -35,8 +35,18 @@
 | .v Files (Total) | **278** | - | ✅ |
 | Rust Prototype | ✅ PASSING (588 tests) | PASSING | ✅ GREEN |
 | Rust Crates | **13** | - | ✅ (+riina-pkg) |
-| Example .rii Files | **108** | 100+ | ✅ (+5 demo files) |
+| Example .rii Files | **111** | 100+ | ✅ (+5 demos, +3 showcase) |
 | Prover | **Rocq 9.1 (Coq 8.21)** | - | ✅ Migrated from 8.18 |
+
+**SESSION 64 KEY ACTIONS (Phase 6 Completion — Showcase, Community, Enterprise, Public Branch):**
+1. **Public branch** — Created `public` branch (GitHub default) with internal files stripped; `scripts/sync-public.sh` automates cherry-pick from validated main
+2. **3 showcase demos** — `07_EXAMPLES/showcase/`: pelayan_web_selamat.rii (secure web server), utusan_pasca_kuantum.rii (PQ messenger), rekod_perubatan_hipaa.rii (HIPAA medical records)
+3. **Community setup** — CONTRIBUTING.md, .github/ISSUE_TEMPLATE/{bug_report,feature_request}.md, .github/PULL_REQUEST_TEMPLATE.md
+4. **Multilingual docs** — docs/i18n/README_ms.md (Bahasa Melayu), docs/i18n/README_zh.md (中文)
+5. **Enterprise docs** — docs/enterprise/COMPLIANCE_PACKAGING.md (15 regulations, 150 compliance theorems), docs/enterprise/CERTIFICATION.md (proof certificates)
+6. **Website live demos** — Added 5 pre-recorded terminal demos to website ExamplesPage
+7. **Mandatory sync flow** — CLAUDE.md §3.3 updated: main → commit (verify --fast) → push (verify --full) → sync-public.sh
+8. **Example count: 108 → 111** (+3 showcase)
 
 **SESSION 63 KEY ACTIONS (Rocq 9.1 Migration Sync + Doc Updates):**
 1. **Rocq 9.1 version sync** — Updated 8 stale files still referencing Coq 8.18.0: install_coq.sh, Makefile, CLAUDE.md, riina-website.jsx, DECISIONS.md, MATERIALIZATION_PLAN, DEFINITIVE_SCOPE, DELEGATION_PROMPT

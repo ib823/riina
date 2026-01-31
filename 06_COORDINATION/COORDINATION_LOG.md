@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
-## Version: 3.13.0
-## Last Updated: 2026-01-31 (Session 63)
+## Version: 3.14.0
+## Last Updated: 2026-01-31 (Session 64)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -33,7 +33,7 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-31 Session 63)
+### Grand Totals (2026-01-31 Session 64)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
@@ -49,7 +49,7 @@
 | **Rust Tests** | **588** | All passing |
 | **Rust Builtins** | **88** | 9 modules (Phase 2 stdlib done) |
 | **Rust Crates** | **13** | +riina-pkg (Phase 5 ecosystem) |
-| **Example .rii Files** | **108** | 8 categories (+FFI, +demos) |
+| **Example .rii Files** | **111** | 9 categories (+FFI, +demos, +showcase) |
 | **Build Status** | ✅ GREEN | All files compile |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Attack→Proof Map** | ✅ | `06_COORDINATION/ATTACK_PROOF_MAP.md` |
@@ -64,7 +64,7 @@
 | Materialization plan document | ✅ COMPLETE | `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` |
 | Syntax improvement spec | ✅ ESTABLISHED | `04_SPECS/language/SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` |
 | Authoritative doc updates | ✅ COMPLETE | CLAUDE.md, PROGRESS.md, SESSION_LOG.md, DECISIONS.md |
-| Execution start | ✅ **PHASE 6 P0 DONE** | Phase 1-5 done; Phase 6 FFI done; 590 tests |
+| Execution start | ✅ **PHASE 6 DONE** | Phase 1-6 done; 588 tests; public branch live |
 | Gap remediation | ✅ ACTIVE | 13-item plan in materialization doc Section 7 |
 | ATTACK_PROOF_MAP.md | ✅ COMPLETE | `06_COORDINATION/ATTACK_PROOF_MAP.md` (490 lines) |
 
