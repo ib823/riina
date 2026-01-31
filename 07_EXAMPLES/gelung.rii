@@ -1,0 +1,18 @@
+// gelung.rii — Loop and conditional test
+// RIINA = Rigorous Immutable Invariant — Normalized Axiom
+
+biar x = 10;
+
+selagi x > 0 {
+    cetakln(ke_teks(x))
+};
+
+ulang {
+    cetakln("sekali sahaja")
+};
+
+kalau x == 10 {
+    cetakln("x ialah sepuluh")
+} lain {
+    cetakln("x bukan sepuluh")
+}
