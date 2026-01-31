@@ -1,0 +1,94 @@
+{
+    "Function": {
+        "prefix": "fungsi",
+        "body": [
+            "fungsi ${1:nama}(${2:param}: ${3:Jenis}) -> ${4:Jenis} {",
+            "    ${0}",
+            "}"
+        ],
+        "description": "Function declaration (fungsi)"
+    },
+    "Function with effect": {
+        "prefix": "fungsi-kesan",
+        "body": [
+            "fungsi ${1:nama}(${2:param}: ${3:Jenis}) -> ${4:Jenis} kesan ${5:Tulis} {",
+            "    ${0}",
+            "}"
+        ],
+        "description": "Function with effect annotation"
+    },
+    "Let binding": {
+        "prefix": "biar",
+        "body": "biar ${1:nama} = ${0};",
+        "description": "Variable binding (biar)"
+    },
+    "If-else": {
+        "prefix": "kalau",
+        "body": [
+            "kalau ${1:syarat} {",
+            "    ${2}",
+            "} lain {",
+            "    ${0}",
+            "}"
+        ],
+        "description": "If-else conditional (kalau/lain)"
+    },
+    "Pattern match": {
+        "prefix": "padan",
+        "body": [
+            "padan ${1:nilai} {",
+            "    ${2:corak} => ${3:hasil},",
+            "    _ => ${0},",
+            "}"
+        ],
+        "description": "Pattern match (padan)"
+    },
+    "For loop": {
+        "prefix": "untuk",
+        "body": [
+            "untuk ${1:item} dalam ${2:senarai} {",
+            "    ${0}",
+            "}"
+        ],
+        "description": "For loop (untuk/dalam)"
+    },
+    "While loop": {
+        "prefix": "selagi",
+        "body": [
+            "selagi ${1:syarat} {",
+            "    ${0}",
+            "}"
+        ],
+        "description": "While loop (selagi)"
+    },
+    "Guard clause": {
+        "prefix": "pastikan",
+        "body": [
+            "pastikan ${1:syarat} lain {",
+            "    ${2:pulang ()};",
+            "};",
+            "${0}"
+        ],
+        "description": "Guard clause (pastikan)"
+    },
+    "Secret type": {
+        "prefix": "rahsia",
+        "body": "biar ${1:nama}: Rahsia<${2:Teks}> = sulit ${0};",
+        "description": "Secret type binding"
+    },
+    "Declassify": {
+        "prefix": "dedah",
+        "body": "dedah ${1:nilai} dengan ${0:bukti}",
+        "description": "Declassify value"
+    },
+    "Module declaration": {
+        "prefix": "modul",
+        "body": "modul ${0:nama};",
+        "description": "Module declaration"
+    },
+    "Use import": {
+        "prefix": "guna",
+        "body": "guna ${0:laluan};",
+        "description": "Import module"
+    }
+}

@@ -1,0 +1,269 @@
+/// calculator.rii
+/// Scientific calculator with pattern matching
+/// Demonstrates pure computation and algebraic data types
+///
+/// Features:
+/// - Expression evaluation
+/// - Pattern matching for operations
+/// - Error handling with algebraic types
+
+modul kalkulator;
+
+guna std::teks;
+guna std::senarai;
+
+jenis Operasi =
+    | Tambah
+    | Tolak
+    | Darab
+    | Bahagi
+    | Kuasa
+    | Modulo;
+
+jenis Ungkapan =
+    | Nombor(Nombor)
+    | BinariOp { operasi: Operasi, kiri: Ungkapan, kanan: Ungkapan }
+    | Fungsi { nama: Teks, arg: Ungkapan };
+
+/// Parse infix expression string
+/// "3 + 4 * 5" -> BinariOp(+, 3, BinariOp(*, 4, 5))
+fungsi huraikan_ungkapan(teks: Teks) -> Mungkin<Ungkapan> kesan Bersih {
+    biar token = tokenisasi(teks);
+    biar hasil = parse_token(token, 0);
+
+    padan hasil {
+        Ada((ungkapan, _)) => Ada(ungkapan),
+        Tiada => Tiada,
+    };
+}
+
+/// Tokenize expression string
+fungsi tokenisasi(teks: Teks) -> Senarai<Teks> kesan Bersih {
+    biar token = [];
+    biar kata_semasa = "";
+
+    untuk aksara dalam teks::ke_senarai(teks) {
+        kalau aksara == " " {
+            kalau kata_semasa != "" {
+                token = token + [kata_semasa];
+                kata_semasa = "";
+            }
+        } lain kalau aksara == "+" {
+            kalau kata_semasa != "" {
+                token = token + [kata_semasa];
+                kata_semasa = "";
+            }
+            token = token + ["+"];
+        } lain kalau aksara == "-" {
+            kalau kata_semasa != "" {
+                token = token + [kata_semasa];
+                kata_semasa = "";
+            }
+            token = token + ["-"];
+        } lain kalau aksara == "*" {
+            kalau kata_semasa != "" {
+                token = token + [kata_semasa];
+                kata_semasa = "";
+            }
+            token = token + ["*"];
+        } lain kalau aksara == "/" {
+            kalau kata_semasa != "" {
+                token = token + [kata_semasa];
+                kata_semasa = "";
+            }
+            token = token + ["/"];
+        } lain {
+            kata_semasa = kata_semasa + aksara;
+        }
+    }
+
+    kalau kata_semasa != "" {
+        token = token + [kata_semasa];
+    }
+
+    pulang token;
+}
+
+/// Parse tokens into expression tree (simplified)
+fungsi parse_token(token: Senarai<Teks>, indeks: Nombor) -> Mungkin<(Ungkapan, Nombor)> kesan Bersih {
+    kalau indeks >= panjang_senarai(token) {
+        pulang Tiada;
+    }
+
+    biar tok_semasa = token[indeks];
+    biar hasil_prim = parse_utama(tok_semasa);
+
+    padan hasil_prim {
+        Ada(ungkapan) => Ada((ungkapan, indeks + 1)),
+        Tiada => Tiada,
+    };
+}
+
+/// Parse primary (number or function)
+fungsi parse_utama(tok: Teks) -> Mungkin<Ungkapan> kesan Bersih {
+    // Try to parse as number
+    biar mungkin_nom = teks::ke_nombor(tok);
+    padan mungkin_nom {
+        Ada(nom) => pulang Ada(Nombor(nom)),
+        Tiada => {
+            // Could be function name
+            kalau tok == "punca" {
+                pulang Ada(Fungsi { nama: "punca", arg: Nombor(0) });
+            } lain kalau tok == "sin" {
+                pulang Ada(Fungsi { nama: "sin", arg: Nombor(0) });
+            } lain kalau tok == "cos" {
+                pulang Ada(Fungsi { nama: "cos", arg: Nombor(0) });
+            } lain {
+                pulang Tiada;
+            }
+        },
+    };
+}
+
+/// Evaluate expression tree
+fungsi nilai(ungkapan: Ungkapan) -> Mungkin<Nombor> kesan Bersih {
+    padan ungkapan {
+        Nombor(n) => Ada(n),
+        BinariOp { operasi: op, kiri: kiri, kanan: kanan } => {
+            biar nilai_kiri = nilai(kiri);
+            biar nilai_kanan = nilai(kanan);
+
+            padan (nilai_kiri, nilai_kanan) {
+                (Ada(nk), Ada(nn)) => {
+                    pulang hitung_binari(op, nk, nn);
+                },
+                _ => Tiada,
+            };
+        },
+        Fungsi { nama: nm, arg: arg } => {
+            biar nilai_arg = nilai(arg);
+            padan nilai_arg {
+                Ada(n) => hitung_fungsi(nm, n),
+                Tiada => Tiada,
+            };
+        },
+    };
+}
+
+/// Binary operation calculation
+fungsi hitung_binari(op: Operasi, kiri: Nombor, kanan: Nombor) -> Mungkin<Nombor> kesan Bersih {
+    padan op {
+        Tambah => Ada(kiri + kanan),
+        Tolak => Ada(kiri - kanan),
+        Darab => Ada(kiri * kanan),
+        Bahagi => {
+            kalau kanan == 0 {
+                Tiada
+            } lain {
+                Ada(kiri / kanan)
+            }
+        },
+        Kuasa => Ada(kiri ^ kanan),
+        Modulo => {
+            kalau kanan == 0 {
+                Tiada
+            } lain {
+                Ada(kiri % kanan)
+            }
+        },
+    };
+}
+
+/// Mathematical function evaluation
+fungsi hitung_fungsi(nama: Teks, nilai: Nombor) -> Mungkin<Nombor> kesan Bersih {
+    padan nama {
+        "punca" => {
+            kalau nilai < 0 {
+                Tiada
+            } lain {
+                Ada(math_sqrt(nilai))
+            }
+        },
+        "sin" => Ada(math_sin(nilai)),
+        "cos" => Ada(math_cos(nilai)),
+        "tan" => Ada(math_tan(nilai)),
+        "ln" => {
+            kalau nilai <= 0 {
+                Tiada
+            } lain {
+                Ada(math_ln(nilai))
+            }
+        },
+        "log" => {
+            kalau nilai <= 0 {
+                Tiada
+            } lain {
+                Ada(math_log10(nilai))
+            }
+        },
+        _ => Tiada,
+    };
+}
+
+/// Main calculator REPL
+awam fungsi utama() -> kesan Tulis {
+    cetak_baris("=== KALKULATOR SAINTIFIK ===");
+    cetak_baris("Operasi: + - * / ^ %");
+    cetak_baris("Fungsi: punca sin cos tan ln log");
+
+    ulang {
+        cetak_baris("\nMasukkan ungkapan (atau 'keluar'):");
+        biar input = baca_baris();
+
+        kalau input == "keluar" {
+            ulang_akhir;
+        }
+
+        biar mungkin_ungkapan = huraikan_ungkapan(input);
+        padan mungkin_ungkapan {
+            Ada(ungkapan) => {
+                biar mungkin_hasil = nilai(ungkapan);
+                padan mungkin_hasil {
+                    Ada(hasil) => {
+                        cetak_baris(format!("Hasil: {}", hasil));
+                    },
+                    Tiada => {
+                        cetak_baris("Ralat: Tidak dapat menghitung");
+                    },
+                };
+            },
+            Tiada => {
+                cetak_baris("Ralat: Ungkapan tidak sah");
+            },
+        };
+    };
+}
+
+// Helper functions
+fungsi panjang_senarai(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi baca_baris() -> Teks kesan Tulis {
+    pulang "";
+}
+
+// Math library stubs
+fungsi math_sqrt(n: Nombor) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi math_sin(n: Nombor) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi math_cos(n: Nombor) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi math_tan(n: Nombor) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi math_ln(n: Nombor) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi math_log10(n: Nombor) -> Nombor kesan Bersih {
+    pulang 0;
+}

@@ -1,0 +1,158 @@
+/// LISTS.RII - List Operations and Manipulation
+/// Operasi senarai (list) dalam RIINA
+/// Demonstrates: list literals, methods, iteration, functional ops
+
+fungsi buat_senarai() -> Senarai<Nombor> kesan Bersih {
+    /// Senarai literal dengan elemen awal
+    /// List literal with initial elements
+    biar senarai = [1, 2, 3, 4, 5];
+
+    /// Senarai kosong
+    /// Empty list
+    biar kosong: Senarai<Nombor> = [];
+
+    /// Senarai dengan satu jenis elemen
+    /// List with string elements
+    biar nama_nama = ["Ahmad", "Siti", "Budi"];
+
+    pulang senarai;
+}
+
+fungsi operasi_senarai() -> Nombor kesan Bersih {
+    /// Panjang senarai (method call)
+    /// List length
+    biar senarai = [1, 2, 3, 4, 5];
+    biar panjang = senarai.panjang();   /// 5
+
+    /// Akses elemen dengan indeks
+    /// Access element by index
+    biar pertama = senarai[0];          /// 1
+    biar terakhir = senarai[4];         /// 5
+
+    /// Tambah elemen (returns new list)
+    /// Add element (returns new list)
+    biar senarai2 = senarai.tambah(6);
+
+    /// Singkirkan elemen pertama
+    /// Remove first element
+    biar senarai3 = senarai.ekor();     /// [2, 3, 4, 5]
+
+    pulang panjang;
+}
+
+fungsi ubah_senarai() -> Senarai<Nombor> kesan Bersih {
+    /// Ubah setiap elemen dengan peta (map)
+    /// Transform each element with map
+    biar senarai = [1, 2, 3, 4, 5];
+
+    biar ubahan = senarai.peta(fungsi(x: Nombor) -> Nombor {
+        pulang x * 2;
+    });
+
+    /// ubahan = [2, 4, 6, 8, 10]
+
+    pulang ubahan;
+}
+
+fungsi tapis_senarai() -> Senarai<Nombor> kesan Bersih {
+    /// Tapis elemen dengan syarat (filter)
+    /// Filter elements with condition
+    biar senarai = [1, 2, 3, 4, 5, 6];
+
+    biar ganjil = senarai.tapis(fungsi(x: Nombor) -> Benar {
+        pulang x % 2 != 0;
+    });
+
+    /// ganjil = [1, 3, 5]
+
+    pulang ganjil;
+}
+
+fungsi lipat_senarai() -> Nombor kesan Bersih {
+    /// Lipat senarai ke nilai tunggal (fold/reduce)
+    /// Fold list to single value
+    biar senarai = [1, 2, 3, 4, 5];
+
+    biar jumlah = senarai.lipat(0, fungsi(akum: Nombor, x: Nombor) -> Nombor {
+        pulang akum + x;
+    });
+
+    /// jumlah = 15
+
+    pulang jumlah;
+}
+
+fungsi cari_dalam_senarai() -> Mungkin<Nombor> kesan Bersih {
+    /// Cari elemen pertama yang memenuhi syarat
+    /// Find first element matching condition
+    biar senarai = [1, 2, 3, 4, 5];
+
+    biar hasil = senarai.cari(fungsi(x: Nombor) -> Benar {
+        pulang x > 3;
+    });
+
+    /// hasil = Ada(4)
+
+    pulang hasil;
+}
+
+fungsi gabung_senarai() -> Senarai<Nombor> kesan Bersih {
+    /// Gabung dua senarai
+    /// Concatenate two lists
+    biar senarai1 = [1, 2, 3];
+    biar senarai2 = [4, 5, 6];
+
+    biar gabungan = senarai1.gabung(senarai2);
+
+    /// gabungan = [1, 2, 3, 4, 5, 6]
+
+    pulang gabungan;
+}
+
+fungsi potong_senarai() -> Senarai<Nombor> kesan Bersih {
+    /// Ambil sebahagian daripada senarai (slice)
+    /// Take a slice of list
+    biar senarai = [1, 2, 3, 4, 5, 6, 7];
+
+    biar potongan = senarai.potong(2, 5);    /// [3, 4, 5]
+
+    pulang potongan;
+}
+
+fungsi iterasi_senarai() -> Nombor kesan Tulis {
+    /// Iterasi dengan untuk-dalam
+    /// Iterate with for-in
+    biar senarai = [10, 20, 30];
+
+    untuk (indeks, nilai) dalam senarai.indeks_dan_item() {
+        cetak("Indeks ");
+        cetak(indeks);
+        cetak(": ");
+        cetak(nilai);
+        cetak("\n");
+    }
+
+    pulang 0;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar senarai = [1, 2, 3, 4, 5];
+    cetak("Panjang: ");
+    cetak(senarai.panjang());
+    cetak("\n");
+
+    biar ubahan = senarai.peta(fungsi(x: Nombor) -> Nombor { x * 2 });
+    cetak("Ubahan: ");
+    cetak(ubahan);
+    cetak("\n");
+
+    iterasi_senarai();
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Senarai<T> is the list type.
+/// List literals: [expr1, expr2, ...]
+/// Empty list requires type annotation: []: Senarai<T>
+/// Common methods: panjang, peta, tapis, lipat, cari, gabung, potong
+/// Indexing: senarai[i] (returns element or panics if out of bounds)

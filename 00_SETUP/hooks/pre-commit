@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# RIINA pre-commit hook — runs riinac verify --fast before each commit.
+# Install: cp 00_SETUP/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run: 00_SETUP/scripts/install_hooks.sh
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Locate riinac binary (prefer release, fall back to debug)
+RIINAC=""
+for candidate in \
+    "${REPO_ROOT}/03_PROTO/target/release/riinac" \
+    "${REPO_ROOT}/03_PROTO/target/debug/riinac"; do
+    if [ -x "$candidate" ]; then
+        RIINAC="$candidate"
+        break
+    fi
+done
+
+if [ -z "$RIINAC" ]; then
+    echo "riinac not found — building..."
+    (cd "${REPO_ROOT}/03_PROTO" && cargo build --release -p riinac 2>&1) || {
+        echo "FAIL: could not build riinac"
+        exit 1
+    }
+    RIINAC="${REPO_ROOT}/03_PROTO/target/release/riinac"
+fi
+
+echo "Running riinac verify --fast ..."
+"$RIINAC" verify --fast
+exit $?

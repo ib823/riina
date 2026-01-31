@@ -1,0 +1,205 @@
+/// AUDIT_TRAIL.RII - Security Audit Logging
+/// Jejak audit untuk kebolehan jejakan keselamatan
+/// Demonstrates: event logging, audit tracking, secure logging
+
+jenis AcaraAudit {
+    masa: Nombor,
+    tindakan: Teks,
+    pengguna: Teks,
+    sumber: Teks,
+    hasil: Benar,
+    butiran: Teks,
+}
+
+jenis JejakAudit {
+    acara_acara: Senarai<AcaraAudit>,
+}
+
+fungsi buat_jejak_audit() -> JejakAudit kesan Bersih {
+    /// Buat jejak audit kosong
+    JejakAudit {
+        acara_acara: [],
+    }
+}
+
+fungsi catat_acara_audit(
+    ubah jejak: JejakAudit,
+    tindakan: Teks,
+    pengguna: Teks,
+    sumber: Teks,
+    hasil: Benar,
+    butiran: Teks
+) -> Nombor kesan (Tulis, Masa) {
+    /// Catat acara audit
+    biar acara = AcaraAudit {
+        masa: ambil_waktu_kini(),
+        tindakan: tindakan,
+        pengguna: pengguna,
+        sumber: sumber,
+        hasil: hasil,
+        butiran: butiran,
+    };
+
+    jejak.acara_acara = jejak.acara_acara.tambah(acara);
+
+    /// Cetak ke log aman
+    cetak("[AUDIT] ");
+    cetak(tindakan);
+    cetak(" oleh ");
+    cetak(pengguna);
+    cetak(" - ");
+    cetak(butiran);
+    cetak("\n");
+
+    jejak.acara_acara.panjang()
+}
+
+fungsi catat_percubaan_akses(
+    ubah jejak: JejakAudit,
+    pengguna: Teks,
+    sumber: Teks,
+    berjaya: Benar
+) -> Nombor kesan (Tulis, Masa) {
+    biar hasil_teks = kalau berjaya { "BERJAYA" } lain { "GAGAL" };
+
+    catat_acara_audit(jejak, "AKSES", pengguna, sumber, berjaya, "Akses {hasil_teks}")
+}
+
+fungsi catat_perubahan_data(
+    ubah jejak: JejakAudit,
+    pengguna: Teks,
+    medan: Teks,
+    nilai_lama: Teks,
+    nilai_baru: Teks
+) -> Nombor kesan (Tulis, Masa) {
+    biar butiran = "Ubah {medan} dari {nilai_lama} ke {nilai_baru}";
+    catat_acara_audit(jejak, "UBAH", pengguna, medan, betul, butiran)
+}
+
+fungsi catat_dedah_rahsia(
+    ubah jejak: JejakAudit,
+    pengguna: Teks,
+    rahsia: Teks,
+    justifikasi: Teks
+) -> Nombor kesan (Tulis, Masa) {
+    biar butiran = "Dedah {rahsia} dengan justifikasi: {justifikasi}";
+    catat_acara_audit(jejak, "DEDAH", pengguna, "sistem", betul, butiran)
+}
+
+fungsi catat_kegagalan_autentikasi(
+    ubah jejak: JejakAudit,
+    pengguna: Teks,
+    sebab: Teks
+) -> Nombor kesan (Tulis, Masa) {
+    catat_acara_audit(jejak, "AUTENTIKASI_GAGAL", pengguna, "autentikasi", salah, sebab)
+}
+
+fungsi catat_delegasi_keupayaan(
+    ubah jejak: JejakAudit,
+    pemberi: Teks,
+    penerima: Teks,
+    keupayaan: Teks
+) -> Nombor kesan (Tulis, Masa) {
+    biar butiran = "Delegasi {keupayaan} dari {pemberi} ke {penerima}";
+    catat_acara_audit(jejak, "DELEGASI", pemberi, "sistem", betul, butiran)
+}
+
+fungsi cetak_jejak_audit(j: JejakAudit) -> Nombor kesan Tulis {
+    /// Cetak semua acara audit
+    cetak("=== Jejak Audit ===\n");
+    cetak("Jumlah acara: ");
+    cetak(j.acara_acara.panjang());
+    cetak("\n\n");
+
+    untuk acara dalam j.acara_acara {
+        cetak("Masa: ");
+        cetak(acara.masa);
+        cetak("\n");
+
+        cetak("Tindakan: ");
+        cetak(acara.tindakan);
+        cetak("\n");
+
+        cetak("Pengguna: ");
+        cetak(acara.pengguna);
+        cetak("\n");
+
+        cetak("Sumber: ");
+        cetak(acara.sumber);
+        cetak("\n");
+
+        cetak("Hasil: ");
+        cetak(acara.hasil);
+        cetak("\n");
+
+        cetak("Butiran: ");
+        cetak(acara.butiran);
+        cetak("\n");
+
+        cetak("---\n");
+    }
+
+    0
+}
+
+fungsi cari_acara_audit(
+    j: JejakAudit,
+    pengguna: Teks
+) -> Senarai<AcaraAudit> kesan Bersih {
+    /// Cari semua acara untuk pengguna tertentu
+    j.acara_acara.tapis(fungsi(a: AcaraAudit) -> Benar {
+        a.pengguna == pengguna
+    })
+}
+
+fungsi kiraan_kegagalan(j: JejakAudit) -> Nombor kesan Bersih {
+    /// Hitung jumlah kegagalan
+    biar ubah kira = 0;
+
+    untuk acara dalam j.acara_acara {
+        kalau !acara.hasil {
+            kira = kira + 1;
+        }
+    }
+
+    kira
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Masa) {
+    cetak("=== Jejak Audit Keselamatan ===\n");
+
+    /// Buat jejak audit
+    biar ubah jejak = buat_jejak_audit();
+
+    /// Catat berbagai acara
+    cetak("Mencatat acara...\n\n");
+
+    catat_percubaan_akses(jejak, "ahmad", "data.txt", betul);
+    catat_perubahan_data(jejak, "siti", "status", "aktif", "tidak_aktif");
+    catat_dedah_rahsia(jejak, "admin", "kunci_api", "enkripsi_diperlukan");
+    catat_kegagalan_autentikasi(jejak, "pengguna_tidak_sah", "kata_laluan_salah");
+    catat_delegasi_keupayaan(jejak, "admin", "pengguna_baru", "baca");
+
+    /// Cetak jejak
+    cetak_jejak_audit(jejak);
+
+    /// Cari acara untuk pengguna
+    cetak("\nAcara untuk ahmad:\n");
+    biar acara_ahmad = cari_acara_audit(jejak, "ahmad");
+    cetak("Jumlah: ");
+    cetak(acara_ahmad.panjang());
+    cetak("\n");
+
+    /// Hitung kegagalan
+    cetak("\nJumlah kegagalan: ");
+    cetak(kiraan_kegagalan(jejak));
+    cetak("\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: AcaraAudit logs all security-relevant operations.
+/// Each log entry includes timestamp, actor, action, result.
+/// Audit trail is immutable for forensics.
+/// Type system prevents selective deletion of logs.

@@ -1,0 +1,53 @@
+/// FUNCTIONS.RII - Function Declarations and Calls
+/// Menunjukkan deklarasi dan panggilan fungsi
+/// Demonstrates: function syntax, parameters, return types, overloading
+
+/// Fungsi tanpa parameter
+/// Function with no parameters
+fungsi ambilNilaiTetap() -> Nombor kesan Bersih {
+    pulang 42;
+}
+
+/// Fungsi dengan satu parameter
+/// Function with one parameter
+fungsi tambahSatu(x: Nombor) -> Nombor kesan Bersih {
+    pulang x + 1;
+}
+
+/// Fungsi dengan banyak parameter
+/// Function with multiple parameters
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    pulang x + y;
+}
+
+/// Fungsi dengan beberapa efek
+/// Function with multiple effects
+fungsi cetakDanKira(x: Nombor) -> Nombor kesan (Tulis, Bersih) {
+    cetak("Nilai: ");
+    cetak(x);
+    cetak("\n");
+    pulang x * 2;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    /// Panggil fungsi tanpa parameter
+    biar a = ambilNilaiTetap();
+
+    /// Panggil dengan satu parameter
+    biar b = tambahSatu(a);
+
+    /// Panggil dengan banyak parameter
+    biar c = tambah(a, b);
+
+    /// Cetak hasil
+    cetak("Hasil: ");
+    cetak(c);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Functions use `fungsi` keyword.
+/// Return type syntax: `-> ReturnType`
+/// Effects listed as: `kesan (Effect1, Effect2, ...)`
+/// Implicit return for expression statements.

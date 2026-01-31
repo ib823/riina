@@ -122,6 +122,14 @@ pub enum TokenKind {
     KwSpeculationSafe,
     KwCombined,
     KwZeroize,
+    KwFst,            // fst / pertama
+    KwSnd,            // snd / kedua
+    KwRequire,        // require / perlukan
+    KwGrant,          // grant / beri
+    KwSome,           // Some / Ada
+    KwNone,           // None / Tiada
+    KwOk,             // Ok / Jadi
+    KwErr,            // Err / Gagal
     KwIn,
     KwIs,
     KwPure,

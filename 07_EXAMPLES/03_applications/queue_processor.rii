@@ -1,0 +1,251 @@
+/// queue_processor.rii
+/// Message queue processing with worker pool
+/// Demonstrates concurrent effect handling and state management
+///
+/// Features:
+/// - FIFO message queue
+/// - Worker thread pool
+/// - Graceful shutdown
+/// - Error handling and retry
+
+modul pemproses_baris_giliran;
+
+guna std::senarai;
+guna std::teks;
+guna std::fail;
+guna std::masa;
+
+jenis Pesanan = {
+    id: Nombor,
+    jenis: Teks,
+    payload: Teks,
+    masa_cipta: Nombor,
+    cubaan: Nombor,
+    max_cubaan: Nombor,
+};
+
+jenis Status =
+    | MENUNGGU
+    | MEMPROSES
+    | BERJAYA
+    | GAGAL
+    | DITOLAK;
+
+jenis CatatanPesanan = {
+    id: Nombor,
+    status: Status,
+    pesan_ralat: Mungkin<Teks>,
+    masa_siap: Mungkin<Nombor>,
+};
+
+/// Global queue and processing state
+biar ubah giliran_pesanan: Senarai<Pesanan> = [];
+biar ubah catatan_pesanan: Senarai<CatatanPesanan> = [];
+biar ubah id_pesanan_berikutnya: Nombor = 1;
+
+/// Enqueue new message
+fungsi masukkan_pesanan(
+    jenis_pesanan: Teks,
+    payload: Teks
+) -> Nombor kesan Bersih {
+    biar id_baru = id_pesanan_berikutnya;
+    id_pesanan_berikutnya = id_pesanan_berikutnya + 1;
+
+    biar pesanan = {
+        id: id_baru,
+        jenis: jenis_pesanan,
+        payload: payload,
+        masa_cipta: Masa::masa_unix(),
+        cubaan: 0,
+        max_cubaan: 3,
+    };
+
+    giliran_pesanan = giliran_pesanan + [pesanan];
+
+    biar catatan = {
+        id: id_baru,
+        status: MENUNGGU,
+        pesan_ralat: Tiada,
+        masa_siap: Tiada,
+    };
+    catatan_pesanan = catatan_pesanan + [catatan];
+
+    pulang id_baru;
+}
+
+/// Dequeue next message for processing
+fungsi ambil_pesanan_seterusnya() -> Mungkin<Pesanan> kesan Bersih {
+    kalau panjang(giliran_pesanan) > 0 {
+        biar pesanan = giliran_pesanan[0];
+        giliran_pesanan = tunda_kepala(giliran_pesanan);
+        pulang Ada(pesanan);
+    } lain {
+        pulang Tiada;
+    };
+}
+
+/// Process message based on type
+fungsi proses_pesanan(pesanan: Pesanan) -> (Benar, Mungkin<Teks>) kesan SistemFail {
+    padan pesanan.jenis {
+        "emel" => {
+            // Send email
+            biar hasil = coba SistemFail::hantar_emel(pesanan.payload);
+            padan hasil {
+                Berjaya(_) => pulang (betul, Tiada),
+                Kegagalan(ralat) => pulang (salah, Ada(ralat)),
+            };
+        },
+        "sms" => {
+            // Send SMS
+            biar hasil = coba SistemFail::hantar_sms(pesanan.payload);
+            padan hasil {
+                Berjaya(_) => pulang (betul, Tiada),
+                Kegagalan(ralat) => pulang (salah, Ada(ralat)),
+            };
+        },
+        "laporan" => {
+            // Generate report
+            biar hasil = coba SistemFail::jana_laporan(pesanan.payload);
+            padan hasil {
+                Berjaya(_) => pulang (betul, Tiada),
+                Kegagalan(ralat) => pulang (salah, Ada(ralat)),
+            };
+        },
+        "pengesahan" => {
+            // Webhook notification
+            biar hasil = coba SistemFail::panggil_hook(pesanan.payload);
+            padan hasil {
+                Berjaya(_) => pulang (betul, Tiada),
+                Kegagalan(ralat) => pulang (salah, Ada(ralat)),
+            };
+        },
+        _ => {
+            pulang (salah, Ada("Jenis pesanan tidak dikenali"));
+        },
+    };
+}
+
+/// Update message status
+fungsi kemaskini_status(id_pesanan: Nombor, status_baru: Status, ralat: Mungkin<Teks>) -> kesan Bersih {
+    biar catatan_baru = [];
+
+    untuk catatan dalam catatan_pesanan {
+        kalau catatan.id == id_pesanan {
+            catatan_baru = catatan_baru + [{
+                id: catatan.id,
+                status: status_baru,
+                pesan_ralat: ralat,
+                masa_siap: Ada(Masa::masa_unix()),
+            }];
+        } lain {
+            catatan_baru = catatan_baru + [catatan];
+        }
+    }
+
+    catatan_pesanan = catatan_baru;
+}
+
+/// Worker process function
+/// Processes messages from queue until empty
+/// Kesan: SistemFail (actual work may perform I/O)
+fungsi pekerja_pemproses(id_pekerja: Nombor) -> kesan SistemFail {
+    cetak_baris(format!("Pekerja {} memulai", id_pekerja));
+
+    ulang {
+        biar mungkin_pesanan = ambil_pesanan_seterusnya();
+
+        padan mungkin_pesanan {
+            Ada(pesanan) => {
+                cetak_baris(format!("Pekerja {} memproses pesanan {}", id_pekerja, pesanan.id));
+
+                kemaskini_status(pesanan.id, MEMPROSES, Tiada);
+
+                biar (berjaya, ralat) = proses_pesanan(pesanan);
+
+                kalau berjaya {
+                    kemaskini_status(pesanan.id, BERJAYA, Tiada);
+                    cetak_baris(format!("Pesanan {} berjaya", pesanan.id));
+                } lain {
+                    // Check if should retry
+                    kalau pesanan.cubaan < pesanan.max_cubaan {
+                        biar pesanan_retry = {
+                            id: pesanan.id,
+                            jenis: pesanan.jenis,
+                            payload: pesanan.payload,
+                            masa_cipta: pesanan.masa_cipta,
+                            cubaan: pesanan.cubaan + 1,
+                            max_cubaan: pesanan.max_cubaan,
+                        };
+                        giliran_pesanan = giliran_pesanan + [pesanan_retry];
+                        cetak_baris(format!("Pesanan {} dijadual semula (cubaan {})", pesanan.id, pesanan.cubaan + 1));
+                    } lain {
+                        kemaskini_status(pesanan.id, GAGAL, ralat);
+                        cetak_baris(format!("Pesanan {} gagal akhir", pesanan.id));
+                    }
+                }
+            },
+            Tiada => {
+                cetak_baris(format!("Pekerja {} tiada pesanan, berhenti", id_pekerja));
+                ulang_akhir;
+            },
+        };
+
+        // Simulate work time
+        Masa::rehat_ms(100);
+    };
+
+    cetak_baris(format!("Pekerja {} selesai", id_pekerja));
+}
+
+/// Get queue status
+fungsi dapat_status_giliran() -> (Nombor, Nombor, Nombor) kesan Bersih {
+    biar menunggu = 0;
+    biar memproses = 0;
+    biar berjaya = 0;
+
+    untuk catatan dalam catatan_pesanan {
+        padan catatan.status {
+            MENUNGGU => menunggu = menunggu + 1,
+            MEMPROSES => memproses = memproses + 1,
+            BERJAYA => berjaya = berjaya + 1,
+            _ => {},
+        };
+    }
+
+    pulang (menunggu, memproses, berjaya);
+}
+
+/// Main queue processor
+awam fungsi utama() -> kesan SistemFail {
+    cetak_baris("=== PEMPROSES BARIS GILIRAN ===");
+
+    // Add sample messages
+    masukkan_pesanan("emel", "emel@contoh.my");
+    masukkan_pesanan("sms", "+60123456789");
+    masukkan_pesanan("laporan", "laporan_bulanan.pdf");
+    masukkan_pesanan("pengesahan", "https://webhook.contoh.my/notify");
+
+    // Start worker pool (simulated with single worker)
+    pekerja_pemproses(1);
+
+    // Print final stats
+    biar (menunggu, memproses, berjaya) = dapat_status_giliran();
+    cetak_baris(format!("Status akhir - Menunggu: {}, Memproses: {}, Berjaya: {}", menunggu, memproses, berjaya));
+}
+
+// Helper functions
+fungsi tunda_kepala(senarai: Senarai<T>) -> Senarai<T> kesan Bersih {
+    kalau panjang(senarai) > 1 {
+        biar hasil = [];
+        untuk i dari 1 hingga panjang(senarai) {
+            hasil = hasil + [senarai[i]];
+        }
+        pulang hasil;
+    } lain {
+        pulang [];
+    }
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}

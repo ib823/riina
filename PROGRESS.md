@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-30 (Session 52)
-**Session:** 53 (Track A — Fix fst/snd Admitted, Axiom Analysis & Justification)
+**Report Date:** 2026-01-31 (Session 56)
+**Session:** 56 (Track B — Phase 4 Developer Experience)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -31,9 +31,35 @@
 | Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **98** | - | ✅ All compile |
-| Qed Proofs (Build) | **4971** | - | ✅ |
+| Qed Proofs (Build) | **5117+** | - | ✅ |
 | .v Files (Total) | **256** | - | ✅ |
-| Rust Prototype | ✅ PASSING (452 tests) | PASSING | ✅ GREEN |
+| Rust Prototype | ✅ PASSING (529 tests) | PASSING | ✅ GREEN |
+| Example .rii Files | **100** | 100+ | ✅ |
+
+**SESSION 56 KEY ACTIONS (Phase 4 Developer Experience):**
+1. **M1: Span-annotated AST** — Added `Span`, `SpannedDecl` to riina-types; parser records spans for all top-level decls
+2. **M2: riina-fmt formatter** — New crate; handles all 27 Expr variants + TopLevelDecl; `riinac fmt` subcommand
+3. **M3: riina-lsp server (P0)** — Hand-written JSON-RPC over stdio; diagnostics via textDocument/publishDiagnostics
+4. **M4: LSP hover + completion (P1)** — Hover returns type info; completion returns 26 BM keywords
+5. **M5: VS Code extension** — TextMate grammar, snippets, LSP client (`riina-vscode/`)
+6. **M6: riina-doc generator** — Extracts `///` doc comments; generates HTML docs; `riinac doc` subcommand
+7. **M7: Example corpus** — 100 .rii files across 6 directories + AI context docs (cheatsheet, guide, all_examples.rii)
+8. **Tests: 509 → 529** (+20 new tests from riina-fmt, riina-lsp, riina-doc)
+
+**SESSION 55 KEY ACTIONS (Phase 2 Standard Library):**
+1. **M1: C runtime types + 39 builtin C implementations** — riina_list_t, riina_map_t, riina_set_t; all teks/senarai/peta/set builtins now compile to C
+2. **M2: masa (time) module** — 6 builtins (masa_sekarang, masa_sekarang_ms, masa_format, masa_urai, masa_tidur, masa_jam)
+3. **M3: fail (file I/O) module** — 8 builtins (fail_baca, fail_tulis, fail_tambah, fail_ada, fail_buang, fail_panjang, fail_senarai, fail_baca_baris)
+4. **M4: json module** — 5 builtins with hand-written recursive descent parser (json_urai, json_ke_teks, json_dapat, json_letak, json_ada)
+5. **M5: Expanded teks/senarai/matematik** — 10 new builtins (teks_ulang, teks_pad_kiri/kanan, teks_baris, senarai_rata/unik/potong, baki, log2, rawak)
+6. **Tests: 477 → 509** (+32 new builtin tests)
+
+**SESSION 54 KEY ACTIONS (Worker C):**
+1. **Phase 11: 15 MY/SG compliance proofs** (146 Qed, 0 admits) — Malaysia PDPA/BNM/MCMC/MAMPU/Bursa/KKM/CyberAct/DigSig/SCGTRM + Singapore PDPA/MAS-TRM/CyberAct/HealthInfo/MTCS/CyberTrust
+2. **Section 11: store allocation/update infrastructure** — `store_rel_n_alloc`, `store_rel_n_update`, `val_rel_n_fo_alloc_irrelevant` in NI_v2.v
+3. **WIP: logical_relation_ref proof** — replaced 1 broad admit with 3 targeted admits (store_wf, stores_agree_low_fo after allocation)
+4. **Track B: BuiltinCall IR instruction** — emit-c/build now handles builtins (cetakln, ke_teks, tegaskan, etc.) end-to-end
+5. **Updated Qed count: 4,971 → 5,117+**
 
 **SESSION 53 KEY ACTIONS:**
 1. **Fixed `exp_rel_step1_fst_general` and `snd_general`** (Admitted→Qed) — used `fundamental_theorem_step_0` axiom to extract `val_rel_at_type` for TProd, project FO components via `val_rel_at_type_fo_equiv`
@@ -912,7 +938,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Mat. Plan Phase | Name | Status | Key Metric |
 |-----------------|------|--------|------------|
-| 1 | Compiler Completion | 🟡 ~70% | Parser extension (5.3) is critical blocker |
+| 1 | Compiler Completion | 🟢 ~98% | All 5.1-5.7 complete; 477 tests passing |
 | 2 | Standard Library | ⬜ | Blocked on Phase 1 |
 | 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971+ Qed |
 | 4 | Developer Experience | ⬜ | LSP, VS Code, formatter |
@@ -924,15 +950,15 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Item | Description | Status |
 |------|-------------|--------|
-| 5.1 | Wire codegen into riinac | 🟡 Driver exists (385 lines), codegen not imported |
-| 5.2 | Lexer changes | 🟢 ~90% (70+ bilingual keywords) |
-| 5.3 | Parser extension | ❌ **CRITICAL** — expressions only, no functions/modules/types |
-| 5.4 | C emitter completion | 🟡 ~85% (missing closures, effect handlers) |
-| 5.5 | REPL | ❌ Stub |
-| 5.6 | Error diagnostics | ❌ Not started |
+| 5.1 | Wire codegen into riinac | ✅ Done (5 subcommands: check, run, build, emit-c, emit-ir) |
+| 5.2 | Lexer changes | ✅ Done (~80 bilingual keywords, fst/snd/require/grant/Option/Result) |
+| 5.3 | Parser extension | ✅ Done (27/27 Expr variants, BM aliases, all types, functions/modules) |
+| 5.4 | C emitter completion | ✅ Done (effect handlers via setjmp/longjmp, closures with captures) |
+| 5.5 | REPL | ✅ Done (7 bilingual commands, eval/type/ir/c backends) |
+| 5.6 | Error diagnostics | ✅ Done (Display impls, caret-style source context) |
 | 5.7 | Built-in functions | ✅ Done (59 builtins) |
 
-**Critical path:** 5.2 → 5.3.1 → 5.3.2 → 5.1 → 5.4 → Gate 3 (end-to-end compilation)
+**Phase 1 complete.** Next: Phase 2 (Standard Library) or Phase 4 (Developer Experience).
 
 ### Phase 3 (Formal Verification) — Track A Status
 

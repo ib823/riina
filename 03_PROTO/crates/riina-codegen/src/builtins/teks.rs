@@ -17,6 +17,10 @@ pub static BUILTINS: &[(&str, &str, &str)] = &[
     ("teks_aksara_di", "str_char_at", "teks_aksara_di"),
     ("teks_sub", "str_substring", "teks_sub"),
     ("teks_indeks", "str_index_of", "teks_indeks"),
+    ("teks_ulang", "str_repeat", "teks_ulang"),
+    ("teks_pad_kiri", "str_pad_left", "teks_pad_kiri"),
+    ("teks_pad_kanan", "str_pad_right", "teks_pad_kanan"),
+    ("teks_baris", "str_lines", "teks_baris"),
 ];
 
 /// Apply a string builtin. Returns Ok(None) if name doesn't match.
@@ -115,6 +119,72 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
             let (s, sub) = extract_pair_strings(arg, "teks_indeks")?;
             let idx = s.find(&sub).map(|i| i as u64).unwrap_or(u64::MAX);
             Ok(Some(Value::Int(idx)))
+        }
+        "teks_ulang" => {
+            // (String, Int) -> String
+            match arg {
+                Value::Pair(s, n) => {
+                    let text = extract_string(s, "teks_ulang")?;
+                    let count = extract_int(n, "teks_ulang")? as usize;
+                    Ok(Some(Value::String(text.repeat(count))))
+                }
+                _ => Err(type_err("(string, int)", arg, "teks_ulang")),
+            }
+        }
+        "teks_pad_kiri" => {
+            // (String, Int, String) -> String
+            // Encoded as (string, (int, string))
+            match arg {
+                Value::Pair(s, params) => {
+                    let text = extract_string(s, "teks_pad_kiri")?;
+                    match params.as_ref() {
+                        Value::Pair(width, pad) => {
+                            let w = extract_int(width, "teks_pad_kiri")? as usize;
+                            let p = extract_string(pad, "teks_pad_kiri")?;
+                            let pad_char = p.chars().next().unwrap_or(' ');
+                            let current = text.chars().count();
+                            if current >= w {
+                                Ok(Some(Value::String(text)))
+                            } else {
+                                let padding: String = std::iter::repeat(pad_char).take(w - current).collect();
+                                Ok(Some(Value::String(format!("{}{}", padding, text))))
+                            }
+                        }
+                        _ => Err(type_err("(string, (int, string))", arg, "teks_pad_kiri")),
+                    }
+                }
+                _ => Err(type_err("(string, (int, string))", arg, "teks_pad_kiri")),
+            }
+        }
+        "teks_pad_kanan" => {
+            // (String, Int, String) -> String
+            match arg {
+                Value::Pair(s, params) => {
+                    let text = extract_string(s, "teks_pad_kanan")?;
+                    match params.as_ref() {
+                        Value::Pair(width, pad) => {
+                            let w = extract_int(width, "teks_pad_kanan")? as usize;
+                            let p = extract_string(pad, "teks_pad_kanan")?;
+                            let pad_char = p.chars().next().unwrap_or(' ');
+                            let current = text.chars().count();
+                            if current >= w {
+                                Ok(Some(Value::String(text)))
+                            } else {
+                                let padding: String = std::iter::repeat(pad_char).take(w - current).collect();
+                                Ok(Some(Value::String(format!("{}{}", text, padding))))
+                            }
+                        }
+                        _ => Err(type_err("(string, (int, string))", arg, "teks_pad_kanan")),
+                    }
+                }
+                _ => Err(type_err("(string, (int, string))", arg, "teks_pad_kanan")),
+            }
+        }
+        "teks_baris" => {
+            // String -> List<String>
+            let s = extract_string(arg, "teks_baris")?;
+            let lines: Vec<Value> = s.lines().map(|l| Value::String(l.to_string())).collect();
+            Ok(Some(Value::List(lines)))
         }
         _ => Ok(None),
     }
@@ -262,5 +332,42 @@ mod tests {
     fn test_teks_indeks() {
         assert_eq!(apply("teks_indeks", &pair_s("hello", "ll")).unwrap(), Some(Value::Int(2)));
         assert_eq!(apply("teks_indeks", &pair_s("hello", "xyz")).unwrap(), Some(Value::Int(u64::MAX)));
+    }
+
+    #[test]
+    fn test_teks_ulang() {
+        let arg = Value::Pair(
+            Box::new(Value::String("ab".to_string())),
+            Box::new(Value::Int(3)),
+        );
+        assert_eq!(apply("teks_ulang", &arg).unwrap(), Some(Value::String("ababab".to_string())));
+    }
+
+    #[test]
+    fn test_teks_pad_kiri() {
+        let arg = Value::Pair(
+            Box::new(Value::String("42".to_string())),
+            Box::new(Value::Pair(Box::new(Value::Int(5)), Box::new(Value::String("0".to_string())))),
+        );
+        assert_eq!(apply("teks_pad_kiri", &arg).unwrap(), Some(Value::String("00042".to_string())));
+    }
+
+    #[test]
+    fn test_teks_pad_kanan() {
+        let arg = Value::Pair(
+            Box::new(Value::String("hi".to_string())),
+            Box::new(Value::Pair(Box::new(Value::Int(5)), Box::new(Value::String(".".to_string())))),
+        );
+        assert_eq!(apply("teks_pad_kanan", &arg).unwrap(), Some(Value::String("hi...".to_string())));
+    }
+
+    #[test]
+    fn test_teks_baris() {
+        let result = apply("teks_baris", &Value::String("a\nb\nc".to_string())).unwrap().unwrap();
+        assert_eq!(result, Value::List(vec![
+            Value::String("a".to_string()),
+            Value::String("b".to_string()),
+            Value::String("c".to_string()),
+        ]));
     }
 }

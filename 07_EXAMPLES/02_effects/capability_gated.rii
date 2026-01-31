@@ -1,0 +1,131 @@
+/// CAPABILITY_GATED.RII - Capability-Gated Effects
+/// Kesan terpintu dengan keupayaan
+/// Demonstrates: effect authorization, capability checks
+
+jenis Keupayaan<T> {
+    hak: T,
+}
+
+jenis HakTulis {
+    ada_tulis: Benar,
+}
+
+jenis HakBaca {
+    ada_baca: Benar,
+}
+
+fungsi buat_keupayaan_tulis() -> Keupayaan<HakTulis> kesan Bersih {
+    /// Buat keupayaan tulis
+    Keupayaan {
+        hak: HakTulis { ada_tulis: betul },
+    }
+}
+
+fungsi buat_keupayaan_baca() -> Keupayaan<HakBaca> kesan Bersih {
+    /// Buat keupayaan baca
+    Keupayaan {
+        hak: HakBaca { ada_baca: betul },
+    }
+}
+
+fungsi tulis_dengan_keupayaan(
+    cap: Keupayaan<HakTulis>,
+    mesej: Teks
+) -> Hasil<Nombor, Teks> kesan (Tulis, Bersih) {
+    /// Tulis hanya jika ada keupayaan
+    kalau cap.hak.ada_tulis {
+        cetak(mesej);
+        cetak("\n");
+        Ok(0)
+    } lain {
+        Ralat("Tiada keupayaan tulis")
+    }
+}
+
+fungsi baca_dengan_keupayaan(
+    cap: Keupayaan<HakBaca>
+) -> Hasil<Teks, Teks> kesan (Baca, Bersih) {
+    /// Baca hanya jika ada keupayaan
+    kalau cap.hak.ada_baca {
+        Ok(baca_garisan())
+    } lain {
+        Ralat("Tiada keupayaan baca")
+    }
+}
+
+fungsi fail_tulis_dengan_keupayaan(
+    cap: Keupayaan<HakTulis>,
+    fail: Teks,
+    kandungan: Teks
+) -> Hasil<Nombor, Teks> kesan (Tulis, SistemFail, Bersih) {
+    /// Tulis fail hanya jika ada keupayaan
+    kalau !cap.hak.ada_tulis {
+        pulang Ralat("Tiada keupayaan tulis ke fail");
+    }
+
+    padan tulis_ke_fail(fail, kandungan) {
+        Ok(_) -> Ok(0),
+        Ralat(e) -> Ralat("Tulis fail gagal"),
+    }
+}
+
+fungsi fail_baca_dengan_keupayaan(
+    cap: Keupayaan<HakBaca>,
+    fail: Teks
+) -> Hasil<Teks, Teks> kesan (Baca, SistemFail, Bersih) {
+    /// Baca fail hanya jika ada keupayaan
+    kalau !cap.hak.ada_baca {
+        pulang Ralat("Tiada keupayaan baca dari fail");
+    }
+
+    padan baca_fail_sepenuhnya(fail) {
+        Ok(kandungan) -> Ok(kandungan),
+        Ralat(e) -> Ralat("Baca fail gagal"),
+    }
+}
+
+fungsi delegasi_keupayaan<T>(
+    cap: Keupayaan<T>
+) -> Keupayaan<T> kesan Bersih {
+    /// Delegasi keupayaan
+    cap
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Baca, SistemFail) {
+    cetak("=== Kesan Terpintu Keupayaan ===\n");
+
+    /// Buat keupayaan
+    biar cap_tulis = buat_keupayaan_tulis();
+    biar cap_baca = buat_keupayaan_baca();
+
+    cetak("Keupayaan dibuat\n");
+
+    /// Gunakan keupayaan tulis
+    padan tulis_dengan_keupayaan(cap_tulis, "Mesej dengan keupayaan") {
+        Ok(_) -> cetak("Tulis berjaya\n"),
+        Ralat(e) -> cetak("Ralat: "),
+    }
+
+    /// Gunakan keupayaan baca
+    padan baca_dengan_keupayaan(cap_baca) {
+        Ok(data) -> {
+            cetak("Dibaca: ");
+            cetak(data);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Ralat baca\n"),
+    }
+
+    /// Tulis fail dengan keupayaan
+    padan fail_tulis_dengan_keupayaan(cap_tulis, "test.txt", "Kandungan") {
+        Ok(_) -> cetak("Tulis fail berjaya\n"),
+        Ralat(e) -> cetak("Ralat tulis fail\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Capability-gated effects prevent unauthorized operations.
+/// Type system enforces capability presence before effect can execute.
+/// Provides fine-grained access control at compile time.

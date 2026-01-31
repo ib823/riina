@@ -1,0 +1,165 @@
+/// RECURSION.RII - Recursive Functions
+/// Fungsi rekursif dalam RIINA
+/// Demonstrates: base case, recursive case, tail recursion, accumulator
+
+fungsi faktorial(n: Nombor) -> Nombor kesan Bersih {
+    /// Kes asas (base case)
+    /// Base case: 0! = 1
+    kalau n == 0 {
+        pulang 1;
+    }
+
+    /// Kes rekursif (recursive case)
+    /// Recursive case: n! = n * (n-1)!
+    pulang n * faktorial(n - 1);
+}
+
+fungsi fibonacci(n: Nombor) -> Nombor kesan Bersih {
+    /// Fibonacci dengan rekursi langsung
+    /// Fibonacci with direct recursion
+    kalau n <= 1 {
+        pulang n;
+    }
+
+    pulang fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fungsi fibonacci_enak(n: Nombor) -> Nombor kesan Bersih {
+    /// Fibonacci dengan akumulator (lebih baik)
+    /// Fibonacci with accumulator (more efficient)
+    fungsi fib_akum(n: Nombor, a: Nombor, b: Nombor) -> Nombor {
+        kalau n == 0 {
+            pulang a;
+        }
+
+        pulang fib_akum(n - 1, b, a + b);
+    }
+
+    pulang fib_akum(n, 0, 1);
+}
+
+fungsi kuasa(asas: Nombor, eksponen: Nombor) -> Nombor kesan Bersih {
+    /// Kuasa dengan rekursi
+    /// Power with recursion
+    kalau eksponen == 0 {
+        pulang 1;
+    }
+
+    pulang asas * kuasa(asas, eksponen - 1);
+}
+
+fungsi kuasa_enak(asas: Nombor, eksponen: Nombor) -> Nombor kesan Bersih {
+    /// Kuasa dengan akumulator (tail recursion)
+    /// Power with accumulator (tail recursive)
+    fungsi kuasa_akum(asas: Nombor, eksponen: Nombor, hasil: Nombor) -> Nombor {
+        kalau eksponen == 0 {
+            pulang hasil;
+        }
+
+        pulang kuasa_akum(asas, eksponen - 1, hasil * asas);
+    }
+
+    pulang kuasa_akum(asas, eksponen, 1);
+}
+
+fungsi panjang_senarai(s: Senarai<Nombor>) -> Nombor kesan Bersih {
+    /// Panjang senarai dengan rekursi
+    /// List length with recursion
+    padan s {
+        [] -> 0,
+        [_] -> 1,
+        [_, ..ekor] -> 1 + panjang_senarai(ekor),
+    }
+}
+
+fungsi jumlah_senarai(s: Senarai<Nombor>) -> Nombor kesan Bersih {
+    /// Jumlah unsur dengan rekursi
+    /// Sum of elements with recursion
+    padan s {
+        [] -> 0,
+        [x] -> x,
+        [x, ..ekor] -> x + jumlah_senarai(ekor),
+    }
+}
+
+fungsi balik_senarai(s: Senarai<Nombor>) -> Senarai<Nombor> kesan Bersih {
+    /// Balik senarai dengan rekursi
+    /// Reverse list with recursion
+    fungsi balik_akum(s: Senarai<Nombor>, akum: Senarai<Nombor>) -> Senarai<Nombor> {
+        padan s {
+            [] -> akum,
+            [x, ..ekor] -> balik_akum(ekor, [x] + akum),
+        }
+    }
+
+    pulang balik_akum(s, []);
+}
+
+fungsi cari_dalam_senarai(s: Senarai<Nombor>, cari: Nombor) -> Benar kesan Bersih {
+    /// Cari elemen dalam senarai
+    /// Search element in list
+    padan s {
+        [] -> salah,
+        [x, ..ekor] kalau x == cari -> betul,
+        [x, ..ekor] -> cari_dalam_senarai(ekor, cari),
+    }
+}
+
+fungsi pohon_kedalaman_pertama(n: Nombor) -> Nombor kesan Tulis {
+    /// Traversal pohon (depth-first) dengan rekursi
+    /// Tree traversal (depth-first) with recursion
+    kalau n == 0 {
+        pulang 0;
+    }
+
+    cetak("Nod: ");
+    cetak(n);
+    cetak("\n");
+
+    /// Rekursi pada anak-anak (simplified)
+    pohon_kedalaman_pertama(n - 1);
+
+    pulang 0;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("Faktorial 5: ");
+    cetak(faktorial(5));
+    cetak("\n");
+
+    cetak("Fibonacci 10: ");
+    cetak(fibonacci(10));
+    cetak("\n");
+
+    cetak("Fibonacci enak 10: ");
+    cetak(fibonacci_enak(10));
+    cetak("\n");
+
+    cetak("Kuasa 2^8: ");
+    cetak(kuasa(2, 8));
+    cetak("\n");
+
+    cetak("Kuasa enak 2^8: ");
+    cetak(kuasa_enak(2, 8));
+    cetak("\n");
+
+    biar senarai = [1, 2, 3, 4, 5];
+    cetak("Panjang: ");
+    cetak(panjang_senarai(senarai));
+    cetak("\n");
+
+    cetak("Jumlah: ");
+    cetak(jumlah_senarai(senarai));
+    cetak("\n");
+
+    cetak("Cari 3: ");
+    cetak(cari_dalam_senarai(senarai, 3));
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Recursive functions call themselves.
+/// Base case must exist to prevent infinite recursion.
+/// Tail recursion can be optimized to loops by compiler.
+/// Accumulators improve efficiency for tail-recursive functions.

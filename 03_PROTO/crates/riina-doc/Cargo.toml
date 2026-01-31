@@ -1,0 +1,12 @@
+[package]
+name = "riina-doc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA documentation generator"
+
+[dependencies]
+riina-types.workspace = true
+riina-lexer.workspace = true
+riina-parser.workspace = true

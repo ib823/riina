@@ -1,0 +1,58 @@
+/// phantom_types.rii
+/// Phantom types pattern for type-level state without runtime cost
+/// Demonstrates zero-cost abstractions
+
+modul jenis_phantom;
+
+guna std::teks;
+
+/// Phantom type parameters (not used in data)
+jenis Belum_Disahkan;
+jenis Disahkan;
+jenis Dienkripsi;
+
+/// Value with phantom type state
+jenis KataLaluan<State> = {
+    nilai: Teks,
+};
+
+/// Create unverified password
+fungsi cipta_katalaluan(nilai: Teks) -> KataLaluan<Belum_Disahkan> kesan Bersih {
+    cetak_baris(format!("Cipta kata laluan: {} (belum disahkan)", nilai));
+    pulang { nilai: nilai };
+}
+
+/// Verify password (state transition)
+fungsi sahkan_katalaluan(kata: KataLaluan<Belum_Disahkan>) -> KataLaluan<Disahkan> kesan Bersih {
+    cetak_baris("Menyahkan kata laluan...");
+    kalau panjang(kata.nilai) >= 8 {
+        cetak_baris("Kata laluan sah (8+ karakter)");
+        pulang { nilai: kata.nilai };
+    }
+    cetak_baris("Peringatan: Kata laluan pendek");
+    pulang { nilai: kata.nilai };
+}
+
+/// Encrypt password (final state)
+fungsi enkripsi_katalaluan(kata: KataLaluan<Disahkan>) -> KataLaluan<Dienkripsi> kesan Bersih {
+    cetak_baris("Mengenkripsi kata laluan...");
+    pulang { nilai: "***" };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== JENIS PHANTOM ===\n");
+
+    biar kata1 = cipta_katalaluan("MyPassword123");
+    biar kata2 = sahkan_katalaluan(kata1);
+    biar kata3 = enkripsi_katalaluan(kata2);
+
+    cetak_baris("Aliran keadaan selesai");
+}
+
+fungsi panjang(t: Teks) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

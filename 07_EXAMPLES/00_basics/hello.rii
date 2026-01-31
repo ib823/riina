@@ -1,0 +1,18 @@
+/// HELLO.RII - Hello World
+/// Contoh paling mudah dalam RIINA - mencetak ke konsol
+/// Demonstrates: basic I/O, simple expressions
+
+fungsi utama() -> Nombor kesan Tulis {
+    /// Cetak mesej sambutan
+    /// Print greeting message to console
+    cetak("Selamat pagi, dunia!");
+
+    /// Pulang nilai 0 untuk berjaya
+    /// Return 0 for success (exit code)
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: This file demonstrates pure I/O with the Tulis effect.
+/// The `fungsi utama()` is the entry point, similar to `main()` in C/Rust.
+/// `kesan Tulis` declares that this function performs output.
+/// `cetak(...)` is a builtin that outputs to stdout.

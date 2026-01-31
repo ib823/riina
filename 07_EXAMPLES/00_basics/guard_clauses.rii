@@ -1,0 +1,152 @@
+/// GUARD_CLAUSES.RII - Guard Clauses and Assertions
+/// Klausa penjaga (guard) untuk validasi input
+/// Demonstrates: pastikan (guard), preconditions, assertions
+
+fungsi bahagi_dengan_penjaga(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    /// Penjaga untuk pastikan y tidak sifar
+    /// Guard to ensure y is not zero
+    pastikan y != 0 "Pembahagi tidak boleh sifar";
+
+    pulang x / y;
+}
+
+fungsi ambil_elemen_aman(senarai: Senarai<Nombor>, indeks: Nombor) -> Mungkin<Nombor> kesan Bersih {
+    /// Penjaga untuk pastikan indeks sah
+    /// Guard to ensure index is valid
+    pastikan indeks >= 0 "Indeks tidak boleh negatif";
+    pastikan indeks < senarai.panjang() "Indeks melebihi batas";
+
+    pulang Ada(senarai[indeks]);
+}
+
+fungsi log_dengan_penjaga(n: Nombor) -> Nombor kesan Bersih {
+    /// Penjaga untuk log (hanya untuk positif)
+    /// Guard for logarithm (only positive)
+    pastikan n > 0 "Log hanya untuk nombor positif";
+
+    /// Log calculation (simplified)
+    pulang 0;
+}
+
+fungsi tukar_elemen(ubah senarai: Senarai<Nombor>, indeks: Nombor, nilai: Nombor) -> Nombor kesan Bersih {
+    /// Penjaga untuk verifikasi indeks
+    /// Guard to verify index
+    pastikan indeks >= 0 "Indeks tidak boleh negatif";
+    pastikan indeks < senarai.panjang() "Indeks melebihi batas";
+
+    senarai = senarai;  /// Update (simplified)
+    pulang nilai;
+}
+
+fungsi cek_umur_sah(umur: Nombor) -> Benar kesan Bersih {
+    /// Penjaga untuk umur yang munasabah
+    /// Guard for reasonable age
+    pastikan umur >= 0 "Umur tidak boleh negatif";
+    pastikan umur <= 150 "Umur terlalu tinggi";
+
+    pulang betul;
+}
+
+fungsi operasi_dengan_keadaan(x: Nombor, y: Nombor, mod: Teks) -> Nombor kesan Bersih {
+    /// Penjaga pelbagai dalam keadaan
+    /// Multiple guards in conditions
+    padan mod {
+        "tambah" -> {
+            pastikan x >= 0 "x mesti bukan negatif";
+            pastikan y >= 0 "y mesti bukan negatif";
+            pulang x + y;
+        },
+        "bahagi" -> {
+            pastikan x >= 0 "x mesti bukan negatif";
+            pastikan y > 0 "y mesti positif";
+            pulang x / y;
+        },
+        _ -> {
+            pastikan salah "Mod tidak sah";
+            pulang 0;
+        },
+    }
+}
+
+fungsi proses_data_dengan_penjaga(
+    nama: Teks,
+    umur: Nombor,
+    emel: Teks
+) -> Benar kesan Bersih {
+    /// Penjaga bersarang untuk validasi data
+    /// Nested guards for data validation
+    pastikan nama != "" "Nama tidak boleh kosong";
+
+    kalau nama.panjang() > 100 {
+        pastikan salah "Nama terlalu panjang";
+    }
+
+    pastikan umur > 0 "Umur mesti positif";
+    pastikan umur < 150 "Umur mesti munasabah";
+
+    pastikan emel.ada("@") "Emel mesti mengandungi @";
+    pastikan emel.ada(".") "Emel mesti mempunyai domain";
+
+    pulang betul;
+}
+
+fungsi fungsi_dengan_penjaga_awal(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    /// Penjaga awal - keluar terus jika tidak memenuhi
+    /// Early guard - exit immediately if condition not met
+    pastikan x > 0 "x mesti positif";
+    pastikan y > 0 "y mesti positif";
+
+    /// Jika tiba di sini, x dan y dijamin positif
+    /// If we reach here, x and y are guaranteed positive
+    pulang x + y;
+}
+
+fungsi panjang_teks_sah(t: Teks) -> Nombor kesan Bersih {
+    /// Penjaga untuk teks bukan kosong
+    /// Guard for non-empty text
+    pastikan t != "" "Teks tidak boleh kosong";
+    pastikan t.panjang() <= 1000 "Teks terlalu panjang";
+
+    pulang t.panjang();
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    /// Contoh 1: Bahagi dengan penjaga
+    /// Example 1: Division with guard
+    kalau bahagi_dengan_penjaga(10, 2) == 5 {
+        cetak("Bahagi berjaya\n");
+    }
+
+    /// Contoh 2: Ambil elemen aman
+    /// Example 2: Safe element retrieval
+    biar senarai = [1, 2, 3, 4, 5];
+    padan ambil_elemen_aman(senarai, 0) {
+        Ada(n) -> {
+            cetak("Elemen: ");
+            cetak(n);
+            cetak("\n");
+        },
+        Tidak -> {
+            cetak("Indeks tidak sah\n");
+        },
+    }
+
+    /// Contoh 3: Cek umur
+    /// Example 3: Check age
+    kalau cek_umur_sah(25) {
+        cetak("Umur sah\n");
+    }
+
+    /// Contoh 4: Proses data
+    /// Example 4: Process data
+    kalau proses_data_dengan_penjaga("Ahmad", 25, "ahmad@example.com") {
+        cetak("Data sah\n");
+    }
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: pastikan (guard/require) for preconditions.
+/// Guard statement: pastikan condition "error message";
+/// Assertion fails program execution with error message if condition false.
+/// Used to validate function preconditions and invariants.

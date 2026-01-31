@@ -1,0 +1,224 @@
+/// rate_limiter.rii
+/// Rate limiting implementation using token bucket algorithm
+/// Demonstrates Masa effect for time-based operations
+///
+/// Features:
+/// - Token bucket rate limiting
+/// - Per-user/endpoint quotas
+/// - Configurable refill rates
+/// - Reject excess requests
+
+modul pembatas_kadar;
+
+guna std::masa;
+guna std::teks;
+guna std::senarai;
+
+jenis KonfigurBatas = {
+    kapasitas_maksimal: Nombor,
+    kadar_isi_semula: Nombor, // tokens per second
+    tempoh_jendela_saat: Nombor,
+};
+
+jenis LadangToken = {
+    id_klien: Teks,
+    token_sedia: Nombor,
+    masa_isi_semula_terakhir: Nombor,
+    konfigur: KonfigurBatas,
+};
+
+jenis HasilPemeriksaan =
+    | DibenarkanTokens(Nombor)
+    | DihadMelebihi(Nombor); // tokens required
+
+/// Global rate limiters per client
+biar ubah ladang_token: Senarai<LadangToken> = [];
+
+/// Initialize rate limiter for client
+fungsi inisialisasi_klien(id_klien: Teks, konfigur: KonfigurBatas) -> kesan Bersih {
+    biar ladang_baru = {
+        id_klien: id_klien,
+        token_sedia: konfigur.kapasitas_maksimal,
+        masa_isi_semula_terakhir: Masa::masa_unix(),
+        konfigur: konfigur,
+    };
+
+    ladang_token = ladang_token + [ladang_baru];
+}
+
+/// Refill tokens based on elapsed time
+fungsi isi_semula_token(ubah ladang: LadangToken) -> kesan Masa {
+    biar masa_sekarang = Masa::masa_unix();
+    biar masa_berlalu = masa_sekarang - ladang.masa_isi_semula_terakhir;
+
+    biar token_diisi = masa_berlalu * ladang.konfigur.kadar_isi_semula;
+    biar token_baru = ladang.token_sedia + token_diisi;
+
+    // Cap at maximum
+    kalau token_baru > ladang.konfigur.kapasitas_maksimal {
+        ladang.token_sedia = ladang.konfigur.kapasitas_maksimal;
+    } lain {
+        ladang.token_sedia = token_baru;
+    }
+
+    ladang.masa_isi_semula_terakhir = masa_sekarang;
+}
+
+/// Check if request is allowed
+/// Kesan: Masa (checks current time)
+fungsi semak_had(id_klien: Teks, token_diperlukan: Nombor) -> HasilPemeriksaan kesan Masa {
+    biar mungkin_ladang = cari_ladang(id_klien);
+
+    padan mungkin_ladang {
+        Ada(ladang) => {
+            // Refill tokens first
+            isi_semula_token(ladang);
+
+            kalau ladang.token_sedia >= token_diperlukan {
+                // Allow request
+                ladang.token_sedia = ladang.token_sedia - token_diperlukan;
+                pulang DibenarkanTokens(token_diperlukan);
+            } lain {
+                // Rate limited
+                pulang DihadMelebihi(token_diperlukan);
+            }
+        },
+        Tiada => {
+            // Client not found - could auto-initialize
+            pulang DihadMelebihi(token_diperlukan);
+        },
+    };
+}
+
+/// Find ladang for client
+fungsi cari_ladang(id_klien: Teks) -> Mungkin<LadangToken> kesan Bersih {
+    untuk ladang dalam ladang_token {
+        kalau ladang.id_klien == id_klien {
+            pulang Ada(ladang);
+        }
+    }
+
+    pulang Tiada;
+}
+
+/// Get remaining tokens for client
+fungsi dapat_token_sedia(id_klien: Teks) -> Mungkin<Nombor> kesan Bersih {
+    biar mungkin_ladang = cari_ladang(id_klien);
+
+    padan mungkin_ladang {
+        Ada(ladang) => Ada(ladang.token_sedia),
+        Tiada => Tiada,
+    };
+}
+
+/// Get reset time for client
+fungsi dapat_masa_set_semula(id_klien: Teks) -> Mungkin<Nombor> kesan Bersih {
+    biar mungkin_ladang = cari_ladang(id_klien);
+
+    padan mungkin_ladang {
+        Ada(ladang) => {
+            biar token_untuk_isi_penuh = ladang.konfigur.kapasitas_maksimal - ladang.token_sedia;
+            biar saat_diperlukan = token_untuk_isi_penuh / ladang.konfigur.kadar_isi_semula;
+            pulang Ada(saat_diperlukan);
+        },
+        Tiada => Tiada,
+    };
+}
+
+/// API endpoint handler with rate limiting
+fungsi uruskan_permintaan_api(id_klien: Teks, laluan: Teks) -> Mungkin<Teks> kesan Masa {
+    // Check rate limit
+    biar hasil = semak_had(id_klien, 1);
+
+    padan hasil {
+        DibenarkanTokens(_) => {
+            // Process request
+            padan laluan {
+                "/data/senarai" => {
+                    pulang Ada("{\"senarai\":[1,2,3]}");
+                },
+                "/data/perincian" => {
+                    pulang Ada("{\"nama\":\"Ahmad\",\"umur\":30}");
+                },
+                "/tindakan/kemaskini" => {
+                    pulang Ada("{\"berjaya\":true}");
+                },
+                _ => {
+                    pulang Ada("{\"ralat\":\"Laluan tidak ditemui\"}");
+                },
+            };
+        },
+        DihadMelebihi(diperlukan) => {
+            biar saat_tunggu = dapat_masa_set_semula(id_klien);
+            padan saat_tunggu {
+                Ada(saat) => {
+                    pulang Ada(format!("{{\"ralat\":\"Kadar melebihi\",\"tunggu_saat\":{}}}", saat));
+                },
+                Tiada => {
+                    pulang Ada("{\"ralat\":\"Kadar melebihi\"}");
+                },
+            };
+        },
+    };
+}
+
+/// Distributed rate limiter example
+awam fungsi utama() -> kesan Masa {
+    cetak_baris("=== PEMBATAS KADAR PERMINTAAN ===");
+
+    // Configure rate limits
+    biar konfigur_standard = {
+        kapasitas_maksimal: 100,      // 100 requests max
+        kadar_isi_semula: 10,         // 10 requests per second
+        tempoh_jendela_saat: 1,       // 1 second window
+    };
+
+    // Initialize clients
+    inisialisasi_klien("klien_a", konfigur_standard);
+    inisialisasi_klien("klien_b", konfigur_standard);
+
+    // Simulate requests
+    untuk i dari 1 hingga 5 {
+        biar hasil_a = semak_had("klien_a", 1);
+        biar hasil_b = semak_had("klien_b", 1);
+
+        padan hasil_a {
+            DibenarkanTokens(_) => {
+                cetak_baris(format!("Permintaan {} dari klien_a: Dibenarkan", i));
+            },
+            DihadMelebihi(_) => {
+                cetak_baris(format!("Permintaan {} dari klien_a: Dihadkan", i));
+            },
+        };
+
+        padan hasil_b {
+            DibenarkanTokens(_) => {
+                cetak_baris(format!("Permintaan {} dari klien_b: Dibenarkan", i));
+            },
+            DihadMelebihi(_) => {
+                cetak_baris(format!("Permintaan {} dari klien_b: Dihadkan", i));
+            },
+        };
+
+        // Small delay between requests
+        Masa::rehat_ms(50);
+    }
+
+    // Show remaining tokens
+    biar baki_a = dapat_token_sedia("klien_a");
+    biar baki_b = dapat_token_sedia("klien_b");
+
+    cetak_baris(format!("Token sedia - Klien A: {}, Klien B: {}", taraf_baki(baki_a), taraf_baki(baki_b)));
+}
+
+// Helper functions
+fungsi taraf_baki(mungkin: Mungkin<Nombor>) -> Teks kesan Bersih {
+    padan mungkin {
+        Ada(n) => format!("{}", n),
+        Tiada => "Tidak diketahui",
+    };
+}
+
+fungsi format(s: Teks, args: Senarai<Teks>) -> Teks kesan Bersih {
+    pulang s;
+}

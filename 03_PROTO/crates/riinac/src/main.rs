@@ -7,7 +7,9 @@
 
 #![forbid(unsafe_code)]
 
+mod diagnostics;
 mod repl;
+mod verify;
 
 use std::fs;
 use std::path::PathBuf;
@@ -24,6 +26,11 @@ enum Command {
     EmitC,
     EmitIR,
     Repl,
+    Fmt,
+    Doc,
+    Lsp,
+    Verify(verify::Mode),
+    Pkg(Vec<String>),
 }
 
 fn usage() -> ! {
@@ -35,16 +42,47 @@ fn usage() -> ! {
     eprintln!("  build    Parse, typecheck, emit C, and compile");
     eprintln!("  emit-c   Parse, typecheck, and emit C to stdout");
     eprintln!("  emit-ir  Parse, typecheck, lower, and print IR");
+    eprintln!("  doc      Generate HTML documentation");
+    eprintln!("  fmt      Format a .rii file");
+    eprintln!("  lsp      Start LSP server (stdio)");
     eprintln!("  repl     Interactive read-eval-print loop");
+    eprintln!("  verify   Run verification gate [--fast|--full]");
+    eprintln!("  pkg      Package manager (init/add/remove/lock/build/...)");
     process::exit(1);
 }
 
 fn parse_args() -> (Command, Option<PathBuf>) {
     let args: Vec<String> = std::env::args().collect();
+
+    // Handle pkg early — it takes subcommands, not a file
+    if args.len() >= 2 && args[1] == "pkg" {
+        return (Command::Pkg(args[2..].to_vec()), None);
+    }
+
+    // Handle verify early — it takes flags, not a file
+    if args.len() >= 2 && args[1] == "verify" {
+        let mode = if args.len() >= 3 {
+            match args[2].as_str() {
+                "--fast" => verify::Mode::Fast,
+                "--full" => verify::Mode::Full,
+                other => {
+                    eprintln!("Unknown verify flag: {other}");
+                    usage();
+                }
+            }
+        } else {
+            verify::Mode::Fast
+        };
+        return (Command::Verify(mode), None);
+    }
+
     match args.len() {
         2 => {
             if args[1] == "repl" {
                 return (Command::Repl, None);
+            }
+            if args[1] == "lsp" {
+                return (Command::Lsp, None);
             }
             // riinac <file.rii> — default to check (backwards compat)
             (Command::Check, Some(PathBuf::from(&args[1])))
@@ -56,8 +94,14 @@ fn parse_args() -> (Command, Option<PathBuf>) {
                 "build" => Command::Build,
                 "emit-c" => Command::EmitC,
                 "emit-ir" => Command::EmitIR,
+                "doc" => Command::Doc,
+                "fmt" => Command::Fmt,
                 "repl" => {
                     eprintln!("repl does not take a file argument");
+                    usage();
+                }
+                "lsp" => {
+                    eprintln!("lsp does not take a file argument");
                     usage();
                 }
                 other => {
@@ -79,6 +123,26 @@ fn main() {
         return;
     }
 
+    if let Command::Lsp = command {
+        if let Err(e) = riina_lsp::server::run() {
+            eprintln!("LSP error: {e}");
+            process::exit(1);
+        }
+        return;
+    }
+
+    if let Command::Verify(mode) = command {
+        process::exit(verify::run(mode));
+    }
+
+    if let Command::Pkg(ref pkg_args) = command {
+        if let Err(e) = riina_pkg::cli::run(pkg_args) {
+            eprintln!("pkg error: {e}");
+            process::exit(1);
+        }
+        return;
+    }
+
     let input = input.expect("file path required");
     let source = match fs::read_to_string(&input) {
         Ok(s) => s,
@@ -88,12 +152,16 @@ fn main() {
         }
     };
 
-    // 1. Parse
+    let filename = input.display().to_string();
+
+    // 1. Parse program (top-level declarations) and desugar to expression
     let mut parser = Parser::new(&source);
-    let expr = match parser.parse_expr() {
-        Ok(e) => e,
+    let expr = match parser.parse_program() {
+        Ok(program) => program.desugar(),
         Err(e) => {
-            eprintln!("Parse Error: {:?}", e);
+            eprintln!("{}", diagnostics::format_diagnostic(
+                &source, &e.span, &e.to_string(), &filename
+            ));
             process::exit(1);
         }
     };
@@ -103,7 +171,7 @@ fn main() {
     let (ty, eff) = match type_check(&ctx, &expr) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("Type Error: {}", e);
+            eprintln!("error: {}", e);
             process::exit(1);
         }
     };
@@ -190,6 +258,31 @@ fn main() {
                 }
             }
         }
+        Command::Fmt => {
+            match riina_fmt::format_source(&source) {
+                Ok(formatted) => print!("{formatted}"),
+                Err(e) => {
+                    eprintln!("Format error: {e}");
+                    process::exit(1);
+                }
+            }
+        }
+        Command::Doc => {
+            let title = input
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("RIINA");
+            match riina_doc::generate_from_source(title, &source) {
+                Ok(html) => print!("{html}"),
+                Err(e) => {
+                    eprintln!("Doc error: {e}");
+                    process::exit(1);
+                }
+            }
+        }
         Command::Repl => unreachable!("handled above"),
+        Command::Lsp => unreachable!("handled above"),
+        Command::Verify(_) => unreachable!("handled above"),
+        Command::Pkg(_) => unreachable!("handled above"),
     }
 }

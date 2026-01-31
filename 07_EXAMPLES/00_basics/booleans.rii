@@ -1,0 +1,61 @@
+/// BOOLEANS.RII - Boolean Operations and Logic
+/// Operasi logik dalam RIINA menggunakan betul/salah
+/// Demonstrates: true/false, &&, ||, !, comparisons
+
+fungsi operasiLogik() -> Benar kesan Bersih {
+    /// Nilai boolean asli
+    /// Native boolean values
+    biar betulnya = betul;           /// true
+    biar salahnya = salah;            /// false
+
+    /// Operasi AND (&&)
+    biar dan = betul && betul;        /// true
+    biar danFalse = betul && salah;   /// false
+
+    /// Operasi OR (||)
+    biar atau = betul || salah;       /// true
+    biar auSemua = salah || salah;    /// false
+
+    /// Operasi NOT (!)
+    biar tidak = !betul;              /// false
+    biar tidakFalse = !salah;         /// true
+
+    pulang betul;
+}
+
+fungsi perbandingan() -> Benar kesan Bersih {
+    biar x = 5;
+    biar y = 10;
+
+    /// Sama dengan
+    biar samadengan = x == y;         /// false
+
+    /// Tidak sama dengan
+    biar tidakSama = x != y;          /// true
+
+    /// Lebih besar
+    biar lebihBesar = x > y;          /// false
+
+    /// Lebih kecil
+    biar lebihKecil = x < y;          /// true
+
+    /// Lebih besar atau sama
+    biar lebihBesarSama = x >= y;     /// false
+
+    /// Lebih kecil atau sama
+    biar lebihKecilSama = x <= y;     /// true
+
+    pulang lebihKecilSama;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil = operasiLogik();
+    cetak("Boolean result: ");
+    cetak(hasil);
+    cetak("\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: betul/salah are keywords for true/false.
+/// Logical operators: && (and), || (or), ! (not)
+/// Comparison operators work on all comparable types.

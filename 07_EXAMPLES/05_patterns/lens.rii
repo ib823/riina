@@ -1,0 +1,101 @@
+/// lens.rii
+/// Lens pattern for functional updates to nested data
+/// Demonstrates composition of getters and setters
+
+modul corak_binaan;
+
+guna std::teks;
+
+/// Lens definition
+jenis Binaan<S, T> = {
+    dapat: S -> T,
+    tetapkan: (T, S) -> S,
+};
+
+/// Person with Address
+jenis Alamat = {
+    jalan: Teks,
+    bandar: Teks,
+    negeri: Teks,
+};
+
+jenis Orang = {
+    nama: Teks,
+    umur: Nombor,
+    alamat: Alamat,
+};
+
+/// Create lenses
+fungsi lens_alamat() -> Binaan<Orang, Alamat> kesan Bersih {
+    pulang {
+        dapat: fungi(orang: Orang) -> Alamat { orang.alamat },
+        tetapkan: fungi(alamat_baru: Alamat, orang: Orang) -> Orang {
+            {
+                nama: orang.nama,
+                umur: orang.umur,
+                alamat: alamat_baru,
+            }
+        },
+    };
+}
+
+fungsi lens_bandar() -> Binaan<Alamat, Teks> kesan Bersih {
+    pulang {
+        dapat: fungi(alamat: Alamat) -> Teks { alamat.bandar },
+        tetapkan: fungi(bandar_baru: Teks, alamat: Alamat) -> Alamat {
+            {
+                jalan: alamat.jalan,
+                bandar: bandar_baru,
+                negeri: alamat.negeri,
+            }
+        },
+    };
+}
+
+/// Compose lenses
+fungsi gubah_binaan<A, B, C>(
+    lens1: Binaan<A, B>,
+    lens2: Binaan<B, C>
+) -> Binaan<A, C> kesan Bersih {
+    pulang {
+        dapat: fungi(a: A) -> C {
+            biar b = lens1.dapat(a);
+            lens2.dapat(b);
+        },
+        tetapkan: fungi(c_baru: C, a: A) -> A {
+            biar b = lens1.dapat(a);
+            biar b_baru = lens2.tetapkan(c_baru, b);
+            lens1.tetapkan(b_baru, a);
+        },
+    };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK BINAAN ===\n");
+
+    biar orang_asal = {
+        nama: "Ahmad",
+        umur: 30,
+        alamat: {
+            jalan: "Jalan Merdeka",
+            bandar: "Kuala Lumpur",
+            negeri: "Selangor",
+        },
+    };
+
+    // Compose lenses: orang -> alamat -> bandar
+    biar lens_A = lens_alamat();
+    biar lens_B = lens_bandar();
+    biar lens_gubahan = gubah_binaan(lens_A, lens_B);
+
+    biar bandar_semasa = lens_gubahan.dapat(orang_asal);
+    cetak_baris(format!("Bandar semasa: {}", bandar_semasa));
+
+    biar orang_baru = lens_gubahan.tetapkan("Shah Alam", orang_asal);
+    biar bandar_baru = lens_gubahan.dapat(orang_baru);
+    cetak_baris(format!("Bandar baru: {}", bandar_baru));
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

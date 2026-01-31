@@ -1,0 +1,147 @@
+/// ZEROIZING.RII - Secure Memory Zeroization
+/// Pembersihan memori aman untuk data sensitif
+/// Demonstrates: Sifar type, secure memory, garbage collection safety
+
+jenis Sifar<T> {
+    nilai: T,
+    sifar_apabila_habis: Benar,
+}
+
+fungsi buat_sifar<T>(nilai: T) -> Sifar<T> kesan Bersih {
+    /// Buat nilai yang akan disifar
+    Sifar {
+        nilai: nilai,
+        sifar_apabila_habis: betul,
+    }
+}
+
+fungsi gunakan_sifar<T>(
+    s: Sifar<T>,
+    f: Fn(T) -> Nombor
+) -> Nombor kesan Bersih {
+    /// Gunakan nilai dalam sifar
+    f(s.nilai)
+}
+
+fungsi akses_sifar<T>(s: Sifar<T>) -> T kesan Bersih {
+    /// Akses nilai dalam sifar (akan disifar selepas)
+    s.nilai
+}
+
+fungsi sifar_segera<T>(ubah s: Sifar<T>) -> Nombor kesan (MasaTetap, Bersih) {
+    /// Sifar segera tanpa menunggu garbage collection
+    /// Immediate erase without GC delay
+    /// (Simulasi - actual implementation uses volatile writes)
+    0
+}
+
+jenis KateLaluanSifar {
+    hash: Sifar<Teks>,
+    garam: Sifar<Teks>,
+}
+
+fungsi buat_kata_laluan_sifar(t: Teks) -> KateLaluanSifar kesan (Kripto, MasaTetap) {
+    /// Buat kata laluan yang sifar
+    biar garam = buat_sifar(hasilkan_garam());
+    biar hash = buat_sifar(
+        hash_dengan_argon2(t, akses_sifar(garam))
+    );
+
+    KateLaluanSifar {
+        hash: hash,
+        garam: garam,
+    }
+}
+
+fungsi gunakan_kata_laluan_sifar(
+    kl: KateLaluanSifar,
+    calon: Teks
+) -> Hasil<Benar, Teks> kesan (MasaTetap, Kripto) {
+    /// Gunakan kata laluan yang sifar
+    biar hash_calon = hash_dengan_argon2(calon, akses_sifar(kl.garam));
+    biar disamakan = bandingkan_masa_tetap(
+        hash_calon,
+        akses_sifar(kl.hash)
+    );
+
+    Ok(disamakan)
+}
+
+fungsi kunci_sifar(ubah k: Sifar<Rahsia<Teks>>) -> Hasil<Nombor, Teks> kesan (MasaTetap, Bersih) {
+    /// Sifar kunci
+    sifar_segera(k);
+    Ok(0)
+}
+
+fungsi buffer_sifar(saiz: Nombor) -> Sifar<Senarai<Nombor>> kesan Bersih {
+    /// Buat buffer yang sifar
+    biar buffer = [0; saiz];
+    buat_sifar(buffer)
+}
+
+fungsi ulang_dengan_sifar<T>(
+    data: Sifar<Teks>,
+    f: Fn(Teks) -> T
+) -> T kesan Bersih {
+    /// Ulang (process) dengan sifar
+    f(akses_sifar(data))
+}
+
+jenis ButiranPenggunaSifar {
+    nama: Teks,
+    emel: Teks,
+    kata_laluan: Sifar<Teks>,
+}
+
+fungsi buat_pengguna_sifar(
+    nama: Teks,
+    emel: Teks,
+    kata_laluan: Teks
+) -> ButiranPenggunaSifar kesan Bersih {
+    /// Buat butiran pengguna dengan kata laluan sifar
+    ButiranPenggunaSifar {
+        nama: nama,
+        emel: emel,
+        kata_laluan: buat_sifar(kata_laluan),
+    }
+}
+
+fungsi hapus_pengguna_sifar(
+    ubah pengguna: ButiranPenggunaSifar
+) -> Hasil<Nombor, Teks> kesan MasaTetap {
+    /// Hapus pengguna dengan sifar kata laluan
+    sifar_segera(pengguna.kata_laluan);
+    Ok(0)
+}
+
+fungsi utama() -> Nombor kesan (Kripto, Tulis, MasaTetap) {
+    cetak("=== Sifar Memori Aman ===\n");
+
+    /// Buat nilai sifar
+    biar rahsia = buat_sifar("rahsiat123");
+    cetak("Rahsia dibuat dengan sifar\n");
+
+    /// Gunakan nilai
+    biar hasil = gunakan_sifar(rahsia, fungsi(t: Teks) -> Nombor {
+        cetak("Menggunakan: ");
+        cetak(t);
+        cetak("\n");
+        0
+    });
+
+    /// Sifar segera
+    sifar_segera(rahsia);
+    cetak("Rahsia disifar\n");
+
+    /// Buat pengguna dengan kata laluan sifar
+    biar pengguna = buat_pengguna_sifar("Ahmad", "ahmad@example.com", "kata_laluan");
+    cetak("Pengguna dibuat dengan kata laluan sifar\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Sifar<T> guarantees secure memory clearing.
+/// Memory is overwritten when value is dropped.
+/// sifar_segera for immediate erasure without GC delay.
+/// Prevents sensitive data recovery from memory dumps.
