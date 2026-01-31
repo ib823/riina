@@ -82,6 +82,23 @@ impl<'a> Parser<'a> {
                 self.consume(TokenKind::Semi)?;
                 self.parse_top_level_decl()
             }
+            Some(TokenKind::KwStruct) | Some(TokenKind::KwEnum) => {
+                // bentuk/pilihan — skip declaration (no struct/enum semantics yet)
+                self.next(); // consume KwStruct or KwEnum
+                let _name = self.parse_ident()?;
+                self.consume(TokenKind::LBrace)?;
+                // Skip until matching RBrace
+                let mut depth = 1u32;
+                while depth > 0 {
+                    match self.peek().map(|t| &t.kind) {
+                        Some(TokenKind::LBrace) => { self.next(); depth += 1; }
+                        Some(TokenKind::RBrace) => { self.next(); depth -= 1; }
+                        None => break,
+                        _ => { self.next(); }
+                    }
+                }
+                self.parse_top_level_decl()
+            }
             Some(TokenKind::KwPub) => {
                 // awam fungsi ... — consume visibility, delegate
                 self.consume(TokenKind::KwPub)?;
@@ -241,6 +258,8 @@ impl<'a> Parser<'a> {
                 }
             }
             Some(TokenKind::KwFor) => self.parse_for_in(),
+            Some(TokenKind::KwWhile) => self.parse_while(),
+            Some(TokenKind::KwLoop) => self.parse_loop(),
             _ => self.parse_pipe(),
         }
     }
@@ -262,6 +281,38 @@ impl<'a> Parser<'a> {
             Box::new(Expr::App(Box::new(Expr::Var("map".into())), Box::new(lam))),
             Box::new(iter),
         ))
+    }
+
+    /// Parse while loop:
+    ///   selagi cond { body }
+    /// Desugars to: If(cond, Let("_", body, while_again), Unit)
+    /// Since we don't have Fix/recursion, we desugar to a bounded
+    /// representation the interpreter can handle via recursive eval.
+    fn parse_while(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwWhile)?;
+        let cond = self.parse_pipe()?;
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        // Desugar: selagi cond { body } → if cond { body; () } else { () }
+        // Full looping requires runtime support; for now emit single-iteration conditional
+        Ok(Expr::If(
+            Box::new(cond),
+            Box::new(Expr::Let("_".to_string(), Box::new(body), Box::new(Expr::Unit))),
+            Box::new(Expr::Unit),
+        ))
+    }
+
+    /// Parse infinite loop:
+    ///   ulang { body }
+    /// Desugars to: selagi betul { body }
+    fn parse_loop(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwLoop)?;
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        // Desugar: ulang { body } → body; () (single iteration for now)
+        Ok(Expr::Let("_".to_string(), Box::new(body), Box::new(Expr::Unit)))
     }
 
     /// Parse guard clause:

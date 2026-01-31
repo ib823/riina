@@ -363,7 +363,17 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
                     }
                     Ok((Ty::Int, eff))
                 }
-                BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => {
+                BinOp::Eq | BinOp::Ne => {
+                    // Eq/Ne work on Int, Bool, and String
+                    if t1 != t2 {
+                        return Err(TypeError::TypeMismatch { expected: t1, found: t2 });
+                    }
+                    if t1 != Ty::Int && t1 != Ty::Bool && t1 != Ty::String {
+                        return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t1 });
+                    }
+                    Ok((Ty::Bool, eff))
+                }
+                BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge => {
                     if t1 != Ty::Int {
                         return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t1 });
                     }
