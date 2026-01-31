@@ -66,6 +66,27 @@ impl<'a> Parser<'a> {
 
     fn parse_top_level_decl(&mut self) -> Result<TopLevelDecl, ParseError> {
         match self.peek().map(|t| &t.kind) {
+            Some(TokenKind::KwMod) => {
+                // modul name; — skip (no module system yet)
+                self.consume(TokenKind::KwMod)?;
+                let _name = self.parse_ident()?;
+                self.consume(TokenKind::Semi)?;
+                self.parse_top_level_decl()
+            }
+            Some(TokenKind::KwUse) => {
+                // guna path::to::module; — skip (no module system yet)
+                self.consume(TokenKind::KwUse)?;
+                while !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Semi) | None) {
+                    self.next();
+                }
+                self.consume(TokenKind::Semi)?;
+                self.parse_top_level_decl()
+            }
+            Some(TokenKind::KwPub) => {
+                // awam fungsi ... — consume visibility, delegate
+                self.consume(TokenKind::KwPub)?;
+                self.parse_top_level_decl()
+            }
             Some(TokenKind::KwFn) => self.parse_function_decl(),
             Some(TokenKind::KwLet) => {
                 self.consume(TokenKind::KwLet)?;
@@ -118,6 +139,10 @@ impl<'a> Parser<'a> {
     fn parse_param_list(&mut self) -> Result<Vec<(Ident, Ty)>, ParseError> {
         let mut params = Vec::new();
         if !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RParen)) {
+            // Optional mut/ubah modifier (ignored for now)
+            if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut)) {
+                self.consume(TokenKind::KwMut)?;
+            }
             let name = self.parse_ident()?;
             self.consume(TokenKind::Colon)?;
             let ty = self.parse_ty()?;
@@ -125,6 +150,9 @@ impl<'a> Parser<'a> {
 
             while matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
                 self.consume(TokenKind::Comma)?;
+                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut)) {
+                    self.consume(TokenKind::KwMut)?;
+                }
                 let name = self.parse_ident()?;
                 self.consume(TokenKind::Colon)?;
                 let ty = self.parse_ty()?;
@@ -203,8 +231,37 @@ impl<'a> Parser<'a> {
             Some(TokenKind::KwMatch) => self.parse_match(),
             Some(TokenKind::KwHandle) => self.parse_handle(),
             Some(TokenKind::KwGuard) => self.parse_guard(),
+            Some(TokenKind::KwReturn) => {
+                self.consume(TokenKind::KwReturn)?;
+                // pulang expr — return is identity (desugars to just the expression)
+                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::LParen)) {
+                    self.parse_pipe()
+                } else {
+                    self.parse_pipe()
+                }
+            }
+            Some(TokenKind::KwFor) => self.parse_for_in(),
             _ => self.parse_pipe(),
         }
+    }
+
+    /// Parse for-in loop:
+    ///   untuk x dalam iter { body }
+    /// Desugars to: map (fn(x: Any) body) iter
+    fn parse_for_in(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwFor)?;
+        let var = self.parse_ident()?;
+        self.consume(TokenKind::KwIn)?;
+        let iter = self.parse_pipe()?;
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        // Desugar: untuk x dalam list { body } → map(fn(x: Any) body, list)
+        let lam = Expr::Lam(var, Ty::Any, Box::new(body));
+        Ok(Expr::App(
+            Box::new(Expr::App(Box::new(Expr::Var("map".into())), Box::new(lam))),
+            Box::new(iter),
+        ))
     }
 
     /// Parse guard clause:
@@ -330,6 +387,24 @@ impl<'a> Parser<'a> {
 
     fn parse_app(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.parse_unary()?;
+        // Check for parenthesized call syntax: f(a, b, c) → App(App(App(f, a), b), c)
+        if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::LParen)) {
+            // Only treat as call if current expr could be a callee (Var or prior App)
+            if matches!(&expr, Expr::Var(_) | Expr::App(_, _)) {
+                self.consume(TokenKind::LParen)?;
+                if !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RParen)) {
+                    let arg = self.parse_control_flow()?;
+                    expr = Expr::App(Box::new(expr), Box::new(arg));
+                    while matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                        self.consume(TokenKind::Comma)?;
+                        let arg = self.parse_control_flow()?;
+                        expr = Expr::App(Box::new(expr), Box::new(arg));
+                    }
+                }
+                self.consume(TokenKind::RParen)?;
+                return Ok(expr);
+            }
+        }
         loop {
             if self.is_expr_start() {
                 let arg = self.parse_unary()?;
@@ -505,30 +580,67 @@ impl<'a> Parser<'a> {
 
     fn parse_match(&mut self) -> Result<Expr, ParseError> {
          self.consume(TokenKind::KwMatch)?;
-         let e = self.parse_expr()?;
+         let scrutinee = self.parse_pipe()?;
          self.consume(TokenKind::LBrace)?;
-         
-         self.consume(TokenKind::KwInl)?;
-         let x = self.parse_ident()?;
-         self.consume(TokenKind::FatArrow)?;
-         let e1 = self.parse_expr()?;
-         
-         if let Some(TokenKind::Comma) = self.peek().map(|t| &t.kind) {
-             self.consume(TokenKind::Comma)?;
+
+         // Dispatch: inl/inr → sum match, otherwise → literal match
+         match self.peek().map(|t| &t.kind) {
+             Some(TokenKind::KwInl) => {
+                 self.consume(TokenKind::KwInl)?;
+                 let x = self.parse_ident()?;
+                 self.consume(TokenKind::FatArrow)?;
+                 let e1 = self.parse_expr()?;
+                 if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                     self.next();
+                 }
+                 self.consume(TokenKind::KwInr)?;
+                 let y = self.parse_ident()?;
+                 self.consume(TokenKind::FatArrow)?;
+                 let e2 = self.parse_expr()?;
+                 if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                     self.next();
+                 }
+                 self.consume(TokenKind::RBrace)?;
+                 Ok(Expr::Case(Box::new(scrutinee), x, Box::new(e1), y, Box::new(e2)))
+             }
+             _ => {
+                 // Literal match: desugar to nested if-else
+                 let mut arms = Vec::new();
+                 let mut default = None;
+                 loop {
+                     if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RBrace) | None) {
+                         break;
+                     }
+                     // Wildcard _
+                     if matches!(self.peek().map(|t| t.kind.clone()), Some(TokenKind::Identifier(ref s)) if s == "_") {
+                         self.next();
+                         self.consume(TokenKind::FatArrow)?;
+                         default = Some(self.parse_pipe()?);
+                         if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                             self.next();
+                         }
+                         break;
+                     }
+                     let pattern = self.parse_atom()?;
+                     self.consume(TokenKind::FatArrow)?;
+                     let body = self.parse_pipe()?;
+                     arms.push((pattern, body));
+                     if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                         self.next();
+                     }
+                 }
+                 self.consume(TokenKind::RBrace)?;
+                 let fallback = default.unwrap_or(Expr::Unit);
+                 let result = arms.into_iter().rev().fold(fallback, |else_branch, (pat, body)| {
+                     Expr::If(
+                         Box::new(Expr::BinOp(BinOp::Eq, Box::new(scrutinee.clone()), Box::new(pat))),
+                         Box::new(body),
+                         Box::new(else_branch),
+                     )
+                 });
+                 Ok(result)
+             }
          }
-         
-         self.consume(TokenKind::KwInr)?;
-         let y = self.parse_ident()?;
-         self.consume(TokenKind::FatArrow)?;
-         let e2 = self.parse_expr()?;
-         
-         if let Some(TokenKind::Comma) = self.peek().map(|t| &t.kind) {
-             self.consume(TokenKind::Comma)?;
-         }
-         
-         self.consume(TokenKind::RBrace)?;
-         
-         Ok(Expr::Case(Box::new(e), x, Box::new(e1), y, Box::new(e2)))
     }
 
     fn parse_handle(&mut self) -> Result<Expr, ParseError> {

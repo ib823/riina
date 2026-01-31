@@ -814,12 +814,21 @@ impl CEmitter {
 
         for func_id in &self.forward_decls {
             if let Some(func) = program.functions.get(func_id) {
-                let _ = writeln!(
-                    self.output,
-                    "static riina_value_t* {}(riina_value_t* {});",
-                    self.func_name(func_id),
-                    func.param
-                );
+                if func.captures.is_empty() {
+                    let _ = writeln!(
+                        self.output,
+                        "static riina_value_t* {}(riina_value_t* {});",
+                        self.func_name(func_id),
+                        func.param
+                    );
+                } else {
+                    let _ = writeln!(
+                        self.output,
+                        "static riina_value_t* {}(riina_value_t* _self, riina_value_t* {});",
+                        self.func_name(func_id),
+                        func.param
+                    );
+                }
             }
         }
         self.writeln("");
@@ -858,16 +867,55 @@ impl CEmitter {
         self.writeln("");
 
         // Function signature
-        self.write(&format!(
-            "static riina_value_t* {}(riina_value_t* {})",
-            self.func_name(&func.id),
-            func.param
-        ));
+        if func.captures.is_empty() {
+            self.write(&format!(
+                "static riina_value_t* {}(riina_value_t* {})",
+                self.func_name(&func.id),
+                func.param
+            ));
+        } else {
+            self.write(&format!(
+                "static riina_value_t* {}(riina_value_t* _self, riina_value_t* {})",
+                self.func_name(&func.id),
+                func.param
+            ));
+        }
         self.write_raw(" {\n");
         self.indent();
 
         // Declare all variables used in the function
         self.emit_var_declarations(func)?;
+
+        // Bind parameter and captured variables to their VarIds
+        if !func.captures.is_empty() {
+            self.writeln("/* Extract captured variables */");
+            for (i, (_name, _ty)) in func.captures.iter().enumerate() {
+                let var = VarId::new(i as u32);
+                self.writeln(&format!(
+                    "{} = _self->data.closure_val.captures[{i}];",
+                    self.var_name(&var)
+                ));
+            }
+            let param_var = VarId::new(func.captures.len() as u32);
+            self.writeln(&format!(
+                "{} = {};",
+                self.var_name(&param_var),
+                func.param
+            ));
+            self.writeln("");
+        } else {
+            // For non-capture functions, bind parameter to VarId(0)
+            // (the lowerer allocates VarId(0) for the parameter)
+            let param_var = VarId::new(0);
+            if self.declared_vars.contains(&param_var) {
+                self.writeln(&format!(
+                    "{} = {};",
+                    self.var_name(&param_var),
+                    func.param
+                ));
+                self.writeln("");
+            }
+        }
 
         // Build phi map for SSA destruction (copy insertion before jumps)
         let phi_map = Self::build_phi_map(func);
@@ -888,10 +936,50 @@ impl CEmitter {
     fn emit_var_declarations(&mut self, func: &Function) -> Result<()> {
         let mut vars: HashSet<VarId> = HashSet::new();
 
-        // Collect all variables
+        // Add capture VarIds and parameter VarId
+        if !func.captures.is_empty() {
+            for i in 0..func.captures.len() {
+                vars.insert(VarId::new(i as u32));
+            }
+            vars.insert(VarId::new(func.captures.len() as u32));
+        }
+
+        // Collect all variables (results and operands)
         for block in &func.blocks {
             for instr in &block.instrs {
                 vars.insert(instr.result);
+                // Also collect operand VarIds (for captures/params referenced)
+                match &instr.instr {
+                    Instruction::Copy(v) | Instruction::Fst(v) | Instruction::Snd(v)
+                    | Instruction::IsLeft(v) | Instruction::UnwrapLeft(v) | Instruction::UnwrapRight(v)
+                    | Instruction::Load(v) | Instruction::Classify(v) | Instruction::Prove(v)
+                    | Instruction::UnaryOp(_, v) | Instruction::Inl(v) | Instruction::Inr(v) => {
+                        vars.insert(*v);
+                    }
+                    Instruction::BinOp(_, a, b) | Instruction::Pair(a, b)
+                    | Instruction::Store(a, b) | Instruction::Declassify(a, b)
+                    | Instruction::Call(a, b) => {
+                        vars.insert(*a);
+                        vars.insert(*b);
+                    }
+                    Instruction::Alloc { init, .. } => {
+                        vars.insert(*init);
+                    }
+                    Instruction::Perform { payload, .. } => {
+                        vars.insert(*payload);
+                    }
+                    Instruction::Closure { captures, .. } => {
+                        for c in captures {
+                            vars.insert(*c);
+                        }
+                    }
+                    Instruction::Phi(entries) => {
+                        for (_, v) in entries {
+                            vars.insert(*v);
+                        }
+                    }
+                    Instruction::Const(_) | Instruction::RequireCap(_) | Instruction::GrantCap(_) => {}
+                }
             }
         }
 
@@ -1032,11 +1120,28 @@ impl CEmitter {
                     "if ({}->tag != RIINA_TAG_CLOSURE) {{ fprintf(stderr, \"RIINA: call on non-closure\\n\"); abort(); }}",
                     self.var_name(func_var)
                 ));
+                // If closure has captures, pass _self as first arg
+                self.writeln(&format!(
+                    "if ({}->data.closure_val.num_captures > 0) {{",
+                    self.var_name(func_var)
+                ));
+                self.indent();
+                self.writeln(&format!(
+                    "{result} = ((riina_value_t* (*)(riina_value_t*, riina_value_t*)){}->data.closure_val.func_ptr)({}, {});",
+                    self.var_name(func_var),
+                    self.var_name(func_var),
+                    self.var_name(arg)
+                ));
+                self.dedent();
+                self.writeln("} else {");
+                self.indent();
                 self.writeln(&format!(
                     "{result} = ((riina_value_t* (*)(riina_value_t*)){}->data.closure_val.func_ptr)({});",
                     self.var_name(func_var),
                     self.var_name(arg)
                 ));
+                self.dedent();
+                self.writeln("}");
             }
 
             Instruction::Pair(fst, snd) => {
