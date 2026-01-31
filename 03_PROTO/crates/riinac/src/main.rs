@@ -7,6 +7,7 @@
 
 #![forbid(unsafe_code)]
 
+mod diagnostics;
 mod repl;
 
 use std::fs;
@@ -88,12 +89,16 @@ fn main() {
         }
     };
 
+    let filename = input.display().to_string();
+
     // 1. Parse program (top-level declarations) and desugar to expression
     let mut parser = Parser::new(&source);
     let expr = match parser.parse_program() {
         Ok(program) => program.desugar(),
         Err(e) => {
-            eprintln!("Parse Error: {:?}", e);
+            eprintln!("{}", diagnostics::format_diagnostic(
+                &source, &e.span, &e.to_string(), &filename
+            ));
             process::exit(1);
         }
     };
@@ -103,7 +108,7 @@ fn main() {
     let (ty, eff) = match type_check(&ctx, &expr) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("Type Error: {}", e);
+            eprintln!("error: {}", e);
             process::exit(1);
         }
     };
