@@ -48,17 +48,18 @@ Qed.
 Lemma val_rel_at_type_mono_store : forall T Σ Σ'
   (sp : store_ty -> store -> store -> Prop)
   (vl : store_ty -> ty -> expr -> expr -> Prop)
-  (sl : store_ty -> store -> store -> Prop) v1 v2,
+  (sl : store_ty -> store -> store -> Prop)
+  (svp : store_ty -> store -> store -> Prop) v1 v2,
   store_ty_extends Σ Σ' ->
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
-  val_rel_at_type Σ' sp vl sl T v1 v2.
+  val_rel_at_type Σ sp vl sl svp T v1 v2 ->
+  val_rel_at_type Σ' sp vl sl svp T v1 v2.
 Proof.
-  induction T; intros Σ Σ' sp vl sl v1 v2 Hext Hrel; simpl in *; try exact Hrel.
+  induction T; intros Σ Σ' sp vl sl svp v1 v2 Hext Hrel; simpl in *; try exact Hrel.
   - (* TFn *)
-    intros Σ'' Hext'' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore.
+    intros Σ'' Hext'' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore Hwf1 Hwf2 Hagree Hsvp.
     assert (Hext_Σ_Σ'' : store_ty_extends Σ Σ'').
     { apply store_ty_extends_trans_early with Σ'; assumption. }
-    exact (Hrel Σ'' Hext_Σ_Σ'' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore).
+    exact (Hrel Σ'' Hext_Σ_Σ'' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore Hwf1 Hwf2 Hagree Hsvp).
   - (* TProd *)
     destruct Hrel as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
     exists x1, y1, x2, y2. repeat split; try assumption.

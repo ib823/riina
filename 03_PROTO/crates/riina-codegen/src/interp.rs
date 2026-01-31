@@ -375,6 +375,44 @@ impl Interpreter {
                 self.eval_with_env(&new_env, body)
             }
 
+            // E_LetRec: Recursive let binding (fix-point)
+            // For a recursive function, we wrap the body in an expression
+            // that re-binds the function name on each call.
+            Expr::LetRec(name, _ty, binding, body) => {
+                // For LetRec, the binding (typically a lambda) needs the
+                // function name in scope. We achieve this by storing the
+                // raw binding expression and re-evaluating the self-reference
+                // pattern: wrap the original lambda body so it re-binds `name`.
+                match binding.as_ref() {
+                    Expr::Lam(param, param_ty, lam_body) => {
+                        // Create a closure whose body is wrapped:
+                        // let rec name = lam(param) { let name = <self> in lam_body }
+                        // We use a LetRec-aware closure: the closure env includes
+                        // the name bound to itself.
+                        let rec_body = Expr::LetRec(
+                            name.clone(),
+                            _ty.clone(),
+                            binding.clone(),
+                            Box::new((**lam_body).clone()),
+                        );
+                        let rec_closure = Value::Closure(Closure {
+                            env: env.clone(),
+                            param: param.clone(),
+                            param_ty: param_ty.clone(),
+                            body: Rc::new(rec_body),
+                        });
+                        let new_env = env.extend(name.clone(), rec_closure);
+                        self.eval_with_env(&new_env, body)
+                    }
+                    _ => {
+                        // Non-lambda: treat like regular Let
+                        let bind_val = self.eval_with_env(env, binding)?;
+                        let new_env = env.extend(name.clone(), bind_val);
+                        self.eval_with_env(&new_env, body)
+                    }
+                }
+            }
+
             // ═══════════════════════════════════════════════════════════════
             // EFFECTS (E_Perform, E_Handle)
             // ═══════════════════════════════════════════════════════════════
@@ -1367,5 +1405,59 @@ mod tests {
             )),
         );
         assert_eq!(interp.eval(&expr), Ok(Value::Int(10)));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // LETREC (RECURSIVE FUNCTION) TESTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_eval_letrec_simple() {
+        let mut interp = Interpreter::new();
+        // let rec f : Int -> Int = λn. if n <= 0 then 1 else n * f(n-1) in f(5)
+        let fn_ty = Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure);
+        let body = Expr::If(
+            Box::new(Expr::BinOp(BinOp::Le, Box::new(Expr::Var("n".into())), Box::new(Expr::Int(0)))),
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::BinOp(
+                BinOp::Mul,
+                Box::new(Expr::Var("n".into())),
+                Box::new(Expr::App(
+                    Box::new(Expr::Var("f".into())),
+                    Box::new(Expr::BinOp(BinOp::Sub, Box::new(Expr::Var("n".into())), Box::new(Expr::Int(1)))),
+                )),
+            )),
+        );
+        let lam = Expr::Lam("n".into(), Ty::Int, Box::new(body));
+        let letrec = Expr::LetRec(
+            "f".into(),
+            fn_ty,
+            Box::new(lam),
+            Box::new(Expr::App(Box::new(Expr::Var("f".into())), Box::new(Expr::Int(5)))),
+        );
+        assert_eq!(interp.eval(&letrec), Ok(Value::Int(120)));
+    }
+
+    #[test]
+    fn test_eval_letrec_countdown() {
+        let mut interp = Interpreter::new();
+        // let rec count : Int -> Int = λn. if n <= 0 then 0 else count(n-1) in count(10)
+        let fn_ty = Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure);
+        let body = Expr::If(
+            Box::new(Expr::BinOp(BinOp::Le, Box::new(Expr::Var("n".into())), Box::new(Expr::Int(0)))),
+            Box::new(Expr::Int(0)),
+            Box::new(Expr::App(
+                Box::new(Expr::Var("count".into())),
+                Box::new(Expr::BinOp(BinOp::Sub, Box::new(Expr::Var("n".into())), Box::new(Expr::Int(1)))),
+            )),
+        );
+        let lam = Expr::Lam("n".into(), Ty::Int, Box::new(body));
+        let letrec = Expr::LetRec(
+            "count".into(),
+            fn_ty,
+            Box::new(lam),
+            Box::new(Expr::App(Box::new(Expr::Var("count".into())), Box::new(Expr::Int(10)))),
+        );
+        assert_eq!(interp.eval(&letrec), Ok(Value::Int(0)));
     }
 }

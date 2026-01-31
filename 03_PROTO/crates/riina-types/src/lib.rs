@@ -468,31 +468,76 @@ impl Program {
     }
 
     /// Desugar a program into a single expression.
-    /// Functions become Let + Lam, bindings become Let, and the final
-    /// expression is the program's value.
+    /// Functions become LetRec + Lam (recursive binding), bindings become Let,
+    /// extern blocks introduce FFICall wrappers, and the final expression is
+    /// the program's value.
     #[must_use]
     pub fn desugar(self) -> Expr {
         let mut decls = self.decls;
         if decls.is_empty() {
             return Expr::Unit;
         }
+
+        // Helper: desugar a single function decl into the appropriate binding
+        fn desugar_function(name: Ident, params: Vec<(Ident, Ty)>, return_ty: Ty, effect: Effect, body: Box<Expr>, continuation: Box<Expr>) -> Expr {
+            let lam = params.iter().rev().fold(*body, |acc, (p, ty)| {
+                Expr::Lam(p.clone(), ty.clone(), Box::new(acc))
+            });
+            // Build the function type for the LetRec annotation
+            let fn_ty = params.iter().rev().fold(
+                Ty::Fn(
+                    Box::new(params.last().map(|(_, t)| t.clone()).unwrap_or(Ty::Unit)),
+                    Box::new(return_ty.clone()),
+                    effect,
+                ),
+                |acc_ty, (_, param_ty)| {
+                    // Only wrap if we have more than one param (curried)
+                    if acc_ty != Ty::Fn(
+                        Box::new(param_ty.clone()),
+                        Box::new(return_ty.clone()),
+                        effect,
+                    ) {
+                        Ty::Fn(Box::new(param_ty.clone()), Box::new(acc_ty), effect)
+                    } else {
+                        acc_ty
+                    }
+                },
+            );
+            Expr::LetRec(name, fn_ty, Box::new(lam), continuation)
+        }
+
+        // Helper: desugar an extern block into Let bindings for each extern decl
+        fn desugar_extern_block(decls: Vec<ExternDecl>, continuation: Expr) -> Expr {
+            let mut result = continuation;
+            for decl in decls.into_iter().rev() {
+                // Build a lambda wrapper that creates an FFICall
+                let param_names: Vec<Ident> = decl.params.iter().map(|(n, _)| n.clone()).collect();
+                let args: Vec<Expr> = param_names.iter().map(|n| Expr::Var(n.clone())).collect();
+                let ffi_call = Expr::FFICall {
+                    name: decl.name.clone(),
+                    args,
+                    ret_ty: decl.ret_ty.clone(),
+                };
+                let lam = decl.params.iter().rev().fold(ffi_call, |acc, (p, ty)| {
+                    Expr::Lam(p.clone(), ty.clone(), Box::new(acc))
+                });
+                result = Expr::Let(decl.name, Box::new(lam), Box::new(result));
+            }
+            result
+        }
+
         // Build from the end: last decl is the program body
         let last = decls.pop().unwrap();
         let mut result = match last {
             TopLevelDecl::Expr(e) => *e,
             TopLevelDecl::Binding { name, value } => {
-                // Trailing binding with no continuation — body is Unit
                 Expr::Let(name, value, Box::new(Expr::Unit))
             }
-            TopLevelDecl::Function { name, params, body, .. } => {
-                let lam = params.into_iter().rev().fold(*body, |acc, (p, ty)| {
-                    Expr::Lam(p, ty, Box::new(acc))
-                });
-                Expr::Let(name, Box::new(lam), Box::new(Expr::Unit))
+            TopLevelDecl::Function { name, params, return_ty, effect, body } => {
+                desugar_function(name, params, return_ty, effect, body, Box::new(Expr::Unit))
             }
-            TopLevelDecl::ExternBlock { .. } => {
-                // Extern blocks don't produce expressions; skip to Unit
-                Expr::Unit
+            TopLevelDecl::ExternBlock { decls: edecls, .. } => {
+                desugar_extern_block(edecls, Expr::Unit)
             }
         };
         // Wrap remaining decls from back to front
@@ -504,15 +549,11 @@ impl Program {
                 TopLevelDecl::Binding { name, value } => {
                     Expr::Let(name, value, Box::new(result))
                 }
-                TopLevelDecl::Function { name, params, body, .. } => {
-                    let lam = params.into_iter().rev().fold(*body, |acc, (p, ty)| {
-                        Expr::Lam(p, ty, Box::new(acc))
-                    });
-                    Expr::Let(name, Box::new(lam), Box::new(result))
+                TopLevelDecl::Function { name, params, return_ty, effect, body } => {
+                    desugar_function(name, params, return_ty, effect, body, Box::new(result))
                 }
-                TopLevelDecl::ExternBlock { .. } => {
-                    // Extern blocks don't produce expressions; skip
-                    result
+                TopLevelDecl::ExternBlock { decls: edecls, .. } => {
+                    desugar_extern_block(edecls, result)
                 }
             };
         }
@@ -591,6 +632,10 @@ pub enum Expr {
     // Locations (runtime only — corresponds to Coq `ELoc : nat -> expr`)
     /// Store location (not in source; created during evaluation)
     Loc(u64),
+
+    // Recursive binding
+    /// let rec f : T = e1 in e2
+    LetRec(Ident, Ty, Box<Expr>, Box<Expr>),
 
     // Binary operations
     /// e1 op e2

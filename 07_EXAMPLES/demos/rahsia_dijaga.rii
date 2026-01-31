@@ -1,0 +1,9 @@
+/// Rahsia Dijaga — Secret Types Demo
+/// Demo 2: Menunjukkan jenis rahsia dan deklasifikasi
+///
+/// Jalankan: riinac run 07_EXAMPLES/demos/rahsia_dijaga.rii
+
+biar kata_laluan = sulit "s3cr3t_p4ss";
+biar bukti_akses = bukti "pengesahan berjaya";
+biar didedahkan = dedah kata_laluan dengan bukti_akses;
+cetakln(ke_teks(didedahkan))

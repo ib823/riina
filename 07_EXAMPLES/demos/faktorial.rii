@@ -1,0 +1,16 @@
+/// Faktorial — Recursive Functions Demo
+/// Demo 5: Fungsi rekursif dalam RIINA
+///
+/// Jalankan: riinac run 07_EXAMPLES/demos/faktorial.rii
+/// Bina:     riinac build 07_EXAMPLES/demos/faktorial.rii
+
+fungsi faktorial(n: Nombor) -> Nombor {
+    kalau n <= 1 {
+        1
+    } lain {
+        n * faktorial(n - 1)
+    }
+}
+
+biar hasil = faktorial(10);
+cetakln(gabung_teks(("faktorial(10) = ", ke_teks(hasil))))

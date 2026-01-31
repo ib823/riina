@@ -1413,9 +1413,9 @@ fn test_parse_program_desugar() {
     let prog = p.parse_program().unwrap();
     assert_eq!(prog.decls.len(), 2);
     let desugared = prog.desugar();
-    // Should be Let("f", Lam("x", Int, Var("x")), App(Var("f"), Int(42)))
+    // Should be LetRec("f", ..., Lam("x", Int, Var("x")), App(Var("f"), Int(42)))
     match desugared {
-        Expr::Let(name, lam, body) => {
+        Expr::LetRec(name, _ty, lam, body) => {
             assert_eq!(name, "f");
             match *lam {
                 Expr::Lam(p, ty, _) => {
@@ -1429,7 +1429,7 @@ fn test_parse_program_desugar() {
                 other => panic!("Expected App, got {:?}", other),
             }
         }
-        other => panic!("Expected Let, got {:?}", other),
+        other => panic!("Expected LetRec, got {:?}", other),
     }
 }
 

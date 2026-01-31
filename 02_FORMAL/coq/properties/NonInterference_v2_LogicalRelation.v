@@ -1704,12 +1704,16 @@ Lemma multi_step_assign2 : forall v1 e2 e2' st st' ctx ctx',
   (EAssign v1 e2, st, ctx) -->* (EAssign v1 e2', st', ctx').
 Proof.
   intros v1 e2 e2' st st' ctx ctx' Hv H.
-  dependent induction H.
-  - apply MS_Refl.
+  remember (e2, st, ctx) as cfg1.
+  remember (e2', st', ctx') as cfg3.
+  revert e2 st ctx e2' st' ctx' Heqcfg1 Heqcfg3.
+  induction H; intros e2_0 st_0 ctx_0 e2'_0 st'_0 ctx'_0 Heq1 Heq2.
+  - subst. injection Heq2; intros; subst. apply MS_Refl.
   - destruct cfg2 as [[e_mid st_mid] ctx_mid].
+    subst.
     eapply MS_Step.
     + apply ST_Assign2. exact Hv. exact H.
-    + apply (IHmulti_step v1 e_mid e2' st_mid st' ctx_mid ctx' Hv); reflexivity.
+    + eapply IHmulti_step; reflexivity.
 Qed.
 
 Lemma exp_rel_of_val_rel : forall Σ T v1 v2,
@@ -1719,7 +1723,7 @@ Proof.
   intros Σ T v1 v2 Hrel n.
   destruct n as [| n'].
   - exact I.
-  - intros Σ_cur st1 st2 ctx Hext Hstore Hwf1 Hwf2 Hagree.
+  - intros Σ_cur st1 st2 ctx Hext Hstore Hwf1 Hwf2 Hagree Hsvr.
     (* Values don't step, so we return immediately with Σ_cur *)
     exists v1, v2, st1, st2, ctx, Σ_cur.
     split.
@@ -1741,7 +1745,8 @@ Proof.
                  split. { exact Hstore. }
                  split. { exact Hwf1. }
                  split. { exact Hwf2. }
-                 { exact Hagree. }
+                 split. { exact Hagree. }
+                 { exact Hsvr. }
 Qed.
 
 Lemma exp_rel_of_val_rel_step : forall n Σ T v1 v2,
@@ -1749,7 +1754,7 @@ Lemma exp_rel_of_val_rel_step : forall n Σ T v1 v2,
   val_rel_n n Σ T v1 v2 ->
   exp_rel_n (S n) Σ T v1 v2.
 Proof.
-  intros n Σ T v1 v2 Hn Hrel Σ_cur st1 st2 ctx Hext Hstore Hwf1 Hwf2 Hagree.
+  intros n Σ T v1 v2 Hn Hrel Σ_cur st1 st2 ctx Hext Hstore Hwf1 Hwf2 Hagree Hsvr.
   exists v1, v2, st1, st2, ctx, Σ_cur.
   split.
   - unfold store_ty_extends. intros l T' sl Hlook. exact Hlook.
@@ -1766,7 +1771,8 @@ Proof.
               ** split. { exact Hstore. }
                  split. { exact Hwf1. }
                  split. { exact Hwf2. }
-                 { exact Hagree. }
+                 split. { exact Hagree. }
+                 { exact Hsvr. }
 Qed.
 
 Lemma exp_rel_of_val_rel_n : forall n Σ T v1 v2,
@@ -1835,8 +1841,8 @@ Lemma val_rel_n_prod_decompose : forall n Σ T1 T2 v1 v2,
     v1 = EPair a1 b1 /\ v2 = EPair a2 b2 /\
     value a1 /\ value b1 /\ value a2 /\ value b2 /\
     closed_expr a1 /\ closed_expr b1 /\ closed_expr a2 /\ closed_expr b2 /\
-    val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) T1 a1 a2 /\
-    val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) T2 b1 b2.
+    val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) (store_vals_rel (n-1)) T1 a1 a2 /\
+    val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) (store_vals_rel (n-1)) T2 b1 b2.
 Proof.
   intros n Σ T1 T2 v1 v2 Hn Hrel.
   destruct n as [| n']; [lia |].
@@ -1869,7 +1875,7 @@ Lemma val_rel_n_of_first_order : forall n Σ T v1 v2,
   closed_expr v1 -> closed_expr v2 ->
   has_type nil Σ Public v1 T EffectPure ->
   has_type nil Σ Public v2 T EffectPure ->
-  (forall sp vl sl, val_rel_at_type Σ sp vl sl T v1 v2) ->
+  (forall sp vl sl svp, val_rel_at_type Σ sp vl sl svp T v1 v2) ->
   val_rel_n n Σ T v1 v2.
 Proof.
   induction n as [| n' IHn]; intros Σ T v1 v2 Hfo Hval1 Hval2 Hcl1 Hcl2 Hty1 Hty2 Hrat.
@@ -1880,7 +1886,7 @@ Proof.
        (if first_order_type T then val_rel_at_type_fo T v1 v2 else True)).
     repeat split; try assumption.
     rewrite Hfo.
-    apply (proj1 (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) v1 v2 Hfo)).
+    apply (proj1 (val_rel_at_type_fo_equiv T Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) v1 v2 Hfo)).
     apply Hrat.
   - rewrite val_rel_n_S_unfold.
     split.
@@ -1916,23 +1922,23 @@ Qed.
     - val_rel_at_type_value_right
     - val_rel_at_type_closed_left
     - val_rel_at_type_closed_right *)
-Lemma val_rel_at_type_to_val_rel_fo : forall Σ sp vl sl T v1 v2,
+Lemma val_rel_at_type_to_val_rel_fo : forall Σ sp vl sl svp T v1 v2,
   first_order_type T = true ->
-  val_rel_at_type Σ sp vl sl T v1 v2 ->
+  val_rel_at_type Σ sp vl sl svp T v1 v2 ->
   value v1 -> value v2 ->
   closed_expr v1 -> closed_expr v2 ->
   has_type nil Σ Public v1 T EffectPure ->
   has_type nil Σ Public v2 T EffectPure ->
   val_rel Σ T v1 v2.
 Proof.
-  intros Σ sp vl sl T v1 v2 Hfo Hrat Hval1 Hval2 Hcl1 Hcl2 Hty1 Hty2.
+  intros Σ sp vl sl svp T v1 v2 Hfo Hrat Hval1 Hval2 Hcl1 Hcl2 Hty1 Hty2.
   apply val_rel_n_to_val_rel_fo; try assumption.
   exists 0.
   apply val_rel_n_of_first_order; try assumption.
   assert (Hfo_rel : val_rel_at_type_fo T v1 v2).
-  { apply (proj1 (val_rel_at_type_fo_equiv T Σ sp vl sl v1 v2 Hfo)). exact Hrat. }
-  intros sp' vl' sl'.
-  apply (proj2 (val_rel_at_type_fo_equiv T Σ sp' vl' sl' v1 v2 Hfo)).
+  { apply (proj1 (val_rel_at_type_fo_equiv T Σ sp vl sl svp v1 v2 Hfo)). exact Hrat. }
+  intros sp' vl' sl' svp'.
+  apply (proj2 (val_rel_at_type_fo_equiv T Σ sp' vl' sl' svp' v1 v2 Hfo)).
   exact Hfo_rel.
 Qed.
 
@@ -1977,9 +1983,9 @@ Proof.
     destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
   subst ε1a ε2a.
   apply val_rel_n_of_first_order; try assumption.
-  intros sp vl sl.
-  apply (proj2 (val_rel_at_type_fo_equiv T1 Σ sp vl sl a1 a2 Hfo)).
-  apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n (n - 1)) (val_rel_n (n - 1)) (store_rel_n (n - 1)) a1 a2 Hfo)).
+  intros sp vl sl svp.
+  apply (proj2 (val_rel_at_type_fo_equiv T1 Σ sp vl sl svp a1 a2 Hfo)).
+  apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n (n - 1)) (val_rel_n (n - 1)) (store_rel_n (n - 1)) (store_vals_rel (n - 1)) a1 a2 Hfo)).
   exact Hrat1.
 Qed.
 
@@ -2011,9 +2017,9 @@ Proof.
     destruct ε2a; destruct ε2b; simpl in Hεeq2; try discriminate; reflexivity. }
   subst ε1b ε2b.
   apply val_rel_n_of_first_order; try assumption.
-  intros sp vl sl.
-  apply (proj2 (val_rel_at_type_fo_equiv T2 Σ sp vl sl b1 b2 Hfo)).
-  apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n (n - 1)) (val_rel_n (n - 1)) (store_rel_n (n - 1)) b1 b2 Hfo)).
+  intros sp vl sl svp.
+  apply (proj2 (val_rel_at_type_fo_equiv T2 Σ sp vl sl svp b1 b2 Hfo)).
+  apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n (n - 1)) (val_rel_n (n - 1)) (store_rel_n (n - 1)) (store_vals_rel (n - 1)) b1 b2 Hfo)).
   exact Hrat2.
 Qed.
 
@@ -2205,7 +2211,7 @@ Proof.
         change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
         change (NonInterference_v2.val_rel_at_type_fo T1 x1 x2) with (val_rel_at_type_fo T1 x1 x2).
         destruct (first_order_type T1) eqn:Hfo1.
-        { apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) x1 x2 Hfo1)).
+        { apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) x1 x2 Hfo1)).
           exact Hrat1. }
         { exact I. }
       * repeat split; try assumption.
@@ -2270,7 +2276,7 @@ Proof.
         change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
         change (NonInterference_v2.val_rel_at_type_fo T2) with (val_rel_at_type_fo T2).
         destruct (first_order_type T2) eqn:Hfo2.
-        { apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) y1 y2 Hfo2)).
+        { apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) y1 y2 Hfo2)).
           exact Hrat2. }
         { exact I. }
       * repeat split; try assumption.
@@ -2327,10 +2333,6 @@ Proof.
       apply andb_true_iff in HfoSum as [Hfo1 Hfo2].
       change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Hfo.
       rewrite Hfo1 in Hfo. simpl in Hfo.
-      unfold val_rel_at_type_fo. simpl.
-      change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-      change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-      rewrite Hfo1, Hfo2. simpl.
       left. exists v1, v2. repeat split; try reflexivity; try assumption.
     + (* HO case *)
       exact I.
@@ -2344,16 +2346,11 @@ Proof.
       { intros y Hfree. simpl in Hfree. apply (Hclv1 y). exact Hfree. }
       split.
       { intros y Hfree. simpl in Hfree. apply (Hclv2 y). exact Hfree. }
-      split.
-      { (* typing conjunct *)
-        change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-        destruct (first_order_type T1 && first_order_type T2) eqn:Hfo.
-        - exact I.
-        - (* HO case: construct typing for EInl *)
-          split; apply T_Inl; assumption. }
+      split. { apply T_Inl. destruct Hrat as [_ Hrat']. assumption. }
+      split. { apply T_Inl. assumption. }
       simpl. left. exists v1, v2.
-      repeat split; try reflexivity; assumption.
+      repeat split; try reflexivity; try assumption.
+      destruct Hrat as [_ Hrat']. exact Hrat'.
 Qed.
 
 Lemma val_rel_n_sum_inr : forall n Σ T1 T2 v1 v2,
@@ -2383,10 +2380,6 @@ Proof.
       apply andb_true_iff in HfoSum as [Hfo1 Hfo2].
       change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Hfo.
       rewrite Hfo2 in Hfo. simpl in Hfo.
-      unfold val_rel_at_type_fo. simpl.
-      change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-      change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-      rewrite Hfo1, Hfo2. simpl.
       right. exists v1, v2. repeat split; try reflexivity; try assumption.
     + (* HO case *)
       exact I.
@@ -2400,16 +2393,11 @@ Proof.
       { intros y Hfree. simpl in Hfree. apply (Hclv1 y). exact Hfree. }
       split.
       { intros y Hfree. simpl in Hfree. apply (Hclv2 y). exact Hfree. }
-      split.
-      { (* typing conjunct *)
-        change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-        change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-        destruct (first_order_type T1 && first_order_type T2) eqn:Hfo.
-        - exact I.
-        - (* HO case: construct typing for EInr *)
-          split; apply T_Inr; assumption. }
+      split. { apply T_Inr. destruct Hrat as [_ Hrat']. assumption. }
+      split. { apply T_Inr. assumption. }
       simpl. right. exists v1, v2.
-      repeat split; try reflexivity; assumption.
+      repeat split; try reflexivity; try assumption.
+      destruct Hrat as [_ Hrat']. exact Hrat'.
 Qed.
 
 (** Decompose val_rel_n at TSum to get the sum structure *)
@@ -2418,15 +2406,15 @@ Lemma val_rel_n_sum_decompose : forall n Σ T1 T2 v1 v2,
   val_rel_n n Σ (TSum T1 T2) v1 v2 ->
   (exists a1 a2, v1 = EInl a1 T2 /\ v2 = EInl a2 T2 /\
      value a1 /\ value a2 /\ closed_expr a1 /\ closed_expr a2 /\
-     val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) T1 a1 a2) \/
+     val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) (store_vals_rel (n-1)) T1 a1 a2) \/
   (exists b1 b2, v1 = EInr b1 T1 /\ v2 = EInr b2 T1 /\
      value b1 /\ value b2 /\ closed_expr b1 /\ closed_expr b2 /\
-     val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) T2 b1 b2).
+     val_rel_at_type Σ (store_rel_n (n-1)) (val_rel_n (n-1)) (store_rel_n (n-1)) (store_vals_rel (n-1)) T2 b1 b2).
 Proof.
   intros n Σ T1 T2 v1 v2 Hn Hrel.
   destruct n as [| n']; [lia |].
   simpl in Hrel.
-  destruct Hrel as [_ [Hval1 [Hval2 [Hcl1 [Hcl2 [_ Hrat]]]]]].
+  destruct Hrel as [_ [Hval1 [Hval2 [Hcl1 [Hcl2 [_ [_ Hrat]]]]]]].
   simpl in Hrat.
   replace (S n' - 1) with n' by lia.
   destruct Hrat as [[a1 [a2 [Heq1 [Heq2 Hrat]]]] | [b1 [b2 [Heq1 [Heq2 Hrat]]]]].
@@ -2457,11 +2445,11 @@ Proof.
   induction n as [| n' IHn]; intros Σ T1 T2 a1 a2 Hn Hrel.
   - lia.
   - rewrite val_rel_n_S_unfold in Hrel.
-    destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping Hrat]]]]]].
+    destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping [Htyping2 Hrat]]]]]]].
     simpl in Hrat.
     destruct Hrat as [Hinl | Hinr].
     + (* Inl case *)
-      destruct Hinl as [x1 [x2 [Heq1 [Heq2 [Hrat1 _]]]]].
+      destruct Hinl as [x1 [x2 [Heq1 [Heq2 Hrat1]]]].
       (* EInl a1 T2 = EInl x1 T2, so a1 = x1 *)
       inversion Heq1; subst. inversion Heq2; subst.
       apply value_inl_inv in Hval. apply value_inl_inv in Hval'.
@@ -2471,42 +2459,41 @@ Proof.
         rewrite val_rel_n_S_unfold. split.
         { rewrite val_rel_n_0_unfold.
           repeat split; try assumption.
-          destruct (first_order_type T1) eqn:Hfo1.
-          - change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-            rewrite Hfo1.
-            apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) x1 x2 Hfo1)).
-            exact Hrat1.
-          - (* HO T1: extract typing from Htyping *)
+          - (* typing1: extract from Htyping *)
+            apply has_type_inl_inv in Htyping. exact Htyping.
+          - (* typing2: extract from Htyping2 *)
+            apply has_type_inl_inv in Htyping2. exact Htyping2.
+          - (* val_rel_at_type_fo or True *)
             change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-            rewrite Hfo1.
-            change (NonInterference_v2.first_order_type (TSum T1 T2)) with (first_order_type (TSum T1 T2)) in Htyping.
-            simpl in Htyping.
-            change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Htyping.
-            change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Htyping.
-            rewrite Hfo1 in Htyping. simpl in Htyping.
-            destruct Htyping as [Hty1 Hty2].
-            split.
-            { apply has_type_inl_inv in Hty1. exact Hty1. }
-            { apply has_type_inl_inv in Hty2. exact Hty2. } }
+            destruct (first_order_type T1) eqn:Hfo1; simpl.
+            + change (NonInterference_v2.val_rel_at_type_fo T1 x1 x2) with (val_rel_at_type_fo T1 x1 x2).
+              apply (proj1 (val_rel_at_type_fo_equiv T1 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) x1 x2 Hfo1)).
+              exact Hrat1.
+            + exact I. }
         { split; [assumption |]. split; [assumption |].
           split; [assumption |]. split; [assumption |].
           split.
-          { change (NonInterference_v2.first_order_type T1) with (first_order_type T1).
-            destruct (first_order_type T1) eqn:Hfo1.
-            - exact I.
-            - change (NonInterference_v2.first_order_type (TSum T1 T2)) with (first_order_type (TSum T1 T2)) in Htyping.
-              simpl in Htyping.
-              change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Htyping.
-              change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Htyping.
-              rewrite Hfo1 in Htyping. simpl in Htyping.
-              destruct Htyping as [Hty1 Hty2].
-              split.
-              { apply has_type_inl_inv in Hty1. exact Hty1. }
-              { apply has_type_inl_inv in Hty2. exact Hty2. } }
-          exact Hrat1. }
+          - (* typing1 *)
+            apply has_type_inl_inv in Htyping. exact Htyping.
+          - split.
+            + (* typing2 *)
+              apply has_type_inl_inv in Htyping2. exact Htyping2.
+            + (* val_rel_at_type *)
+              exact Hrat1. }
       * (* n = S (S n'') — use IH *)
         assert (Hgt : S n'' > 0) by lia.
-        apply (IHn Σ T1 T2 x1 x2 Hgt Hrel_cum).
+        rewrite val_rel_n_S_unfold. split.
+        { apply (IHn Σ T1 T2 x1 x2 Hgt Hrel_cum). }
+        { split; [assumption |]. split; [assumption |].
+          split; [assumption |]. split; [assumption |].
+          split.
+          - (* typing1 *)
+            apply has_type_inl_inv in Htyping. exact Htyping.
+          - split.
+            + (* typing2 *)
+              apply has_type_inl_inv in Htyping2. exact Htyping2.
+            + (* val_rel_at_type *)
+              exact Hrat1. }
     + (* Inr case — contradiction: EInl ≠ EInr *)
       destruct Hinr as [y1 [y2 [Heq1 _]]].
       discriminate Heq1.
@@ -2521,14 +2508,14 @@ Proof.
   induction n as [| n' IHn]; intros Σ T1 T2 b1 b2 Hn Hrel.
   - lia.
   - rewrite val_rel_n_S_unfold in Hrel.
-    destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping Hrat]]]]]].
+    destruct Hrel as [Hrel_cum [Hval [Hval' [Hcl [Hcl' [Htyping [Htyping2 Hrat]]]]]]].
     simpl in Hrat.
     destruct Hrat as [Hinl | Hinr].
     + (* Inl case — contradiction: EInr ≠ EInl *)
       destruct Hinl as [x1 [x2 [Heq1 _]]].
       discriminate Heq1.
     + (* Inr case *)
-      destruct Hinr as [y1 [y2 [Heq1 [Heq2 [_ Hrat2]]]]].
+      destruct Hinr as [y1 [y2 [Heq1 [Heq2 Hrat2]]]].
       inversion Heq1; subst. inversion Heq2; subst.
       apply value_inr_inv in Hval. apply value_inr_inv in Hval'.
       apply closed_expr_inr_inv in Hcl. apply closed_expr_inr_inv in Hcl'.
@@ -2537,52 +2524,52 @@ Proof.
         rewrite val_rel_n_S_unfold. split.
         { rewrite val_rel_n_0_unfold.
           repeat split; try assumption.
-          destruct (first_order_type T2) eqn:Hfo2.
-          - change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-            rewrite Hfo2.
-            apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) y1 y2 Hfo2)).
-            exact Hrat2.
-          - change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-            rewrite Hfo2.
-            change (NonInterference_v2.first_order_type (TSum T1 T2)) with (first_order_type (TSum T1 T2)) in Htyping.
-            simpl in Htyping.
-            change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Htyping.
-            change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Htyping.
-            rewrite Hfo2 in Htyping. rewrite Bool.andb_false_r in Htyping.
-            destruct Htyping as [Hty1 Hty2].
-            split.
-            { apply has_type_inr_inv in Hty1. exact Hty1. }
-            { apply has_type_inr_inv in Hty2. exact Hty2. } }
+          - (* typing1: extract from Htyping *)
+            apply has_type_inr_inv in Htyping. exact Htyping.
+          - (* typing2: extract from Htyping2 *)
+            apply has_type_inr_inv in Htyping2. exact Htyping2.
+          - (* val_rel_at_type_fo or True *)
+            change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
+            destruct (first_order_type T2) eqn:Hfo2; simpl.
+            + change (NonInterference_v2.val_rel_at_type_fo T2 y1 y2) with (val_rel_at_type_fo T2 y1 y2).
+              apply (proj1 (val_rel_at_type_fo_equiv T2 Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) y1 y2 Hfo2)).
+              exact Hrat2.
+            + exact I. }
         { split; [assumption |]. split; [assumption |].
           split; [assumption |]. split; [assumption |].
           split.
-          { change (NonInterference_v2.first_order_type T2) with (first_order_type T2).
-            destruct (first_order_type T2) eqn:Hfo2.
-            - exact I.
-            - change (NonInterference_v2.first_order_type (TSum T1 T2)) with (first_order_type (TSum T1 T2)) in Htyping.
-              simpl in Htyping.
-              change (NonInterference_v2.first_order_type T1) with (first_order_type T1) in Htyping.
-              change (NonInterference_v2.first_order_type T2) with (first_order_type T2) in Htyping.
-              rewrite Hfo2 in Htyping. rewrite Bool.andb_false_r in Htyping.
-              destruct Htyping as [Hty1 Hty2].
-              split.
-              { apply has_type_inr_inv in Hty1. exact Hty1. }
-              { apply has_type_inr_inv in Hty2. exact Hty2. } }
-          exact Hrat2. }
+          - (* typing1 *)
+            apply has_type_inr_inv in Htyping. exact Htyping.
+          - split.
+            + (* typing2 *)
+              apply has_type_inr_inv in Htyping2. exact Htyping2.
+            + (* val_rel_at_type *)
+              exact Hrat2. }
       * (* n = S (S n'') — use IH *)
         assert (Hgt : S n'' > 0) by lia.
-        apply (IHn Σ T1 T2 y1 y2 Hgt Hrel_cum).
+        rewrite val_rel_n_S_unfold. split.
+        { apply (IHn Σ T1 T2 y1 y2 Hgt Hrel_cum). }
+        { split; [assumption |]. split; [assumption |].
+          split; [assumption |]. split; [assumption |].
+          split.
+          - (* typing1 *)
+            apply has_type_inr_inv in Htyping. exact Htyping.
+          - split.
+            + (* typing2 *)
+              apply has_type_inr_inv in Htyping2. exact Htyping2.
+            + (* val_rel_at_type *)
+              exact Hrat2. }
 Qed.
 
 (** Extract val_rel_at_type from product decomposition (for any type) *)
 Lemma val_rel_n_prod_fst_at : forall n Σ T1 T2 v1 v2 v1' v2',
   val_rel_n (S n) Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') ->
   value v1 /\ value v1' /\ closed_expr v1 /\ closed_expr v1' /\
-  val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T1 v1 v1'.
+  val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) (store_vals_rel n) T1 v1 v1'.
 Proof.
   intros n Σ T1 T2 v1 v2 v1' v2' Hrel.
   simpl in Hrel.
-  destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [_ Hrat]]]]]].
+  destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [_ [_ Hrat]]]]]]].
   apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
   apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
   assert (Hcl1 : closed_expr v1).
@@ -2599,11 +2586,11 @@ Qed.
 Lemma val_rel_n_prod_snd_at : forall n Σ T1 T2 v1 v2 v1' v2',
   val_rel_n (S n) Σ (TProd T1 T2) (EPair v1 v2) (EPair v1' v2') ->
   value v2 /\ value v2' /\ closed_expr v2 /\ closed_expr v2' /\
-  val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T2 v2 v2'.
+  val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) (store_vals_rel n) T2 v2 v2'.
 Proof.
   intros n Σ T1 T2 v1 v2 v1' v2' Hrel.
   simpl in Hrel.
-  destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [_ Hrat]]]]]].
+  destruct Hrel as [Hcum [Hval [Hval' [Hcl [Hcl' [_ [_ Hrat]]]]]]].
   apply value_pair_inv in Hval. destruct Hval as [Hv1 Hv2].
   apply value_pair_inv in Hval'. destruct Hval' as [Hv1' Hv2'].
   assert (Hcl2 : closed_expr v2).
@@ -2644,7 +2631,9 @@ Proof.
   - constructor.
   - apply closed_expr_unit.
   - apply closed_expr_unit.
-  - intros sp vl sl. simpl. split; reflexivity.
+  - constructor.
+  - constructor.
+  - intros sp vl sl svp. simpl. split; reflexivity.
 Qed.
 
 Lemma val_rel_bool : forall Σ b,
@@ -2657,7 +2646,9 @@ Proof.
   - constructor.
   - apply closed_expr_bool.
   - apply closed_expr_bool.
-  - intros sp vl sl. simpl. exists b. split; reflexivity.
+  - constructor.
+  - constructor.
+  - intros sp vl sl svp. simpl. exists b. split; reflexivity.
 Qed.
 
 (** Extract equal booleans from val_rel_n at TBool *)
@@ -2669,7 +2660,7 @@ Proof.
   intros n Σ v1 v2 Hn Hrel.
   destruct n as [| n']; [lia |].
   simpl in Hrel.
-  destruct Hrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+  destruct Hrel as [_ [_ [_ [_ [_ [_ [_ Hrat]]]]]]].
   simpl in Hrat.
   exact Hrat.
 Qed.
@@ -2684,7 +2675,9 @@ Proof.
   - constructor.
   - apply closed_expr_int.
   - apply closed_expr_int.
-  - intros sp vl sl. simpl. exists i. split; reflexivity.
+  - constructor.
+  - constructor.
+  - intros sp vl sl svp. simpl. exists i. split; reflexivity.
 Qed.
 
 (** Build val_rel_n for TSecret type (val_rel_at_type is True) *)
@@ -2701,12 +2694,11 @@ Proof.
     + constructor; assumption.
     + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
     + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Classify; assumption.
+    + apply T_Classify; assumption.
     + change (NonInterference_v2.first_order_type (TSecret T)) with (first_order_type (TSecret T)).
       simpl.
-      change (NonInterference_v2.first_order_type T) with (first_order_type T).
-      destruct (first_order_type T) eqn:Hfo.
-      * exact I.
-      * split; apply T_Classify; assumption.
+      destruct (first_order_type T); exact I.
   - rewrite val_rel_n_S_unfold. split.
     + apply IHn; assumption.
     + repeat split.
@@ -2714,13 +2706,11 @@ Proof.
       * constructor; assumption.
       * intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
       * intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+      * apply T_Classify; assumption.
+      * apply T_Classify; assumption.
       * change (NonInterference_v2.first_order_type (TSecret T)) with (first_order_type (TSecret T)).
         simpl.
-        change (NonInterference_v2.first_order_type T) with (first_order_type T).
-        destruct (first_order_type T) eqn:Hfo.
-        { exact I. }
-        { split; apply T_Classify; assumption. }
-      * exact I.
+        destruct (first_order_type T); exact I.
 Qed.
 
 (** Build val_rel_n for TProof type (val_rel_at_type is True) *)
@@ -2769,7 +2759,9 @@ Proof.
   - constructor.
   - apply closed_expr_string.
   - apply closed_expr_string.
-  - intros sp vl sl. simpl. exists s. split; reflexivity.
+  - constructor.
+  - constructor.
+  - intros sp vl sl svp. simpl. exists s. split; reflexivity.
 Qed.
 
 Lemma val_rel_loc : forall Σ l,
@@ -2782,7 +2774,9 @@ Proof.
   - constructor.
   - apply closed_expr_loc.
   - apply closed_expr_loc.
-  - intros sp vl sl. simpl. exists l. split; reflexivity.
+  - constructor.
+  - constructor.
+  - intros sp vl sl svp. simpl. exists l. split; reflexivity.
 Qed.
 
 (** ========================================================================
@@ -3162,7 +3156,7 @@ Proof.
         { apply (val_rel_n_mono_store 0 Σ' Σ'' (TFn T1 T2 ε) f1 f2 Hext2 Hfrel). }
         destruct (val_rel_n_typing 0 Σ'' (TFn T1 T2 ε) f1 f2 Hfrel'') as [Htyf1'' Htyf2''].
         (* Get val_rel_at_type via fundamental_theorem_step_0 *)
-        assert (Hfat : val_rel_at_type Σ'' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (TFn T1 T2 ε) f1 f2).
+        assert (Hfat : val_rel_at_type Σ'' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) (TFn T1 T2 ε) f1 f2).
         { apply fundamental_theorem_step_0; try assumption.
           simpl. reflexivity. }
         (* Apply val_rel_at_type for TFn *)

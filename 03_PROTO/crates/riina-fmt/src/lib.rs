@@ -264,6 +264,15 @@ fn fmt_expr(out: &mut String, expr: &Expr, level: usize, cfg: &FmtConfig) {
             out.push_str(";\n");
             fmt_expr(out, body, level, cfg);
         }
+        Expr::LetRec(name, _ty, value, body) => {
+            indent(out, level, cfg);
+            out.push_str("biar ulang ");
+            out.push_str(name);
+            out.push_str(" = ");
+            fmt_expr_inline(out, value, cfg);
+            out.push_str(";\n");
+            fmt_expr(out, body, level, cfg);
+        }
         Expr::Perform(eff, e) => {
             indent(out, level, cfg);
             out.push_str("laku ");
@@ -442,6 +451,14 @@ fn fmt_expr_inline(out: &mut String, expr: &Expr, cfg: &FmtConfig) {
         }
         Expr::Let(name, value, body) => {
             out.push_str("biar ");
+            out.push_str(name);
+            out.push_str(" = ");
+            fmt_expr_inline(out, value, cfg);
+            out.push_str("; ");
+            fmt_expr_inline(out, body, cfg);
+        }
+        Expr::LetRec(name, _ty, value, body) => {
+            out.push_str("biar ulang ");
             out.push_str(name);
             out.push_str(" = ");
             fmt_expr_inline(out, value, cfg);

@@ -268,6 +268,17 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
             let (t2, eff2) = type_check(&ctx_new, e2)?;
             Ok((t2, eff1.join(eff2)))
         },
+        Expr::LetRec(x, ty_ann, e1, e2) => {
+            // Typecheck binding with name already in scope (for recursion)
+            let ctx_rec = ctx.extend(x.clone(), ty_ann.clone());
+            let (t1, eff1) = type_check(&ctx_rec, e1)?;
+            // Check that binding type is compatible with annotation
+            if !types_compatible(ty_ann, &t1) {
+                return Err(TypeError::AnnotationMismatch { expected: ty_ann.clone(), found: t1 });
+            }
+            let (t2, eff2) = type_check(&ctx_rec, e2)?;
+            Ok((t2, eff1.join(eff2)))
+        },
 
         // UNVERIFIED: Effects (Pending formalization in Typing.v)
         Expr::Perform(eff, e) => {

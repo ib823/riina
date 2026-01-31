@@ -326,6 +326,7 @@ Section ValRelAtN.
   Variable store_rel_pred : store_ty -> store -> store -> Prop.
   Variable val_rel_lower : store_ty -> ty -> expr -> expr -> Prop.
   Variable store_rel_lower : store_ty -> store -> store -> Prop.
+  Variable store_vals_pred : store_ty -> store -> store -> Prop.
 
   Fixpoint val_rel_at_type (T : ty) (v1 v2 : expr) {struct T} : Prop :=
     match T with
@@ -359,6 +360,7 @@ Section ValRelAtN.
               store_wf Σ' st1 ->
               store_wf Σ' st2 ->
               stores_agree_low_fo Σ' st1 st2 ->
+              store_vals_pred Σ' st1 st2 ->
               exists v1' v2' st1' st2' ctx' Σ'',
                 store_ty_extends Σ' Σ'' /\
                 (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
@@ -368,7 +370,8 @@ Section ValRelAtN.
                 (* REVOLUTIONARY FIX: Add preservation postconditions *)
                 store_wf Σ'' st1' /\
                 store_wf Σ'' st2' /\
-                stores_agree_low_fo Σ'' st1' st2'
+                stores_agree_low_fo Σ'' st1' st2' /\
+                store_vals_pred Σ'' st1' st2'
     | TCapability _ => True
     | TCapabilityFull _ => True
     | TProof _ => True
@@ -385,10 +388,11 @@ Definition val_rel_at_type_n (n : nat) (Σ : store_ty)
     (store_rel_pred : store_ty -> store -> store -> Prop)
     (val_rel_lower : store_ty -> ty -> expr -> expr -> Prop)
     (store_rel_lower : store_ty -> store -> store -> Prop)
+    (store_vals_pred : store_ty -> store -> store -> Prop)
     (T : ty) (v1 v2 : expr) : Prop :=
   match n with
   | 0 => True  (* At step 0, trivially true *)
-  | S _ => val_rel_at_type Σ store_rel_pred val_rel_lower store_rel_lower T v1 v2
+  | S _ => val_rel_at_type Σ store_rel_pred val_rel_lower store_rel_lower store_vals_pred T v1 v2
   end.
 
 (** THE REVOLUTIONARY STEP-INDEXED RELATIONS
@@ -418,7 +422,14 @@ Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} 
          when constructing val_rel_n for compound HO types with FO components. *)
       has_type nil Σ Public v1 T EffectPure /\
       has_type nil Σ Public v2 T EffectPure /\
-      val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2
+      val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n')
+        (fun Σ' st1 st2 => forall l T sl,
+          store_ty_lookup l Σ' = Some (T, sl) ->
+          exists v1 v2,
+            store_lookup l st1 = Some v1 /\
+            store_lookup l st2 = Some v2 /\
+            val_rel_n n' Σ' T v1 v2)
+        T v1 v2
   end
 with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
   match n with
@@ -441,6 +452,15 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
                  has_type nil Σ Public v2 T EffectPure)))
   end.
 
+(** Store values relation: all locations in the store typing are related *)
+Definition store_vals_rel (n : nat) (Σ : store_ty) (st1 st2 : store) : Prop :=
+  forall l T sl,
+    store_ty_lookup l Σ = Some (T, sl) ->
+    exists v1 v2,
+      store_lookup l st1 = Some v1 /\
+      store_lookup l st2 = Some v2 /\
+      val_rel_n n Σ T v1 v2.
+
 (** Unfolding lemmas for val_rel_n - needed because simpl doesn't work well
     on mutual fixpoints with abstract arguments *)
 Lemma val_rel_n_0_unfold : forall Σ T v1 v2,
@@ -459,7 +479,7 @@ Lemma val_rel_n_S_unfold : forall n Σ T v1 v2,
    value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
    has_type nil Σ Public v1 T EffectPure /\
    has_type nil Σ Public v2 T EffectPure /\
-   val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) T v1 v2).
+   val_rel_at_type Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) (store_vals_rel n) T v1 v2).
 Proof. reflexivity. Qed.
 
 Lemma store_rel_n_0_unfold : forall Σ st1 st2,
@@ -492,12 +512,12 @@ Proof. reflexivity. Qed.
     The predicates are only used for TFn types (function types).
 *)
 
-Lemma val_rel_at_type_fo_equiv : forall T Σ sp vl sl v1 v2,
+Lemma val_rel_at_type_fo_equiv : forall T Σ sp vl sl svp v1 v2,
   first_order_type T = true ->
-  val_rel_at_type Σ sp vl sl T v1 v2 <-> val_rel_at_type_fo T v1 v2.
+  val_rel_at_type Σ sp vl sl svp T v1 v2 <-> val_rel_at_type_fo T v1 v2.
 Proof.
   intros T.
-  induction T; intros Σ' sp vl sl v1 v2 Hfo; simpl in Hfo; try discriminate.
+  induction T; intros Σ' sp vl sl svp v1 v2 Hfo; simpl in Hfo; try discriminate.
   - (* TUnit *) simpl. tauto.
   - (* TBool *) simpl. tauto.
   - (* TInt *) simpl. tauto.
@@ -508,25 +528,25 @@ Proof.
     simpl. split.
     + intros [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hr1 Hr2]]]]]]].
       exists x1, y1, x2, y2. repeat split; try assumption.
-      * apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
-      * apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+      * apply (IHT1 Σ' sp vl sl svp x1 x2 Hfo1). assumption.
+      * apply (IHT2 Σ' sp vl sl svp y1 y2 Hfo2). assumption.
     + intros [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hr1 Hr2]]]]]]].
       exists x1, y1, x2, y2. repeat split; try assumption.
-      * apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
-      * apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+      * apply (IHT1 Σ' sp vl sl svp x1 x2 Hfo1). assumption.
+      * apply (IHT2 Σ' sp vl sl svp y1 y2 Hfo2). assumption.
   - (* TSum *)
     apply Bool.andb_true_iff in Hfo. destruct Hfo as [Hfo1 Hfo2].
     simpl. split.
     + intros [[x1 [x2 [Heq1 [Heq2 Hr]]]] | [y1 [y2 [Heq1 [Heq2 Hr]]]]].
       * left. exists x1, x2. repeat split; try assumption.
-        apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
+        apply (IHT1 Σ' sp vl sl svp x1 x2 Hfo1). assumption.
       * right. exists y1, y2. repeat split; try assumption.
-        apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+        apply (IHT2 Σ' sp vl sl svp y1 y2 Hfo2). assumption.
     + intros [[x1 [x2 [Heq1 [Heq2 Hr]]]] | [y1 [y2 [Heq1 [Heq2 Hr]]]]].
       * left. exists x1, x2. repeat split; try assumption.
-        apply (IHT1 Σ' sp vl sl x1 x2 Hfo1). assumption.
+        apply (IHT1 Σ' sp vl sl svp x1 x2 Hfo1). assumption.
       * right. exists y1, y2. repeat split; try assumption.
-        apply (IHT2 Σ' sp vl sl y1 y2 Hfo2). assumption.
+        apply (IHT2 Σ' sp vl sl svp y1 y2 Hfo2). assumption.
   - (* TList *) simpl. tauto.
   - (* TOption *) simpl. tauto.
   - (* TRef *) simpl. tauto.
@@ -598,7 +618,7 @@ Proof.
       destruct H0 as [Hv1 [Hv2 [Hc1 [Hc2 [Hty1 [Hty2 Hrat]]]]]].
       repeat split; auto.
       * (* val_rel_at_type Σ ... T v1 v2 from val_rel_at_type_fo T v1 v2 *)
-        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') v1 v2 Hfo).
         rewrite Hfo in Hrat. exact Hrat.
 Qed.
 
@@ -631,7 +651,7 @@ Proof.
       (* Need: if first_order_type T then val_rel_at_type_fo T v1 v2 else ... *)
       rewrite Hfo.
       (* Extract val_rel_at_type_fo from val_rel_at_type *)
-      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+      apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') v1 v2 Hfo).
       exact Hrat.
     + (* m = S m': need val_rel_n (S m') from val_rel_n (S n') *)
       rewrite val_rel_n_S_unfold.
@@ -649,8 +669,8 @@ Proof.
         split. { exact Hty2. }
         { (* val_rel_at_type at m' from val_rel_at_type at n' *)
           (* For FO types, both equal val_rel_at_type_fo *)
-          apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') v1 v2 Hfo).
-          apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+          apply (val_rel_at_type_fo_equiv T Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') (store_vals_rel m') v1 v2 Hfo).
+          apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') v1 v2 Hfo).
           exact Hrat. }
 Qed.
 
@@ -838,7 +858,7 @@ Proof.
         split. { exact Htyping1. }
         split. { exact Htyping2. }
         (* val_rel_at_type_fo from val_rel_at_type *)
-        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') v1 v2 Hfo).
         exact Hrat.
       * (* HO type *)
         split. { exact Hv1. }
@@ -997,7 +1017,7 @@ Axiom fundamental_theorem_step_0 : forall T Σ v1 v2,
   val_rel_n 0 Σ T v1 v2 ->
   has_type nil Σ Public v1 T EffectPure ->
   has_type nil Σ Public v2 T EffectPure ->
-  val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) T v1 v2.
+  val_rel_at_type Σ (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) T v1 v2.
 
 (** Generalized step-1 fst: works for ALL type combinations (not just FO).
     NOTE: The T1-FO, T2-HO case at step 0 cannot extract val_rel_at_type_fo
@@ -1067,13 +1087,13 @@ Proof.
             - rewrite HfoProd. exact I. }
           (* Apply fundamental_theorem_step_0 to get val_rel_at_type for TProd *)
           assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
-                          (store_rel_n 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+                          (store_rel_n 0) (store_vals_rel 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
           { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
           simpl in Hvat.
           destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
           inversion Heq1'; subst. inversion Heq2'; subst.
           (* Hr1 : val_rel_at_type Σ' ... T1 a1 a2; for FO T1 this = val_rel_at_type_fo *)
-          apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) a1 a2 Hfo1).
+          apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) _ _ Hfo1).
           exact Hr1.
       + exact I. }
   exact Hstore.
@@ -1142,12 +1162,12 @@ Proof.
             - exact Hty2.
             - rewrite HfoProd. exact I. }
           assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
-                          (store_rel_n 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+                          (store_rel_n 0) (store_vals_rel 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
           { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact Hty1 | exact Hty2]. }
           simpl in Hvat.
           destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
           inversion Heq1'; subst. inversion Heq2'; subst.
-          apply (val_rel_at_type_fo_equiv T2 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) b1 b2 Hfo2).
+          apply (val_rel_at_type_fo_equiv T2 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) _ _ Hfo2).
           exact Hr2.
       + exact I. }
   exact Hstore.
@@ -1478,8 +1498,8 @@ Qed.
 *)
 Lemma val_rel_at_type_fo_step_invariant : forall T n' m' Σ v1 v2,
   first_order_type T = true ->
-  @val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2 ->
-  @val_rel_at_type Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') T v1 v2.
+  @val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') T v1 v2 ->
+  @val_rel_at_type Σ (store_rel_n m') (val_rel_n m') (store_rel_n m') (store_vals_rel m') T v1 v2.
 Proof.
   intros T n' m' Σ v1 v2 Hfo Hrel.
   apply val_rel_at_type_fo_equiv; [exact Hfo|].
@@ -1510,8 +1530,8 @@ Lemma val_rel_at_type_step_up_with_IH : forall T n' Σ v1 v2,
      store_has_values st2 ->
      stores_agree_low_fo Σ' st1 st2 ->
      store_rel_n (S n') Σ' st1 st2) ->
-  @val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') T v1 v2 ->
-  @val_rel_at_type Σ (store_rel_n (S n')) (val_rel_n (S n')) (store_rel_n (S n')) T v1 v2.
+  @val_rel_at_type Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') T v1 v2 ->
+  @val_rel_at_type Σ (store_rel_n (S n')) (val_rel_n (S n')) (store_rel_n (S n')) (store_vals_rel (S n')) T v1 v2.
 Proof.
   intros T.
   induction T; intros n' Σ0 v1 v2 IH_val IH_store Hrel; simpl; simpl in Hrel.
@@ -1522,16 +1542,21 @@ Proof.
   - (* TBytes *) exact Hrel.
   - (* TFn - weaken preconditions, apply, step-up results *)
     (* New signature includes store_wf and stores_agree_low_fo preconditions *)
-    intros Σ' Hext x y Hv_x Hv_y Hc_x Hc_y Hargs st1 st2 ctx Hst Hwf1 Hwf2 Hagree.
+    intros Σ' Hext x y Hv_x Hv_y Hc_x Hc_y Hargs st1 st2 ctx Hst Hwf1 Hwf2 Hagree Hsvp.
     (* Weaken preconditions from S n' to n' *)
     assert (Hargs_n' : val_rel_n n' Σ' T1 x y).
     { apply val_rel_n_mono with (S n'). lia. exact Hargs. }
     assert (Hst_n' : store_rel_n n' Σ' st1 st2).
     { apply store_rel_n_mono with (S n'). lia. exact Hst. }
+    assert (Hsvp_n' : store_vals_rel n' Σ' st1 st2).
+    { intros l0 T0 sl0 Hlookup.
+      destruct (Hsvp l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+      exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+      apply val_rel_n_mono with (S n'). lia. exact Hvw. }
     (* Apply Hrel with weakened preconditions - now including store_wf and stores_agree *)
-    specialize (Hrel Σ' Hext x y Hv_x Hv_y Hc_x Hc_y Hargs_n' st1 st2 ctx Hst_n' Hwf1 Hwf2 Hagree).
-    (* Destruct result - now includes store_wf and stores_agree_low_fo postconditions *)
-    destruct Hrel as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel [Hstrel [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]].
+    specialize (Hrel Σ' Hext x y Hv_x Hv_y Hc_x Hc_y Hargs_n' st1 st2 ctx Hst_n' Hwf1 Hwf2 Hagree Hsvp_n').
+    (* Destruct result - now includes store_wf, stores_agree_low_fo, and store_vals_pred postconditions *)
+    destruct Hrel as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel [Hstrel [Hwf1' [Hwf2' [Hagree' Hsvp']]]]]]]]]]]]]].
     exists v1', v2', st1', st2', ctx', Σ''.
     split. { exact Hext'. }
     split. { exact Hstep1. }
@@ -1561,8 +1586,17 @@ Proof.
       split.
       { (* store_wf Σ'' st2' - From postcondition! *)
         exact Hwf2'. }
+      split.
       { (* stores_agree_low_fo Σ'' st1' st2' - From postcondition! *)
         exact Hagree'. }
+      { (* store_vals_pred Σ'' st1' st2' - step up from n' to S n' *)
+        intros l0 T0 sl0 Hlookup.
+        destruct (Hsvp' l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+        exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+        apply IH_val.
+        - exact Hvw.
+        - intro Hfo_false. apply (proj1 (val_rel_n_typing _ _ _ _ _ Hvw)).
+        - intro Hfo_false. apply (proj2 (val_rel_n_typing _ _ _ _ _ Hvw)). }
   - (* TProd - recurse on components *)
     destruct Hrel as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
     exists x1, y1, x2, y2.
@@ -1755,12 +1789,12 @@ Proof.
       (* val_rel_at_type *)
       destruct (first_order_type T) eqn:Hfo.
       * (* First-order: use val_rel_at_type_fo_equiv *)
-        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) v1 v2 Hfo).
+        apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n) (val_rel_n n) (store_rel_n n) (store_vals_rel n) v1 v2 Hfo).
         destruct n as [| n']; simpl in Hrel.
         -- destruct Hrel as [_ [_ [_ [_ [_ [_ Hfo_rel]]]]]].
            rewrite Hfo in Hfo_rel. exact Hfo_rel.
         -- destruct Hrel as [_ [_ [_ [_ [_ [_ [_ Hrat]]]]]]].
-           apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') v1 v2 Hfo).
+           apply (val_rel_at_type_fo_equiv T Σ (store_rel_n n') (val_rel_n n') (store_rel_n n') (store_vals_rel n') v1 v2 Hfo).
            exact Hrat.
       * (* Higher-order type case: first_order_type T = false *)
         (* This includes TFn, TChan, TSecureChan, and compound types with HO components. *)
@@ -1789,7 +1823,7 @@ Proof.
             + (* TFn T1 T2 eff *)
               simpl. simpl in Hrat_n'.
               (* NEW: TFn now requires store_wf and stores_agree_low_fo preconditions *)
-              intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
+              intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree Hsvp.
               (* Downward closure: step n → n' where n = S n' *)
               (* Hxyrel : val_rel_n n Σ' T1 x y, Hstrel : store_rel_n n Σ' st1 st2 *)
               (* We need val_rel_n n' and store_rel_n n' for Hrat_n' *)
@@ -1797,10 +1831,15 @@ Proof.
               { apply val_rel_n_mono with (S n'). lia. exact Hxyrel. }
               assert (Hstrel_n' : store_rel_n n' Σ' st1 st2).
               { apply store_rel_n_mono with (S n'). lia. exact Hstrel. }
+              assert (Hsvp_n' : store_vals_rel n' Σ' st1 st2).
+              { intros l0 T0 sl0 Hlookup.
+                destruct (Hsvp l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                apply val_rel_n_mono with (S n'). lia. exact Hvw. }
               (* Apply val_rel_at_type at step n' - now with store_wf and stores_agree *)
-              specialize (Hrat_n' Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel_n' st1 st2 ctx Hstrel_n' Hwf1 Hwf2 Hagree).
-              (* Destruct now includes store_wf and stores_agree_low_fo postconditions *)
-              destruct Hrat_n' as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel_n' [Hstrel_n'' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]].
+              specialize (Hrat_n' Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel_n' st1 st2 ctx Hstrel_n' Hwf1 Hwf2 Hagree Hsvp_n').
+              (* Destruct now includes store_wf, stores_agree_low_fo, and store_vals_pred postconditions *)
+              destruct Hrat_n' as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel_n' [Hstrel_n'' [Hwf1' [Hwf2' [Hagree' Hsvp'']]]]]]]]]]]]]].
               exists v1', v2', st1', st2', ctx', Σ''.
               split. { exact Hext'. }
               split. { exact Hstep1. }
@@ -1844,8 +1883,20 @@ Proof.
               split.
               { (* store_wf Σ'' st2' - From postcondition! *)
                 exact Hwf2'. }
+              split.
               { (* stores_agree_low_fo Σ'' st1' st2' - From postcondition! *)
                 exact Hagree'. }
+              { (* store_vals_pred Σ'' st1' st2' - step up from n' to S n' *)
+                intros l0 T0 sl0 Hlookup.
+                destruct (Hsvp'' l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                assert (Hcombined' : combined_step_up n').
+                { apply IH_strong. lia. }
+                destruct Hcombined' as [Hval_step' _].
+                apply Hval_step'.
+                - exact Hvw.
+                - apply (proj1 (val_rel_n_typing _ _ _ _ _ Hvw)).
+                - apply (proj2 (val_rel_n_typing _ _ _ _ _ Hvw)). }
             + (* TProd with HO component - val_rel_at_type uses predicates recursively *)
               (* For TProd, val_rel_at_type = exists ... /\ val_rel_at_type T1 /\ val_rel_at_type T2
                  We prove step-invariance using:
@@ -1870,15 +1921,20 @@ Proof.
                   + (* TFn T1_1 T1_2 e0 *)
                     simpl. simpl in Hrel1.
                     (* NEW: TFn now requires store_wf and stores_agree_low_fo preconditions *)
-                    intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f.
+                    intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f Hsvp_f.
                     assert (Hargs_n' : val_rel_n n' Σ'_f T1_1 arg_x arg_y).
                     { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
                     assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
                     { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                    assert (Hsvp_fn' : store_vals_rel n' Σ'_f st1_f st2_f).
+                    { intros l0 T0 sl0 Hlookup.
+                      destruct (Hsvp_f l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                      exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                      apply val_rel_n_mono with (S n'). lia. exact Hvw. }
                     (* Pass new preconditions to specialize *)
-                    specialize (Hrel1 Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f).
+                    specialize (Hrel1 Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f Hsvp_fn').
                     (* Destruct now includes new postconditions *)
-                    destruct Hrel1 as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r Hagree_r]]]]]]]]]]]]].
+                    destruct Hrel1 as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r [Hagree_r Hsvp_r]]]]]]]]]]]]]].
                     exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
                     split. { exact Hext_r. }
                     split. { exact Hstep1_r. }
@@ -1918,7 +1974,18 @@ Proof.
                     { exact Hwf1_r. }
                     split.
                     { exact Hwf2_r. }
+                    split.
                     { exact Hagree_r. }
+                    { (* store_vals_pred step up *)
+                      intros l0 T0 sl0 Hlookup.
+                      destruct (Hsvp_r l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                      exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                      assert (Hcombined_svp : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_svp as [Hval_step_svp _].
+                      apply Hval_step_svp.
+                      - exact Hvw.
+                      - apply (proj1 (val_rel_n_typing _ _ _ _ _ Hvw)).
+                      - apply (proj2 (val_rel_n_typing _ _ _ _ _ Hvw)). }
                   + (* TProd nested - use helper lemma with IH *)
                     apply val_rel_at_type_step_up_with_IH with (n' := n').
                     * apply (combined_step_up_val_wrap n'); apply IH_strong; lia.
@@ -1951,15 +2018,20 @@ Proof.
                   + (* TFn *)
                     simpl. simpl in Hrel2.
                     (* NEW: TFn now requires store_wf and stores_agree_low_fo preconditions *)
-                    intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f.
+                    intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f Hsvp_f.
                     assert (Hargs_n' : val_rel_n n' Σ'_f T2_1 arg_x arg_y).
                     { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
                     assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
                     { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                    assert (Hsvp_fn' : store_vals_rel n' Σ'_f st1_f st2_f).
+                    { intros l0 T0 sl0 Hlookup.
+                      destruct (Hsvp_f l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                      exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                      apply val_rel_n_mono with (S n'). lia. exact Hvw. }
                     (* Pass new preconditions to specialize *)
-                    specialize (Hrel2 Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f).
+                    specialize (Hrel2 Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f Hsvp_fn').
                     (* Destruct now includes new postconditions *)
-                    destruct Hrel2 as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r Hagree_r]]]]]]]]]]]]].
+                    destruct Hrel2 as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r [Hagree_r Hsvp_r]]]]]]]]]]]]]].
                     exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
                     split. { exact Hext_r. }
                     split. { exact Hstep1_r. }
@@ -1999,7 +2071,18 @@ Proof.
                     { exact Hwf1_r. }
                     split.
                     { exact Hwf2_r. }
+                    split.
                     { exact Hagree_r. }
+                    { (* store_vals_pred step up *)
+                      intros l0 T0 sl0 Hlookup.
+                      destruct (Hsvp_r l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                      exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                      assert (Hcombined_svp : combined_step_up n') by (apply IH_strong; lia).
+                      destruct Hcombined_svp as [Hval_step_svp _].
+                      apply Hval_step_svp.
+                      - exact Hvw.
+                      - apply (proj1 (val_rel_n_typing _ _ _ _ _ Hvw)).
+                      - apply (proj2 (val_rel_n_typing _ _ _ _ _ Hvw)). }
                   + (* TProd nested - use helper lemma with IH *)
                     apply val_rel_at_type_step_up_with_IH with (n' := n').
                     * apply (combined_step_up_val_wrap n'); apply IH_strong; lia.
@@ -2036,15 +2119,20 @@ Proof.
                    ++ (* TFn *)
                       simpl. simpl in Hrel_x.
                       (* NEW: TFn now requires store_wf and stores_agree_low_fo preconditions *)
-                      intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f.
+                      intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f Hsvp_f.
                       assert (Hargs_n' : val_rel_n n' Σ'_f T1_1 arg_x arg_y).
                       { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
                       assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
                       { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                      assert (Hsvp_fn' : store_vals_rel n' Σ'_f st1_f st2_f).
+                      { intros l0 T0 sl0 Hlookup.
+                        destruct (Hsvp_f l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                        exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                        apply val_rel_n_mono with (S n'). lia. exact Hvw. }
                       (* Pass new preconditions to specialize *)
-                      specialize (Hrel_x Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f).
+                      specialize (Hrel_x Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f Hsvp_fn').
                       (* Destruct now includes new postconditions *)
-                      destruct Hrel_x as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r Hagree_r]]]]]]]]]]]]].
+                      destruct Hrel_x as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r [Hagree_r Hsvp_r]]]]]]]]]]]]]].
                       exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
                       split. { exact Hext_r. }
                       split. { exact Hstep1_r. }
@@ -2070,7 +2158,18 @@ Proof.
                       { exact Hwf1_r. }
                       split.
                       { exact Hwf2_r. }
+                      split.
                       { exact Hagree_r. }
+                      { (* store_vals_pred step up *)
+                        intros l0 T0 sl0 Hlookup.
+                        destruct (Hsvp_r l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                        exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                        assert (Hcombined_svp : combined_step_up n') by (apply IH_strong; lia).
+                        destruct Hcombined_svp as [Hval_step_svp _].
+                        apply Hval_step_svp.
+                        - exact Hvw.
+                        - apply (proj1 (val_rel_n_typing _ _ _ _ _ Hvw)).
+                        - apply (proj2 (val_rel_n_typing _ _ _ _ _ Hvw)). }
                    ++ (* TProd nested - use helper lemma with IH *)
                       apply val_rel_at_type_step_up_with_IH with (n' := n').
                       ** apply (combined_step_up_val_wrap n'); apply IH_strong; lia.
@@ -2104,15 +2203,20 @@ Proof.
                    ++ (* TFn *)
                       simpl. simpl in Hrel_y.
                       (* NEW: TFn now requires store_wf and stores_agree_low_fo preconditions *)
-                      intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f.
+                      intros Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_Sn' st1_f st2_f ctx_f Hst_Sn' Hwf1_f Hwf2_f Hagree_f Hsvp_f.
                       assert (Hargs_n' : val_rel_n n' Σ'_f T2_1 arg_x arg_y).
                       { apply val_rel_n_mono with (S n'). lia. exact Hargs_Sn'. }
                       assert (Hst_n' : store_rel_n n' Σ'_f st1_f st2_f).
                       { apply store_rel_n_mono with (S n'). lia. exact Hst_Sn'. }
+                      assert (Hsvp_fn' : store_vals_rel n' Σ'_f st1_f st2_f).
+                      { intros l0 T0 sl0 Hlookup.
+                        destruct (Hsvp_f l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                        exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                        apply val_rel_n_mono with (S n'). lia. exact Hvw. }
                       (* Pass new preconditions to specialize *)
-                      specialize (Hrel_y Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f).
+                      specialize (Hrel_y Σ'_f Hext_f arg_x arg_y Hv_ax Hv_ay Hc_ax Hc_ay Hargs_n' st1_f st2_f ctx_f Hst_n' Hwf1_f Hwf2_f Hagree_f Hsvp_fn').
                       (* Destruct now includes new postconditions *)
-                      destruct Hrel_y as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r Hagree_r]]]]]]]]]]]]].
+                      destruct Hrel_y as [res1 [res2 [st1_r [st2_r [ctx_r [Σ'' [Hext_r [Hstep1_r [Hstep2_r [Hvrel_r [Hstrel_r [Hwf1_r [Hwf2_r [Hagree_r Hsvp_r]]]]]]]]]]]]]].
                       exists res1, res2, st1_r, st2_r, ctx_r, Σ''.
                       split. { exact Hext_r. }
                       split. { exact Hstep1_r. }
@@ -2138,7 +2242,18 @@ Proof.
                       { exact Hwf1_r. }
                       split.
                       { exact Hwf2_r. }
+                      split.
                       { exact Hagree_r. }
+                      { (* store_vals_pred step up *)
+                        intros l0 T0 sl0 Hlookup.
+                        destruct (Hsvp_r l0 T0 sl0 Hlookup) as [w1 [w2 [Hs1 [Hs2 Hvw]]]].
+                        exists w1, w2. split; [exact Hs1|]. split; [exact Hs2|].
+                        assert (Hcombined_svp : combined_step_up n') by (apply IH_strong; lia).
+                        destruct Hcombined_svp as [Hval_step_svp _].
+                        apply Hval_step_svp.
+                        - exact Hvw.
+                        - apply (proj1 (val_rel_n_typing _ _ _ _ _ Hvw)).
+                        - apply (proj2 (val_rel_n_typing _ _ _ _ _ Hvw)). }
                    ++ (* TProd nested - use helper lemma with IH *)
                       apply val_rel_at_type_step_up_with_IH with (n' := n').
                       ** apply (combined_step_up_val_wrap n'); apply IH_strong; lia.
@@ -2376,6 +2491,7 @@ Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} 
         store_wf Σ_cur st1 ->
         store_wf Σ_cur st2 ->
         stores_agree_low_fo Σ_cur st1 st2 ->
+        store_vals_rel n' Σ_cur st1 st2 ->
         exists (v1 : expr) (v2 : expr) (st1' : store) (st2' : store)
                (ctx' : effect_ctx) (Σ' : store_ty),
           store_ty_extends Σ_cur Σ' /\
@@ -2386,7 +2502,8 @@ Fixpoint exp_rel_n (n : nat) (Σ : store_ty) (T : ty) (e1 e2 : expr) {struct n} 
           store_rel_n n' Σ' st1' st2' /\
           store_wf Σ' st1' /\
           store_wf Σ' st2' /\
-          stores_agree_low_fo Σ' st1' st2'
+          stores_agree_low_fo Σ' st1' st2' /\
+          store_vals_rel n' Σ' st1' st2'
   end.
 
 (** Limit definitions - hold for all step indices *)
@@ -2489,7 +2606,7 @@ Proof.
     apply exp_rel_n_base.
   - (* n = S n': show that EUnit terminates to EUnit with related values *)
     simpl.
-    intros Σ_cur st1 st2 ctx Hext Hstrel Hwf1 Hwf2 Hagree.
+    intros Σ_cur st1 st2 ctx Hext Hstrel Hwf1 Hwf2 Hagree Hsvr.
     (* EUnit is already a value, so it terminates in 0 steps to itself *)
     exists EUnit, EUnit, st1, st2, ctx, Σ_cur.
     split. { apply store_ty_extends_refl. }
@@ -2501,7 +2618,8 @@ Proof.
     split. { exact Hstrel. }
     split. { exact Hwf1. }
     split. { exact Hwf2. }
-    exact Hagree.
+    split. { exact Hagree. }
+    exact Hsvr.
 Qed.
 
 (** ========================================================================
@@ -2590,6 +2708,7 @@ Lemma val_rel_at_type_TFn_step_0_bridge : forall Σ T1 T2 eff v1 v2,
         store_wf Σ' st1 ->
         store_wf Σ' st2 ->
         stores_agree_low_fo Σ' st1 st2 ->
+        store_vals_rel 0 Σ' st1 st2 ->
         exists v1' v2' st1' st2' ctx' Σ'',
           store_ty_extends Σ' Σ'' /\
           (EApp v1 x, st1, ctx) -->* (v1', st1', ctx') /\
@@ -2602,7 +2721,7 @@ Lemma val_rel_at_type_TFn_step_0_bridge : forall Σ T1 T2 eff v1 v2,
 Proof.
   intros Σ T1 T2 eff v1 v2 Hty1 Hty2 Hv1 Hv2 Hc1 Hc2.
   intros Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel.
-  intros st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
+  intros st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree Hsvp0.
 
   (* Strategy: Build val_rel_n 0 for TFn, step up to val_rel_n 1 via
      combined_step_up_all, extract val_rel_at_type (the Kripke function property)
@@ -2626,7 +2745,12 @@ Proof.
   simpl in Hrat.
 
   (* Step 4: Apply the Kripke function property with our arguments *)
-  apply (Hrat Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree).
+  specialize (Hrat Σ' Hext x y Hvx Hvy Hcx Hcy Hxyrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree Hsvp0).
+  destruct Hrat as [v1' [v2' [st1' [st2' [ctx' [Σ'' [Hext' [Hstep1 [Hstep2 [Hvrel [Hstrel' [Hwf1' [Hwf2' [Hagree' _]]]]]]]]]]]]]].
+  exists v1', v2', st1', st2', ctx', Σ''.
+  split; [exact Hext'|]. split; [exact Hstep1|]. split; [exact Hstep2|].
+  split; [exact Hvrel|]. split; [exact Hstrel'|]. split; [exact Hwf1'|].
+  split; [exact Hwf2'|]. exact Hagree'.
 Qed.
 
 (** Usage note: Once val_rel_at_type_TFn_step_0_bridge is proven,

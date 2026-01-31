@@ -1,0 +1,10 @@
+/// Pasangan Selamat — Safe Pairs Demo
+/// Demo 4: Pasangan, unjuran, dan pengikatan
+///
+/// Jalankan: riinac run 07_EXAMPLES/demos/pasangan.rii
+
+biar koordinat = (10, 20);
+biar x = pertama koordinat;
+biar y = kedua koordinat;
+biar label = gabung_teks(("Titik: (", gabung_teks((ke_teks(x), gabung_teks((", ", gabung_teks((ke_teks(y), ")"))))))));
+cetakln(label)
