@@ -72,11 +72,16 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
 fi
 echo -e "${GREEN}[✓] On main branch${NC}"
 
-# Step 2: Verify working tree is clean
-if [ -n "$(git diff --name-only HEAD)" ]; then
+# Step 2: Verify working tree is clean (tolerate auto-generated VERIFICATION_MANIFEST.md)
+DIRTY_FILES=$(git diff --name-only HEAD | grep -v "^VERIFICATION_MANIFEST.md$" || true)
+if [ -n "$DIRTY_FILES" ]; then
     echo -e "${RED}ERROR: Uncommitted changes on main. Commit or stash first.${NC}"
-    git diff --name-only HEAD
+    echo "$DIRTY_FILES"
     exit 1
+fi
+# Stash the manifest if it was auto-modified by pre-push hook
+if git diff --name-only HEAD | grep -q "^VERIFICATION_MANIFEST.md$"; then
+    git checkout -- VERIFICATION_MANIFEST.md 2>/dev/null || true
 fi
 echo -e "${GREEN}[✓] Working tree clean${NC}"
 
