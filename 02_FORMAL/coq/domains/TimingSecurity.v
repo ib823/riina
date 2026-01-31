@@ -14,6 +14,7 @@ Require Import Coq.Program.Wf.
 Require Import Coq.Arith.Compare_dec.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.Classical_Prop.
+Require Import Lia.
 
 Import ListNotations.
 
@@ -455,7 +456,7 @@ Proof.
   unfold time_002_atomic_cas in Hcas.
   destruct (eq_dec (cell_value cell) expected) as [Heq | Hneq].
   - injection Hcas. intros Hsucc Hcell.
-    subst. split; [exact Heq | reflexivity].
+    split; [exact Heq | subst; reflexivity].
   - injection Hcas. intros Hsucc Hcell.
     subst. discriminate.
 Qed.
@@ -654,12 +655,11 @@ Proof.
   assert (Hnot_fresh: nonce_fresh (msg_nonce msg) w = false).
   {
     unfold nonce_fresh.
-    apply negb_true_iff.
-    apply negb_involutive_reverse.
-    apply existsb_exists.
-    exists (msg_nonce msg). split.
-    - exact Hin.
-    - apply nat_eqb_refl.
+    assert (Hex: existsb (Nat.eqb (msg_nonce msg)) (seen_nonces w) = true).
+    { apply existsb_exists. exists (msg_nonce msg). split.
+      - exact Hin.
+      - apply nat_eqb_refl. }
+    rewrite Hex. reflexivity.
   }
   rewrite Hnot_fresh. rewrite andb_false_r. reflexivity.
 Qed.
@@ -867,8 +867,7 @@ Proof.
   destruct (deadline <=? now) eqn:Hcmp.
   - reflexivity.
   - apply Nat.leb_gt in Hcmp. 
-    exfalso. apply (Nat.lt_irrefl deadline).
-    apply Nat.lt_le_trans with now; assumption.
+    lia.
 Qed.
 
 Theorem time_010_pending_timeout_preserved :
@@ -882,8 +881,7 @@ Proof.
   rewrite Hstate.
   destruct (deadline <=? now) eqn:Hcmp.
   - apply Nat.leb_le in Hcmp. 
-    exfalso. apply (Nat.lt_irrefl now).
-    apply Nat.lt_le_trans with deadline; assumption.
+    lia.
   - reflexivity.
 Qed.
 
@@ -977,8 +975,7 @@ Proof.
   destruct (req_pri <? effective_priority holder) eqn:Hcmp.
   - simpl. reflexivity.
   - apply Nat.ltb_ge in Hcmp. 
-    exfalso. apply (Nat.lt_irrefl req_pri).
-    apply Nat.lt_le_trans with (effective_priority holder); assumption.
+    lia.
 Qed.
 
 Theorem time_012_release_restores_base :
@@ -1000,8 +997,7 @@ Proof.
   destruct (req_pri <? effective_priority holder) eqn:Hcmp.
   - simpl. apply Nat.le_refl.
   - apply Nat.ltb_ge in Hcmp.
-    exfalso. apply (Nat.lt_irrefl req_pri).
-    apply Nat.lt_le_trans with (effective_priority holder); assumption.
+    lia.
 Qed.
 
 (* ═══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1032,7 +1028,7 @@ Proof.
   unfold time_013_acquire_lock in Hacq.
   destruct (time_013_can_acquire policy lock_id) eqn:Hcan.
   - unfold time_013_can_acquire, respects_lock_order in Hcan.
-    apply forallb_true_forall in Hcan.
+    rewrite forallb_true_forall in Hcan.
     specialize (Hcan held Hin).
     apply Nat.ltb_lt in Hcan.
     exact Hcan.
@@ -1049,11 +1045,10 @@ Proof.
   unfold time_013_acquire_lock, time_013_can_acquire, respects_lock_order.
   destruct (forallb (fun held0 => lock_order_fn policy held0 <? lock_order_fn policy lock_id)
                     (held_locks policy)) eqn:Hfall.
-  - apply forallb_true_forall in Hfall.
+  - rewrite forallb_true_forall in Hfall.
     specialize (Hfall held Hin).
     apply Nat.ltb_lt in Hfall.
-    exfalso. apply (Nat.lt_irrefl (lock_order_fn policy lock_id)).
-    apply Nat.lt_le_trans with (lock_order_fn policy held); assumption.
+    lia.
   - reflexivity.
 Qed.
 
@@ -1066,7 +1061,7 @@ Theorem time_013_deadlock_free :
 Proof.
   intros policy l1 l2 Hin Hcan.
   unfold time_013_can_acquire, respects_lock_order in Hcan.
-  apply forallb_true_forall in Hcan.
+  rewrite forallb_true_forall in Hcan.
   specialize (Hcan l1 Hin).
   apply Nat.ltb_lt in Hcan.
   exact Hcan.
@@ -1101,8 +1096,7 @@ Proof.
   destruct (S n <? progress_bound lp) eqn:Hcmp.
   - simpl. reflexivity.
   - apply Nat.ltb_ge in Hcmp.
-    exfalso. apply (Nat.lt_irrefl (S n)).
-    apply Nat.lt_le_trans with (progress_bound lp); assumption.
+    lia.
 Qed.
 
 Theorem time_014_bounded_progress_completes :
@@ -1116,8 +1110,7 @@ Proof.
   rewrite Hstate.
   destruct (S n <? progress_bound lp) eqn:Hcmp.
   - apply Nat.ltb_lt in Hcmp.
-    exfalso. apply (Nat.lt_irrefl (S n)).
-    apply Nat.lt_le_trans with (progress_bound lp); assumption.
+    lia.
   - simpl. reflexivity.
 Qed.
 
@@ -1238,7 +1231,7 @@ Qed.
 
 (* TIME-004: Covert Timing Channel Prevention *)
 Theorem time_004_main :
-  forall d1 d2 obs1 obs2,
+  forall d1 d2 obs1 (obs2 : TimingObservation),
     domain_isolated d1 = true ->
     domain_isolated d2 = true ->
     domain_id d1 <> domain_id d2 ->
@@ -1343,7 +1336,7 @@ Qed.
 
 (* TIME-015: Starvation Prevention *)
 Theorem time_015_main :
-  forall fs tid now scheduled_time,
+  forall fs tid now (scheduled_time : Time),
     time_015_fair_schedule fs now = Some tid ->
     let fs' := time_015_update_schedule fs tid now in
     In (tid, now) (last_scheduled fs').
