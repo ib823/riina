@@ -127,11 +127,11 @@ Definition matrix_elem := Z.
 (* Simple 2x2 matrix multiplication result element *)
 Definition mat_mul_elem (a11 a12 a21 a22 b11 b12 b21 b22 : Z) (row col : nat) : Z :=
   match row, col with
-  | 0, 0 => a11 * b11 + a12 * b21
-  | 0, 1 => a11 * b12 + a12 * b22
-  | 1, 0 => a21 * b11 + a22 * b21
-  | 1, 1 => a21 * b12 + a22 * b22
-  | _, _ => 0
+  | O, O => a11 * b11 + a12 * b21
+  | O, S O => a11 * b12 + a12 * b22
+  | S O, O => a21 * b11 + a22 * b21
+  | S O, S O => a21 * b12 + a22 * b22
+  | _, _ => 0%Z
   end.
 
 (* ═══════════════════════════════════════════════════════════════════════════════════════════ *)
@@ -168,7 +168,8 @@ Proof.
   unfold lipschitz_output.
   rewrite <- Z.mul_sub_distr_r.
   rewrite Z.abs_mul.
-  rewrite Z.abs_eq by lia.
+  assert (Hw0: (0 <= weight)%Z) by lia.
+  rewrite (Z.abs_eq weight Hw0).
   lia.
 Qed.
 
@@ -189,8 +190,6 @@ Proof.
   unfold classify.
   assert (threshold <= x1) as Hle1 by lia.
   assert (threshold <= x2) as Hle2 by lia.
-  rewrite Z.leb_le in Hle1.
-  rewrite Z.leb_le in Hle2.
   destruct (Z.leb threshold x1) eqn:E1;
   destruct (Z.leb threshold x2) eqn:E2; try reflexivity.
   - apply Z.leb_nle in E2. lia.

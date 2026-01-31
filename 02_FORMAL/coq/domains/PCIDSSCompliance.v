@@ -375,17 +375,17 @@ Qed.
 
 Definition users_unique_ids (users : list User) : bool :=
   let ids := map user_id users in
-  Nat.eqb (length ids) (length (nodup Nat.eq_dec ids)).
+  Nat.eqb (List.length ids) (List.length (nodup Nat.eq_dec ids)).
 
 Theorem COMPLY_002_07_unique_ids_singleton :
   forall (u : User),
     users_unique_ids [u] = true.
 Proof.
   intros u.
-  unfold users_unique_ids.
-  simpl.
-  rewrite Nat.eqb_refl.
-  reflexivity.
+  unfold users_unique_ids. simpl.
+  destruct (Nat.eq_dec (user_id u) (user_id u)) as [_|Hneq].
+  - reflexivity.
+  - exfalso; apply Hneq; reflexivity.
 Qed.
 
 Theorem COMPLY_002_07_unique_ids_empty :

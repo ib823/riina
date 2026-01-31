@@ -12,6 +12,7 @@ Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.
 Require Import Coq.Bool.Bool.
 Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Lia.
 Import ListNotations.
 
 (* ═══════════════════════════════════════════════════════════════════════════════════════════════════
