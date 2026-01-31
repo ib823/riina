@@ -30,7 +30,7 @@
 | `Admitted.` (Active Build) | **0** | 0 | ✅ ZERO |
 | Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
-| Files in Build | **269** | - | ✅ All compile |
+| Files in Build | **244** | - | ✅ All compile |
 | Qed Proofs (Build) | **5,250+** | - | ✅ |
 | .v Files (Total) | **271** | - | ✅ |
 | Rust Prototype | ✅ PASSING (572 tests) | PASSING | ✅ GREEN |
@@ -43,7 +43,7 @@
 3. **6 broken domain files fixed** — AlgebraicEffects, All, CovertChannelElimination, PCIDSSCompliance, TimingSecurity, VerifiedAIML
 4. **4 new proof files** — PI001_VerifiedPerformance (34 Qed), DELTA001_VerifiedDistribution (31 Qed), OMEGA001_NetworkDefense (30 Qed), PSI001_OperationalSecurity (38 Qed)
 5. **LinearTypes.v Admitted eliminated** — Reformulated `weakening_invalid_for_linear` → Qed
-6. **Active build: 269 files, 0 Admitted, 0 admits, 5 justified axioms**
+6. **Active build: 244 files, 0 Admitted, 0 admits, 5 justified axioms**
 
 **SESSION 57 KEY ACTIONS (Phase 5 Ecosystem — riina-pkg):**
 1. **riina-pkg crate** — 14 modules, 39 tests, zero external deps
@@ -803,7 +803,7 @@ ReducibilityFull.v (2 admits)
 
 | Metric | Count |
 |--------|-------|
-| Files in _CoqProject | 269 |
+| Files in _CoqProject | 244 |
 | Qed Proofs | 5,250+ |
 | **Axioms (Active)** | **5** |
 | **`admit.` (Active)** | **0** |
@@ -931,7 +931,7 @@ Session 58 Accomplishments:
 2. 183 domain .v files integrated into _CoqProject (was 114)
 3. 6 broken domain files fixed + 4 new proof files (133 Qed)
 4. LinearTypes.v: last Admitted eliminated (reformulated weakening theorem)
-5. Active build: 269 files, 0 Admitted, 0 admits, 5 justified axioms
+5. Active build: 244 files, 0 Admitted, 0 admits, 5 justified axioms
 
 Track A — Remaining Axioms (5):
 - NI_v2_LR: logical_relation_ref, logical_relation_deref, logical_relation_assign,
@@ -958,7 +958,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 |-----------------|------|--------|------------|
 | 1 | Compiler Completion | ✅ Done | All 5.1-5.7 complete; 477 tests |
 | 2 | Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
-| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 269 files |
+| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 244 files |
 | 4 | Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code, 100 examples |
 | 5 | Ecosystem & Distribution | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution/licensing pending |
 | 6 | Adoption & Community | ⬜ | FFI, demos |
@@ -986,7 +986,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 | `Admitted.` | 0 |
 | Axioms | 5 (all justified) |
 | Qed proofs | 5,250+ |
-| Build | ✅ PASSING (269 files) |
+| Build | ✅ PASSING (244 files) |
 
 **Axiom elimination:** Worker B on branch `track-a/store-rel-v3` is rewriting `store_rel_n` to eliminate 4 axioms → 1 justified (`logical_relation_declassify`). See `WORKER_B_SPEC_STORE_REL_REWRITE.md`.
 

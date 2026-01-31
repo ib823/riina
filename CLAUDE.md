@@ -79,7 +79,7 @@ RIINA is the world's **first formally verified programming language** with:
 | **Admits (Active Build)** | 0 | All fixed (Session 53) |
 | **Qed Proofs (Active Build)** | 5,250+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
-| **Coq Compilation** | ✅ PASSING | 269 files compile clean |
+| **Coq Compilation** | ✅ PASSING | 244 files compile clean |
 | **Rust Tests** | ✅ PASSING (572 tests) | All green |
 | **Rust Crates** | 13 | +riina-pkg (Session 57) |
 | **Example .rii Files** | 101 | 7 categories |
@@ -90,7 +90,7 @@ RIINA is the world's **first formally verified programming language** with:
 |-----------------------|--------|-------|
 | Phase 1: Compiler Completion | ✅ Done | All 5.1-5.7 done; 477 tests |
 | Phase 2: Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
-| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 269 files |
+| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 244 files |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
 | Phase 5: Ecosystem | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution pending |
 | Phase 6: Adoption | ⬜ | FFI, demos, community |
@@ -568,7 +568,7 @@ The older 6-phase system in `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` is arch
 
 ### Track A: Formal Proofs (02_FORMAL/coq/) — 🟢 STABLE
 
-**Build: 0 admits, 0 Admitted, 5 justified axioms, 5,250+ Qed proofs, 269 files**
+**Build: 0 admits, 0 Admitted, 5 justified axioms, 5,250+ Qed proofs, 244 files**
 
 Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic Completeness).
 
@@ -694,7 +694,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 58: Domain integration complete, 0 admits, 5 justified axioms, 572 Rust tests, 13 crates, 101 examples, 269 Coq files)*
+*Last updated: 2026-01-31 (Session 58: Domain integration complete, 0 admits, 5 justified axioms, 572 Rust tests, 13 crates, 101 examples, 244 Coq files)*
 
 ---
 
