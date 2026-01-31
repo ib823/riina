@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: MPL-2.0
+// Contoh: Menggunakan fungsi matematik C dari RIINA
+// Example: Using C math functions from RIINA
+
+luaran "C" {
+    fungsi abs(x: CInt) -> CInt;
+    fungsi rand() -> CInt;
+}
+
+fungsi utama() -> CInt kesan Sistem {
+    abs(42)
+}

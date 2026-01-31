@@ -80,9 +80,9 @@ RIINA is the world's **first formally verified programming language** with:
 | **Qed Proofs (Active Build)** | 4,763+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 244 files compile clean |
-| **Rust Tests** | ✅ PASSING (576 tests) | All green |
+| **Rust Tests** | ✅ PASSING (590 tests) | All green |
 | **Rust Crates** | 13 | +riina-pkg (Session 57) |
-| **Example .rii Files** | 101 | 7 categories |
+| **Example .rii Files** | 103 | 8 categories (+FFI) |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
@@ -93,7 +93,7 @@ RIINA is the world's **first formally verified programming language** with:
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
 | Phase 5: Ecosystem | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 |
-| Phase 6: Adoption | ⬜ | FFI, demos, community |
+| Phase 6: Adoption | 🟡 In Progress | C FFI done (Session 61); demos, community next |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
 
 **See `PROGRESS.md` for detailed status.**
@@ -595,7 +595,7 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 | Licensing | MPL-2.0 for compiler/proofs/stdlib | ✅ Done (LICENSE file added) |
 | Website | `riina.my` / `riina.dev` | ⬜ Deferred to Phase 6+ |
 
-**Total: 576 Rust tests, 13 crates, 101 example files.** Next: Phase 5 distribution or Phase 6 (FFI/demos).
+**Total: 590 Rust tests, 13 crates, 103 example files.** Phase 6 P0 (C FFI) done. Next: Phase 6 demos/community.
 
 ---
 
@@ -695,7 +695,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 59: Repo protection deployed, pre-push hook, REPO_PROTECTION_GUIDE.md v2.0.0, 0 admits, 5 justified axioms, 576 Rust tests, 13 crates, 101 examples, 244 Coq files)*
+*Last updated: 2026-01-31 (Session 61: Phase 6 P0 C FFI done, 0 admits, 5 justified axioms, 590 Rust tests, 13 crates, 103 examples, 244 Coq files)*
 
 ---
 

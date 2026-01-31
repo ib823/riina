@@ -357,6 +357,15 @@ pub enum Ty {
     /// Any type — matches any type during typechecking (for polymorphic builtins).
     /// Rust-only extension, not in Coq.
     Any,
+    // FFI types (C interop)
+    /// Raw pointer (*T) for FFI boundary
+    RawPtr(Box<Ty>),
+    /// C char type
+    CChar,
+    /// C int type
+    CInt,
+    /// C void type
+    CVoid,
 }
 
 /// Binary operators
@@ -412,6 +421,20 @@ pub enum TopLevelDecl {
     },
     /// Expression at top level (the program's main expression)
     Expr(Box<Expr>),
+    /// luaran "C" { ... } — extern block for FFI declarations
+    ExternBlock {
+        abi: String,
+        decls: Vec<ExternDecl>,
+    },
+}
+
+/// A single declaration inside an extern block.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExternDecl {
+    pub name: Ident,
+    pub params: Vec<(Ident, Ty)>,
+    pub ret_ty: Ty,
+    pub effect: Effect,
 }
 
 /// A spanned top-level declaration.
@@ -467,6 +490,10 @@ impl Program {
                 });
                 Expr::Let(name, Box::new(lam), Box::new(Expr::Unit))
             }
+            TopLevelDecl::ExternBlock { .. } => {
+                // Extern blocks don't produce expressions; skip to Unit
+                Expr::Unit
+            }
         };
         // Wrap remaining decls from back to front
         for decl in decls.into_iter().rev() {
@@ -482,6 +509,10 @@ impl Program {
                         Expr::Lam(p, ty, Box::new(acc))
                     });
                     Expr::Let(name, Box::new(lam), Box::new(result))
+                }
+                TopLevelDecl::ExternBlock { .. } => {
+                    // Extern blocks don't produce expressions; skip
+                    result
                 }
             };
         }
@@ -564,4 +595,12 @@ pub enum Expr {
     // Binary operations
     /// e1 op e2
     BinOp(BinOp, Box<Expr>, Box<Expr>),
+
+    // FFI
+    /// Foreign function call
+    FFICall {
+        name: String,
+        args: Vec<Expr>,
+        ret_ty: Ty,
+    },
 }

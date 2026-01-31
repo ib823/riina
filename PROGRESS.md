@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 59)
-**Session:** 59 (Repository Protection + Documentation Sync)
+**Report Date:** 2026-01-31 (Session 61)
+**Session:** 61 (Phase 6 P0 — C FFI Implementation)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -33,9 +33,20 @@
 | Files in Build | **244** | - | ✅ All compile |
 | Qed Proofs (Build) | **4,763+** | - | ✅ |
 | .v Files (Total) | **278** | - | ✅ |
-| Rust Prototype | ✅ PASSING (576 tests) | PASSING | ✅ GREEN |
+| Rust Prototype | ✅ PASSING (590 tests) | PASSING | ✅ GREEN |
 | Rust Crates | **13** | - | ✅ (+riina-pkg) |
-| Example .rii Files | **101** | 100+ | ✅ |
+| Example .rii Files | **103** | 100+ | ✅ (+2 FFI examples) |
+
+**SESSION 61 KEY ACTIONS (Phase 6 P0 — C FFI Implementation):**
+1. **C FFI via `luaran "C"` blocks** — Full pipeline: parse → typecheck → lower → IR → C emit
+2. **riina-types**: Added `RawPtr(Box<Ty>)`, `CChar`, `CInt`, `CVoid` to `Ty`; `FFICall` to `Expr`; `ExternBlock`/`ExternDecl` to `TopLevelDecl`
+3. **riina-parser**: `parse_extern_block()` for `luaran "C" { fungsi name(params) -> ret; }` syntax; `*T`, `CInt`, `CChar`, `CVoid` type parsing
+4. **riina-typechecker**: FFI calls typed with `Effect::System`
+5. **riina-codegen**: `FFICall` IR instruction, lowering, C emission with extern declarations, interpreter rejection
+6. **riina-codegen/ffi.rs** (NEW): `ty_to_c()` marshaling, `emit_extern_decl()` generation
+7. **riina-fmt + riina-doc**: Updated for new AST variants
+8. **Examples**: `07_EXAMPLES/ffi/panggilan_c.rii` (puts), `matematik_c.rii` (abs/rand)
+9. **Tests: 576 → 590** (+14 new FFI tests across parser, codegen, ffi modules)
 
 **SESSION 59 KEY ACTIONS (Repository Protection + Documentation):**
 1. **REPO_PROTECTION_GUIDE.md v2.0.0** — Comprehensive repository security hardening guide, 100% aligned to codebase (10 parts, 3 appendices)

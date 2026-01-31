@@ -1,5 +1,36 @@
 # Session Log
 
+## 2026-01-31 (Session 61): Phase 6 P0 — C FFI Implementation
+
+**Goal:** Implement C Foreign Function Interface via `luaran "C"` extern blocks — Phase 6 P0.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| riina-types | `RawPtr`, `CChar`, `CInt`, `CVoid` in Ty; `FFICall` in Expr; `ExternBlock`/`ExternDecl` in TopLevelDecl | Done |
+| riina-parser | `parse_extern_block()`, C type keywords, `*T` raw pointer syntax, 5 new tests | Done |
+| riina-typechecker | FFI calls typed with `Effect::System` | Done |
+| riina-codegen/ir | `FFICall` instruction variant + Display | Done |
+| riina-codegen/lower | `FFICall` lowering (free_vars, infer_type, infer_effect, lower_expr) | Done |
+| riina-codegen/emit | C emission of FFI calls + extern declarations | Done |
+| riina-codegen/interp | Rejects FFI calls with helpful error message | Done |
+| riina-codegen/ffi.rs (NEW) | `ty_to_c()` marshaling, `emit_extern_decl()`, 5 tests | Done |
+| riina-fmt + riina-doc | Updated for new AST variants | Done |
+| Examples | `07_EXAMPLES/ffi/panggilan_c.rii`, `matematik_c.rii` | Done |
+| Tests | 576 → 590 (+14 FFI tests) | Done |
+| Doc sync | PROGRESS.md, README.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md, Materialization Plan | Done |
+
+### Phase 6 Status
+
+| Item | Status |
+|------|--------|
+| C FFI (`luaran "C"` blocks) | ✅ Done (Session 61) |
+| Demo applications | ⬜ Pending |
+| Community building | ⬜ Pending |
+
+---
+
 ## 2026-01-31 (Session 60): Phase 5 Distribution Complete
 
 **Goal:** Complete Phase 5 Ecosystem & Distribution — Dockerfile, Nix flake, release scripts, installer, license fixes.

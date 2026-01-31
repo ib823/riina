@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
-## Version: 3.11.0
-## Last Updated: 2026-01-31 (Session 59)
+## Version: 3.12.0
+## Last Updated: 2026-01-31 (Session 61)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -33,7 +33,7 @@
 
 ## TRACK STATUS
 
-### Grand Totals (2026-01-31 Session 59)
+### Grand Totals (2026-01-31 Session 61)
 
 | Metric | Count | Notes |
 |--------|-------|-------|
@@ -44,10 +44,10 @@
 | **`admit.` (Active Build)** | **0** | **ALL ELIMINATED** |
 | **`Admitted.` (Active Build)** | **0** | **ALL ELIMINATED** (LinearTypes.v fixed Session 58) |
 | **Axioms (Active Build)** | 5 | All justified |
-| **Rust Tests** | **576** | All passing |
+| **Rust Tests** | **590** | All passing (+14 FFI tests) |
 | **Rust Builtins** | **88** | 9 modules (Phase 2 stdlib done) |
 | **Rust Crates** | **13** | +riina-pkg (Phase 5 ecosystem) |
-| **Example .rii Files** | **101** | 7 categories (Phase 4 done) |
+| **Example .rii Files** | **103** | 8 categories (+FFI) |
 | **Build Status** | ✅ GREEN | All files compile |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Attack→Proof Map** | ✅ | `06_COORDINATION/ATTACK_PROOF_MAP.md` |
@@ -62,7 +62,7 @@
 | Materialization plan document | ✅ COMPLETE | `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` |
 | Syntax improvement spec | ✅ ESTABLISHED | `04_SPECS/language/SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` |
 | Authoritative doc updates | ✅ COMPLETE | CLAUDE.md, PROGRESS.md, SESSION_LOG.md, DECISIONS.md |
-| Execution start | ✅ **PHASE 5 DONE** | Phase 1-5 done; 576 tests; Phase 6 next |
+| Execution start | ✅ **PHASE 6 P0 DONE** | Phase 1-5 done; Phase 6 FFI done; 590 tests |
 | Gap remediation | ✅ ACTIVE | 13-item plan in materialization doc Section 7 |
 | ATTACK_PROOF_MAP.md | ✅ COMPLETE | `06_COORDINATION/ATTACK_PROOF_MAP.md` (490 lines) |
 

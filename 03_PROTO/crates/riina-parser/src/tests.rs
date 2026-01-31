@@ -1754,3 +1754,91 @@ fn test_parse_grant_bm() {
     let expr = p.parse_expr().unwrap();
     assert_eq!(expr, Expr::Grant(Effect::Network, Box::new(Expr::Int(0))));
 }
+
+// =============================================================================
+// FFI / EXTERN BLOCK TESTS
+// =============================================================================
+
+#[test]
+fn test_parse_extern_block_single() {
+    let src = r#"luaran "C" { fungsi puts(s: *CChar) -> CInt; }"#;
+    let mut p = Parser::new(src);
+    let program = p.parse_program().unwrap();
+    assert_eq!(program.decls.len(), 1);
+    match &program.decls[0] {
+        TopLevelDecl::ExternBlock { abi, decls } => {
+            assert_eq!(abi, "C");
+            assert_eq!(decls.len(), 1);
+            assert_eq!(decls[0].name, "puts");
+            assert_eq!(decls[0].params.len(), 1);
+            assert_eq!(decls[0].params[0].0, "s");
+            assert_eq!(decls[0].params[0].1, Ty::RawPtr(Box::new(Ty::CChar)));
+            assert_eq!(decls[0].ret_ty, Ty::CInt);
+        }
+        _ => panic!("Expected ExternBlock"),
+    }
+}
+
+#[test]
+fn test_parse_extern_block_multiple() {
+    let src = r#"luaran "C" {
+        fungsi abs(x: CInt) -> CInt;
+        fungsi rand() -> CInt;
+    }"#;
+    let mut p = Parser::new(src);
+    let program = p.parse_program().unwrap();
+    assert_eq!(program.decls.len(), 1);
+    match &program.decls[0] {
+        TopLevelDecl::ExternBlock { abi, decls } => {
+            assert_eq!(abi, "C");
+            assert_eq!(decls.len(), 2);
+            assert_eq!(decls[0].name, "abs");
+            assert_eq!(decls[1].name, "rand");
+            assert_eq!(decls[1].params.len(), 0);
+        }
+        _ => panic!("Expected ExternBlock"),
+    }
+}
+
+#[test]
+fn test_parse_extern_block_english() {
+    let src = r#"extern "C" { fn getpid() -> CInt; }"#;
+    let mut p = Parser::new(src);
+    let program = p.parse_program().unwrap();
+    match &program.decls[0] {
+        TopLevelDecl::ExternBlock { abi, decls } => {
+            assert_eq!(abi, "C");
+            assert_eq!(decls.len(), 1);
+            assert_eq!(decls[0].name, "getpid");
+        }
+        _ => panic!("Expected ExternBlock"),
+    }
+}
+
+#[test]
+fn test_parse_raw_ptr_type() {
+    let src = r#"luaran "C" { fungsi malloc(n: CInt) -> *CVoid; }"#;
+    let mut p = Parser::new(src);
+    let program = p.parse_program().unwrap();
+    match &program.decls[0] {
+        TopLevelDecl::ExternBlock { decls, .. } => {
+            assert_eq!(decls[0].ret_ty, Ty::RawPtr(Box::new(Ty::CVoid)));
+        }
+        _ => panic!("Expected ExternBlock"),
+    }
+}
+
+#[test]
+fn test_parse_c_types() {
+    let src = r#"luaran "C" { fungsi test(a: CInt, b: CChar, c: CVoid) -> CInt; }"#;
+    let mut p = Parser::new(src);
+    let program = p.parse_program().unwrap();
+    match &program.decls[0] {
+        TopLevelDecl::ExternBlock { decls, .. } => {
+            assert_eq!(decls[0].params[0].1, Ty::CInt);
+            assert_eq!(decls[0].params[1].1, Ty::CChar);
+            assert_eq!(decls[0].params[2].1, Ty::CVoid);
+        }
+        _ => panic!("Expected ExternBlock"),
+    }
+}

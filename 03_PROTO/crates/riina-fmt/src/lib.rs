@@ -104,6 +104,38 @@ fn fmt_decl(out: &mut String, decl: &TopLevelDecl, level: usize, cfg: &FmtConfig
             indent(out, level, cfg);
             fmt_expr(out, e, level, cfg);
         }
+        TopLevelDecl::ExternBlock { abi, decls } => {
+            indent(out, level, cfg);
+            out.push_str("luaran \"");
+            out.push_str(abi);
+            out.push_str("\" {\n");
+            for decl in decls {
+                indent(out, level + 1, cfg);
+                out.push_str("fungsi ");
+                out.push_str(&decl.name);
+                out.push('(');
+                for (i, (pname, pty)) in decl.params.iter().enumerate() {
+                    if i > 0 {
+                        out.push_str(", ");
+                    }
+                    out.push_str(pname);
+                    out.push_str(": ");
+                    fmt_ty(out, pty);
+                }
+                out.push(')');
+                if decl.ret_ty != Ty::Unit {
+                    out.push_str(" -> ");
+                    fmt_ty(out, &decl.ret_ty);
+                }
+                if decl.effect != Effect::Pure {
+                    out.push_str(" kesan ");
+                    fmt_effect(out, &decl.effect);
+                }
+                out.push_str(";\n");
+            }
+            indent(out, level, cfg);
+            out.push('}');
+        }
     }
 }
 
@@ -309,6 +341,18 @@ fn fmt_expr(out: &mut String, expr: &Expr, level: usize, cfg: &FmtConfig) {
             out.push(' ');
             fmt_expr_inline(out, rhs, cfg);
         }
+        Expr::FFICall { name, args, .. } => {
+            indent(out, level, cfg);
+            out.push_str(name);
+            out.push('(');
+            for (i, arg) in args.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                fmt_expr_inline(out, arg, cfg);
+            }
+            out.push(')');
+        }
     }
 }
 
@@ -466,6 +510,17 @@ fn fmt_expr_inline(out: &mut String, expr: &Expr, cfg: &FmtConfig) {
             fmt_binop(out, op);
             out.push(' ');
             fmt_expr_inline(out, rhs, cfg);
+        }
+        Expr::FFICall { name, args, .. } => {
+            out.push_str(name);
+            out.push('(');
+            for (i, arg) in args.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                fmt_expr_inline(out, arg, cfg);
+            }
+            out.push(')');
         }
     }
 }
@@ -633,6 +688,13 @@ fn fmt_ty(out: &mut String, ty: &Ty) {
             out.push('>');
         }
         Ty::Any => out.push_str("Any"),
+        Ty::RawPtr(inner) => {
+            out.push('*');
+            fmt_ty(out, inner);
+        }
+        Ty::CChar => out.push_str("CChar"),
+        Ty::CInt => out.push_str("CInt"),
+        Ty::CVoid => out.push_str("CVoid"),
     }
 }
 
