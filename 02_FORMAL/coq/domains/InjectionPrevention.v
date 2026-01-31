@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* InjectionPrevention.v *)
 (* RIINA Injection Prevention Proofs *)
 (* Proves INJ-001 through INJ-015 are impossible *)

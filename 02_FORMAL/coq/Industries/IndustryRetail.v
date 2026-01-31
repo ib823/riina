@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * IndustryRetail.v - Retail/E-commerce Industry Security Theorems
 
     RIINA Formal Verification - Industry Track J

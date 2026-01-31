@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* AntiJamming.v *)
 (* RIINA Anti-Jamming Security Proofs - Track AJ *)
 (* Proves JAM-001 through JAM-025 *)

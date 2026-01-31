@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* TimeSecurity.v *)
 (* RIINA Time Security Proofs - Track AD *)
 (* Proves TIME-001 through TIME-025 *)

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* CapitalMarkets.v - RIINA Capital Markets Verification *)
 (* Spec: 01_RESEARCH/39_DOMAIN_RIINA_CAPITAL_MARKETS/ *)
 (* Zero admits, zero axioms *)

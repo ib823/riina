@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* TrafficResistance.v *)
 (* RIINA Traffic Analysis Resistance Proofs - Track Eta *)
 (* Proves TRAFFIC-001 through TRAFFIC-025 *)

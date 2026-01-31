@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedRuntime.v - RIINA-RUNTIME Execution Environment Verification *)
 (* Spec: 01_RESEARCH/30_DOMAIN_RIINA_RUNTIME/RESEARCH_RUNTIME01_FOUNDATION.md *)
 (* Layer: L5 Runtime *)

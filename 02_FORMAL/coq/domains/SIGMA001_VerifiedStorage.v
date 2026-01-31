@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedStorage.v - RIINA Verified Database *)
 (* Spec: 01_RESEARCH/27_DOMAIN_SIGMA_VERIFIED_STORAGE/RESEARCH_SIGMA01_FOUNDATION.md *)
 (* Layer: Persistent Storage *)

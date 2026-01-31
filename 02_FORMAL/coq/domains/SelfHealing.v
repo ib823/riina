@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SelfHealing.v *)
 (* RIINA Self-Healing Systems Proofs - Track Upsilon *)
 (* Proves HEAL-001 through HEAL-025 *)

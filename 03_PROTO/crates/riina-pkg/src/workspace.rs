@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Workspace (monorepo) support.
 //!
 //! A workspace root has `[workspace]` in its riina.toml with `members = [...]`.

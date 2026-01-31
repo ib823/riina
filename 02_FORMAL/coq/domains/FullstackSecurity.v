@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* FullstackSecurity.v *)
 (* RIINA Fullstack Security Proofs - Track Kappa *)
 (* Proves WEB-001 through WEB-025 *)

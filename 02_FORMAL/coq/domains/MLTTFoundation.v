@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MLTTFoundation.v - Martin-Löf Type Theory Foundation for RIINA *)
 (* Spec: 01_RESEARCH/01_DOMAIN_A_TYPE_THEORY/ *)
 (* Generated for RIINA formal verification *)

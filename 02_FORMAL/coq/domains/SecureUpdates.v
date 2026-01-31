@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SecureUpdates.v *)
 (* RIINA Verified Secure Updates Proofs - Track AF *)
 (* Proves UPDATE-001 through UPDATE-025 *)

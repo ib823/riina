@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedAudit.v *)
 (* RIINA Verified Immutable Audit Proofs - Track AE *)
 (* Proves AUDIT-001 through AUDIT-025 *)

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! ML-KEM-768 (Module-Lattice Key Encapsulation Mechanism) Implementation
 //!
 //! This module implements ML-KEM-768 as specified in FIPS 203 (August 2024).

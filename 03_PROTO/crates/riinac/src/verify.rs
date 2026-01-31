@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! RIINA Verification Gate
 //!
 //! `riinac verify [--fast|--full]` — runs all checks and produces a manifest.

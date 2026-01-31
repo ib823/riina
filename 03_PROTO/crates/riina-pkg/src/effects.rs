@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Effect permission checking for packages.
 //!
 //! Maps between riina-types Effect categories and the manifest's

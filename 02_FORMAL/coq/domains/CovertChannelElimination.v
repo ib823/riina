@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* ═══════════════════════════════════════════════════════════════════════════════════════════════════
    COVERT CHANNEL ELIMINATION PROOFS
    Task ID: WP-010-COVERT-CHANNEL-COQ-PROOFS

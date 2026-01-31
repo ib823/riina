@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MalaysiaBNMRMiT.v - Bank Negara Malaysia Risk Management in Technology *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md §A2 *)
 (* Legal Requirement: BNM/RH/PD 028-16 (RMiT), updated November 28, 2025 *)

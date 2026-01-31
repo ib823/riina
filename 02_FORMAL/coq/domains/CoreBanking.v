@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* CoreBanking.v - RIINA-BANK Core Banking Verification *)
 (* Spec: 01_RESEARCH/34_DOMAIN_RIINA_BANK/RESEARCH_BANK01_FOUNDATION.md *)
 (* Layer: Financial Infrastructure *)

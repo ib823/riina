@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! RIINA Language Server Protocol
 //!
 //! Hand-written JSON-RPC over stdio for zero-dependency LSP.

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* ASEANCompliance.v - ASEAN Data Sovereignty & Cross-Border Compliance *)
 (* Strategic Item #14: ASEAN Regulatory Adoption / Data Sovereignty *)
 (* Spec: 04_SPECS/industries/ *)

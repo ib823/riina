@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! ML-DSA-65 (Module-Lattice Digital Signature Algorithm) Implementation
 //!
 //! This module implements ML-DSA-65 as specified in FIPS 204.

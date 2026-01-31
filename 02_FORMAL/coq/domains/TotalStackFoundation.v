@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* TotalStackFoundation.v - RIINA Total Stack Integration *)
 (* Spec: 01_RESEARCH/27_DOMAIN_TOTAL_STACK/RESEARCH_TOTALSTACK_FOUNDATION.md *)
 (* Security Property: Absolute immunity through complete stack verification *)

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** IrisSeparationLogic.v
     Strategic Item #1: Iris Separation Logic for RIINA
 

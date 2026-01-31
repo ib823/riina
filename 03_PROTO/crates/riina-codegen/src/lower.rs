@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! AST to IR Lowering
 //!
 //! Translates RIINA AST expressions to SSA-form IR.

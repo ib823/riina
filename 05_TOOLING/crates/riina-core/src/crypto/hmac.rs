@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! HMAC (Hash-based Message Authentication Code) Implementation
 //!
 //! This module implements HMAC as specified in RFC 2104 and FIPS 198-1.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! RIINA Cryptographic Primitives
 //!
 //! This module provides all cryptographic primitives required by the 11 Immutable Laws.

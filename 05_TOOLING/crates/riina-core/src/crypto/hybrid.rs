@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Hybrid Cryptographic Schemes
 //!
 //! This module implements hybrid cryptographic schemes that combine classical

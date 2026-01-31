@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * Step-Up Lemmas from Strong Normalization
     
     This file connects strong normalization to the val_rel_n_step_up lemma,

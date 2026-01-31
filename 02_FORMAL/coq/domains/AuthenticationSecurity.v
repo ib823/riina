@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* AuthenticationSecurity.v *)
 (* RIINA Authentication Security Proofs *)
 (* Proves AUTH-001 through AUTH-020 are mitigated *)

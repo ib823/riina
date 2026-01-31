@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Bilingual diagnostic rendering for RIINA.
 //!
 //! Produces error messages in both Bahasa Melayu and English with

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * Non-Interference with Revolutionary val_rel_n - COMPILATION PERFECT
     
     KEY CHANGE: val_rel_n 0 carries structure for first-order types.
