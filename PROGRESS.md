@@ -904,57 +904,59 @@ Both tracks proceeding in parallel. Track B work does NOT affect Track A.
 
 ---
 
-## 7. PHASE ROADMAP
+## 7. ROADMAP
 
-| Phase | Name | Status | Progress |
-|-------|------|--------|----------|
-| 0 | Foundation Verification | ✅ **COMPLETE** | 100% (well_typed_SN proven) |
-| 1 | Axiom Elimination | 🟡 **ACTIVE** | 6 axioms remain, 0 admits, 0 Admitted |
-| 2 | Core Properties | 🟡 IN PROGRESS | 4,971 Qed proofs in active build |
-| 3 | Domain Properties | ✅ **COMPLETE** | 876 lemmas proven |
-| 4 | Implementation Verification | 🟡 RUNNING | Parallel execution |
-| 5 | Store Semantics | ✅ **COMPLETE** | 12/12 admits eliminated |
-| 6 | Production Hardening | ⚪ NOT STARTED | 0% |
+**SINGLE SOURCE OF TRUTH:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md`
 
-### Parallel Execution Status (Claude AI Web)
+All execution planning follows the 7-phase materialization plan. The older 6-phase system in `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` is archived research — do NOT use it for planning.
 
-| Phase | Target | Status | Admits |
-|-------|--------|--------|--------|
-| Phase 2 | NonInterference_v2.v | ✅ Patch delivered | 3 → 0 |
-| Phase 3 | Infrastructure helpers | ✅ **COMPLETE** | 8 Qed, 4 Axioms |
-| Phase 4 | Self-contained systems | 🟡 Running | 37 |
-| Phase 5 | Store semantics | ✅ **COMPLETE** | 12 → 0 |
+| Mat. Plan Phase | Name | Status | Key Metric |
+|-----------------|------|--------|------------|
+| 1 | Compiler Completion | 🟡 ~70% | Parser extension (5.3) is critical blocker |
+| 2 | Standard Library | ⬜ | Blocked on Phase 1 |
+| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971+ Qed |
+| 4 | Developer Experience | ⬜ | LSP, VS Code, formatter |
+| 5 | Ecosystem & Distribution | ⬜ | CI/CD, package manager |
+| 6 | Adoption & Community | ⬜ | FFI, demos |
+| 7 | Long-term Vision | ⬜ | Self-hosting, HW verification |
 
-### Session 45.5: PHASE 3 COMPLETE - Infrastructure Helpers
+### Phase 1 (Compiler Completion) — Detailed Status
 
-**Phase3_Infrastructure_Helpers_FINAL.v** - 8 Qed proofs + 4 standard axioms:
+| Item | Description | Status |
+|------|-------------|--------|
+| 5.1 | Wire codegen into riinac | 🟡 Driver exists (385 lines), codegen not imported |
+| 5.2 | Lexer changes | 🟢 ~90% (70+ bilingual keywords) |
+| 5.3 | Parser extension | ❌ **CRITICAL** — expressions only, no functions/modules/types |
+| 5.4 | C emitter completion | 🟡 ~85% (missing closures, effect handlers) |
+| 5.5 | REPL | ❌ Stub |
+| 5.6 | Error diagnostics | ❌ Not started |
+| 5.7 | Built-in functions | ✅ Done (59 builtins) |
 
-| Lemma | Status | Purpose |
-|-------|--------|---------|
-| `val_rel_at_type_fo_symmetric` | ✅ Qed | FO relation symmetry |
-| `val_rel_n_0_symmetric_FO` | ✅ Qed | val_rel_n 0 symmetry |
-| `store_rel_preserved_eq` | ✅ Qed | Store equality preservation |
-| `store_rel_preserved_pure` | ✅ Qed | Pure preserves store_rel |
-| `stores_agree_preserved_eq` | ✅ Qed | Agreement equality preservation |
-| `stores_agree_preserved_pure` | ✅ Qed | Pure preserves agreement |
-| `base_type_value_typing` | ✅ Qed | Base type typing |
-| `store_ty_extends_has_type` | ○ Axiom | Standard weakening |
-| `value_typing_from_val_rel_FO` | ○ Axiom | Canonical forms |
-| `FO_noninterference_pure` | ○ Axiom | Core NI theorem |
-| `pure_eval_preserves_store` | ○ Axiom | Effect soundness |
+**Critical path:** 5.2 → 5.3.1 → 5.3.2 → 5.1 → 5.4 → Gate 3 (end-to-end compilation)
 
-**Key Insight:** The 4 axioms are independent infrastructure (weakening, canonical forms, NI theorem, effect soundness) - not circular dependencies.
+### Phase 3 (Formal Verification) — Track A Status
+
+| Metric | Value |
+|--------|-------|
+| `admit.` | 0 |
+| `Admitted.` | 0 |
+| Axioms | 5 (all justified) |
+| Qed proofs | 4,971+ |
+| Build | ✅ PASSING (98 files) |
+
+**Axiom elimination:** Worker B on branch `track-a/store-rel-v3` is rewriting `store_rel_n` to eliminate 4 axioms → 1 justified (`logical_relation_declassify`). See `WORKER_B_SPEC_STORE_REL_REWRITE.md`.
 
 ---
 
 ## 8. NEXT PRIORITIES
 
-| Priority | Task | Current | Target |
-|----------|------|---------|--------|
-| P0 | Axioms 1-3 (ref/deref/assign) in NI_v2_LR | 3 axioms | 0 — inline store operation proofs |
-| P1 | Axiom 5 (val_rel_store_weaken_back) in NI_v2_LR | 1 axiom | 0 — generalize logical_relation with Σ_base |
-| P2 | Axiom 6 (fundamental_theorem_step_0) in NI_v2 | 1 axiom | 0 — requires val_rel_n definition change or full proof |
-| P3 | Axiom 4 (logical_relation_declassify) in NI_v2_LR | 1 justified axiom | Keep — fundamentally unprovable without purity analysis |
+| Priority | Track | Task |
+|----------|-------|------|
+| P0 | B | **5.3 Parser extension** — add `fungsi`, `bentuk`, `modul`, statement sequences |
+| P1 | B | **5.1 Wire codegen** — import riina-codegen, CLI subcommands, `build` pipeline |
+| P2 | B | **5.4 C emitter** — closures, phi copies, effect handler stubs |
+| P3 | A | **Axiom elimination** — Worker B store_rel_n rewrite (parallel) |
+| P4 | B | **Gate 3** — end-to-end: hello_dunia.rii → binary |
 
 ---
 
