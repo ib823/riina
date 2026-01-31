@@ -23,9 +23,18 @@ fi
 if [ -f "${HOOKS_SRC}/pre-commit" ]; then
     cp "${HOOKS_SRC}/pre-commit" "${HOOKS_DST}/pre-commit"
     chmod +x "${HOOKS_DST}/pre-commit"
-    echo "Installed: pre-commit"
+    echo "Installed: pre-commit  (riinac verify --fast)"
 else
     echo "Warning: pre-commit hook source not found"
+fi
+
+# Install pre-push hook
+if [ -f "${HOOKS_SRC}/pre-push" ]; then
+    cp "${HOOKS_SRC}/pre-push" "${HOOKS_DST}/pre-push"
+    chmod +x "${HOOKS_DST}/pre-push"
+    echo "Installed: pre-push   (riinac verify --full + security checks)"
+else
+    echo "Warning: pre-push hook source not found"
 fi
 
 echo "Done. Hooks installed to ${HOOKS_DST}"

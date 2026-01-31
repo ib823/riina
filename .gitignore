@@ -12,7 +12,23 @@
 **/Makefile.coq.conf
 **/_CoqProject.bak
 
-# General
+# Archives & binaries
+*.zip
+*.tar.gz
+dist/
+
+# IDE & tool artifacts
 .DS_Store
 .gemini/
+.claude/
+.vscode/
+.idea/
+
+# Build artifacts
+axiom_audit_report.txt
 .keepalive_timestamp
+integrity_reports/
+.riina_manifest*
+
+# Nix
+result

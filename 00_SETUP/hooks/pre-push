@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# RIINA pre-push hook — runs riinac verify --full + security checks.
+# Install: cp 00_SETUP/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "================================================================"
+echo "  RIINA PRE-PUSH VERIFICATION"
+echo "================================================================"
+
+# ── Step 1: Locate riinac ──────────────────────────────────────────
+RIINAC=""
+for candidate in \
+    "${REPO_ROOT}/03_PROTO/target/release/riinac" \
+    "${REPO_ROOT}/03_PROTO/target/debug/riinac"; do
+    if [ -x "$candidate" ]; then
+        RIINAC="$candidate"
+        break
+    fi
+done
+
+if [ -z "$RIINAC" ]; then
+    echo "riinac not found — building..."
+    (cd "${REPO_ROOT}/03_PROTO" && cargo build --release -p riinac 2>&1) || {
+        echo "FAIL: could not build riinac"
+        exit 1
+    }
+    RIINAC="${REPO_ROOT}/03_PROTO/target/release/riinac"
+fi
+
+# ── Step 2: Run riinac verify --full ───────────────────────────────
+echo "[1/4] Running riinac verify --full..."
+"$RIINAC" verify --full || {
+    echo "BLOCKED: riinac verify --full failed"
+    exit 1
+}
+echo "      riinac verify --full passed"
+
+# ── Step 3: GPG signature check ───────────────────────────────────
+echo "[2/4] Verifying commit signatures..."
+GPG_SIGN=$(git config --get commit.gpgsign 2>/dev/null || echo "false")
+REMOTE=$1
+ZERO="0000000000000000000000000000000000000000"
+
+if [ "$GPG_SIGN" = "true" ]; then
+    while read local_ref local_sha remote_ref remote_sha; do
+        if [ "$local_sha" = "$ZERO" ]; then
+            continue
+        fi
+        if [ "$remote_sha" = "$ZERO" ]; then
+            range="$local_sha --not --remotes"
+        else
+            range="$remote_sha..$local_sha"
+        fi
+        UNSIGNED=$(git log --pretty=format:"%H %G?" $range 2>/dev/null \
+            | grep -v " G$" | grep -v " U$" || true)
+        if [ -n "$UNSIGNED" ]; then
+            echo "BLOCKED: Unsigned commits detected:"
+            echo "$UNSIGNED"
+            exit 1
+        fi
+    done
+    echo "      All commits signed"
+else
+    echo "      GPG signing not configured — skipping signature check"
+    echo "      (Enable with: git config --global commit.gpgsign true)"
+fi
+
+# ── Step 4: Secret detection ──────────────────────────────────────
+echo "[3/4] Scanning for secrets..."
+SECRETS_PATTERN='(password|secret|api[_-]?key|token|private[_-]?key)\s*[=:]\s*["\x27][^"\x27]+'
+STAGED=$(git diff --name-only --diff-filter=ACM HEAD~1..HEAD 2>/dev/null || true)
+if [ -n "$STAGED" ]; then
+    FOUND=$(echo "$STAGED" | xargs grep -lEi "$SECRETS_PATTERN" 2>/dev/null || true)
+    if [ -n "$FOUND" ]; then
+        echo "BLOCKED: Potential secrets detected:"
+        echo "$FOUND"
+        exit 1
+    fi
+fi
+echo "      No secrets detected"
+
+# ── Step 5: Trojan source (bidi Unicode) ──────────────────────────
+echo "[4/4] Scanning for Trojan source attacks..."
+TROJAN=$(grep -rPl \
+    '[\x{202A}\x{202B}\x{202C}\x{202D}\x{202E}\x{2066}\x{2067}\x{2068}\x{2069}]' \
+    --include="*.v" --include="*.rs" --include="*.rii" --include="*.md" \
+    "$REPO_ROOT" 2>/dev/null || true)
+if [ -n "$TROJAN" ]; then
+    echo "BLOCKED: Trojan source (bidi Unicode) characters detected:"
+    echo "$TROJAN"
+    exit 1
+fi
+echo "      No Trojan source attacks detected"
+
+echo ""
+echo "================================================================"
+echo "  ALL PRE-PUSH CHECKS PASSED"
+echo "================================================================"
