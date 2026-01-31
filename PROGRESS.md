@@ -31,9 +31,9 @@
 | Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **244** | - | ✅ All compile |
-| Qed Proofs (Build) | **5,250+** | - | ✅ |
-| .v Files (Total) | **271** | - | ✅ |
-| Rust Prototype | ✅ PASSING (572 tests) | PASSING | ✅ GREEN |
+| Qed Proofs (Build) | **4,763+** | - | ✅ |
+| .v Files (Total) | **278** | - | ✅ |
+| Rust Prototype | ✅ PASSING (576 tests) | PASSING | ✅ GREEN |
 | Rust Crates | **13** | - | ✅ (+riina-pkg) |
 | Example .rii Files | **101** | 100+ | ✅ |
 
@@ -806,7 +806,7 @@ ReducibilityFull.v (2 admits)
 | Metric | Count |
 |--------|-------|
 | Files in _CoqProject | 244 |
-| Qed Proofs | 5,250+ |
+| Qed Proofs | 4,763+ |
 | **Axioms (Active)** | **5** |
 | **`admit.` (Active)** | **0** |
 | **`Admitted.` (Active)** | **0** |
@@ -901,7 +901,7 @@ The following remain and are NOT covered by delegation output:
 | riina-pkg | Package manager | 39 | ✅ |
 | riinac | Compiler driver | 11 | ✅ |
 
-**Total Tests:** 568 | **All Passing** ✅
+**Total Tests:** 576 | **All Passing** ✅
 
 **Materialization Plan:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` — 7-phase plan from prototype to production language. Phase 1 ~90% complete; gap remediation active in parallel with Track A.
 
@@ -922,7 +922,7 @@ The following remain and are NOT covered by delegation output:
 ```
 Session      : 58 (Track A — Domain integration, LinearTypes fix, README overhaul)
 Last Action  : Eliminated last Admitted in active build (LinearTypes.v)
-Build Status : ✅ PASSING (244 Coq files + 572 Rust tests)
+Build Status : ✅ PASSING (244 Coq files + 576 Rust tests)
 Axioms       : 5 (active build: 4 in NI_v2_LR + 1 in NI_v2)
 Admits       : 0 admit. + 0 Admitted. = 0 total
 Rust Tests   : 572 (all passing)
@@ -960,7 +960,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 |-----------------|------|--------|------------|
 | 1 | Compiler Completion | ✅ Done | All 5.1-5.7 complete; 477 tests |
 | 2 | Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
-| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 244 files |
+| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | 4 | Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code, 100 examples |
 | 5 | Ecosystem & Distribution | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution/licensing pending |
 | 6 | Adoption & Community | ⬜ | FFI, demos |
@@ -987,7 +987,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 | `admit.` | 0 |
 | `Admitted.` | 0 |
 | Axioms | 5 (all justified) |
-| Qed proofs | 5,250+ |
+| Qed proofs | 4,763+ |
 | Build | ✅ PASSING (244 files) |
 
 **Axiom elimination:** Worker B on branch `track-a/store-rel-v3` is rewriting `store_rel_n` to eliminate 4 axioms → 1 justified (`logical_relation_declassify`). See `WORKER_B_SPEC_STORE_REL_REWRITE.md`.
@@ -1028,4 +1028,4 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 *"Every line of code backed by mathematical proof."*
 
 *Report Generated: 2026-01-31 (Session 58)*
-*"0 admits. 5 justified axioms. 244 Coq files. 572 Rust tests. 13 crates. Q.E.D. Aeternum."*
+*"0 admits. 5 justified axioms. 244 Coq files. 576 Rust tests. 13 crates. Q.E.D. Aeternum."*

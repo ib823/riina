@@ -40,11 +40,11 @@
 | **Total Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Delegation Prompts** | **90** | **100% coverage** |
 | **Coq .v Files (Active Build)** | 244 | All compile (was 98; +171 domain files integrated) |
-| **Coq Qed Proofs (Active Build)** | 5,250+ | Verified |
+| **Coq Qed Proofs (Active Build)** | 4,763+ | Verified |
 | **`admit.` (Active Build)** | **0** | **ALL ELIMINATED** |
 | **`Admitted.` (Active Build)** | **0** | **ALL ELIMINATED** (LinearTypes.v fixed Session 58) |
 | **Axioms (Active Build)** | 5 | All justified |
-| **Rust Tests** | **572** | All passing |
+| **Rust Tests** | **576** | All passing |
 | **Rust Builtins** | **88** | 9 modules (Phase 2 stdlib done) |
 | **Rust Crates** | **13** | +riina-pkg (Phase 5 ecosystem) |
 | **Example .rii Files** | **101** | 7 categories (Phase 4 done) |

@@ -20,8 +20,8 @@
 
 ### Final State
 
-- **Active Coq build**: 244 files, 0 Admitted, 0 admits, 5 justified axioms, 5,250+ Qed
-- **Rust**: 13 crates, 572 tests, all passing
+- **Active Coq build**: 244 files, 0 Admitted, 0 admits, 5 justified axioms, 4,763+ Qed
+- **Rust**: 13 crates, 576 tests, all passing
 - **Examples**: 101 .rii files across 7 categories
 
 ### Commits

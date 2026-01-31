@@ -296,7 +296,7 @@ When adding new code, **do NOT add external dependencies** to any `Cargo.toml`.
 | **Arena** | `riina-arena/src/lib.rs` | 437 | Complete. Typed arena with grow support. |
 | **Driver** | `riinac/src/main.rs` | 63 | **Minimal.** Reads file, parses, typechecks, prints type/effect. No codegen, no subcommands. |
 | **Crypto** | `05_TOOLING/crates/riina-core/` | ~15,000 | Complete. 15 modules (AES, SHA, HMAC, X25519, Ed25519, ML-KEM, ML-DSA, etc.). |
-| **Coq Proofs** | `02_FORMAL/coq/` | ~89,282 | 4,971 Qed, 0 admits, 6 axioms. 98 files in active build. 124 domain files outside build (118 complete, 3 uncompilable). Track A actively working. |
+| **Coq Proofs** | `02_FORMAL/coq/` | ~125,000 | 4,763+ Qed, 0 admits, 5 axioms. 244 files in active build. All domain files integrated. Track A stable. |
 
 ### 3.2 What Does NOT Work Today
 
@@ -1473,7 +1473,7 @@ This phase addresses ALL gaps identified by the exhaustive 4-agent audit (2026-0
 
 ### 7.3 P0: Domain File Integration — ✅ COMPLETE (Session 58)
 
-**All 183 domain files integrated into `_CoqProject`.** Total active build: 269 files.
+**All 183 domain files integrated into `_CoqProject`.** Total active build: 244 files.
 
 6 previously-broken files fixed (AlgebraicEffects.v, All.v, CovertChannelElimination.v, PCIDSSCompliance.v, TimingSecurity.v, VerifiedAIML.v). 4 new proof files created (PI001, DELTA001, OMEGA001, PSI001 — 133 Qed).
 
@@ -1493,7 +1493,7 @@ All previously-broken domain files fixed and integrated:
 | `domains/TimingSecurity.v` | Tactic ordering issue | Reordered + `lia` |
 | `domains/VerifiedAIML.v` | Z/nat type mismatch | Explicit `O`/`S O` patterns |
 
-**Active build: 0 Admitted, 0 admits across all 269 files.**
+**Active build: 0 Admitted, 0 admits across all 244 files.**
 
 ---
 
