@@ -1,0 +1,148 @@
+/// OPTIONS.RII - Optional Values with Mungkin Type
+/// Nilai opsional dengan jenis Mungkin (Maybe/Option)
+/// Demonstrates: Option/Maybe type, pattern matching, unwrapping
+
+fungsi ambil_mungkin() -> Mungkin<Nombor> kesan Bersih {
+    /// Kembalikan Ada (Some value)
+    /// Return Ada (Some)
+    pulang Ada(42);
+}
+
+fungsi ambil_tiada() -> Mungkin<Teks> kesan Bersih {
+    /// Kembalikan Tidak (None)
+    /// Return Tidak (None)
+    pulang Tidak;
+}
+
+fungsi padan_mungkin(m: Mungkin<Nombor>) -> Teks kesan Bersih {
+    /// Corak padankan dengan Mungkin
+    /// Pattern match with Mungkin
+    padan m {
+        Ada(n) -> "Ada nilai: {n}",
+        Tidak -> "Tiada nilai",
+    }
+}
+
+fungsi gelap_mungkin(m: Mungkin<Nombor>) -> Teks kesan Bersih {
+    /// Gelang (wrap) nilai dalam Mungkin
+    /// Wrap value in Mungkin
+    biar hasil = m.peta(fungsi(x: Nombor) -> Nombor {
+        pulang x * 2;
+    });
+
+    padan hasil {
+        Ada(n) -> "Dua kali: {n}",
+        Tidak -> "Tiada untuk diubah",
+    }
+}
+
+fungsi dapatkan_atau_lalai(m: Mungkin<Nombor>, lalai: Nombor) -> Nombor kesan Bersih {
+    /// Dapatkan nilai atau gunakan lalai
+    /// Get value or use default
+    padan m {
+        Ada(n) -> n,
+        Tidak -> lalai,
+    }
+}
+
+fungsi gabung_mungkin(m1: Mungkin<Nombor>, m2: Mungkin<Nombor>) -> Mungkin<Nombor> kesan Bersih {
+    /// Gabung dua Mungkin
+    /// Combine two Mungkin values
+    padan (m1, m2) {
+        (Ada(a), Ada(b)) -> Ada(a + b),
+        _ -> Tidak,
+    }
+}
+
+fungsi rantai_mungkin() -> Mungkin<Nombor> kesan Bersih {
+    /// Rantai operasi pada Mungkin
+    /// Chain operations on Mungkin
+    biar m = Ada(5);
+
+    biar hasil = m
+        .peta(fungsi(x: Nombor) -> Nombor { x * 2 })    /// Ada(10)
+        .peta(fungsi(x: Nombor) -> Nombor { x + 3 })    /// Ada(13)
+        ;
+
+    pulang hasil;
+}
+
+fungsi selamat_pembukaan(m: Mungkin<Teks>) -> Teks kesan Bersih {
+    /// Buka dengan selamat (safe unwrap)
+    /// Safe unwrap with default
+    padan m {
+        Ada(t) -> t,
+        Tidak -> "kosong",
+    }
+}
+
+fungsi paksa_pembukaan(m: Mungkin<Nombor>) -> Nombor kesan Bersih {
+    /// Buka dengan paksa (panics jika Tidak)
+    /// Forced unwrap (panics if Tidak)
+    padan m {
+        Ada(n) -> n,
+        Tidak -> {
+            cetak("RALAT: Percubaan membuka Tidak!\n");
+            /// Dalam implementasi sebenar, ini akan panic
+            /// In real implementation, this would panic
+            pulang 0;
+        }
+    }
+}
+
+fungsi saring_ada(senarai: Senarai<Mungkin<Nombor>>) -> Senarai<Nombor> kesan Bersih {
+    /// Saring hanya elemen Ada
+    /// Filter only Ada values
+    senarai.tapis(fungsi(m: Mungkin<Nombor>) -> Benar {
+        padan m {
+            Ada(_) -> betul,
+            Tidak -> salah,
+        }
+    }).peta(fungsi(m: Mungkin<Nombor>) -> Nombor {
+        padan m {
+            Ada(n) -> n,
+            _ -> 0,    /// Tidak boleh terjadi
+        }
+    })
+}
+
+fungsi cari_mungkin(senarai: Senarai<Nombor>) -> Mungkin<Nombor> kesan Bersih {
+    /// Cari elemen dalam senarai, kembalikan Mungkin
+    /// Search list, return Mungkin
+    untuk x dalam senarai {
+        kalau x > 10 {
+            pulang Ada(x);
+        }
+    }
+
+    pulang Tidak;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar m1 = Ada(42);
+    biar hasil1 = padan_mungkin(m1);
+    cetak(hasil1);
+    cetak("\n");
+
+    biar m2 = Tidak;
+    biar hasil2 = padan_mungkin(m2);
+    cetak(hasil2);
+    cetak("\n");
+
+    biar nilai = dapatkan_atau_lalai(Ada(10), 0);
+    cetak("Nilai: ");
+    cetak(nilai);
+    cetak("\n");
+
+    biar lalai = dapatkan_atau_lalai(Tidak, 99);
+    cetak("Lalai: ");
+    cetak(lalai);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Mungkin<T> is the Option/Maybe type.
+/// Variants: Ada(T) for Some, Tidak for None.
+/// Pattern matching handles both cases.
+/// Method chaining with peta, tapis, lipat for functional operations.

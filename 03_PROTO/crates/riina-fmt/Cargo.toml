@@ -1,0 +1,12 @@
+[package]
+name = "riina-fmt"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA source code formatter"
+
+[dependencies]
+riina-types.workspace = true
+riina-lexer.workspace = true
+riina-parser.workspace = true

@@ -1,0 +1,142 @@
+/// NETWORK.RII - Network Operations
+/// Operasi rangkaian
+/// Demonstrates: Rangkaian effect, HTTP, sockets
+
+fungsi buat_sambungan_http(url: Teks) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Buat sambungan HTTP dan dapatkan tindakbalas
+    /// Simulasi - dalam praktik akan gunakan HTTP library
+    Ok("respons_dari_server")
+}
+
+fungsi hantar_permintaan_get(url: Teks) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Hantar permintaan GET
+    buat_sambungan_http(url)
+}
+
+fungsi hantar_permintaan_post(
+    url: Teks,
+    badan: Teks
+) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Hantar permintaan POST
+    Ok("respons_post")
+}
+
+fungsi ambil_kepala_http(url: Teks) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Ambil kepala HTTP dari URL
+    Ok("200 OK")
+}
+
+fungsi sambung_ke_pelayan(
+    pelayan: Teks,
+    port: Nombor
+) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Sambung ke pelayan menggunakan socket
+    Ok("sambungan_dibuka")
+}
+
+fungsi hantar_paket(
+    sambungan: Teks,
+    data: Teks
+) -> Hasil<Nombor, Teks> kesan Rangkaian {
+    /// Hantar paket melalui sambungan
+    Ok(data.panjang())
+}
+
+fungsi terima_paket(
+    sambungan: Teks
+) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Terima paket dari sambungan
+    Ok("data_dari_pelayan")
+}
+
+fungsi tutup_sambungan(
+    sambungan: Teks
+) -> Hasil<Nombor, Teks> kesan Rangkaian {
+    /// Tutup sambungan
+    Ok(0)
+}
+
+fungsi permintaan_dns(nama_hos: Teks) -> Hasil<Teks, Teks> kesan Rangkaian {
+    /// Lakukan permintaan DNS
+    Ok("192.168.1.1")
+}
+
+fungsi unduh_fail(
+    url: Teks,
+    nama_fail_tujuan: Teks
+) -> Hasil<Nombor, Teks> kesan (Rangkaian, Tulis) {
+    /// Unduh fail dari URL
+    padan hantar_permintaan_get(url) {
+        Ok(kandungan) -> {
+            padan tulis_ke_fail(nama_fail_tujuan, kandungan) {
+                Ok(_) -> Ok(0),
+                Ralat(e) -> Ralat("Tulis gagal"),
+            }
+        },
+        Ralat(e) -> Ralat("Unduh gagal"),
+    }
+}
+
+fungsi muat_naik_fail(
+    url: Teks,
+    nama_fail: Teks
+) -> Hasil<Teks, Teks> kesan (Rangkaian, Baca) {
+    /// Muat naik fail ke URL
+    padan baca_fail_sepenuhnya(nama_fail) {
+        Ok(kandungan) -> {
+            hantar_permintaan_post(url, kandungan)
+        },
+        Ralat(e) -> Ralat("Baca fail gagal"),
+    }
+}
+
+fungsi utama() -> Nombor kesan (Rangkaian, Tulis) {
+    cetak("=== Operasi Rangkaian ===\n");
+
+    /// Dapatkan perkhidmatan dari HTTP
+    padan hantar_permintaan_get("http://example.com") {
+        Ok(respons) -> {
+            cetak("Respons: ");
+            cetak(respons);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    /// Lakukan permintaan DNS
+    padan permintaan_dns("example.com") {
+        Ok(ip) -> {
+            cetak("IP: ");
+            cetak(ip);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Ralat DNS\n"),
+    }
+
+    /// Sambung ke pelayan
+    padan sambung_ke_pelayan("localhost", 8080) {
+        Ok(conn) -> {
+            cetak("Sambungan dibuka\n");
+
+            /// Hantar data
+            padan hantar_paket(conn, "hello") {
+                Ok(_) -> cetak("Data dihantar\n"),
+                Ralat(e) -> cetak("Hantar gagal\n"),
+            }
+
+            /// Tutup sambungan
+            padan tutup_sambungan(conn) {
+                Ok(_) -> cetak("Sambungan ditutup\n"),
+                Ralat(e) -> cetak("Tutup gagal\n"),
+            }
+        },
+        Ralat(e) -> cetak("Sambung gagal\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Rangkaian for network operations.
+/// May fail due to network conditions.
+/// Order matters for protocol correctness.

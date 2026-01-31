@@ -1,0 +1,172 @@
+/// TIME_BOUNDED_CAP.RII - Time-Bounded Capabilities
+/// Keupayaan yang dibatasi masa untuk penggunaan sementara
+/// Demonstrates: expiry tracking, time bounds, revocation
+
+jenis Keupayaan<T> {
+    hak: T,
+    pemilik: Teks,
+    waktu_dibuat: Nombor,
+    waktu_tamat: Nombor,
+    masa_guna_tinggal: Nombor,
+}
+
+jenis HakUmum {
+    jenis_hak: Teks,
+}
+
+fungsi buat_keupayaan_masa_terbatas<T>(
+    hak: T,
+    pemilik: Teks,
+    durasi_saat: Nombor
+) -> Keupayaan<T> kesan Masa {
+    /// Buat keupayaan dengan batas masa
+    biar waktu_kini = ambil_waktu_kini();
+    biar waktu_tamat = waktu_kini + durasi_saat;
+
+    Keupayaan {
+        hak: hak,
+        pemilik: pemilik,
+        waktu_dibuat: waktu_kini,
+        waktu_tamat: waktu_tamat,
+        masa_guna_tinggal: durasi_saat,
+    }
+}
+
+fungsi periksa_keupayaan_belum_tamat<T>(
+    cap: Keupayaan<T>
+) -> Benar kesan Masa {
+    /// Periksa sama ada keupayaan belum tamat
+    biar waktu_kini = ambil_waktu_kini();
+    waktu_kini < cap.waktu_tamat
+}
+
+fungsi gunakan_keupayaan_masa_terbatas<T>(
+    ubah cap: Keupayaan<T>
+) -> Hasil<T, Teks> kesan Masa {
+    /// Gunakan keupayaan dengan pemeriksaan masa
+    kalau !periksa_keupayaan_belum_tamat(cap) {
+        pulang Ralat("Keupayaan telah tamat masa");
+    }
+
+    kalau cap.masa_guna_tinggal <= 0 {
+        pulang Ralat("Penggunaan telah habis");
+    }
+
+    /// Kurangkan penggunaan tinggal
+    cap.masa_guna_tinggal = cap.masa_guna_tinggal - 1;
+
+    Ok(cap.hak)
+}
+
+fungsi perpanjang_keupayaan<T>(
+    ubah cap: Keupayaan<T>,
+    durasi_tambahan_saat: Nombor
+) -> Hasil<Keupayaan<T>, Teks> kesan Masa {
+    /// Perpanjang keupayaan
+    kalau !periksa_keupayaan_belum_tamat(cap) {
+        pulang Ralat("Keupayaan sudah tamat, tidak dapat perpanjang");
+    }
+
+    cap.waktu_tamat = cap.waktu_tamat + durasi_tambahan_saat;
+    cap.masa_guna_tinggal = cap.masa_guna_tinggal + durasi_tambahan_saat;
+
+    Ok(cap)
+}
+
+fungsi sisa_masa_keupayaan<T>(
+    cap: Keupayaan<T>
+) -> Nombor kesan Masa {
+    /// Dapatkan sisa masa keupayaan dalam saat
+    biar waktu_kini = ambil_waktu_kini();
+    biar sisa = cap.waktu_tamat - waktu_kini;
+
+    kalau sisa < 0 {
+        0
+    } lain {
+        sisa
+    }
+}
+
+fungsi keupayaan_setara_umur_sesi(
+    id_sesi: Teks,
+    durasi_sesi: Nombor
+) -> Keupayaan<HakUmum> kesan Masa {
+    /// Buat keupayaan yang sama dengan umur sesi
+    buat_keupayaan_masa_terbatas(
+        HakUmum { jenis_hak: "sesi:{id_sesi}" },
+        "sistem",
+        durasi_sesi
+    )
+}
+
+fungsi keupayaan_dengan_had_penggunaan<T>(
+    cap: Keupayaan<T>,
+    had_penggunaan: Nombor
+) -> Keupayaan<T> kesan Bersih {
+    /// Keupayaan dengan had penggunaan tambahan
+    Keupayaan {
+        hak: cap.hak,
+        pemilik: cap.pemilik,
+        waktu_dibuat: cap.waktu_dibuat,
+        waktu_tamat: cap.waktu_tamat,
+        masa_guna_tinggal: had_penggunaan,
+    }
+}
+
+fungsi daftarkan_keupayaan_berakhir(
+    ubah cap: Keupayaan<HakUmum>
+) -> Hasil<Nombor, Teks> kesan (Tulis, Masa) {
+    /// Daftarkan keupayaan yang akan berakhir
+    biar sisa = sisa_masa_keupayaan(cap);
+
+    kalau sisa < 3600 {  /// Kurang dari 1 jam
+        cetak("Amaran: Keupayaan akan tamat dalam ");
+        cetak(sisa);
+        cetak(" saat\n");
+    }
+
+    Ok(sisa)
+}
+
+fungsi utama() -> Nombor kesan (Masa, Tulis) {
+    cetak("=== Keupayaan Terbatas Masa ===\n");
+
+    /// Buat keupayaan 1 jam
+    biar cap = buat_keupayaan_masa_terbatas(
+        HakUmum { jenis_hak: "baca" },
+        "pengguna1",
+        3600
+    );
+
+    cetak("Keupayaan dibuat dengan durasi 1 jam\n");
+
+    /// Periksa keupayaan
+    biar belum_tamat = periksa_keupayaan_belum_tamat(cap);
+    cetak("Keupayaan belum tamat: ");
+    cetak(belum_tamat);
+    cetak("\n");
+
+    /// Sisa masa
+    biar sisa = sisa_masa_keupayaan(cap);
+    cetak("Sisa masa (saat): ");
+    cetak(sisa);
+    cetak("\n");
+
+    /// Daftarkan
+    padan daftarkan_keupayaan_berakhir(cap) {
+        Ok(s) -> {
+            cetak("Didaftarkan, sisa: ");
+            cetak(s);
+            cetak(" saat\n");
+        },
+        Ralat(e) -> cetak("Ralat\n"),
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Time-bounded capabilities auto-expire.
+/// waktu_tamat prevents indefinite access.
+/// masa_guna_tinggal limits usage count.
+/// Requires refresh/renewal for extended access.

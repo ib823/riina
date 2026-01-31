@@ -28,6 +28,7 @@ Require Import Coq.Lists.List.
 Require Import Coq.Bool.Bool.
 Require Import Coq.Arith.Arith.
 Require Import Coq.Arith.PeanoNat.
+Require Import Lia.
 Import ListNotations.
 
 (* ================================================================ *)
@@ -300,10 +301,10 @@ Record BreachEvent := mkBreach {
 }.
 
 Definition pdpc_notified_in_time (b : BreachEvent) (notification_time : nat) : Prop :=
-  notification_time <= breach_detected_at + 72.  (* 72 hours *)
+  notification_time <= breach_detected_at b + 72.  (* 72 hours *)
 
 Definition subjects_notified_in_time (b : BreachEvent) (notification_time : nat) : Prop :=
-  notification_time <= breach_detected_at + 168.  (* 7 days = 168 hours *)
+  notification_time <= breach_detected_at b + 168.  (* 7 days = 168 hours *)
 
 Theorem breach_notification_ordering :
   forall (b : BreachEvent) (t_pdpc t_subjects : nat),
@@ -321,9 +322,7 @@ Theorem pdpc_deadline_stricter :
   subjects_notified_in_time b t.
 Proof.
   intros b t H. unfold pdpc_notified_in_time in H.
-  unfold subjects_notified_in_time.
-  apply (Nat.le_trans _ _ _ H). apply Nat.add_le_mono_l. repeat apply le_S.
-  do 96 apply le_S. apply Nat.le_refl.
+  unfold subjects_notified_in_time. lia.
 Qed.
 
 (* ================================================================ *)

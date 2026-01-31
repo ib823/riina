@@ -1,0 +1,156 @@
+/// MULTILEVEL_FLOW.RII - Multi-Level Security Information Flow
+/// Aliran maklumat keselamatan berbilang aras
+/// Demonstrates: level hierarchy, information flow, declassification
+
+jenis Aras {
+    Awam,
+    Dalaman,
+    Rahsia,
+}
+
+jenis DataBertaraf<T> {
+    nilai: T,
+    aras: Aras,
+    sumber: Teks,
+}
+
+fungsi buat_data_awam(nilai: Teks) -> DataBertaraf<Teks> kesan Bersih {
+    DataBertaraf { nilai: nilai, aras: Aras.Awam, sumber: "awam" }
+}
+
+fungsi buat_data_dalaman(nilai: Teks) -> DataBertaraf<Teks> kesan Bersih {
+    DataBertaraf { nilai: nilai, aras: Aras.Dalaman, sumber: "dalaman" }
+}
+
+fungsi buat_data_rahsia(nilai: Teks) -> DataBertaraf<Teks> kesan Bersih {
+    DataBertaraf { nilai: nilai, aras: Aras.Rahsia, sumber: "rahsia" }
+}
+
+fungsi taraf_lebih_tinggi(a: Aras, b: Aras) -> Benar kesan Bersih {
+    /// Periksa sama ada aras a >= b
+    padan (a, b) {
+        (_, Aras.Awam) -> betul,
+        (Aras.Dalaman, Aras.Dalaman) -> betul,
+        (Aras.Rahsia, Aras.Dalaman) -> betul,
+        (Aras.Rahsia, Aras.Rahsia) -> betul,
+        _ -> salah,
+    }
+}
+
+fungsi aliran_boleh(dari: Aras, ke: Aras) -> Benar kesan Bersih {
+    /// Aliran hanya boleh naik atau tetap
+    taraf_lebih_tinggi(ke, dari)
+}
+
+fungsi aliran_maklumat<T>(
+    data: DataBertaraf<T>,
+    ke_taraf: Aras
+) -> Hasil<DataBertaraf<T>, Teks> kesan Bersih {
+    /// Alir data ke taraf baru
+    kalau aliran_boleh(data.aras, ke_taraf) {
+        Ok(DataBertaraf {
+            nilai: data.nilai,
+            aras: ke_taraf,
+            sumber: data.sumber,
+        })
+    } lain {
+        Ralat("Aliran turun dilarang")
+    }
+}
+
+fungsi campurkan_data_berlevel(
+    d1: DataBertaraf<Teks>,
+    d2: DataBertaraf<Teks>
+) -> DataBertaraf<Teks> kesan Bersih {
+    /// Campurkan dua data - hasil pada aras tertinggi
+    biar aras_hasil = padan (d1.aras, d2.aras) {
+        (Aras.Rahsia, _) -> Aras.Rahsia,
+        (_, Aras.Rahsia) -> Aras.Rahsia,
+        (Aras.Dalaman, _) -> Aras.Dalaman,
+        (_, Aras.Dalaman) -> Aras.Dalaman,
+        _ -> Aras.Awam,
+    };
+
+    DataBertaraf {
+        nilai: d1.nilai + " " + d2.nilai,
+        aras: aras_hasil,
+        sumber: "{d1.sumber},{d2.sumber}",
+    }
+}
+
+fungsi cetak_jika_boleh(d: DataBertaraf<Teks>, taraf_cetak: Aras) -> Hasil<Nombor, Teks> kesan Tulis {
+    /// Cetak hanya jika taraf cetak >= aras data
+    kalau aliran_boleh(d.aras, taraf_cetak) {
+        cetak(d.nilai);
+        cetak("\n");
+        Ok(0)
+    } lain {
+        Ralat("Tiada akses untuk cetak")
+    }
+}
+
+fungsi dedah_jika_sah(
+    d: DataBertaraf<Rahsia<Teks>>,
+    taraf_pengguna: Aras
+) -> Hasil<Teks, Teks> kesan Bersih {
+    /// Dedah hanya jika pengguna taraf lebih tinggi
+    kalau taraf_lebih_tinggi(taraf_pengguna, d.aras) {
+        biar rahsia = padan d.nilai {
+            Rahsia(nilai) -> nilai,
+        };
+        Ok(dedah(Rahsia(rahsia), bukti: "taraf_sah"))
+    } lain {
+        Ralat("Tiada akses")
+    }
+}
+
+fungsi jejak_aliran<T>(
+    data: DataBertaraf<T>,
+    dari_taraf: Aras,
+    ke_taraf: Aras
+) -> Hasil<Teks, Teks> kesan Tulis {
+    /// Catat aliran maklumat
+    cetak("Aliran: ");
+    cetak(data.sumber);
+    cetak(" dari ");
+    cetak("X");  /// Taraf string
+    cetak(" ke ");
+    cetak("Y");  /// Taraf string
+    cetak("\n");
+
+    Ok("Tercatat")
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Bersih) {
+    cetak("=== Aliran Maklumat Berbilang Aras ===\n");
+
+    /// Buat data pada pelbagai taraf
+    biar awam = buat_data_awam("Data awam");
+    biar dalaman = buat_data_dalaman("Data dalaman");
+    biar rahsia = buat_data_rahsia("Data rahsia");
+
+    cetak("Data dibuat\n");
+
+    /// Periksa aliran
+    biar boleh_alir = aliran_boleh(Aras.Dalaman, Aras.Rahsia);
+    cetak("Boleh alir Dalaman ke Rahsia: ");
+    cetak(boleh_alir);
+    cetak("\n");
+
+    biar tidak_boleh = aliran_boleh(Aras.Rahsia, Aras.Awam);
+    cetak("Boleh alir Rahsia ke Awam: ");
+    cetak(tidak_boleh);
+    cetak("\n");
+
+    /// Campurkan data
+    biar campuran = campurkan_data_berlevel(awam, dalaman);
+    cetak("Data dicampurkan pada taraf: X\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: Multi-level security prevents downgrade.
+/// Information can flow from low to high classification.
+/// Cannot flow from high to low without declassification.
+/// Type system tracks classification through all operations.

@@ -1,0 +1,100 @@
+/// EFFECT_INFERENCE.RII - Effect Type Inference
+/// Penyimpulan jenis kesan secara automatik
+/// Demonstrates: implicit effect tracking, type inference
+
+/// Compiler automatically infers kesan Bersih
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor {
+    x + y
+}
+
+/// Compiler automatically infers kesan Tulis
+fungsi cetak_nombor(x: Nombor) {
+    cetak(x);
+    cetak("\n");
+}
+
+/// Compiler automatically infers kesan (Tulis, Bersih)
+fungsi cetak_hasil(x: Nombor, y: Nombor) {
+    cetak("Hasil: ");
+    cetak(x + y);
+    cetak("\n");
+}
+
+/// Compiler infers kesan (Baca, Bersih)
+fungsi baca_dan_tambah(y: Nombor) -> Mungkin<Nombor> {
+    padan baca_nombor_dari_pengguna() {
+        Ok(x) -> Ada(x + y),
+        Ralat(_) -> Tidak,
+    }
+}
+
+/// Return type help inference
+fungsi operasi_kompleks(x: Nombor) -> Hasil<Nombor, Teks> {
+    kalau x < 0 {
+        Ralat("Negatif")
+    } lain {
+        Ok(x * 2)
+    }
+}
+
+/// Generic function - effect inferred from parameter
+fungsi peta_dengan_inferensi<T1, T2>(
+    senarai: Senarai<T1>,
+    f: Fn(T1) -> T2
+) -> Senarai<T2> {
+    senarai.peta(f)
+}
+
+/// Tupling inference
+fungsi pasangan_daripada_pembacaan() -> Mungkin<(Teks, Nombor)> {
+    padan baca_dan_tambah(5) {
+        Ada(n) -> {
+            biar t = minta_input("Nama");
+            Ada((t, n))
+        },
+        Tidak -> Tidak,
+    }
+}
+
+/// Conditional inference
+fungsi bersyarat_berbeza(keadaan: Benar) {
+    kalau keadaan {
+        cetak("Benar\n");
+    } lain {
+        cetak("Salah\n");
+    }
+}
+
+fungsi utama() -> Nombor {
+    cetak("=== Penyimpulan Jenis Kesan ===\n");
+
+    /// Penyimpulan bersih
+    biar a = tambah(5, 3);
+    cetak("Tambah: ");
+    cetak(a);
+    cetak("\n");
+
+    /// Penyimpulan Tulis
+    cetak_nombor(10);
+
+    /// Penyimpulan gabung
+    cetak_hasil(20, 30);
+
+    /// Penyimpulan dengan generik
+    biar senarai = [1, 2, 3];
+    biar ubahan = peta_dengan_inferensi(senarai, fungsi(x: Nombor) -> Nombor {
+        x * 2
+    });
+
+    cetak("Ubahan: ");
+    cetak(ubahan);
+    cetak("\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Effect inference reduces annotation burden.
+/// Compiler tracks effects through call chains.
+/// Explicit annotations still available for clarity.
+/// Type checker unifies inferred effects with declarations.

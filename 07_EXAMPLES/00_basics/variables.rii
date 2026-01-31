@@ -1,0 +1,34 @@
+/// VARIABLES.RII - Variable Bindings with Bahasa Melayu
+/// Menunjukkan cara mengikat pembolehubah dengan biar
+/// Demonstrates: let bindings, immutability, type inference
+
+fungsi contohPembolehubah() -> Nombor kesan Bersih {
+    /// Ikat pembolehubah tidak berubah
+    /// Bind immutable variable with type inference
+    biar x = 42;
+
+    /// Ikat dengan jenis eksplisit
+    /// Bind with explicit type annotation
+    biar nama: Teks = "Ahmad";
+
+    /// Ikat pembolehubah berubah dengan ubah
+    /// Bind mutable variable with ubah modifier
+    biar ubah jumlah: Nombor = 0;
+    jumlah = jumlah + 10;
+
+    /// Ikat pasangan (tuple)
+    /// Bind a pair/tuple
+    biar (a, b) = (1, 2);
+
+    /// Ikat senarai
+    /// Bind a list
+    biar senarai: Senarai<Nombor> = [1, 2, 3, 4, 5];
+
+    /// Kembalikan nilai terakhir
+    /// Return final value (implicit return)
+    pulang jumlah;
+}
+
+/// TYPE SYSTEM: All bindings are immutable by default.
+/// Use `ubah` to make a binding mutable.
+/// Type annotations are optional; type inference is supported.

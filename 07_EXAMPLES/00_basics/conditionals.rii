@@ -1,0 +1,73 @@
+/// CONDITIONALS.RII - If-Else Control Flow
+/// Kawalan aliran dengan kalau dan lain
+/// Demonstrates: if, else-if, else, conditional expressions
+
+fungsi periksaBilangan(x: Nombor) -> Teks kesan Bersih {
+    /// Bentuk mudah kalau-lain
+    /// Simple if-else
+    kalau x > 0 {
+        pulang "positif";
+    } lain kalau x < 0 {
+        pulang "negatif";
+    } lain {
+        pulang "kosong";
+    }
+}
+
+fungsi periksaNama(nama: Teks) -> Benar kesan Bersih {
+    /// Kalau tanpa lain
+    /// If without else
+    kalau nama == "Ahmad" {
+        pulang betul;
+    }
+
+    /// Jatuh keluar - pulang salah secara tersirat
+    /// Falls through to implicit return false
+    pulang salah;
+}
+
+fungsi getDiscount(umur: Nombor) -> Nombor kesan Bersih {
+    /// Kalau sebagai expression (dalam assignment)
+    /// If as expression (in assignment)
+    biar diskaun = kalau umur > 60 {
+        50      /// Diskaun untuk warga emas (senior discount)
+    } lain kalau umur < 18 {
+        25      /// Diskaun untuk belia (youth discount)
+    } lain {
+        0       /// Tiada diskaun (no discount)
+    };
+
+    pulang diskaun;
+}
+
+fungsi periksaBilangan2(x: Nombor, y: Nombor) -> Teks kesan Bersih {
+    /// Kalau bersarang (nested if)
+    /// Nested if statements
+    kalau x > 0 {
+        kalau y > 0 {
+            pulang "kedua positif";
+        } lain {
+            pulang "x positif, y negatif";
+        }
+    } lain {
+        pulang "x tidak positif";
+    }
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil = periksaBilangan(42);
+    cetak(hasil);
+    cetak("\n");
+
+    biar diskaun = getDiscount(65);
+    cetak("Diskaun: ");
+    cetak(diskaun);
+    cetak("%\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kalau/lain (if/else) keywords.
+/// If-else can be expression or statement.
+/// Multiple else-if branches are chained with `lain kalau`.
+/// Implicit return of last expression in each branch.
