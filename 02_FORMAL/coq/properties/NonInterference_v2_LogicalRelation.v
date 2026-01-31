@@ -805,7 +805,13 @@ Proof.
     set (Σ'' := store_ty_update loc1 T l Σ').
     (* Need: store_ty_lookup loc1 Σ' = None (fresh location not yet in Σ') *)
     assert (Hfresh_none : store_ty_lookup loc1 Σ' = None).
-    { apply fresh_loc_not_in_store_ty. exact Hwf1'. }
+    { (* fresh_loc_not_in_store_ty inline *)
+      destruct (store_ty_lookup loc1 Σ') as [[T0 sl0] |] eqn:Hlook; auto.
+      exfalso.
+      destruct Hwf1' as [HΣtost _].
+      specialize (HΣtost loc1 T0 sl0 Hlook).
+      destruct HΣtost as [v0 [Hst0 _]].
+      rewrite store_lookup_fresh in Hst0. discriminate. }
     exists (ELoc loc1), (ELoc loc1),
            (store_update loc1 v1 st1'), (store_update loc1 v2 st2'),
            ctx', Σ''.
