@@ -118,13 +118,27 @@ else
     git cherry-pick "$COMMIT_ARG" --no-commit || true
 fi
 
-# Step 7: Resolve any conflicts by removing conflicting internal files
-# (conflicts happen when main modifies a file that public has deleted)
+# Step 7: Resolve conflicts
+# Internal files (matching INTERNAL_PATHS) → git rm
+# Public files (README.md, etc.) → accept main's version
 CONFLICTED=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
 if [ -n "$CONFLICTED" ]; then
-    echo -e "${YELLOW}    Resolving conflicts (removing internal files)...${NC}"
+    echo -e "${YELLOW}    Resolving conflicts...${NC}"
     echo "$CONFLICTED" | while read -r f; do
-        git rm -f --quiet "$f" 2>/dev/null || true
+        IS_INTERNAL=false
+        for pattern in "${INTERNAL_PATHS[@]}"; do
+            case "$f" in
+                $pattern*) IS_INTERNAL=true; break ;;
+            esac
+        done
+        if $IS_INTERNAL; then
+            echo -e "${YELLOW}      Removing internal: $f${NC}"
+            git rm -f --quiet "$f" 2>/dev/null || true
+        else
+            echo -e "${GREEN}      Keeping (accept main): $f${NC}"
+            git checkout --theirs "$f" 2>/dev/null || true
+            git add "$f" 2>/dev/null || true
+        fi
     done
 fi
 
