@@ -2699,18 +2699,14 @@ Proof.
     + change (NonInterference_v2.first_order_type (TSecret T)) with (first_order_type (TSecret T)).
       simpl.
       destruct (first_order_type T); exact I.
-  - rewrite val_rel_n_S_unfold. split.
+  - rewrite val_rel_n_S_unfold. repeat split.
     + apply IHn; assumption.
-    + repeat split.
-      * constructor; assumption.
-      * constructor; assumption.
-      * intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
-      * intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
-      * apply T_Classify; assumption.
-      * apply T_Classify; assumption.
-      * change (NonInterference_v2.first_order_type (TSecret T)) with (first_order_type (TSecret T)).
-        simpl.
-        destruct (first_order_type T); exact I.
+    + constructor; assumption.
+    + constructor; assumption.
+    + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
+    + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Classify; assumption.
+    + apply T_Classify; assumption.
 Qed.
 
 (** Build val_rel_n for TProof type (val_rel_at_type is True) *)
@@ -2727,26 +2723,20 @@ Proof.
     + constructor; assumption.
     + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
     + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Prove; assumption.
+    + apply T_Prove; assumption.
     + change (NonInterference_v2.first_order_type (TProof T)) with (first_order_type (TProof T)).
       simpl.
       change (NonInterference_v2.first_order_type T) with (first_order_type T).
-      destruct (first_order_type T) eqn:Hfo.
-      * exact I.
-      * split; apply T_Prove; assumption.
-  - rewrite val_rel_n_S_unfold. split.
+      destruct (first_order_type T) eqn:Hfo; exact I.
+  - rewrite val_rel_n_S_unfold. repeat split.
     + apply IHn; assumption.
-    + repeat split.
-      * constructor; assumption.
-      * constructor; assumption.
-      * intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
-      * intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
-      * change (NonInterference_v2.first_order_type (TProof T)) with (first_order_type (TProof T)).
-        simpl.
-        change (NonInterference_v2.first_order_type T) with (first_order_type T).
-        destruct (first_order_type T) eqn:Hfo.
-        { exact I. }
-        { split; apply T_Prove; assumption. }
-      * exact I.
+    + constructor; assumption.
+    + constructor; assumption.
+    + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
+    + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Prove; assumption.
+    + apply T_Prove; assumption.
 Qed.
 
 Lemma val_rel_string : forall Σ s,

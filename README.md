@@ -301,43 +301,32 @@ proof/
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            103 example .rii files
-├── 01_RESEARCH/            Research archive (349 documents, 276K lines)
-└── riina-vscode/           VS Code extension
+├── 07_EXAMPLES/            108 example .rii files
+├── riina-vscode/           VS Code extension
+└── website/                Project website source
 ```
 
 ---
 
-## Research Scope
+## Proof Coverage
 
-Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek letter tracks) has corresponding Coq proofs in the active build. 100% coverage, verified by audit.
+All proofs live in `02_FORMAL/coq/` and cover 55+ domains:
 
-| Track | Domain | Coq Proofs | Status |
-|-------|--------|-----------|--------|
-| A | Core type system, non-interference | 55 files (38K lines) | Proven |
-| R | Certified compilation (translation validation) | 1 file (955 lines) | Proven |
-| S | Hardware contracts (CPU side-channel models) | 1 file (560 lines) | Proven |
-| T | Hermetic build (binary bootstrap verification) | 1 file (502 lines) | Proven |
-| U | Runtime guardian (verified micro-hypervisor) | 1 file (604 lines) | Proven |
-| V | Termination guarantees (strong normalization) | 6 files (3K lines) | Proven |
-| W | Verified memory (separation logic) | 1 file (739 lines) | Proven |
-| X | Concurrency (session types, data-race freedom) | 1 file (750 lines) | Proven |
-| Y | Verified standard library | 1 file (780 lines) | Proven |
-| Z | Declassification policy (budgets, robust) | 1 file (665 lines) | Proven |
-| Σ | Verified persistent storage | 1 file (712 lines) | Proven |
-| — | Industry compliance (15 jurisdictions) | 15 files (2K lines) | Proven |
-| — | Domain security (timing, protocols, hardware, ...) | 183 files (76K lines) | Proven |
-
-| Π | Verified performance (WCET, SIMD, lock-free) | 1 file (470 lines) | Proven |
-| Δ | Verified distribution (Raft, BFT, CRDTs) | 1 file (500 lines) | Proven |
-| Ω | Network defense (rate limiting, SYN cookies) | 1 file (530 lines) | Proven |
-| Ψ | Operational security (Shamir, duress, dead man) | 1 file (560 lines) | Proven |
-| L | FFI boundary safety, attack surface research | 1 file (17 Qed) | Proven |
-| — | Mobile OS security (27 subsystems) | 27 files | Proven |
-| — | Security foundations (boot, IOMMU, crypto) | 11 files | Proven |
-| — | UI/UX accessibility and safety | 7 files | Proven |
-| — | Capital markets (order matching, settlement) | 1 file (15 Qed) | Proven |
-| — | Physical systems security (sensors, timing) | 1 file (16 Qed) | Proven |
+| Domain | Status |
+|--------|--------|
+| Core type system, non-interference | Proven |
+| Certified compilation (translation validation) | Proven |
+| Hardware contracts (CPU side-channel models) | Proven |
+| Hermetic build (binary bootstrap verification) | Proven |
+| Runtime guardian (verified micro-hypervisor) | Proven |
+| Termination guarantees (strong normalization) | Proven |
+| Verified memory (separation logic) | Proven |
+| Concurrency (session types, data-race freedom) | Proven |
+| Verified standard library | Proven |
+| Declassification policy (budgets, robust) | Proven |
+| Verified persistent storage | Proven |
+| Industry compliance (15 jurisdictions) | Proven |
+| Domain security (183 proof files) | Proven |
 
 ---
 
@@ -379,7 +368,7 @@ Install hooks: `./00_SETUP/scripts/install_hooks.sh`
 
 **Deep verification** (manual, 7 levels): `bash 05_TOOLING/scripts/verify.sh [0-6]`
 
-See [`REPO_PROTECTION_GUIDE.md`](REPO_PROTECTION_GUIDE.md) for the full repository security hardening specification.
+See the git hooks in `00_SETUP/scripts/` for the full verification setup.
 
 ---
 
@@ -414,7 +403,7 @@ cd 03_PROTO && cargo test --all && cd ..
 ./00_SETUP/scripts/install_hooks.sh
 ```
 
-Read [`CLAUDE.md`](CLAUDE.md) for detailed development instructions.
+See the [Contributing](#contributing) section above for development setup.
 
 ---
 

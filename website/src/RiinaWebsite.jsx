@@ -1228,9 +1228,73 @@ awam fungsi sulit(
 }`}
           </pre>
 
+          <h2 style={{ ...sectionLabel, marginTop: '64px' }}>LIVE DEMOS</h2>
+          <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6, marginBottom: '32px' }}>
+            Pre-recorded output from <code>riinac run</code> on the 5 demo programs in <code>07_EXAMPLES/demos/</code>.
+          </p>
+          {[
+            { name: 'selamat_datang.rii', desc: 'Hello World — Bahasa Melayu greeting', code: `fungsi utama() -> Teks kesan IO {
+    biar mesej = "Selamat datang ke RIINA, Malaysia!";
+    cetakln(mesej);
+    pulang mesej;
+}`, output: `$ riinac run selamat_datang.rii
+Selamat datang ke RIINA, Malaysia!` },
+            { name: 'faktorial.rii', desc: 'Recursive factorial with LetRec', code: `fungsi utama() -> Teks kesan IO {
+    biar hasil = faktorial(10);
+    biar mesej = "faktorial(10) = " + ke_teks(hasil);
+    cetakln(mesej);
+    pulang mesej;
+}`, output: `$ riinac run faktorial.rii
+faktorial(10) = 3628800` },
+            { name: 'pasangan.rii', desc: 'Tuple / pair types', code: `fungsi utama() -> Teks kesan IO {
+    biar titik = (10, 20);
+    biar mesej = "Titik: (" + ke_teks(titik.0) + ", " + ke_teks(titik.1) + ")";
+    cetakln(mesej);
+    pulang mesej;
+}`, output: `$ riinac run pasangan.rii
+Titik: (10, 20)` },
+            { name: 'rahsia_dijaga.rii', desc: 'Secret type with controlled declassification', code: `fungsi utama() -> Teks kesan IO {
+    biar kunci: Rahsia<Teks> = rahsia("s3cr3t_p4ss");
+    biar terdedah = dedah(kunci);
+    cetakln(terdedah);
+    pulang terdedah;
+}`, output: `$ riinac run rahsia_dijaga.rii
+s3cr3t_p4ss` },
+            { name: 'kalkulator_c.rii', desc: 'C FFI — calling abs() via luaran "C"', code: `luaran "C" {
+    fungsi abs(n: Nombor) -> Nombor;
+}
+
+fungsi utama() -> Teks kesan IO {
+    biar hasil = abs(42);
+    biar mesej = "mutlak(42) = " + ke_teks(hasil);
+    cetakln(mesej);
+    pulang mesej;
+}`, output: `$ riinac run kalkulator_c.rii
+mutlak(42) = 42` },
+          ].map((demo, i) => (
+            <div key={i} style={{ ...cardStyle, marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <code style={{ fontWeight: 600, fontSize: '14px' }}>{demo.name}</code>
+                <span style={{ color: '#999', fontSize: '12px' }}>{demo.desc}</span>
+              </div>
+              <pre style={{ ...codeBlockStyle, marginBottom: '12px' }}>{demo.code}</pre>
+              <pre style={{
+                background: '#1a1a1a',
+                color: '#33ff33',
+                padding: '16px 20px',
+                fontSize: '13px',
+                lineHeight: 1.5,
+                borderRadius: '0',
+                border: '1px solid #333',
+                fontFamily: '"SF Mono", "Fira Code", monospace',
+                overflow: 'auto',
+              }}>{demo.output}</pre>
+            </div>
+          ))}
+
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
             <a
-              href="https://github.com/ib823/proof/tree/main/07_EXAMPLES"
+              href="https://github.com/ib823/proof/tree/public/07_EXAMPLES"
               style={{
                 display: 'inline-block',
                 padding: '14px 28px',

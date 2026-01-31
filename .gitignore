@@ -2,15 +2,20 @@
 **/target/
 **/*.rs.bk
 
-# Coq
+# Coq build artifacts
 **/*.vo
 **/*.vos
 **/*.vok
 **/*.glob
+**/*.aux
 **/.Makefile.coq.d
+**/.Makefile.d
+**/.lia.cache
+**/.nia.cache
 **/Makefile.coq
 **/Makefile.coq.conf
 **/_CoqProject.bak
+**/_CoqProject.backup
 
 # Archives & binaries
 *.zip
@@ -29,6 +34,10 @@ axiom_audit_report.txt
 .keepalive_timestamp
 integrity_reports/
 .riina_manifest*
+
+# Node
+**/node_modules/
+package-lock.json
 
 # Nix
 result
