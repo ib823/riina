@@ -1,0 +1,7 @@
+// mudah.rii — Simplest compilable RIINA program
+
+fungsi tambah(x: Int, y: Int) -> Int {
+    x + y
+}
+
+tambah(3, 4)
