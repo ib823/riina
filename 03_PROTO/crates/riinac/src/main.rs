@@ -30,6 +30,7 @@ enum Command {
     Doc,
     Lsp,
     Verify(verify::Mode),
+    Pkg(Vec<String>),
 }
 
 fn usage() -> ! {
@@ -46,11 +47,17 @@ fn usage() -> ! {
     eprintln!("  lsp      Start LSP server (stdio)");
     eprintln!("  repl     Interactive read-eval-print loop");
     eprintln!("  verify   Run verification gate [--fast|--full]");
+    eprintln!("  pkg      Package manager (init/add/remove/lock/build/...)");
     process::exit(1);
 }
 
 fn parse_args() -> (Command, Option<PathBuf>) {
     let args: Vec<String> = std::env::args().collect();
+
+    // Handle pkg early — it takes subcommands, not a file
+    if args.len() >= 2 && args[1] == "pkg" {
+        return (Command::Pkg(args[2..].to_vec()), None);
+    }
 
     // Handle verify early — it takes flags, not a file
     if args.len() >= 2 && args[1] == "verify" {
@@ -126,6 +133,14 @@ fn main() {
 
     if let Command::Verify(mode) = command {
         process::exit(verify::run(mode));
+    }
+
+    if let Command::Pkg(ref pkg_args) = command {
+        if let Err(e) = riina_pkg::cli::run(pkg_args) {
+            eprintln!("pkg error: {e}");
+            process::exit(1);
+        }
+        return;
     }
 
     let input = input.expect("file path required");
@@ -268,5 +283,6 @@ fn main() {
         Command::Repl => unreachable!("handled above"),
         Command::Lsp => unreachable!("handled above"),
         Command::Verify(_) => unreachable!("handled above"),
+        Command::Pkg(_) => unreachable!("handled above"),
     }
 }

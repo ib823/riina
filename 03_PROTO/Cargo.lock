@@ -54,6 +54,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "riina-pkg"
+version = "0.1.0"
+dependencies = [
+ "riina-types",
+]
+
+[[package]]
 name = "riina-span"
 version = "0.1.0"
 
@@ -85,6 +92,7 @@ dependencies = [
  "riina-lexer",
  "riina-lsp",
  "riina-parser",
+ "riina-pkg",
  "riina-typechecker",
  "riina-types",
 ]
