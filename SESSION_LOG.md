@@ -1,5 +1,40 @@
 # Session Log
 
+## 2026-01-31 (Session 56): Phase 4 Developer Experience
+
+**Goal:** Implement Phase 4 Developer Experience — 8 milestones (M1-M8): span AST, formatter, LSP, hover/completion, VS Code extension, doc generator, example corpus, docs update.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| M1 | **Span-annotated AST** — `Span`, `SpannedDecl` in riina-types; parser records spans | ✅ |
+| M2 | **riina-fmt formatter** — new crate, handles all 27 Expr variants, `riinac fmt` subcommand | ✅ |
+| M3 | **riina-lsp server (P0)** — hand-written JSON-RPC over stdio, diagnostics via publishDiagnostics | ✅ |
+| M4 | **LSP hover + completion (P1)** — hover returns type info, completion returns 26 BM keywords | ✅ |
+| M5 | **VS Code extension** — TextMate grammar, 12 snippets, LSP client (`riina-vscode/`) | ✅ |
+| M6 | **riina-doc generator** — extracts `///` doc comments, generates HTML, `riinac doc` subcommand | ✅ |
+| M7 | **Example corpus** — 100 .rii files across 6 directories + AI context docs | ✅ |
+| M8 | **Update planning documents** — PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md, materialization plan | ✅ |
+
+### Final State
+
+- **New crates**: riina-fmt, riina-lsp, riina-doc
+- **VS Code extension**: riina-vscode/ (TextMate grammar, snippets, LSP client)
+- **Rust tests**: 530 (was 509)
+- **Example files**: 100 .rii across 00_basics(20), 01_security(18), 02_effects(15), 03_applications(15), 04_compliance(10), 05_patterns(15)
+- **AI context**: RIINA_CHEATSHEET.md, RIINA_FOR_AI.md, all_examples.rii (15k lines)
+
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| af89c3d | [TRACK_B] IMPL: Phase 4 M1-M6 + 53 example files |
+| 0fc2c8f | [ALL] EXAMPLES: 40 more .rii files (applications, compliance, patterns) |
+| b6c1039 | [ALL] DOCS: Update planning documents — Phase 4 Developer Experience done |
+
+---
+
 ## 2026-01-31 (Session 55): Phase 2 Standard Library
 
 **Goal:** Implement Phase 2 Standard Library — 6 milestones (M1-M6): C runtime types, 3 new modules (masa/fail/json), expand existing modules, update docs.
