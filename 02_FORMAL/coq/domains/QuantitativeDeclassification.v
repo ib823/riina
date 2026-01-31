@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** QuantitativeDeclassification.v
     Strategic Item #5: Quantitative Declassification for RIINA
 

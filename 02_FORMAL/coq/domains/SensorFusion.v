@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SensorFusion.v *)
 (* RIINA Sensor Fusion Security Proofs - Track Xi *)
 (* Proves SENSOR-001 through SENSOR-025 *)

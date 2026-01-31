@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* OperationalSecurity.v *)
 (* RIINA Operational Security Proofs - Track Psi *)
 (* Proves OPSEC-001 through OPSEC-025 *)

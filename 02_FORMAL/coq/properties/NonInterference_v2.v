@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * Non-Interference for RIINA - VERSION 2
 
     FOUNDATIONAL REWRITE: val_rel_n 0 carries val_rel_at_type structure

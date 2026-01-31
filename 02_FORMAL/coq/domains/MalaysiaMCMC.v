@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MalaysiaMCMC.v - Communications and Multimedia Act 1998 (Act 588) *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md *)
 (* Legal Requirement: Communications and Multimedia Act 1998 *)

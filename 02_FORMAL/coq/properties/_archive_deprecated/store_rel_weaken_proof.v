@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* ================================================================== *)
 (* PACKAGE B: Store Weakening Proofs for KripkeMutual.v              *)
 (* Target: store_rel_n_weaken_aux                                     *)

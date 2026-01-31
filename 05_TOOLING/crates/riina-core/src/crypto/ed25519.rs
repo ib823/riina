@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Ed25519 Digital Signature Implementation
 //!
 //! This module implements Ed25519 as specified in RFC 8032.

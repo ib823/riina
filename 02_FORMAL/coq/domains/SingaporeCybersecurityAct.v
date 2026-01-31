@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SingaporeCybersecurityAct.v - Singapore Cybersecurity Act 2018 (Amended 2025) *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md §B2 *)
 (* Legal Requirement: Cybersecurity Act 2018 (No. 9 of 2018), *)

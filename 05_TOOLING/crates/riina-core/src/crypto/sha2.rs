@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! SHA-256 Hash Function Implementation
 //!
 //! This module implements SHA-256 as specified in FIPS 180-4.

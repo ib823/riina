@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * Step-Up Lemmas - COMPILATION PERFECT
     
     This file connects val_rel_n_base to higher step indices.

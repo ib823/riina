@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedNetwork.v - RIINA-NET Network Stack Verification *)
 (* Spec: 01_RESEARCH/29_DOMAIN_RIINA_NET/RESEARCH_NET01_FOUNDATION.md *)
 (* Layer: L3 Network *)

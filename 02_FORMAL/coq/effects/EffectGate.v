@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * Effect Gate Proofs for RIINA
 
     Formal verification of the Effect Gate mechanism.

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* KeyLifecycle.v *)
 (* RIINA Key Lifecycle Management Proofs - Track AG *)
 (* Proves KEY-001 through KEY-025 *)

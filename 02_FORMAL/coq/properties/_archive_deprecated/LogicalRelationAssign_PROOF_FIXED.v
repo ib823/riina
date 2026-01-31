@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * LogicalRelationAssign_PROOF_FIXED.v
     
     RIINA AXIOM ELIMINATION: 7 Axioms Eliminated

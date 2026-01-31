@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! X25519 Key Exchange Implementation
 //!
 //! This module implements X25519 (Curve25519 ECDH) as specified in RFC 7748.

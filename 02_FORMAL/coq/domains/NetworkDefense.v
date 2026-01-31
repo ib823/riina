@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* NetworkDefense.v - RIINA Network Defense Verification *)
 (* Spec: 01_RESEARCH/30_DOMAIN_OMEGA_NETWORK_DEFENSE/RESEARCH_OMEGA01_FOUNDATION.md *)
 (* Layer: Network Layer *)

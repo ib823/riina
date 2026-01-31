@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* HardwareContracts.v - RIINA Hardware/Software Contract Verification *)
 (* Spec: 01_RESEARCH/19_DOMAIN_S_HARDWARE_CONTRACTS/RESEARCH_S01_FOUNDATION.md *)
 (* Layer: Hardware Abstraction *)

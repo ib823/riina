@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* RadiationHardening.v - Radiation Hardening for RIINA *)
 (* Spec: 01_RESEARCH/09_DOMAIN_Θ_RADIATION/ *)
 (* Domain: Space systems, satellites, nuclear, high-altitude *)

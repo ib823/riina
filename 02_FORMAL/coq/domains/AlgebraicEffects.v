@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* AlgebraicEffects.v - Algebraic Effects for RIINA *)
 (* Spec: 01_RESEARCH/02_DOMAIN_B_EFFECTS/ *)
 (* Security Property: Controlled side effects *)

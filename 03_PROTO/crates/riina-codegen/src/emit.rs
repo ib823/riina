@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! C Code Emission Backend
 //!
 //! Translates RIINA IR to portable C99 code that can be compiled by any

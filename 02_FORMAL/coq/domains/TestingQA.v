@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* TestingQA.v - Testing and Quality Assurance for RIINA *)
 (* Spec: 01_RESEARCH/13_DOMAIN_M_TESTING_QA/RESEARCH_DOMAIN_M_COMPLETE.md *)
 (* Security Property: Verified test coverage of security-critical code *)

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* SingaporePDPA.v - Singapore Personal Data Protection Act 2012 *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md §B1 *)
 (* Legal Requirement: Personal Data Protection Act 2012 (No. 26 of 2012) *)

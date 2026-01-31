@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** ProbabilisticVerification.v
     Strategic Item #7: Probabilistic Crypto Verification for RIINA
 

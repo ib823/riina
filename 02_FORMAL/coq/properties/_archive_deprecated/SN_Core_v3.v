@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * Strong Normalization Core - ALL PROOFS COMPLETE
 
     This file contains the core definitions and lemmas for strong normalization.

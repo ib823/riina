@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedAutonomy.v *)
 (* RIINA Verified Autonomy Proofs - Track Rho *)
 (* Proves AUTO-001 through AUTO-025 *)

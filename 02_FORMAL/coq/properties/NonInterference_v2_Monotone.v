@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (** * NonInterference_v2_Monotone.v
 
     Store-typing monotonicity lemmas for NonInterference_v2.

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* FFIAttackResearch.v - RIINA FFI & Attack Surface Research *)
 (* Spec: 01_RESEARCH/12_DOMAIN_L_FFI_AND_ATTACK_RESEARCH/ *)
 (* Zero admits, zero axioms *)

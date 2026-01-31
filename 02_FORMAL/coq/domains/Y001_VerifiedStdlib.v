@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* VerifiedStdlib.v - RIINA Verified Standard Library *)
 (* Spec: 01_RESEARCH/25_DOMAIN_Y_VERIFIED_STDLIB/RESEARCH_Y01_FOUNDATION.md *)
 (* Layer: Standard Library *)

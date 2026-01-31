@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MobilePlatform.v *)
 (* RIINA Mobile Platform Security Proofs - Track Lambda *)
 (* Proves MOBILE-001 through MOBILE-025 *)

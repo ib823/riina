@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* DeclassificationPolicy.v - RIINA Declassification Policy Verification *)
 (* Spec: 01_RESEARCH/26_DOMAIN_Z_DECLASSIFICATION_POLICY/RESEARCH_Z01_FOUNDATION.md *)
 (* Layer: Information Flow Control *)

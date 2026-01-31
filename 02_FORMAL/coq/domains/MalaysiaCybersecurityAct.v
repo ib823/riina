@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* MalaysiaCybersecurityAct.v - Akta Keselamatan Siber 2024 (Act 854) *)
 (* Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md §A3 *)
 (* Legal Requirement: Cybersecurity Act 2024, effective August 26, 2024 *)

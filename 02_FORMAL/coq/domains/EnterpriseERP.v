@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* EnterpriseERP.v *)
 (* RIINA Enterprise ERP Security Proofs - Track Mu *)
 (* Proves ERP-001 through ERP-025 *)

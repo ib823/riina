@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 // Standalone test to debug field inversion
 // Compile: rustc --edition 2021 test_inversion.rs
 // Run: ./test_inversion

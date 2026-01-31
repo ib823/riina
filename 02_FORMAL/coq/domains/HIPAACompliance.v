@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* HIPAACompliance.v - HIPAA Compliance Proofs for RIINA *)
 (* Spec: 04_SPECS/industries/IND_B_HEALTHCARE.md *)
 (* Legal Requirement: 45 CFR Parts 160, 162, 164 *)

@@ -1,3 +1,6 @@
+(* SPDX-License-Identifier: MPL-2.0 *)
+(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+
 (* DELTA001_VerifiedDistribution.v - RIINA Verified Distribution *)
 (* Spec: 01_RESEARCH/29_DOMAIN_DELTA_VERIFIED_DISTRIBUTION/RESEARCH_DELTA01_FOUNDATION.md *)
 (* Layer: Distributed Consensus & Replication *)

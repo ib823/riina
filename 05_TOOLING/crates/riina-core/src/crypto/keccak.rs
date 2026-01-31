@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Keccak and SHAKE Implementation (FIPS 202)
 //!
 //! This module implements the Keccak-f[1600] permutation and the SHAKE128/SHAKE256

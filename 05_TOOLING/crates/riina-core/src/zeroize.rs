@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
 //! Secure Memory Zeroization
 //!
 //! This module provides secure zeroization of memory to ensure that
