@@ -62,7 +62,58 @@ use crate::ir::{
 use crate::{Error, Result};
 use crate::ir::BinOp as IrBinOp;
 use riina_types::{BinOp, Effect, Expr, Ident, SecurityLevel, Ty};
+use crate::builtins;
 use std::collections::{HashMap, HashSet};
+
+/// Map a source name to its canonical builtin name, if it is a known builtin.
+fn builtin_canonical(name: &str) -> Option<&'static str> {
+    // I/O
+    match name {
+        "cetak" | "print" => return Some("cetak"),
+        "cetakln" | "println" => return Some("cetakln"),
+        // String
+        "gabung_teks" | "concat" => return Some("gabung_teks"),
+        "panjang" | "length" => return Some("panjang"),
+        // Conversion
+        "ke_teks" | "to_string" => return Some("ke_teks"),
+        "ke_nombor" | "parse_int" => return Some("ke_nombor"),
+        "ke_bool" | "to_bool" => return Some("ke_bool"),
+        "bool_ke_nombor" | "bool_to_int" => return Some("bool_ke_nombor"),
+        "nombor_ke_teks" | "int_to_string" => return Some("nombor_ke_teks"),
+        // Math
+        "mutlak" | "abs" => return Some("mutlak"),
+        "minimum" | "min" => return Some("minimum"),
+        "maksimum" | "max" => return Some("maksimum"),
+        "kuasa" | "pow" => return Some("kuasa"),
+        "punca" | "sqrt" => return Some("punca"),
+        "gcd" => return Some("gcd"),
+        "lcm" => return Some("lcm"),
+        // Test
+        "tegaskan" | "assert" => return Some("tegaskan"),
+        "tegaskan_sama" | "assert_eq" => return Some("tegaskan_sama"),
+        "tegaskan_beza" | "assert_ne" => return Some("tegaskan_beza"),
+        "tegaskan_betul" | "assert_true" => return Some("tegaskan_betul"),
+        "tegaskan_salah" | "assert_false" => return Some("tegaskan_salah"),
+        _ => {}
+    }
+    // String (teks) builtins
+    for &(bm, en, canonical) in builtins::teks::BUILTINS {
+        if name == bm || name == en { return Some(canonical); }
+    }
+    // List (senarai) builtins
+    for &(bm, en, canonical) in builtins::senarai::BUILTINS {
+        if name == bm || name == en { return Some(canonical); }
+    }
+    // Map (peta) builtins
+    for &(bm, en, canonical) in builtins::peta::BUILTINS {
+        if name == bm || name == en { return Some(canonical); }
+    }
+    // Set builtins
+    for &(bm, en, canonical) in builtins::set::BUILTINS {
+        if name == bm || name == en { return Some(canonical); }
+    }
+    None
+}
 
 /// Variable environment during lowering
 #[derive(Debug, Clone, Default)]
@@ -412,6 +463,18 @@ impl Lower {
             // VARIABLES (Expr::Var)
             // ═══════════════════════════════════════════════════════════════
             Expr::Var(name) => {
+                // If it's a known builtin used as a bare value (not in App position),
+                // emit a string constant placeholder so we don't crash with UnboundVariable.
+                if self.env.lookup(name).is_none() {
+                    if let Some(canonical) = builtin_canonical(name) {
+                        return Ok(self.emit(
+                            Instruction::Const(Constant::String(canonical.to_string())),
+                            Ty::String,
+                            SecurityLevel::Public,
+                            Effect::Pure,
+                        ));
+                    }
+                }
                 let var = self.env.lookup(name)
                     .ok_or_else(|| Error::UnboundVariable(name.clone()))?;
                 let ty = self.env.types.get(&var).cloned().unwrap_or(Ty::Unit);
@@ -525,6 +588,23 @@ impl Lower {
             }
 
             Expr::App(func_expr, arg_expr) => {
+                // Intercept builtin calls: if func is Var(name) and name is a known builtin,
+                // emit BuiltinCall instead of Call.
+                if let Expr::Var(name) = func_expr.as_ref() {
+                    if let Some(canonical) = builtin_canonical(name) {
+                        let arg_var = self.lower_expr(arg_expr)?;
+                        let effect = self.infer_effect(expr);
+                        return Ok(self.emit(
+                            Instruction::BuiltinCall {
+                                name: canonical.to_string(),
+                                arg: arg_var,
+                            },
+                            Ty::Unit, // builtins mostly return Unit or String; C emitter handles
+                            SecurityLevel::Public,
+                            effect,
+                        ));
+                    }
+                }
                 let func_var = self.lower_expr(func_expr)?;
                 let arg_var = self.lower_expr(arg_expr)?;
                 let return_ty = if let Ty::Fn(_, ret, _) = self.infer_type(func_expr) {

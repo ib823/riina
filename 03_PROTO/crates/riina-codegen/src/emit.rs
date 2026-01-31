@@ -356,6 +356,9 @@ impl CEmitter {
 
         // Security checks
         self.emit_security_checks();
+
+        // Builtin function helpers
+        self.emit_builtin_helpers();
     }
 
     /// Emit value constructor functions
@@ -684,6 +687,9 @@ impl CEmitter {
         self.writeln("        case RIINA_TAG_UNIT: return riina_bool(true);");
         self.writeln("        case RIINA_TAG_BOOL: return riina_bool(a->data.bool_val == b->data.bool_val);");
         self.writeln("        case RIINA_TAG_INT: return riina_bool(a->data.int_val == b->data.int_val);");
+        self.writeln("        case RIINA_TAG_STRING:");
+        self.writeln("            return riina_bool(a->data.string_val.len == b->data.string_val.len &&");
+        self.writeln("                memcmp(a->data.string_val.data, b->data.string_val.data, a->data.string_val.len) == 0);");
         self.writeln("        default: return riina_bool(false);");
         self.writeln("    }");
         self.writeln("}");
@@ -803,6 +809,248 @@ impl CEmitter {
         self.writeln("    return payload;");
         self.writeln("}");
         self.writeln("");
+    }
+
+    /// Emit built-in function helpers (C implementations of RIINA builtins)
+    fn emit_builtin_helpers(&mut self) {
+        self.writeln("/* ═══════════════════════════════════════════════════════════════════ */");
+        self.writeln("/*                      BUILTIN FUNCTIONS                              */");
+        self.writeln("/* ═══════════════════════════════════════════════════════════════════ */");
+        self.writeln("");
+
+        // Helper: format a value as a string for printing
+        self.writeln("static const char* riina_format(riina_value_t* v) {");
+        self.writeln("    static char buf[256];");
+        self.writeln("    switch (v->tag) {");
+        self.writeln("        case RIINA_TAG_UNIT: return \"()\";");
+        self.writeln("        case RIINA_TAG_BOOL: return v->data.bool_val ? \"betul\" : \"salah\";");
+        self.writeln("        case RIINA_TAG_INT:");
+        self.writeln("            snprintf(buf, sizeof(buf), \"%llu\", (unsigned long long)v->data.int_val);");
+        self.writeln("            return buf;");
+        self.writeln("        case RIINA_TAG_STRING: return v->data.string_val.data;");
+        self.writeln("        default: return \"<value>\";");
+        self.writeln("    }");
+        self.writeln("}");
+        self.writeln("");
+
+        // cetak (print without newline)
+        self.writeln("static riina_value_t* riina_builtin_cetak(riina_value_t* arg) {");
+        self.writeln("    printf(\"%s\", riina_format(arg));");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // cetakln (print with newline)
+        self.writeln("static riina_value_t* riina_builtin_cetakln(riina_value_t* arg) {");
+        self.writeln("    printf(\"%s\\n\", riina_format(arg));");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // ke_teks (to_string)
+        self.writeln("static riina_value_t* riina_builtin_ke_teks(riina_value_t* arg) {");
+        self.writeln("    char buf[256];");
+        self.writeln("    switch (arg->tag) {");
+        self.writeln("        case RIINA_TAG_UNIT: return riina_string(\"()\");");
+        self.writeln("        case RIINA_TAG_BOOL: return riina_string(arg->data.bool_val ? \"betul\" : \"salah\");");
+        self.writeln("        case RIINA_TAG_INT:");
+        self.writeln("            snprintf(buf, sizeof(buf), \"%llu\", (unsigned long long)arg->data.int_val);");
+        self.writeln("            return riina_string(buf);");
+        self.writeln("        case RIINA_TAG_STRING: return arg;");
+        self.writeln("        default: return riina_string(\"<value>\");");
+        self.writeln("    }");
+        self.writeln("}");
+        self.writeln("");
+
+        // nombor_ke_teks (int_to_string) — alias
+        self.writeln("static riina_value_t* riina_builtin_nombor_ke_teks(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_ke_teks(arg);");
+        self.writeln("}");
+        self.writeln("");
+
+        // panjang (length)
+        self.writeln("static riina_value_t* riina_builtin_panjang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) {");
+        self.writeln("        fprintf(stderr, \"RIINA: panjang on non-string\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_int((uint64_t)arg->data.string_val.len);");
+        self.writeln("}");
+        self.writeln("");
+
+        // gabung_teks (concat) — expects a pair
+        self.writeln("static riina_value_t* riina_builtin_gabung_teks(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: gabung_teks expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    riina_value_t* a = riina_builtin_ke_teks(arg->data.pair_val.fst);");
+        self.writeln("    riina_value_t* b = riina_builtin_ke_teks(arg->data.pair_val.snd);");
+        self.writeln("    return riina_string_concat(a, b);");
+        self.writeln("}");
+        self.writeln("");
+
+        // ke_nombor (parse_int)
+        self.writeln("static riina_value_t* riina_builtin_ke_nombor(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) {");
+        self.writeln("        fprintf(stderr, \"RIINA: ke_nombor on non-string\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_int((uint64_t)atoll(arg->data.string_val.data));");
+        self.writeln("}");
+        self.writeln("");
+
+        // ke_bool (to_bool)
+        self.writeln("static riina_value_t* riina_builtin_ke_bool(riina_value_t* arg) {");
+        self.writeln("    switch (arg->tag) {");
+        self.writeln("        case RIINA_TAG_BOOL: return arg;");
+        self.writeln("        case RIINA_TAG_INT: return riina_bool(arg->data.int_val != 0);");
+        self.writeln("        case RIINA_TAG_STRING: return riina_bool(arg->data.string_val.len > 0);");
+        self.writeln("        default: return riina_bool(false);");
+        self.writeln("    }");
+        self.writeln("}");
+        self.writeln("");
+
+        // bool_ke_nombor
+        self.writeln("static riina_value_t* riina_builtin_bool_ke_nombor(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_BOOL) {");
+        self.writeln("        fprintf(stderr, \"RIINA: bool_ke_nombor on non-bool\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_int(arg->data.bool_val ? 1 : 0);");
+        self.writeln("}");
+        self.writeln("");
+
+        // tegaskan (assert)
+        self.writeln("static riina_value_t* riina_builtin_tegaskan(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_BOOL || !arg->data.bool_val) {");
+        self.writeln("        fprintf(stderr, \"RIINA: assertion failed\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // tegaskan_betul (assert_true) — alias
+        self.writeln("static riina_value_t* riina_builtin_tegaskan_betul(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_tegaskan(arg);");
+        self.writeln("}");
+        self.writeln("");
+
+        // tegaskan_salah (assert_false)
+        self.writeln("static riina_value_t* riina_builtin_tegaskan_salah(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_BOOL || arg->data.bool_val) {");
+        self.writeln("        fprintf(stderr, \"RIINA: assert_false failed\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // tegaskan_sama (assert_eq) — expects pair
+        self.writeln("static riina_value_t* riina_builtin_tegaskan_sama(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: tegaskan_sama expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    riina_value_t* eq = riina_binop_eq(arg->data.pair_val.fst, arg->data.pair_val.snd);");
+        self.writeln("    if (!eq->data.bool_val) {");
+        self.writeln("        fprintf(stderr, \"RIINA: assert_eq failed\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // tegaskan_beza (assert_ne) — expects pair
+        self.writeln("static riina_value_t* riina_builtin_tegaskan_beza(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: tegaskan_beza expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    riina_value_t* eq = riina_binop_eq(arg->data.pair_val.fst, arg->data.pair_val.snd);");
+        self.writeln("    if (eq->data.bool_val) {");
+        self.writeln("        fprintf(stderr, \"RIINA: assert_ne failed\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // mutlak (abs)
+        self.writeln("static riina_value_t* riina_builtin_mutlak(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_INT) {");
+        self.writeln("        fprintf(stderr, \"RIINA: mutlak on non-int\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    return riina_int(arg->data.int_val); /* uint64 always non-negative */");
+        self.writeln("}");
+        self.writeln("");
+
+        // minimum (min) — expects pair
+        self.writeln("static riina_value_t* riina_builtin_minimum(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: minimum expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    riina_value_t* a = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* b = arg->data.pair_val.snd;");
+        self.writeln("    return (a->data.int_val <= b->data.int_val) ? a : b;");
+        self.writeln("}");
+        self.writeln("");
+
+        // maksimum (max) — expects pair
+        self.writeln("static riina_value_t* riina_builtin_maksimum(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: maksimum expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    riina_value_t* a = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* b = arg->data.pair_val.snd;");
+        self.writeln("    return (a->data.int_val >= b->data.int_val) ? a : b;");
+        self.writeln("}");
+        self.writeln("");
+
+        // kuasa (pow) — expects pair
+        self.writeln("static riina_value_t* riina_builtin_kuasa(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: kuasa expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    uint64_t base = arg->data.pair_val.fst->data.int_val;");
+        self.writeln("    uint64_t exp = arg->data.pair_val.snd->data.int_val;");
+        self.writeln("    uint64_t result = 1;");
+        self.writeln("    for (uint64_t i = 0; i < exp; i++) result *= base;");
+        self.writeln("    return riina_int(result);");
+        self.writeln("}");
+        self.writeln("");
+
+        // punca (sqrt)
+        self.writeln("static riina_value_t* riina_builtin_punca(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_INT) {");
+        self.writeln("        fprintf(stderr, \"RIINA: punca on non-int\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    uint64_t n = arg->data.int_val, r = 0;");
+        self.writeln("    while ((r + 1) * (r + 1) <= n) r++;");
+        self.writeln("    return riina_int(r);");
+        self.writeln("}");
+        self.writeln("");
+
+        // gcd
+        self.writeln("static riina_value_t* riina_builtin_gcd(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: gcd expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    uint64_t a = arg->data.pair_val.fst->data.int_val;");
+        self.writeln("    uint64_t b = arg->data.pair_val.snd->data.int_val;");
+        self.writeln("    while (b) { uint64_t t = b; b = a % b; a = t; }");
+        self.writeln("    return riina_int(a);");
+        self.writeln("}");
+        self.writeln("");
+
+        // lcm
+        self.writeln("static riina_value_t* riina_builtin_lcm(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) {");
+        self.writeln("        fprintf(stderr, \"RIINA: lcm expects pair\\n\"); abort();");
+        self.writeln("    }");
+        self.writeln("    uint64_t a = arg->data.pair_val.fst->data.int_val;");
+        self.writeln("    uint64_t b = arg->data.pair_val.snd->data.int_val;");
+        self.writeln("    riina_value_t* g = riina_builtin_gcd(arg);");
+        self.writeln("    if (g->data.int_val == 0) return riina_int(0);");
+        self.writeln("    return riina_int(a / g->data.int_val * b);");
+        self.writeln("}");
+        self.writeln("");
+
+        // Catch-all for unimplemented builtins (string ops, list ops, etc.)
+        // These will be stubs that abort with a message for now.
+        // Not emitting all 59 builtins — just the most commonly used ones above.
+        // Uncommon builtins will produce a linker error pointing to the missing C function.
     }
 
     /// Emit forward declarations for all functions
@@ -977,6 +1225,9 @@ impl CEmitter {
                         for (_, v) in entries {
                             vars.insert(*v);
                         }
+                    }
+                    Instruction::BuiltinCall { arg, .. } => {
+                        vars.insert(*arg);
                     }
                     Instruction::Const(_) | Instruction::RequireCap(_) | Instruction::GrantCap(_) => {}
                 }
@@ -1237,6 +1488,13 @@ impl CEmitter {
                 let eff_str = self.effect_str(effect);
                 self.writeln(&format!("riina_grant_cap({eff_str});"));
                 self.writeln(&format!("{result} = riina_capability({eff_str});"));
+            }
+
+            Instruction::BuiltinCall { name, arg } => {
+                self.writeln(&format!(
+                    "{result} = riina_builtin_{name}({});",
+                    self.var_name(arg)
+                ));
             }
 
             Instruction::Phi(_entries) => {
