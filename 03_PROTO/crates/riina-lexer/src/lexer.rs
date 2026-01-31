@@ -344,6 +344,7 @@ impl<'a> Lexer<'a> {
         TokenKind::LiteralInt(s, None) // Default
     }
 
+    #[allow(clippy::too_many_lines)]
     fn read_identifier(&mut self, first: char, _start: usize) -> TokenKind {
         let mut s = String::new();
         s.push(first);
@@ -448,6 +449,20 @@ impl<'a> Lexer<'a> {
             // Sum type constructors
             "inl" => TokenKind::KwInl,
             "inr" => TokenKind::KwInr,
+
+            // Projection keywords (English | Bahasa Melayu)
+            "fst" | "pertama" => TokenKind::KwFst,
+            "snd" | "kedua" => TokenKind::KwSnd,
+
+            // Capability requirement/grant (English | Bahasa Melayu)
+            "require" | "perlukan" => TokenKind::KwRequire,
+            "grant" | "beri" => TokenKind::KwGrant,
+
+            // Option/Result constructors (English | Bahasa Melayu)
+            "Some" | "Ada" => TokenKind::KwSome,
+            "None" | "Tiada" => TokenKind::KwNone,
+            "Ok" | "Jadi" => TokenKind::KwOk,
+            "Err" | "Gagal" => TokenKind::KwErr,
 
             // Session types (English | Bahasa Melayu)
             "session" | "sesi" => TokenKind::KwSession,

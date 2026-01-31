@@ -6,13 +6,21 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 use riina_lexer::{Token, TokenKind, Lexer, Span};
-use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program};
+use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program, TaintSource, Sanitizer, CapabilityKind, SpannedDecl};
+use riina_types::Span as AstSpan;
+use std::fmt;
 use std::iter::Peekable;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParseError {
     pub kind: ParseErrorKind,
     pub span: Span,
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} at {}..{}", self.kind, self.span.start, self.span.end)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +32,20 @@ pub enum ParseErrorKind {
     ExpectedExpression,
     InvalidSecurityLevel,
     InvalidEffect,
+}
+
+impl fmt::Display for ParseErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseErrorKind::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok),
+            ParseErrorKind::UnexpectedEof => write!(f, "Unexpected end of input"),
+            ParseErrorKind::ExpectedIdentifier => write!(f, "Expected identifier"),
+            ParseErrorKind::ExpectedType => write!(f, "Expected type"),
+            ParseErrorKind::ExpectedExpression => write!(f, "Expected expression"),
+            ParseErrorKind::InvalidSecurityLevel => write!(f, "Invalid security level"),
+            ParseErrorKind::InvalidEffect => write!(f, "Invalid effect"),
+        }
+    }
 }
 
 struct LexerIter<'a> {
@@ -58,14 +80,68 @@ impl<'a> Parser<'a> {
     /// Parse a complete .rii file as a sequence of top-level declarations.
     pub fn parse_program(&mut self) -> Result<Program, ParseError> {
         let mut decls = Vec::new();
+        let mut spans = Vec::new();
         while self.peek().map(|t| &t.kind) != Some(&TokenKind::Eof) && self.peek().is_some() {
-            decls.push(self.parse_top_level_decl()?);
+            let start = self.peek().map(|t| t.span.start).unwrap_or(0);
+            let decl = self.parse_top_level_decl()?;
+            let end = self.current_span.end;
+            let name_span = match &decl {
+                TopLevelDecl::Function { .. } | TopLevelDecl::Binding { .. } => {
+                    // Name span recorded during parsing via current_span after ident
+                    None // Will be filled in by enhanced parse methods below
+                }
+                TopLevelDecl::Expr(_) => None,
+            };
+            spans.push(SpannedDecl {
+                decl: decl.clone(),
+                span: AstSpan::new(start, end),
+                name_span,
+            });
+            decls.push(decl);
         }
-        Ok(Program { decls })
+        Ok(Program::with_spans(decls, spans))
     }
 
     fn parse_top_level_decl(&mut self) -> Result<TopLevelDecl, ParseError> {
         match self.peek().map(|t| &t.kind) {
+            Some(TokenKind::KwMod) => {
+                // modul name; — skip (no module system yet)
+                self.consume(TokenKind::KwMod)?;
+                let _name = self.parse_ident()?;
+                self.consume(TokenKind::Semi)?;
+                self.parse_top_level_decl()
+            }
+            Some(TokenKind::KwUse) => {
+                // guna path::to::module; — skip (no module system yet)
+                self.consume(TokenKind::KwUse)?;
+                while !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Semi) | None) {
+                    self.next();
+                }
+                self.consume(TokenKind::Semi)?;
+                self.parse_top_level_decl()
+            }
+            Some(TokenKind::KwStruct) | Some(TokenKind::KwEnum) => {
+                // bentuk/pilihan — skip declaration (no struct/enum semantics yet)
+                self.next(); // consume KwStruct or KwEnum
+                let _name = self.parse_ident()?;
+                self.consume(TokenKind::LBrace)?;
+                // Skip until matching RBrace
+                let mut depth = 1u32;
+                while depth > 0 {
+                    match self.peek().map(|t| &t.kind) {
+                        Some(TokenKind::LBrace) => { self.next(); depth += 1; }
+                        Some(TokenKind::RBrace) => { self.next(); depth -= 1; }
+                        None => break,
+                        _ => { self.next(); }
+                    }
+                }
+                self.parse_top_level_decl()
+            }
+            Some(TokenKind::KwPub) => {
+                // awam fungsi ... — consume visibility, delegate
+                self.consume(TokenKind::KwPub)?;
+                self.parse_top_level_decl()
+            }
             Some(TokenKind::KwFn) => self.parse_function_decl(),
             Some(TokenKind::KwLet) => {
                 self.consume(TokenKind::KwLet)?;
@@ -118,6 +194,10 @@ impl<'a> Parser<'a> {
     fn parse_param_list(&mut self) -> Result<Vec<(Ident, Ty)>, ParseError> {
         let mut params = Vec::new();
         if !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RParen)) {
+            // Optional mut/ubah modifier (ignored for now)
+            if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut)) {
+                self.consume(TokenKind::KwMut)?;
+            }
             let name = self.parse_ident()?;
             self.consume(TokenKind::Colon)?;
             let ty = self.parse_ty()?;
@@ -125,6 +205,9 @@ impl<'a> Parser<'a> {
 
             while matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
                 self.consume(TokenKind::Comma)?;
+                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut)) {
+                    self.consume(TokenKind::KwMut)?;
+                }
                 let name = self.parse_ident()?;
                 self.consume(TokenKind::Colon)?;
                 let ty = self.parse_ty()?;
@@ -203,8 +286,71 @@ impl<'a> Parser<'a> {
             Some(TokenKind::KwMatch) => self.parse_match(),
             Some(TokenKind::KwHandle) => self.parse_handle(),
             Some(TokenKind::KwGuard) => self.parse_guard(),
+            Some(TokenKind::KwReturn) => {
+                self.consume(TokenKind::KwReturn)?;
+                // pulang expr — return is identity (desugars to just the expression)
+                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::LParen)) {
+                    self.parse_pipe()
+                } else {
+                    self.parse_pipe()
+                }
+            }
+            Some(TokenKind::KwFor) => self.parse_for_in(),
+            Some(TokenKind::KwWhile) => self.parse_while(),
+            Some(TokenKind::KwLoop) => self.parse_loop(),
             _ => self.parse_pipe(),
         }
+    }
+
+    /// Parse for-in loop:
+    ///   untuk x dalam iter { body }
+    /// Desugars to: map (fn(x: Any) body) iter
+    fn parse_for_in(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwFor)?;
+        let var = self.parse_ident()?;
+        self.consume(TokenKind::KwIn)?;
+        let iter = self.parse_pipe()?;
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        // Desugar: untuk x dalam list { body } → map(fn(x: Any) body, list)
+        let lam = Expr::Lam(var, Ty::Any, Box::new(body));
+        Ok(Expr::App(
+            Box::new(Expr::App(Box::new(Expr::Var("map".into())), Box::new(lam))),
+            Box::new(iter),
+        ))
+    }
+
+    /// Parse while loop:
+    ///   selagi cond { body }
+    /// Desugars to: If(cond, Let("_", body, while_again), Unit)
+    /// Since we don't have Fix/recursion, we desugar to a bounded
+    /// representation the interpreter can handle via recursive eval.
+    fn parse_while(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwWhile)?;
+        let cond = self.parse_pipe()?;
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        // Desugar: selagi cond { body } → if cond { body; () } else { () }
+        // Full looping requires runtime support; for now emit single-iteration conditional
+        Ok(Expr::If(
+            Box::new(cond),
+            Box::new(Expr::Let("_".to_string(), Box::new(body), Box::new(Expr::Unit))),
+            Box::new(Expr::Unit),
+        ))
+    }
+
+    /// Parse infinite loop:
+    ///   ulang { body }
+    /// Desugars to: selagi betul { body }
+    fn parse_loop(&mut self) -> Result<Expr, ParseError> {
+        self.consume(TokenKind::KwLoop)?;
+        self.consume(TokenKind::LBrace)?;
+        let body = self.parse_expr()?;
+        self.consume(TokenKind::RBrace)?;
+        // Desugar: ulang { body } → body; () (single iteration for now)
+        Ok(Expr::Let("_".to_string(), Box::new(body), Box::new(Expr::Unit)))
     }
 
     /// Parse guard clause:
@@ -330,6 +476,24 @@ impl<'a> Parser<'a> {
 
     fn parse_app(&mut self) -> Result<Expr, ParseError> {
         let mut expr = self.parse_unary()?;
+        // Check for parenthesized call syntax: f(a, b, c) → App(App(App(f, a), b), c)
+        if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::LParen)) {
+            // Only treat as call if current expr could be a callee (Var or prior App)
+            if matches!(&expr, Expr::Var(_) | Expr::App(_, _)) {
+                self.consume(TokenKind::LParen)?;
+                if !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RParen)) {
+                    let arg = self.parse_control_flow()?;
+                    expr = Expr::App(Box::new(expr), Box::new(arg));
+                    while matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                        self.consume(TokenKind::Comma)?;
+                        let arg = self.parse_control_flow()?;
+                        expr = Expr::App(Box::new(expr), Box::new(arg));
+                    }
+                }
+                self.consume(TokenKind::RParen)?;
+                return Ok(expr);
+            }
+        }
         loop {
             if self.is_expr_start() {
                 let arg = self.parse_unary()?;
@@ -397,6 +561,28 @@ impl<'a> Parser<'a> {
                 self.consume(TokenKind::KwProve)?;
                 let e = self.parse_unary()?;
                 Ok(Expr::Prove(Box::new(e)))
+            },
+            Some(TokenKind::KwFst) => {
+                self.consume(TokenKind::KwFst)?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Fst(Box::new(e)))
+            },
+            Some(TokenKind::KwSnd) => {
+                self.consume(TokenKind::KwSnd)?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Snd(Box::new(e)))
+            },
+            Some(TokenKind::KwRequire) => {
+                self.consume(TokenKind::KwRequire)?;
+                let eff = self.parse_effect()?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Require(eff, Box::new(e)))
+            },
+            Some(TokenKind::KwGrant) => {
+                self.consume(TokenKind::KwGrant)?;
+                let eff = self.parse_effect()?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Grant(eff, Box::new(e)))
             },
             Some(TokenKind::KwInl) => {
                 self.consume(TokenKind::KwInl)?;
@@ -505,30 +691,67 @@ impl<'a> Parser<'a> {
 
     fn parse_match(&mut self) -> Result<Expr, ParseError> {
          self.consume(TokenKind::KwMatch)?;
-         let e = self.parse_expr()?;
+         let scrutinee = self.parse_pipe()?;
          self.consume(TokenKind::LBrace)?;
-         
-         self.consume(TokenKind::KwInl)?;
-         let x = self.parse_ident()?;
-         self.consume(TokenKind::FatArrow)?;
-         let e1 = self.parse_expr()?;
-         
-         if let Some(TokenKind::Comma) = self.peek().map(|t| &t.kind) {
-             self.consume(TokenKind::Comma)?;
+
+         // Dispatch: inl/inr → sum match, otherwise → literal match
+         match self.peek().map(|t| &t.kind) {
+             Some(TokenKind::KwInl) => {
+                 self.consume(TokenKind::KwInl)?;
+                 let x = self.parse_ident()?;
+                 self.consume(TokenKind::FatArrow)?;
+                 let e1 = self.parse_expr()?;
+                 if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                     self.next();
+                 }
+                 self.consume(TokenKind::KwInr)?;
+                 let y = self.parse_ident()?;
+                 self.consume(TokenKind::FatArrow)?;
+                 let e2 = self.parse_expr()?;
+                 if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                     self.next();
+                 }
+                 self.consume(TokenKind::RBrace)?;
+                 Ok(Expr::Case(Box::new(scrutinee), x, Box::new(e1), y, Box::new(e2)))
+             }
+             _ => {
+                 // Literal match: desugar to nested if-else
+                 let mut arms = Vec::new();
+                 let mut default = None;
+                 loop {
+                     if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::RBrace) | None) {
+                         break;
+                     }
+                     // Wildcard _
+                     if matches!(self.peek().map(|t| t.kind.clone()), Some(TokenKind::Identifier(ref s)) if s == "_") {
+                         self.next();
+                         self.consume(TokenKind::FatArrow)?;
+                         default = Some(self.parse_pipe()?);
+                         if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                             self.next();
+                         }
+                         break;
+                     }
+                     let pattern = self.parse_atom()?;
+                     self.consume(TokenKind::FatArrow)?;
+                     let body = self.parse_pipe()?;
+                     arms.push((pattern, body));
+                     if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                         self.next();
+                     }
+                 }
+                 self.consume(TokenKind::RBrace)?;
+                 let fallback = default.unwrap_or(Expr::Unit);
+                 let result = arms.into_iter().rev().fold(fallback, |else_branch, (pat, body)| {
+                     Expr::If(
+                         Box::new(Expr::BinOp(BinOp::Eq, Box::new(scrutinee.clone()), Box::new(pat))),
+                         Box::new(body),
+                         Box::new(else_branch),
+                     )
+                 });
+                 Ok(result)
+             }
          }
-         
-         self.consume(TokenKind::KwInr)?;
-         let y = self.parse_ident()?;
-         self.consume(TokenKind::FatArrow)?;
-         let e2 = self.parse_expr()?;
-         
-         if let Some(TokenKind::Comma) = self.peek().map(|t| &t.kind) {
-             self.consume(TokenKind::Comma)?;
-         }
-         
-         self.consume(TokenKind::RBrace)?;
-         
-         Ok(Expr::Case(Box::new(e), x, Box::new(e1), y, Box::new(e2)))
     }
 
     fn parse_handle(&mut self) -> Result<Expr, ParseError> {
@@ -645,7 +868,60 @@ impl<'a> Parser<'a> {
                         self.consume(TokenKind::Gt)?;
                         Ok(Ty::Sum(Box::new(t1), Box::new(t2)))
                     },
-                    _ => Ok(Ty::Unit), // Fallback
+                    // Function type: Fn(T1, T2) or Fn(T1, T2, Effect)
+                    "Fn" => {
+                        self.consume(TokenKind::LParen)?;
+                        let param_ty = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let ret_ty = self.parse_ty()?;
+                        // Optional effect as third argument
+                        let eff = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                            self.consume(TokenKind::Comma)?;
+                            self.parse_effect()?
+                        } else {
+                            Effect::Pure
+                        };
+                        self.consume(TokenKind::RParen)?;
+                        Ok(Ty::Fn(Box::new(param_ty), Box::new(ret_ty), eff))
+                    },
+                    // Labeled<T, Level> / Berlabel<T, Level>
+                    "Labeled" | "Berlabel" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let level = self.parse_security_level()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Labeled(Box::new(inner), level))
+                    },
+                    // Tainted<T, Source> / Tercemar<T, Source>
+                    "Tainted" | "Tercemar" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let source = self.parse_taint_source()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Tainted(Box::new(inner), source))
+                    },
+                    // Sanitized<T, Sanitizer> / Disanitasi<T, Sanitizer>
+                    "Sanitized" | "Disanitasi" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let san = self.parse_sanitizer()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Sanitized(Box::new(inner), san))
+                    },
+                    // Capability<Kind> / Keupayaan<Kind>
+                    "Capability" | "Keupayaan" => {
+                        self.consume(TokenKind::Lt)?;
+                        let kind = self.parse_capability_kind()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Capability(kind))
+                    },
+                    _ => Err(ParseError {
+                        kind: ParseErrorKind::ExpectedType,
+                        span: self.current_span,
+                    }),
                 }
             },
             _ => Err(ParseError {
@@ -658,12 +934,12 @@ impl<'a> Parser<'a> {
     fn parse_security_level(&mut self) -> Result<SecurityLevel, ParseError> {
         let ident = self.parse_ident()?;
         match ident.as_str() {
-            "Public" => Ok(SecurityLevel::Public),
-            "Internal" => Ok(SecurityLevel::Internal),
-            "Session" => Ok(SecurityLevel::Session),
-            "User" => Ok(SecurityLevel::User),
-            "System" => Ok(SecurityLevel::System),
-            "Secret" => Ok(SecurityLevel::Secret),
+            "Public" | "Awam" => Ok(SecurityLevel::Public),
+            "Internal" | "Dalaman" => Ok(SecurityLevel::Internal),
+            "Session" | "Sesi" => Ok(SecurityLevel::Session),
+            "User" | "Pengguna" => Ok(SecurityLevel::User),
+            "System" | "Sistem" => Ok(SecurityLevel::System),
+            "Secret" | "Rahsia" => Ok(SecurityLevel::Secret),
              _ => Err(ParseError { kind: ParseErrorKind::InvalidSecurityLevel, span: self.current_span })
         }
     }
@@ -671,17 +947,17 @@ impl<'a> Parser<'a> {
     fn parse_effect(&mut self) -> Result<Effect, ParseError> {
          let ident = self.parse_ident()?;
          match ident.as_str() {
-             "Pure" => Ok(Effect::Pure),
-             "Read" => Ok(Effect::Read),
-             "Write" => Ok(Effect::Write),
-             "FileSystem" => Ok(Effect::FileSystem),
-             "Network" => Ok(Effect::Network),
-             "NetworkSecure" => Ok(Effect::NetworkSecure),
-             "Crypto" => Ok(Effect::Crypto),
-             "Random" => Ok(Effect::Random),
-             "System" => Ok(Effect::System),
-             "Time" => Ok(Effect::Time),
-             "Process" => Ok(Effect::Process),
+             "Pure" | "Bersih" => Ok(Effect::Pure),
+             "Read" | "Baca" => Ok(Effect::Read),
+             "Write" | "Tulis" => Ok(Effect::Write),
+             "FileSystem" | "SistemFail" => Ok(Effect::FileSystem),
+             "Network" | "Rangkaian" => Ok(Effect::Network),
+             "NetworkSecure" | "RangkaianSelamat" => Ok(Effect::NetworkSecure),
+             "Crypto" | "Kripto" => Ok(Effect::Crypto),
+             "Random" | "Rawak" => Ok(Effect::Random),
+             "System" | "Sistem" => Ok(Effect::System),
+             "Time" | "Masa" => Ok(Effect::Time),
+             "Process" | "Proses" => Ok(Effect::Process),
              "Panel" => Ok(Effect::Panel),
              "Zirah" => Ok(Effect::Zirah),
              "Benteng" => Ok(Effect::Benteng),
@@ -690,6 +966,76 @@ impl<'a> Parser<'a> {
              "Gapura" => Ok(Effect::Gapura),
              _ => Err(ParseError { kind: ParseErrorKind::InvalidEffect, span: self.current_span })
          }
+    }
+
+    fn parse_taint_source(&mut self) -> Result<TaintSource, ParseError> {
+        let ident = self.parse_ident()?;
+        match ident.as_str() {
+            "NetworkExternal" => Ok(TaintSource::NetworkExternal),
+            "NetworkInternal" => Ok(TaintSource::NetworkInternal),
+            "UserInput" => Ok(TaintSource::UserInput),
+            "FileSystem" => Ok(TaintSource::FileSystem),
+            "Database" => Ok(TaintSource::Database),
+            "Environment" => Ok(TaintSource::Environment),
+            "GapuraRequest" => Ok(TaintSource::GapuraRequest),
+            "ZirahEvent" => Ok(TaintSource::ZirahEvent),
+            "ZirahEndpoint" => Ok(TaintSource::ZirahEndpoint),
+            "BentengBiometric" => Ok(TaintSource::BentengBiometric),
+            "SandiSignature" => Ok(TaintSource::SandiSignature),
+            "MenaraDevice" => Ok(TaintSource::MenaraDevice),
+            _ => Err(ParseError { kind: ParseErrorKind::ExpectedType, span: self.current_span }),
+        }
+    }
+
+    fn parse_sanitizer(&mut self) -> Result<Sanitizer, ParseError> {
+        let ident = self.parse_ident()?;
+        match ident.as_str() {
+            "HtmlEscape" => Ok(Sanitizer::HtmlEscape),
+            "UrlEncode" => Ok(Sanitizer::UrlEncode),
+            "JsEscape" => Ok(Sanitizer::JsEscape),
+            "CssEscape" => Ok(Sanitizer::CssEscape),
+            "SqlEscape" => Ok(Sanitizer::SqlEscape),
+            "SqlParam" => Ok(Sanitizer::SqlParam),
+            "XssFilter" => Ok(Sanitizer::XssFilter),
+            "PathTraversal" => Ok(Sanitizer::PathTraversal),
+            "CommandEscape" => Ok(Sanitizer::CommandEscape),
+            "LdapEscape" => Ok(Sanitizer::LdapEscape),
+            "XmlEscape" => Ok(Sanitizer::XmlEscape),
+            "JsonValidation" => Ok(Sanitizer::JsonValidation),
+            "XmlValidation" => Ok(Sanitizer::XmlValidation),
+            "EmailValidation" => Ok(Sanitizer::EmailValidation),
+            "PhoneValidation" => Ok(Sanitizer::PhoneValidation),
+            "HashVerify" => Ok(Sanitizer::HashVerify),
+            "SignatureVerify" => Ok(Sanitizer::SignatureVerify),
+            "MacVerify" => Ok(Sanitizer::MacVerify),
+            "GapuraAuth" => Ok(Sanitizer::GapuraAuth),
+            "ZirahSession" => Ok(Sanitizer::ZirahSession),
+            "BentengBiometric" => Ok(Sanitizer::BentengBiometric),
+            "SandiDecrypt" => Ok(Sanitizer::SandiDecrypt),
+            "MenaraAttestation" => Ok(Sanitizer::MenaraAttestation),
+            _ => Err(ParseError { kind: ParseErrorKind::ExpectedType, span: self.current_span }),
+        }
+    }
+
+    fn parse_capability_kind(&mut self) -> Result<CapabilityKind, ParseError> {
+        let ident = self.parse_ident()?;
+        match ident.as_str() {
+            "FileRead" => Ok(CapabilityKind::FileRead),
+            "FileWrite" => Ok(CapabilityKind::FileWrite),
+            "FileExecute" => Ok(CapabilityKind::FileExecute),
+            "FileDelete" => Ok(CapabilityKind::FileDelete),
+            "NetConnect" => Ok(CapabilityKind::NetConnect),
+            "NetListen" => Ok(CapabilityKind::NetListen),
+            "NetBind" => Ok(CapabilityKind::NetBind),
+            "ProcSpawn" => Ok(CapabilityKind::ProcSpawn),
+            "ProcSignal" => Ok(CapabilityKind::ProcSignal),
+            "SysTime" => Ok(CapabilityKind::SysTime),
+            "SysRandom" => Ok(CapabilityKind::SysRandom),
+            "SysEnv" => Ok(CapabilityKind::SysEnv),
+            "RootProduct" => Ok(CapabilityKind::RootProduct),
+            "ProductAccess" => Ok(CapabilityKind::ProductAccess),
+            _ => Err(ParseError { kind: ParseErrorKind::ExpectedType, span: self.current_span }),
+        }
     }
 }
 

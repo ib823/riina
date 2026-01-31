@@ -1,0 +1,18 @@
+// rentetan.rii — String equality test
+// RIINA = Rigorous Immutable Invariant — Normalized Axiom
+
+biar nama = "Ahmad";
+biar nama2 = "Ahmad";
+biar lain_nama = "Siti";
+
+kalau nama == nama2 {
+    cetakln("Nama sama!")
+} lain {
+    cetakln("Nama beza!")
+};
+
+kalau nama != lain_nama {
+    cetakln("Betul, nama beza")
+} lain {
+    cetakln("Salah")
+}

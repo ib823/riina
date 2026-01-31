@@ -1,5 +1,74 @@
 # Session Log
 
+## 2026-01-31 (Session 56): Phase 4 Developer Experience
+
+**Goal:** Implement Phase 4 Developer Experience — 8 milestones (M1-M8): span AST, formatter, LSP, hover/completion, VS Code extension, doc generator, example corpus, docs update.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| M1 | **Span-annotated AST** — `Span`, `SpannedDecl` in riina-types; parser records spans | ✅ |
+| M2 | **riina-fmt formatter** — new crate, handles all 27 Expr variants, `riinac fmt` subcommand | ✅ |
+| M3 | **riina-lsp server (P0)** — hand-written JSON-RPC over stdio, diagnostics via publishDiagnostics | ✅ |
+| M4 | **LSP hover + completion (P1)** — hover returns type info, completion returns 26 BM keywords | ✅ |
+| M5 | **VS Code extension** — TextMate grammar, 12 snippets, LSP client (`riina-vscode/`) | ✅ |
+| M6 | **riina-doc generator** — extracts `///` doc comments, generates HTML, `riinac doc` subcommand | ✅ |
+| M7 | **Example corpus** — 100 .rii files across 6 directories + AI context docs | ✅ |
+| M8 | **Update planning documents** — PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md, materialization plan | ✅ |
+
+### Final State
+
+- **New crates**: riina-fmt, riina-lsp, riina-doc
+- **VS Code extension**: riina-vscode/ (TextMate grammar, snippets, LSP client)
+- **Rust tests**: 530 (was 509)
+- **Example files**: 100 .rii across 00_basics(20), 01_security(18), 02_effects(15), 03_applications(15), 04_compliance(10), 05_patterns(15)
+- **AI context**: RIINA_CHEATSHEET.md, RIINA_FOR_AI.md, all_examples.rii (15k lines)
+
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| af89c3d | [TRACK_B] IMPL: Phase 4 M1-M6 + 53 example files |
+| 0fc2c8f | [ALL] EXAMPLES: 40 more .rii files (applications, compliance, patterns) |
+| b6c1039 | [ALL] DOCS: Update planning documents — Phase 4 Developer Experience done |
+
+---
+
+## 2026-01-31 (Session 55): Phase 2 Standard Library
+
+**Goal:** Implement Phase 2 Standard Library — 6 milestones (M1-M6): C runtime types, 3 new modules (masa/fail/json), expand existing modules, update docs.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| M1 | **C runtime types + 39 builtin C implementations** — riina_list_t, riina_map_t; all teks/senarai/peta/set compile to C | ✅ |
+| M2 | **masa (time) module** — 6 builtins (sekarang, sekarang_ms, format, urai, tidur, jam) | ✅ |
+| M3 | **fail (file I/O) module** — 8 builtins (baca, tulis, tambah, ada, buang, panjang, senarai, baca_baris) | ✅ |
+| M4 | **json module** — 5 builtins with hand-written recursive descent parser (urai, ke_teks, dapat, letak, ada) | ✅ |
+| M5 | **Expand teks/senarai/matematik** — 10 new builtins (ulang, pad_kiri/kanan, baris, rata, unik, potong, baki, log2, rawak) | ✅ |
+| M6 | **Update planning documents** — PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md | ✅ |
+
+### Final State
+
+- **Builtins**: 88 across 9 modules (was 59 across 7)
+- **Rust tests**: 509 (was 477)
+- **New modules**: masa.rs, fail.rs, json.rs
+- **C emitter**: All builtins now have C implementations (was ~21, now 88)
+
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| 4a48f50 | [TRACK_B] IMPL: Phase 2 M1 — C runtime types + 39 builtin C implementations |
+| c8fbab3 | [TRACK_B] IMPL: Phase 2 M2 — masa (time) module, 6 builtins |
+| d27881a | [TRACK_B] IMPL: Phase 2 M3 — fail (file I/O) module, 8 builtins |
+| dde36ac | [TRACK_B] IMPL: Phase 2 M4 — json module, 5 builtins |
+| b908d27 | [TRACK_B] IMPL: Phase 2 M5 — expand teks/senarai/matematik, 10 new builtins |
+
+---
+
 ## 2026-01-30 (Session 53): Fix fst/snd Admitted, Axiom Analysis & Justification
 
 **Goal:** Eliminate remaining 5 axioms or justify them. Fix Rocq 9.1 regressions (2 Admitted, 2 admits).
@@ -2980,3 +3049,29 @@ val_rel_n_mono (Admitted) ──► store_rel_n_mono (Admitted)
 
 ### Status
 - Coordination and status docs aligned; no build impact.
+
+---
+
+## 2026-01-31: Track B Phase 1 Completion (Session 54)
+
+### Work Done
+1. **5.2 Lexer** — Added 8 bilingual keyword pairs: fst/pertama, snd/kedua, require/perlukan, grant/beri, Some/Ada, None/Tiada, Ok/Jadi, Err/Gagal. 3 new tests.
+2. **5.3 Parser** — BM effect aliases (Tulis, Baca, Bersih, etc.), BM security level aliases (Awam, Rahsia, etc.), missing type variants (Fn, Labeled/Berlabel, Tainted/Tercemar, Sanitized/Disanitasi, Capability/Keupayaan), unknown type error (was silent fallback to Unit), fst/snd/require/grant expression parsing. 20 new tests.
+3. **5.4 C emitter** — Effect handler stack via setjmp/longjmp (riina_handler_frame_t, push/pop, 64 max depth). riina_perform now searches handler stack and longjmps. Fixed stale closure TODO.
+4. **5.5 REPL** — Already complete (7 bilingual commands, all backends). Status was stale.
+5. **5.6 Error diagnostics** — Display impls for ParseError/ParseErrorKind. New diagnostics module with caret-style source context (line/column, source line, underline).
+6. **Track A** — Committed pre-existing store-rel monotonicity lemmas and allocation helpers (0 admits).
+7. **Planning docs** — Updated PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md.
+
+### Commits
+- 1da1bbf: 5.3 Parser BM aliases + type variants
+- 288c475: 5.2 Lexer keyword gaps
+- 944d277: 5.3 Parser fst/snd/require/grant
+- e1e3d21: 5.4 C emitter effect handlers
+- eb779ce: 5.6 Error diagnostics
+- 144256e: Track A store-rel monotonicity lemmas
+
+### Status
+- **Phase 1 (Compiler Completion): COMPLETE** — All 5.1-5.7 done
+- Rust tests: 477 passing (0 failures)
+- Next: Phase 2 (Standard Library) or Phase 4 (Developer Experience)

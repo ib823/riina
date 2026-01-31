@@ -419,7 +419,20 @@ Fixpoint val_rel_n (n : nat) (Σ : store_ty) (T : ty) (v1 v2 : expr) {struct n} 
   end
 with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :=
   match n with
-  | 0 => store_max st1 = store_max st2  (* Domain equality *)
+  | 0 =>
+      (* ENRICHED: Step 0 carries val_rel_n-0-equivalent for all locations.
+         Inlined because Coq's termination checker rejects val_rel_n 0 here
+         (0 is not structurally smaller than n=0). *)
+      store_max st1 = store_max st2 /\
+      (forall l T sl,
+        store_ty_lookup l Σ = Some (T, sl) ->
+        exists v1 v2,
+          store_lookup l st1 = Some v1 /\
+          store_lookup l st2 = Some v2 /\
+          value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+          has_type nil Σ Public v1 T EffectPure /\
+          has_type nil Σ Public v2 T EffectPure /\
+          (if first_order_type T then val_rel_at_type_fo T v1 v2 else True))
   | S n' =>
       store_rel_n n' Σ st1 st2 /\
       store_max st1 = store_max st2 /\
@@ -428,14 +441,9 @@ with store_rel_n (n : nat) (Σ : store_ty) (st1 st2 : store) {struct n} : Prop :
         exists v1 v2,
           store_lookup l st1 = Some v1 /\
           store_lookup l st2 = Some v2 /\
-          (* SECURITY-AWARE RELATION:
-             - LOW security: require full val_rel_n (structural equality for FO)
-             - HIGH security: only require well-typed values (observer can't see them) *)
-          (if is_low_dec sl
-           then val_rel_n n' Σ T v1 v2
-           else (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-                 has_type nil Σ Public v1 T EffectPure /\
-                 has_type nil Σ Public v2 T EffectPure)))
+          (* ALL locations tracked with val_rel_n — no is_low_dec split.
+             This enables proving ref/deref/assign without axioms. *)
+          val_rel_n n' Σ T v1 v2)
   end.
 
 (** Unfolding lemmas for val_rel_n - needed because simpl doesn't work well
@@ -460,8 +468,43 @@ Lemma val_rel_n_S_unfold : forall n Σ T v1 v2,
 Proof. reflexivity. Qed.
 
 Lemma store_rel_n_0_unfold : forall Σ st1 st2,
-  store_rel_n 0 Σ st1 st2 = (store_max st1 = store_max st2).
+  store_rel_n 0 Σ st1 st2 =
+  (store_max st1 = store_max st2 /\
+   (forall l T sl,
+     store_ty_lookup l Σ = Some (T, sl) ->
+     exists v1 v2,
+       store_lookup l st1 = Some v1 /\
+       store_lookup l st2 = Some v2 /\
+       value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
+       has_type nil Σ Public v1 T EffectPure /\
+       has_type nil Σ Public v2 T EffectPure /\
+       (if first_order_type T then val_rel_at_type_fo T v1 v2 else True))).
 Proof. reflexivity. Qed.
+
+(** store_rel_n 0 implies val_rel_n 0 for all locations *)
+Lemma store_rel_n_0_val_rel : forall Σ st1 st2,
+  store_rel_n 0 Σ st1 st2 ->
+  forall l T sl,
+    store_ty_lookup l Σ = Some (T, sl) ->
+    exists v1 v2,
+      store_lookup l st1 = Some v1 /\
+      store_lookup l st2 = Some v2 /\
+      val_rel_n 0 Σ T v1 v2.
+Proof.
+  intros Σ st1 st2 H l T sl Hlook.
+  rewrite store_rel_n_0_unfold in H. destruct H as [_ Hlocs].
+  destruct (Hlocs l T sl Hlook) as [v1 [v2 [Hl1 [Hl2 [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hfo]]]]]]]]]].
+  exists v1, v2. split; [exact Hl1|]. split; [exact Hl2|].
+  rewrite val_rel_n_0_unfold.
+  repeat split; assumption.
+Qed.
+
+(** Backward-compatible: extract domain equality from store_rel_n 0 *)
+Lemma store_rel_n_0_domain : forall Σ st1 st2,
+  store_rel_n 0 Σ st1 st2 -> store_max st1 = store_max st2.
+Proof.
+  intros Σ st1 st2 H. rewrite store_rel_n_0_unfold in H. destruct H. exact H.
+Qed.
 
 Lemma store_rel_n_S_unfold : forall n Σ st1 st2,
   store_rel_n (S n) Σ st1 st2 =
@@ -472,11 +515,7 @@ Lemma store_rel_n_S_unfold : forall n Σ st1 st2,
      exists v1 v2,
        store_lookup l st1 = Some v1 /\
        store_lookup l st2 = Some v2 /\
-       (if is_low_dec sl
-        then val_rel_n n Σ T v1 v2
-        else (value v1 /\ value v2 /\ closed_expr v1 /\ closed_expr v2 /\
-              has_type nil Σ Public v1 T EffectPure /\
-              has_type nil Σ Public v2 T EffectPure)))).
+       val_rel_n n Σ T v1 v2)).
 Proof. reflexivity. Qed.
 
 (** ========================================================================
@@ -865,22 +904,31 @@ Proof.
   induction n as [| n' IHn]; intros m Hle Hrel.
   - inversion Hle. exact Hrel.
   - destruct m as [| m'].
-    + simpl. simpl in Hrel.
-      destruct Hrel as [_ [Hmax _]]. exact Hmax.
-    + simpl. simpl in Hrel.
+    + (* m=0, n=S n': need store_rel_n 0 from store_rel_n (S n') *)
+      rewrite store_rel_n_0_unfold.
+      rewrite store_rel_n_S_unfold in Hrel.
+      destruct Hrel as [Hrec [Hmax Hlocs]].
+      split.
+      * exact Hmax.
+      * intros l T sl Hlook.
+        destruct (Hlocs l T sl Hlook) as [v1 [v2 [Hl1 [Hl2 Hvrel]]]].
+        exists v1, v2. split; [exact Hl1|]. split; [exact Hl2|].
+        (* val_rel_n n' -> val_rel_n 0 components (inlined in store_rel_n 0) *)
+        assert (Hvrel0 : val_rel_n 0 Σ T v1 v2).
+        { apply val_rel_n_mono with (n := n'). lia. exact Hvrel. }
+        rewrite val_rel_n_0_unfold in Hvrel0.
+        destruct Hvrel0 as [? [? [? [? [? [? ?]]]]]].
+        repeat split; assumption.
+    + (* m=S m', n=S n': standard *)
+      rewrite store_rel_n_S_unfold. rewrite store_rel_n_S_unfold in Hrel.
       destruct Hrel as [Hrec [Hmax Hlocs]].
       split; [| split].
       * apply IHn. lia. exact Hrec.
       * exact Hmax.
       * intros l T sl Hlook.
         destruct (Hlocs l T sl Hlook) as [v1 [v2 [Hl1 [Hl2 Hvrel]]]].
-        exists v1, v2. repeat split; try assumption.
-        (* Handle security-aware conditional *)
-        destruct (is_low_dec sl) eqn:Hsl.
-        -- (* LOW: apply val_rel_n_mono *)
-           apply val_rel_n_mono with (n := n'). lia. exact Hvrel.
-        -- (* HIGH: typing doesn't depend on step index *)
-           exact Hvrel.
+        exists v1, v2. split; [exact Hl1|]. split; [exact Hl2|].
+        apply val_rel_n_mono with (n := n'). lia. exact Hvrel.
 Qed.
 
 (** ========================================================================
@@ -1068,7 +1116,8 @@ Proof.
           { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
           simpl in Hvat.
           destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
-          inversion Heq1'; subst. inversion Heq2'; subst.
+          inversion Heq1'. inversion Heq2'.
+          subst x1 y1 x2 y2.
           (* Hr1 : val_rel_at_type Σ' ... T1 a1 a2; for FO T1 this = val_rel_at_type_fo *)
           apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) a1 a2 Hfo1).
           exact Hr1.
@@ -1143,7 +1192,8 @@ Proof.
           { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact Hty1 | exact Hty2]. }
           simpl in Hvat.
           destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
-          inversion Heq1'; subst. inversion Heq2'; subst.
+          inversion Heq1'. inversion Heq2'.
+          subst x1 y1 x2 y2.
           apply (val_rel_at_type_fo_equiv T2 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) b1 b2 Hfo2).
           exact Hr2.
       + exact I. }
@@ -1672,19 +1722,11 @@ Proof.
     specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
     rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
     rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
-    (* Handle security-aware conditional *)
-    destruct (is_low_dec sl) eqn:Hsl.
-    + (* LOW: Use IH_val to step up from n' to S n' *)
-      apply IH_val.
-      * exact Hvrel_n'.
-      * exact Hty1.
-      * exact Hty2.
-    + (* HIGH: Just need typing, which we already have *)
-      assert (Hc1: closed_expr v1).
-      { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
-      assert (Hc2: closed_expr v2).
-      { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
-      repeat split; assumption.
+    (* All locations now carry val_rel_n — use IH_val to step up *)
+    apply IH_val.
+    * exact Hvrel_n'.
+    * exact Hty1.
+    * exact Hty2.
 Qed.
 
 (** ========================================================================
@@ -2191,7 +2233,7 @@ Proof.
     rewrite store_rel_n_S_unfold. split; [| split].
     + exact Hrel.
     + destruct n.
-      * rewrite store_rel_n_0_unfold in Hrel. exact Hrel.
+      * apply store_rel_n_0_domain in Hrel. exact Hrel.
       * rewrite store_rel_n_S_unfold in Hrel. destruct Hrel as [_ [Hmax _]]. exact Hmax.
     + intros l T sl Hlook.
       destruct Hwf1 as [HΣ_to_st1 _].
@@ -2199,50 +2241,28 @@ Proof.
       specialize (HΣ_to_st1 l T sl Hlook) as [v1 [Hlook1 [Hv1 Hty1]]].
       specialize (HΣ_to_st2 l T sl Hlook) as [v2 [Hlook2 [Hv2 Hty2]]].
       exists v1, v2. split; [exact Hlook1 | split; [exact Hlook2 |]].
-      (* FIRST: case split on security level for the security-aware store_rel *)
-      destruct (is_low_dec sl) eqn:Hsl.
-      * (* LOW security: need full val_rel_n *)
-        destruct n as [| n'].
-        -- (* n = 0: Bootstrap case for LOW *)
-           rewrite val_rel_n_0_unfold.
-           assert (Hc1: closed_expr v1).
-           { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
-           assert (Hc2: closed_expr v2).
-           { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
-           repeat split; try assumption.
-           destruct (first_order_type T) eqn:Hfo.
-           ++ (* FO type: use stores_agree_low_fo for LOW *)
-              assert (Hlow: is_low sl).
-              { apply is_low_dec_correct. exact Hsl. }
-              specialize (Hagree l T sl Hlook Hfo Hlow).
-              rewrite Hlook1, Hlook2 in Hagree.
-              injection Hagree as Heq. subst v2.
-              apply val_rel_at_type_fo_refl with Σ; assumption.
-           ++ (* HO type at step 0: need typing *)
-              split; assumption.
-        -- (* n = S n': Use val_rel from store_rel_n (S n') and step up *)
-           rewrite store_rel_n_S_unfold in Hrel.
-           destruct Hrel as [Hrel_n' [_ Hlocs]].
-           specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
-           rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
-           rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
-           (* Hvrel_n' is security-aware; we're in LOW case so it's val_rel_n n' *)
-           rewrite Hsl in Hvrel_n'.
-           (* Use IH_strong(n') to step up from val_rel_n n' to val_rel_n (S n') *)
-           assert (Hcombined : combined_step_up n').
-           { apply IH_strong. lia. }
-           destruct Hcombined as [Hval_step _].
-           apply Hval_step.
-           ++ exact Hvrel_n'.
-           ++ exact Hty1.
-           ++ exact Hty2.
-      * (* HIGH security: only need typing, not val_rel_n *)
-        (* Hv1 and Hv2 already available from store_wf destruct above *)
-        assert (Hc1: closed_expr v1).
-        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty1. }
-        assert (Hc2: closed_expr v2).
-        { apply typing_nil_implies_closed with Σ Public T EffectPure. exact Hty2. }
-        repeat split; assumption.
+      (* All locations now need val_rel_n n — no is_low_dec split *)
+      destruct n as [| n'].
+      * (* n = 0: Bootstrap — need val_rel_n 0 from store_rel_n 0 *)
+        destruct (store_rel_n_0_val_rel Σ st1 st2 Hrel l T sl Hlook)
+          as [v1' [v2' [Hlook1' [Hlook2' Hvrel0]]]].
+        rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
+        rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
+        exact Hvrel0.
+      * (* n = S n': Use val_rel from store_rel_n (S n') and step up *)
+        rewrite store_rel_n_S_unfold in Hrel.
+        destruct Hrel as [Hrel_n' [_ Hlocs]].
+        specialize (Hlocs l T sl Hlook) as [v1' [v2' [Hlook1' [Hlook2' Hvrel_n']]]].
+        rewrite Hlook1 in Hlook1'. injection Hlook1' as Heq1. subst v1'.
+        rewrite Hlook2 in Hlook2'. injection Hlook2' as Heq2. subst v2'.
+        (* Use IH_strong(n') to step up from val_rel_n n' to val_rel_n (S n') *)
+        assert (Hcombined : combined_step_up n').
+        { apply IH_strong. lia. }
+        destruct Hcombined as [Hval_step _].
+        apply Hval_step.
+        -- exact Hvrel_n'.
+        -- exact Hty1.
+        -- exact Hty2.
 Qed.
 
 (** Corollary: Extract val_rel step-up from combined_step_up_all *)
@@ -2642,3 +2662,257 @@ Qed.
 
     Additional cases (TProd, TSum with HO components) follow similar patterns.
 *)
+
+(** ========================================================================
+    LOCAL MONOTONICITY LEMMAS (duplicated from Monotone.v to avoid circular import)
+    ======================================================================== *)
+
+(** val_rel_at_type is covariant in Σ for all types *)
+Lemma val_rel_at_type_mono_store_local : forall T Σ Σ'
+  (sp : store_ty -> store -> store -> Prop)
+  (vl : store_ty -> ty -> expr -> expr -> Prop)
+  (sl : store_ty -> store -> store -> Prop) v1 v2,
+  store_ty_extends Σ Σ' ->
+  val_rel_at_type Σ sp vl sl T v1 v2 ->
+  val_rel_at_type Σ' sp vl sl T v1 v2.
+Proof.
+  induction T; intros Σ Σ' sp vl sl v1 v2 Hext Hrel; simpl in *; try exact Hrel.
+  - (* TFn *)
+    intros Σ'' Hext'' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore.
+    assert (Hext_Σ_Σ'' : store_ty_extends Σ Σ'').
+    { apply store_ty_extends_trans with Σ'; assumption. }
+    exact (Hrel Σ'' Hext_Σ_Σ'' x y Hvx Hvy Hcx Hcy Hargs st1 st2 ctx Hstore).
+  - (* TProd *)
+    destruct Hrel as [x1 [y1 [x2 [y2 [Heq1 [Heq2 [Hrel1 Hrel2]]]]]]].
+    exists x1, y1, x2, y2. repeat split; try assumption.
+    + apply IHT1 with Σ; assumption.
+    + apply IHT2 with Σ; assumption.
+  - (* TSum *)
+    destruct Hrel as [[x1 [x2 [Heq1 [Heq2 Hrel1]]]] | [y1 [y2 [Heq1 [Heq2 Hrel2]]]]].
+    + left. exists x1, x2. repeat split; try assumption.
+      apply IHT1 with Σ; assumption.
+    + right. exists y1, y2. repeat split; try assumption.
+      apply IHT2 with Σ; assumption.
+Qed.
+
+(** Store-typing monotonicity (Kripke strengthening) *)
+Lemma val_rel_n_mono_store_local : forall n Σ Σ' T v1 v2,
+  store_ty_extends Σ Σ' ->
+  val_rel_n n Σ T v1 v2 ->
+  val_rel_n n Σ' T v1 v2.
+Proof.
+  induction n as [| n' IHn]; intros Σ Σ' T v1 v2 Hext Hrel.
+  - rewrite val_rel_n_0_unfold in *.
+    destruct Hrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]].
+    repeat split; try assumption.
+    + apply (store_ty_extends_preserves_typing nil Σ Σ' Public v1 T EffectPure Hext Ht1).
+    + apply (store_ty_extends_preserves_typing nil Σ Σ' Public v2 T EffectPure Hext Ht2).
+  - rewrite val_rel_n_S_unfold in *.
+    destruct Hrel as [Hrec [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hrat]]]]]]].
+    split.
+    + exact (IHn Σ Σ' T v1 v2 Hext Hrec).
+    + repeat split; try assumption.
+      * apply (store_ty_extends_preserves_typing nil Σ Σ' Public v1 T EffectPure Hext Ht1).
+      * apply (store_ty_extends_preserves_typing nil Σ Σ' Public v2 T EffectPure Hext Ht2).
+      * apply val_rel_at_type_mono_store_local with Σ; assumption.
+Qed.
+
+(** ========================================================================
+    SECTION 11: STORE ALLOCATION AND UPDATE INFRASTRUCTURE
+    ========================================================================
+
+    These lemmas support proving logical_relation_ref and logical_relation_assign
+    by showing store_rel_n is preserved under allocation and update.
+*)
+
+(** Local helper: store_max preserved by symmetric update *)
+Lemma store_max_update_bound_local : forall l v st,
+  store_max (store_update l v st) <= Nat.max l (store_max st).
+Proof.
+  induction st as [| [l' v'] st' IH]; intros; simpl.
+  - lia.
+  - destruct (Nat.eqb l l') eqn:Heq; simpl.
+    + apply Nat.eqb_eq in Heq. subst. lia.
+    + specialize (IH). lia.
+Qed.
+
+Lemma store_max_update_lower_local : forall l v st,
+  store_max st <= store_max (store_update l v st).
+Proof.
+  induction st as [| [l' v'] st' IH]; intros; simpl.
+  - lia.
+  - destruct (Nat.eqb l l') eqn:Heq; simpl.
+    + apply Nat.eqb_eq in Heq. subst. lia.
+    + specialize (IH). lia.
+Qed.
+
+Lemma store_max_update_includes_l_local : forall l v st,
+  l <= store_max (store_update l v st).
+Proof.
+  induction st as [| [l' v'] st' IH]; intros; simpl.
+  - lia.
+  - destruct (Nat.eqb l l') eqn:Heq; simpl.
+    + apply Nat.eqb_eq in Heq. subst. lia.
+    + specialize (IH). lia.
+Qed.
+
+Lemma store_max_update_eq_local : forall l v1 v2 st1 st2,
+  store_max st1 = store_max st2 ->
+  store_max (store_update l v1 st1) = store_max (store_update l v2 st2).
+Proof.
+  intros l v1 v2 st1 st2 Heq.
+  apply Nat.le_antisymm.
+  - apply Nat.le_trans with (Nat.max l (store_max st1)).
+    + apply store_max_update_bound_local.
+    + specialize (store_max_update_includes_l_local l v2 st2).
+      specialize (store_max_update_lower_local l v2 st2).
+      rewrite Heq. lia.
+  - apply Nat.le_trans with (Nat.max l (store_max st2)).
+    + apply store_max_update_bound_local.
+    + specialize (store_max_update_includes_l_local l v1 st1).
+      specialize (store_max_update_lower_local l v1 st1).
+      rewrite <- Heq. lia.
+Qed.
+
+(** store_rel_n preserved after allocation at fresh location *)
+Lemma store_rel_n_alloc : forall n Σ st1 st2 T sl v1 v2,
+  store_rel_n n Σ st1 st2 ->
+  val_rel_n n Σ T v1 v2 ->
+  store_ty_lookup (fresh_loc st1) Σ = None ->
+  fresh_loc st1 = fresh_loc st2 ->
+  let loc := fresh_loc st1 in
+  let Σ' := store_ty_update loc T sl Σ in
+  store_rel_n n Σ' (store_update loc v1 st1) (store_update loc v2 st2).
+Proof.
+  induction n as [| n' IHn]; intros Σ st1 st2 T sl v1 v2 Hsrel Hvrel Hfresh Heq_fresh.
+  - (* n = 0 *)
+    rewrite store_rel_n_0_unfold in Hsrel.
+    destruct Hsrel as [Hmax Hlocs].
+    rewrite store_rel_n_0_unfold. split.
+    + (* store_max equality *)
+      apply store_max_update_eq_local. exact Hmax.
+    + (* val_rel_n 0 content for all locations in Σ' *)
+      intros l T0 sl0 Hlook.
+      destruct (Nat.eq_dec (fresh_loc st1) l) as [Heql | Hneql].
+      * (* l = fresh_loc: newly allocated location *)
+        subst l.
+        rewrite store_ty_lookup_update_eq in Hlook.
+        injection Hlook as HT Hsl. subst T0 sl0.
+        rewrite val_rel_n_0_unfold in Hvrel.
+        destruct Hvrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hfo]]]]]].
+        exists v1, v2.
+        split; [apply store_lookup_update_eq|].
+        split; [rewrite Heq_fresh; apply store_lookup_update_eq|].
+        repeat split; try assumption.
+        -- apply store_ty_extends_preserves_typing with Σ;
+           [apply store_ty_extends_update_fresh; exact Hfresh | exact Ht1].
+        -- apply store_ty_extends_preserves_typing with Σ;
+           [apply store_ty_extends_update_fresh; exact Hfresh | exact Ht2].
+      * (* l <> fresh_loc: existing location *)
+        assert (Hneql' : l <> fresh_loc st1) by (intro Heq; apply Hneql; symmetry; exact Heq).
+        rewrite store_ty_lookup_update_neq in Hlook; [|exact Hneql'].
+        rewrite store_lookup_update_neq; [|exact Hneql'].
+        rewrite Heq_fresh. rewrite store_lookup_update_neq.
+        -- specialize (Hlocs l T0 sl0 Hlook) as [w1 [w2 [Hw1 [Hw2 Hcontent]]]].
+           exists w1, w2.
+           split; [exact Hw1|]. split; [exact Hw2|].
+           destruct Hcontent as [Hvw1 [Hvw2 [Hcw1 [Hcw2 [Htw1 [Htw2 Hfo_w]]]]]].
+           repeat split; try assumption.
+           ++ apply store_ty_extends_preserves_typing with Σ;
+              [apply store_ty_extends_update_fresh; rewrite <- Heq_fresh; exact Hfresh | exact Htw1].
+           ++ apply store_ty_extends_preserves_typing with Σ;
+              [apply store_ty_extends_update_fresh; rewrite <- Heq_fresh; exact Hfresh | exact Htw2].
+        -- rewrite <- Heq_fresh. exact Hneql'.
+  - (* n = S n' *)
+    rewrite store_rel_n_S_unfold in Hsrel.
+    destruct Hsrel as [Hsrel_prev [Hmax Hlocs]].
+    rewrite store_rel_n_S_unfold. split; [| split].
+    + (* Recursive: store_rel_n n' Σ' for updated stores *)
+      apply IHn.
+      * exact Hsrel_prev.
+      * apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * exact Hfresh.
+      * exact Heq_fresh.
+    + (* store_max equality *)
+      apply store_max_update_eq_local. exact Hmax.
+    + (* val_rel_n n' for all locations in Σ' *)
+      intros l T0 sl0 Hlook.
+      destruct (Nat.eq_dec (fresh_loc st1) l) as [Heql | Hneql].
+      * (* l = fresh_loc: newly allocated *)
+        subst l.
+        rewrite store_ty_lookup_update_eq in Hlook.
+        injection Hlook as HT Hsl. subst T0 sl0.
+        rewrite Heq_fresh.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        exists v1, v2. repeat split; try reflexivity.
+        apply val_rel_n_mono_store_local with Σ.
+        -- apply store_ty_extends_update_fresh. rewrite <- Heq_fresh. exact Hfresh.
+        -- apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * (* l <> fresh_loc: existing *)
+        assert (Hneql' : l <> fresh_loc st1) by (intro Heq; apply Hneql; symmetry; exact Heq).
+        rewrite store_ty_lookup_update_neq in Hlook; [|exact Hneql'].
+        rewrite store_lookup_update_neq; [|exact Hneql'].
+        rewrite Heq_fresh. rewrite store_lookup_update_neq.
+        -- specialize (Hlocs l T0 sl0 Hlook) as [w1 [w2 [Hw1 [Hw2 Hvrel_w]]]].
+           exists w1, w2. split; [exact Hw1|]. split; [exact Hw2|].
+           apply val_rel_n_mono_store_local with Σ.
+           ++ apply store_ty_extends_update_fresh. rewrite <- Heq_fresh. exact Hfresh.
+           ++ exact Hvrel_w.
+        -- rewrite <- Heq_fresh. exact Hneql'.
+Qed.
+
+(** store_rel_n preserved after update at existing location *)
+Lemma store_rel_n_update : forall n Σ st1 st2 l T sl v1 v2,
+  store_rel_n n Σ st1 st2 ->
+  val_rel_n n Σ T v1 v2 ->
+  store_ty_lookup l Σ = Some (T, sl) ->
+  store_lookup l st1 <> None ->
+  store_lookup l st2 <> None ->
+  store_rel_n n Σ (store_update l v1 st1) (store_update l v2 st2).
+Proof.
+  induction n as [| n' IHn]; intros Σ st1 st2 l T sl v1 v2 Hsrel Hvrel Hlook Hsome1 Hsome2.
+  - (* n = 0 *)
+    rewrite store_rel_n_0_unfold in Hsrel |- *.
+    destruct Hsrel as [Hmax Hlocs].
+    split.
+    + apply store_max_update_eq_local. exact Hmax.
+    + intros l' T0 sl0 Hlook'.
+      destruct (Nat.eq_dec l l') as [Heql | Hneql].
+      * (* l = l': updated location *)
+        subst l'.
+        rewrite Hlook in Hlook'. injection Hlook' as HT Hsl. subst T0 sl0.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        rewrite val_rel_n_0_unfold in Hvrel.
+        destruct Hvrel as [Hv1 [Hv2 [Hc1 [Hc2 [Ht1 [Ht2 Hfo]]]]]].
+        exists v1, v2.
+        split; [reflexivity|]. split; [reflexivity|].
+        split; [exact Hv1|]. split; [exact Hv2|].
+        split; [exact Hc1|]. split; [exact Hc2|].
+        split; [exact Ht1|]. split; [exact Ht2|].
+        exact Hfo.
+      * (* l <> l': unchanged location *)
+        rewrite store_lookup_update_neq; auto.
+        rewrite store_lookup_update_neq; auto.
+        exact (Hlocs l' T0 sl0 Hlook').
+  - (* n = S n' *)
+    rewrite store_rel_n_S_unfold in Hsrel |- *.
+    destruct Hsrel as [Hsrel_prev [Hmax Hlocs]].
+    split; [| split].
+    + apply IHn with T sl.
+      * exact Hsrel_prev.
+      * apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * exact Hlook.
+      * exact Hsome1.
+      * exact Hsome2.
+    + apply store_max_update_eq_local. exact Hmax.
+    + intros l' T0 sl0 Hlook'.
+      destruct (Nat.eq_dec l l') as [Heql | Hneql].
+      * subst l'.
+        rewrite Hlook in Hlook'. injection Hlook' as HT Hsl. subst T0 sl0.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        exists v1, v2. repeat split; try reflexivity.
+        apply val_rel_n_mono with (n := S n'). lia. exact Hvrel.
+      * rewrite store_lookup_update_neq; auto.
+        rewrite store_lookup_update_neq; auto.
+        exact (Hlocs l' T0 sl0 Hlook').
+Qed.

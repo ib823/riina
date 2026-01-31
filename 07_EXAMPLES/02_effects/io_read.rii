@@ -1,0 +1,150 @@
+/// IO_READ.RII - Reading Input Operations
+/// Operasi membaca input
+/// Demonstrates: Baca effect, input operations, file reading
+
+fungsi baca_baris_dari_pengguna() -> Teks kesan Baca {
+    /// Baca satu baris dari stdin
+    baca_garisan()
+}
+
+fungsi baca_nombor_dari_pengguna() -> Hasil<Nombor, Teks> kesan Baca {
+    /// Baca nombor dari pengguna
+    biar masukan = baca_garisan();
+    padan tukar_string_ke_nombor(masukan) {
+        Ada(n) -> Ok(n),
+        Tidak -> Ralat("Bukan nombor sah"),
+    }
+}
+
+fungsi baca_fail_sepenuhnya(nama_fail: Teks) -> Hasil<Teks, Teks> kesan Baca {
+    /// Baca isi fail sepenuhnya
+    padan buka_fail(nama_fail) {
+        Ok(fail) -> {
+            biar kandungan = baca_semua_dari_fail(fail);
+            tutup_fail(fail);
+            Ok(kandungan)
+        },
+        Ralat(e) -> Ralat("Tidak dapat buka fail: {e}"),
+    }
+}
+
+fungsi baca_fail_baris_demi_baris(
+    nama_fail: Teks,
+    f: Fn(Teks) -> Nombor
+) -> Hasil<Nombor, Teks> kesan Baca {
+    /// Baca fail baris demi baris
+    padan buka_fail(nama_fail) {
+        Ok(fail) -> {
+            biar ubah jumlah = 0;
+
+            ulang {
+                padan baca_baris_dari_fail(fail) {
+                    Ok(baris) -> {
+                        f(baris);
+                        jumlah = jumlah + 1;
+                    },
+                    Ralat(_) -> putus,
+                }
+            }
+
+            tutup_fail(fail);
+            Ok(jumlah)
+        },
+        Ralat(e) -> Ralat("Fail tidak dapat dibuka"),
+    }
+}
+
+fungsi baca_alam_sekitar(nama_pembolehubah: Teks) -> Mungkin<Teks> kesan Baca {
+    /// Baca pembolehubah alam sekitar
+    padan ambil_alam_sekitar(nama_pembolehubah) {
+        Ada(nilai) -> Ada(nilai),
+        Tidak -> Tidak,
+    }
+}
+
+fungsi baca_konfigurasi_dari_fail(nama_fail: Teks) -> Hasil<Teks, Teks> kesan Baca {
+    /// Baca fail konfigurasi
+    padan baca_fail_sepenuhnya(nama_fail) {
+        Ok(kandungan) -> Ok(kandungan),
+        Ralat(e) -> Ralat("Tidak dapat baca konfigurasi: {e}"),
+    }
+}
+
+fungsi baca_json_dari_fail(nama_fail: Teks) -> Hasil<Teks, Teks> kesan Baca {
+    /// Baca JSON dari fail
+    padan baca_fail_sepenuhnya(nama_fail) {
+        Ok(kandungan) -> {
+            /// Validasi JSON mudah
+            kalau kandungan.ada("{") {
+                Ok(kandungan)
+            } lain {
+                Ralat("JSON tidak sah")
+            }
+        },
+        Ralat(e) -> Ralat(e),
+    }
+}
+
+fungsi minta_input(
+    gesaan: Teks
+) -> Teks kesan (Tulis, Baca) {
+    /// Minta input dengan gesaan
+    cetak(gesaan);
+    cetak(": ");
+    baca_garisan()
+}
+
+fungsi minta_input_nombor(
+    gesaan: Teks
+) -> Hasil<Nombor, Teks> kesan (Tulis, Baca) {
+    /// Minta input nombor dengan gesaan
+    cetak(gesaan);
+    cetak(": ");
+    biar masukan = baca_garisan();
+    padan tukar_string_ke_nombor(masukan) {
+        Ada(n) -> Ok(n),
+        Tidak -> Ralat("Input bukan nombor sah"),
+    }
+}
+
+fungsi utama() -> Nombor kesan (Tulis, Baca) {
+    cetak("=== Operasi Baca ===\n");
+
+    /// Minta nama
+    biar nama = minta_input("Masukkan nama");
+    cetak("Nama: ");
+    cetak(nama);
+    cetak("\n");
+
+    /// Minta umur
+    padan minta_input_nombor("Masukkan umur") {
+        Ok(umur) -> {
+            cetak("Umur: ");
+            cetak(umur);
+            cetak("\n");
+        },
+        Ralat(e) -> {
+            cetak("Ralat: ");
+            cetak(e);
+            cetak("\n");
+        },
+    }
+
+    /// Baca pembolehubah alam sekitar
+    padan baca_alam_sekitar("PATH") {
+        Ada(path) -> {
+            cetak("PATH dijumpai\n");
+        },
+        Tidak -> {
+            cetak("PATH tidak dijumpai\n");
+        },
+    }
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Baca indicates input operations.
+/// Side effect tracked in type system.
+/// Functions with Baca cannot be called from pure contexts.
+/// Order of Baca effects matters.

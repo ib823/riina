@@ -1,0 +1,165 @@
+/// FUNCTIONS_HIGHER.RII - Higher-Order Functions
+/// Fungsi yang mengambil atau mengembalikan fungsi lain
+/// Demonstrates: function parameters, function returns, closures
+
+/// Fungsi yang mengambil fungsi sebagai parameter
+/// Function taking function as parameter
+fungsi gunakan_pada_senarai(
+    senarai: Senarai<Nombor>,
+    f: Fn(Nombor) -> Nombor
+) -> Senarai<Nombor> kesan Bersih {
+    /// Gunakan f untuk mengubah setiap elemen
+    /// Use f to transform each element
+    senarai.peta(f)
+}
+
+/// Fungsi yang mengembalikan fungsi
+/// Function returning function
+fungsi buat_pengadun(n: Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Kembalikan fungsi yang menambah n
+    /// Return function that adds n
+    fungsi pengadun(x: Nombor) -> Nombor {
+        pulang x + n;
+    }
+
+    pulang pengadun;
+}
+
+/// Fungsi komposisi
+/// Function composition
+fungsi komposisi(
+    f: Fn(Nombor) -> Nombor,
+    g: Fn(Nombor) -> Nombor
+) -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Kembalikan f(g(x))
+    /// Return f composed with g
+    fungsi hasil(x: Nombor) -> Nombor {
+        pulang f(g(x));
+    }
+
+    pulang hasil;
+}
+
+/// Fungsi dengan dua parameter fungsi
+/// Function with two function parameters
+fungsi gunakan_dua(
+    x: Nombor,
+    f: Fn(Nombor) -> Nombor,
+    g: Fn(Nombor) -> Nombor
+) -> Nombor kesan Bersih {
+    /// Gunakan f dan g pada x
+    /// Apply f and g to x
+    biar hasil1 = f(x);
+    biar hasil2 = g(hasil1);
+    pulang hasil2;
+}
+
+/// Fungsi pembawa (currying)
+/// Curried function
+fungsi tambah_dibawa(x: Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Kembalikan fungsi yang menambah x pada parameter berikutnya
+    /// Return function that adds x
+    fungsi tambah_y(y: Nombor) -> Nombor {
+        pulang x + y;
+    }
+
+    pulang tambah_y;
+}
+
+/// Filter dengan predikat
+/// Filter with predicate
+fungsi tapis_dengan(
+    senarai: Senarai<Nombor>,
+    predikat: Fn(Nombor) -> Benar
+) -> Senarai<Nombor> kesan Bersih {
+    /// Tapis senarai menggunakan predikat
+    /// Filter list using predicate
+    senarai.tapis(predikat)
+}
+
+/// Ulang operasi n kali
+/// Apply operation n times
+fungsi ulang_n_kali(
+    n: Nombor,
+    f: Fn(Nombor) -> Nombor,
+    awal: Nombor
+) -> Nombor kesan Bersih {
+    /// Gunakan f n kali bermula dari awal
+    /// Apply f n times starting from initial value
+    biar ubah hasil = awal;
+
+    untuk i dalam 0..n {
+        hasil = f(hasil);
+    }
+
+    pulang hasil;
+}
+
+/// Pengurangan nilai
+/// Reduce/fold operation
+fungsi kurangkan_dengan(
+    senarai: Senarai<Nombor>,
+    f: Fn(Nombor, Nombor) -> Nombor,
+    awal: Nombor
+) -> Nombor kesan Bersih {
+    /// Kurangkan senarai menggunakan f
+    /// Reduce list using f
+    senarai.lipat(awal, f)
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    /// Contoh 1: Gunakan fungsi pada senarai
+    /// Example 1: Use function on list
+    biar senarai = [1, 2, 3, 4, 5];
+    biar ubahan = gunakan_pada_senarai(senarai, fungsi(x: Nombor) -> Nombor {
+        pulang x * 2;
+    });
+
+    cetak("Ubahan: ");
+    cetak(ubahan);
+    cetak("\n");
+
+    /// Contoh 2: Buat dan gunakan fungsi pembawa
+    /// Example 2: Create and use curried function
+    biar tambah_lima = buat_pengadun(5);
+    biar hasil = tambah_lima(10);
+
+    cetak("10 + 5 = ");
+    cetak(hasil);
+    cetak("\n");
+
+    /// Contoh 3: Komposisi fungsi
+    /// Example 3: Function composition
+    biar kurangkan = fungsi(x: Nombor) -> Nombor { x - 1 };
+    biar darab = fungsi(x: Nombor) -> Nombor { x * 2 };
+    biar komposit = komposisi(darab, kurangkan);
+
+    biar hasil2 = komposit(5);    /// (5-1)*2 = 8
+    cetak("Komposisi: ");
+    cetak(hasil2);
+    cetak("\n");
+
+    /// Contoh 4: Ulang operasi
+    /// Example 4: Apply operation repeatedly
+    biar hasil3 = ulang_n_kali(3, fungsi(x: Nombor) -> Nombor { x * 2 }, 1);
+    cetak("2^3 = ");
+    cetak(hasil3);
+    cetak("\n");
+
+    /// Contoh 5: Tapis dengan predikat
+    /// Example 5: Filter with predicate
+    biar ganjil = tapis_dengan(senarai, fungsi(x: Nombor) -> Benar {
+        pulang x % 2 != 0;
+    });
+
+    cetak("Ganjil: ");
+    cetak(ganjil);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: Fn(T1, T2, ...) -> ReturnType is function type.
+/// Functions are first-class values.
+/// Closures capture variables from enclosing scope.
+/// Lambda syntax: fungsi(params) { body } or shorter form when possible.

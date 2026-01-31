@@ -285,6 +285,13 @@ pub enum Instruction {
     /// ```
     Call(VarId, VarId),
 
+    /// Call a built-in function by canonical name
+    ///
+    /// ```text
+    /// v = builtin_call "cetakln" arg_var
+    /// ```
+    BuiltinCall { name: String, arg: VarId },
+
     // ═══════════════════════════════════════════════════════════════════
     // PRODUCTS (correspond to Expr::Pair, Expr::Fst, Expr::Snd)
     // ═══════════════════════════════════════════════════════════════════
@@ -470,6 +477,7 @@ impl std::fmt::Display for Instruction {
                 Ok(())
             }
             Self::Call(func, arg) => write!(f, "call {func} {arg}"),
+            Self::BuiltinCall { name, arg } => write!(f, "builtin_call \"{name}\" {arg}"),
             Self::Pair(l, r) => write!(f, "pair {l} {r}"),
             Self::Fst(v) => write!(f, "fst {v}"),
             Self::Snd(v) => write!(f, "snd {v}"),

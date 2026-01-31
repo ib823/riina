@@ -1502,4 +1502,38 @@ mod tests {
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::RBrace);
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
+
+    #[test]
+    fn test_projection_keywords() {
+        let input = "fst snd pertama kedua";
+        let mut lexer = Lexer::new(input);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwFst);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSnd);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwFst);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSnd);
+    }
+
+    #[test]
+    fn test_require_grant_keywords() {
+        let input = "require grant perlukan beri";
+        let mut lexer = Lexer::new(input);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwRequire);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwGrant);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwRequire);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwGrant);
+    }
+
+    #[test]
+    fn test_option_result_constructors() {
+        let input = "Some None Ok Err Ada Tiada Jadi Gagal";
+        let mut lexer = Lexer::new(input);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSome);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwNone);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwOk);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwErr);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSome);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwNone);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwOk);
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwErr);
+    }
 }

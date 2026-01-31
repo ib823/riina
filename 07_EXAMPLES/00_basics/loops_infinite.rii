@@ -1,0 +1,147 @@
+/// LOOPS_INFINITE.RII - Infinite Loops with Break
+/// Gelung tak terhingga dengan ulang dan putus
+/// Demonstrates: infinite loops, break, continue, loop control
+
+fungsi gelung_tak_terhingga_mudah() -> Nombor kesan Tulis {
+    /// Gelung tak terhingga dengan break
+    /// Infinite loop with explicit break
+    biar ubah i = 0;
+
+    ulang {
+        cetak("Gelung: ");
+        cetak(i);
+        cetak("\n");
+
+        i = i + 1;
+
+        /// Keluar dari gelung apabila i >= 5
+        /// Break when i >= 5
+        kalau i >= 5 {
+            putus;
+        }
+    }
+
+    cetak("Selesai!\n");
+    pulang 0;
+}
+
+fungsi proses_amalan() -> Nombor kesan (Tulis, Baca) {
+    /// Gelung tak terhingga dengan input
+    /// Infinite loop with user input
+    ulang {
+        cetak("Masukkan perintah (q untuk keluar): ");
+        biar perintah = baca_garisan();
+
+        kalau perintah == "q" {
+            putus;
+        }
+
+        cetak("Anda masukkan: ");
+        cetak(perintah);
+        cetak("\n");
+    }
+
+    pulang 0;
+}
+
+fungsi lanjut_contoh() -> Nombor kesan Tulis {
+    /// Gunakan lanjut untuk langkau iterasi
+    /// Use continue to skip iteration
+    ulang {
+        biar ubah x = 0;
+
+        ulang {
+            x = x + 1;
+
+            /// Langkau jika genap
+            /// Skip if even
+            kalau x % 2 == 0 {
+                lanjut;
+            }
+
+            cetak("Ganjil: ");
+            cetak(x);
+            cetak("\n");
+
+            kalau x >= 9 {
+                putus;
+            }
+        }
+
+        /// Putus dari gelung luar
+        /// Break from outer loop
+        putus;
+    }
+
+    pulang 0;
+}
+
+fungsi bendera_keluar() -> Nombor kesan Tulis {
+    /// Gunakan bendera untuk kontrol gelung
+    /// Use flag for loop control
+    biar ubah terus = betul;
+    biar ubah kiraan = 0;
+
+    ulang {
+        kalau !terus {
+            putus;
+        }
+
+        cetak("Kiraan: ");
+        cetak(kiraan);
+        cetak("\n");
+
+        kiraan = kiraan + 1;
+
+        kalau kiraan >= 10 {
+            terus = salah;
+        }
+    }
+
+    pulang 0;
+}
+
+fungsi gelung_bersarang_keluar() -> Nombor kesan Tulis {
+    /// Gelung bersarang dengan keluar
+    /// Nested loops with break
+    biar ubah keluar = salah;
+
+    ulang {
+        biar ubah i = 0;
+
+        ulang {
+            cetak("(");
+            cetak(i);
+            cetak(") ");
+
+            i = i + 1;
+
+            kalau i >= 3 {
+                cetak("\n");
+                putus;
+            }
+        }
+
+        keluar = betul;
+        putus;
+    }
+
+    pulang 0;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    gelung_tak_terhingga_mudah();
+    cetak("---\n");
+
+    lanjut_contoh();
+    cetak("---\n");
+
+    bendera_keluar();
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: ulang (loop) for infinite loops.
+/// putus (break) to exit loop.
+/// lanjut (continue) to skip to next iteration.
+/// Labeled breaks for nested loops may be supported: `putus 'label`.

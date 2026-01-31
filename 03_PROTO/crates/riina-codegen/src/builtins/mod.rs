@@ -5,13 +5,16 @@
 //!
 //! Bilingual names: Bahasa Melayu and English.
 
-mod teks;
-mod senarai;
-mod peta;
-mod set;
-mod matematik;
-mod penukaran;
-mod ujian;
+pub(crate) mod teks;
+pub(crate) mod senarai;
+pub(crate) mod peta;
+pub(crate) mod set;
+pub(crate) mod matematik;
+pub(crate) mod penukaran;
+pub(crate) mod ujian;
+pub(crate) mod masa;
+pub(crate) mod fail;
+pub(crate) mod json;
 
 use crate::value::{Env, Value};
 use crate::{Error, Result};
@@ -79,6 +82,24 @@ pub fn register_builtins(env: &Env) -> Env {
 
     // Test builtins (ujian)
     for (bm, en, canonical) in ujian::BUILTINS {
+        e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
+        e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
+    }
+
+    // Time builtins (masa)
+    for (bm, en, canonical) in masa::BUILTINS {
+        e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
+        e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
+    }
+
+    // File I/O builtins (fail)
+    for (bm, en, canonical) in fail::BUILTINS {
+        e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
+        e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
+    }
+
+    // JSON builtins
+    for (bm, en, canonical) in json::BUILTINS {
         e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
         e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
     }
@@ -157,6 +178,21 @@ pub fn apply_builtin(name: &str, arg: Value) -> Result<Value> {
 
     // Test
     if let Some(result) = ujian::apply(name, &arg)? {
+        return Ok(result);
+    }
+
+    // Time
+    if let Some(result) = masa::apply(name, &arg)? {
+        return Ok(result);
+    }
+
+    // File I/O
+    if let Some(result) = fail::apply(name, &arg)? {
+        return Ok(result);
+    }
+
+    // JSON
+    if let Some(result) = json::apply(name, &arg)? {
         return Ok(result);
     }
 

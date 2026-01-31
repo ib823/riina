@@ -1,0 +1,180 @@
+/// TAINTED_DATA.RII - Tainted Data Tracking
+/// Penjejakan data tercemar dari sumber tidak dipercayai
+/// Demonstrates: data contamination, source tracking, sanitization
+
+jenis Sumber {
+    Http,
+    Pengguna,
+    Fail,
+    Rangkaian,
+    Program,
+}
+
+jenis DataTercemar<T> {
+    nilai: T,
+    sumber: Sumber,
+    masa_ciptaan: Nombor,
+}
+
+fungsi tandakan_tercemar_http(nilai: Teks) -> DataTercemar<Teks> kesan Baca {
+    /// Tandakan data dari HTTP sebagai tercemar
+    DataTercemar {
+        nilai: nilai,
+        sumber: Sumber.Http,
+        masa_ciptaan: 0,
+    }
+}
+
+fungsi tandakan_tercemar_pengguna(nilai: Teks) -> DataTercemar<Teks> kesan Baca {
+    /// Tandakan data dari input pengguna sebagai tercemar
+    DataTercemar {
+        nilai: nilai,
+        sumber: Sumber.Pengguna,
+        masa_ciptaan: 0,
+    }
+}
+
+fungsi tandakan_tercemar_fail(nama_fail: Teks) -> DataTercemar<Teks> kesan Baca {
+    /// Tandakan data dari fail sebagai tercemar
+    biar kandungan = baca_fail(nama_fail);
+    DataTercemar {
+        nilai: kandungan,
+        sumber: Sumber.Fail,
+        masa_ciptaan: 0,
+    }
+}
+
+fungsi tandakan_tercemar_rangkaian(data: Teks) -> DataTercemar<Teks> kesan Rangkaian {
+    /// Tandakan data dari rangkaian sebagai tercemar
+    DataTercemar {
+        nilai: data,
+        sumber: Sumber.Rangkaian,
+        masa_ciptaan: 0,
+    }
+}
+
+fungsi propogasi_taint<T>(
+    d: DataTercemar<T>,
+    f: Fn(T) -> T
+) -> DataTercemar<T> kesan Bersih {
+    /// Taint mempropogasi melalui transformasi
+    DataTercemar {
+        nilai: f(d.nilai),
+        sumber: d.sumber,
+        masa_ciptaan: d.masa_ciptaan,
+    }
+}
+
+fungsi campurkan_taint(
+    d1: DataTercemar<Teks>,
+    d2: DataTercemar<Teks>
+) -> DataTercemar<Teks> kesan Bersih {
+    /// Campurkan taint dari kedua sumber
+    biar sumber_baru = padan (d1.sumber, d2.sumber) {
+        (Sumber.Http, Sumber.Http) -> Sumber.Http,
+        (s1, s2) kalau s1 == s2 -> s1,
+        _ -> Sumber.Program,  /// Campuran
+    };
+
+    DataTercemar {
+        nilai: d1.nilai + d2.nilai,
+        sumber: sumber_baru,
+        masa_ciptaan: 0,
+    }
+}
+
+fungsi bersihkan_sql_injection(d: DataTercemar<Teks>) -> DataTercemar<Teks> kesan Bersih {
+    /// Bersihkan data untuk mengelakkan SQL injection
+    biar teks_bersih = d.nilai
+        .ganti("'", "''")
+        .ganti("\"", "\\\"")
+        .ganti(";", "\\;");
+
+    DataTercemar {
+        nilai: teks_bersih,
+        sumber: d.sumber,
+        masa_ciptaan: d.masa_ciptaan,
+    }
+}
+
+fungsi bersihkan_html_escape(d: DataTercemar<Teks>) -> DataTercemar<Teks> kesan Bersih {
+    /// Bersihkan data untuk HTML escaping
+    biar teks_bersih = d.nilai
+        .ganti("<", "&lt;")
+        .ganti(">", "&gt;")
+        .ganti("&", "&amp;")
+        .ganti("\"", "&quot;")
+        .ganti("'", "&#x27;");
+
+    DataTercemar {
+        nilai: teks_bersih,
+        sumber: d.sumber,
+        masa_ciptaan: d.masa_ciptaan,
+    }
+}
+
+fungsi nyahcemar(d: DataTercemar<Teks>) -> Teks kesan Bersih {
+    /// Nyahcemar - hanya untuk data bersih atau disanitasi
+    d.nilai
+}
+
+fungsi masukkan_ke_database_aman(
+    d: DataTercemar<Teks>,
+    jadual: Teks,
+    medan: Teks
+) -> Hasil<Nombor, Teks> kesan (Tulis, Baca) {
+    /// Masukkan ke database dengan pembersihan
+    biar dibersihkan = bersihkan_sql_injection(d);
+    biar nilai_aman = nyahcemar(dibersihkan);
+
+    cetak("INSERT INTO {jadual} ({medan}) VALUES ('{nilai_aman}')\n");
+    Ok(1)
+}
+
+fungsi keluarkan_ke_html_aman(
+    d: DataTercemar<Teks>
+) -> Hasil<Teks, Teks> kesan (Tulis, Bersih) {
+    /// Keluarkan ke HTML dengan escaping
+    biar dibersihkan = bersihkan_html_escape(d);
+    biar nilai_aman = nyahcemar(dibersihkan);
+
+    cetak("<p>");
+    cetak(nilai_aman);
+    cetak("</p>\n");
+
+    Ok(nilai_aman)
+}
+
+fungsi utama() -> Nombor kesan (Baca, Tulis) {
+    cetak("=== Penjejakan Data Tercemar ===\n");
+
+    /// Baca input dari pengguna
+    biar input = tandakan_tercemar_pengguna("Ahmad<script>alert('XSS')</script>");
+    cetak("Input tercemar: ");
+    cetak(input.nilai);
+    cetak("\n");
+
+    /// Transformasi mengekalkan taint
+    biar diubah = propogasi_taint(input, fungsi(t: Teks) -> Teks {
+        t.besarkan()
+    });
+    cetak("Selepas transformasi tetap tercemar\n");
+
+    /// Bersihkan untuk output HTML
+    biar hasil = keluarkan_ke_html_aman(diubah);
+    padan hasil {
+        Ok(nilai) -> {
+            cetak("HTML aman: ");
+            cetak(nilai);
+            cetak("\n");
+        },
+        Ralat(e) -> cetak("Ralat: "),
+    }
+
+    pulang 0;
+}
+
+/// SECURITY NOTE: Tercemar marks data from untrusted sources.
+/// Taint propagates through all operations.
+/// Sinks (database, output) require sanitization before use.
+/// Compiler tracks taint through entire program.

@@ -7,12 +7,16 @@ resolver = "2"
 members = [
     "crates/riina-arena",
     "crates/riina-codegen",
+    "crates/riina-doc",
+    "crates/riina-fmt",
     "crates/riina-lexer",
+    "crates/riina-lsp",
     "crates/riina-parser",
     "crates/riina-span",
     "crates/riina-symbols",
     "crates/riina-typechecker",
     "crates/riina-types",
+    "crates/riina-pkg",
     "crates/riinac",
 ]
 
@@ -34,6 +38,10 @@ riina-lexer = { path = "crates/riina-lexer" }
 riina-parser = { path = "crates/riina-parser" }
 riina-types = { path = "crates/riina-types" }
 riina-codegen = { path = "crates/riina-codegen" }
+riina-doc = { path = "crates/riina-doc" }
+riina-fmt = { path = "crates/riina-fmt" }
+riina-lsp = { path = "crates/riina-lsp" }
+riina-pkg = { path = "crates/riina-pkg" }
 riina-typechecker = { path = "crates/riina-typechecker" }
 
 # No external dependencies (Law 8)

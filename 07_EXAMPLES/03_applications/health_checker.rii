@@ -1,0 +1,296 @@
+/// health_checker.rii
+/// Service health monitoring and status aggregation
+/// Demonstrates Rangkaian effect for remote service checks
+///
+/// Features:
+/// - Periodic health check scheduling
+/// - Status aggregation
+/// - Alert generation
+/// - Historical tracking
+
+modul penyemak_kesihatan;
+
+guna std::rangkaian;
+guna std::masa;
+guna std::teks;
+guna std::senarai;
+
+jenis KeadaanKesihatan =
+    | SIHAT
+    | AMARAN
+    | SAKIT
+    | TIDAK_DIKETAHUI;
+
+jenis HasilSemakan = {
+    nama_perkhidmatan: Teks,
+    keadaan: KeadaanKesihatan,
+    kod_respons: Nombor,
+    masa_tindakbalas_ms: Nombor,
+    mesej: Teks,
+    masa_semak: Nombor,
+};
+
+jenis KonfigurPerkhidmatan = {
+    nama: Teks,
+    alamat_url: Teks,
+    timeout_ms: Nombor,
+    had_kesuksesan_ms: Nombor,
+};
+
+jenis RekodKesihatan = {
+    nama_perkhidmatan: Teks,
+    senarai_hasil: Senarai<HasilSemakan>,
+    keadaan_semasa: KeadaanKesihatan,
+    masa_pembaruan_terakhir: Nombor,
+};
+
+/// Global health records
+biar ubah rekod_kesihatan: Senarai<RekodKesihatan> = [];
+biar ubah amaran: Senarai<Teks> = [];
+
+/// Check single service health
+/// Kesan: Rangkaian (makes HTTP requests)
+fungsi semak_perkhidmatan(konfigur: KonfigurPerkhidmatan) -> HasilSemakan kesan Rangkaian {
+    biar masa_mula = Masa::masa_unix_ms();
+
+    biar hasil_http = coba Rangkaian::get_dengan_timeout(
+        konfigur.alamat_url,
+        konfigur.timeout_ms
+    );
+
+    biar masa_akhir = Masa::masa_unix_ms();
+    biar masa_tindakbalas = masa_akhir - masa_mula;
+
+    padan hasil_http {
+        Berjaya(respons) => {
+            biar keadaan = kalau masa_tindakbalas > konfigur.had_kesuksesan_ms {
+                AMARAN
+            } lain {
+                SIHAT
+            };
+
+            pulang {
+                nama_perkhidmatan: konfigur.nama,
+                keadaan: keadaan,
+                kod_respons: respons.kod,
+                masa_tindakbalas_ms: masa_tindakbalas,
+                mesej: "Respons OK",
+                masa_semak: Masa::masa_unix(),
+            };
+        },
+        Kegagalan(ralat) => {
+            pulang {
+                nama_perkhidmatan: konfigur.nama,
+                keadaan: SAKIT,
+                kod_respons: 0,
+                masa_tindakbalas_ms: konfigur.timeout_ms,
+                mesej: format!("Ralat: {}", ralat),
+                masa_semak: Masa::masa_unix(),
+            };
+        },
+    };
+}
+
+/// Aggregate health status across services
+fungsi agregat_kesihatan(senarai_hasil: Senarai<HasilSemakan>) -> KeadaanKesihatan kesan Bersih {
+    biar ada_sakit = salah;
+    biar ada_amaran = salah;
+
+    untuk hasil dalam senarai_hasil {
+        padan hasil.keadaan {
+            SAKIT => ada_sakit = betul,
+            AMARAN => ada_amaran = betul,
+            _ => {},
+        };
+    }
+
+    kalau ada_sakit {
+        pulang SAKIT;
+    } lain kalau ada_amaran {
+        pulang AMARAN;
+    } lain {
+        pulang SIHAT;
+    };
+}
+
+/// Update or create health record
+fungsi kemaskini_rekod(hasil_semak: HasilSemakan) -> kesan Bersih {
+    biar nama = hasil_semak.nama_perkhidmatan;
+    biar didapati = salah;
+
+    biar rekod_baru = [];
+    untuk rekod dalam rekod_kesihatan {
+        kalau rekod.nama_perkhidmatan == nama {
+            didapati = betul;
+            biar senarai_baru = rekod.senarai_hasil + [hasil_semak];
+
+            // Keep only last 100 results
+            biar senarai_terhad = kalau panjang(senarai_baru) > 100 {
+                buang_kepala(senarai_baru, panjang(senarai_baru) - 100)
+            } lain {
+                senarai_baru
+            };
+
+            rekod_baru = rekod_baru + [{
+                nama_perkhidmatan: rekod.nama_perkhidmatan,
+                senarai_hasil: senarai_terhad,
+                keadaan_semasa: hasil_semak.keadaan,
+                masa_pembaruan_terakhir: Masa::masa_unix(),
+            }];
+        } lain {
+            rekod_baru = rekod_baru + [rekod];
+        }
+    }
+
+    kalau !didapati {
+        rekod_baru = rekod_baru + [{
+            nama_perkhidmatan: nama,
+            senarai_hasil: [hasil_semak],
+            keadaan_semasa: hasil_semak.keadaan,
+            masa_pembaruan_terakhir: Masa::masa_unix(),
+        }];
+    }
+
+    rekod_kesihatan = rekod_baru;
+}
+
+/// Generate alert if status changed
+fungsi jana_amaran(nama: Teks, keadaan_lama: KeadaanKesihatan, keadaan_baru: KeadaanKesihatan) -> kesan Bersih {
+    biar perlu_amaran = padan (keadaan_lama, keadaan_baru) {
+        (SIHAT, SAKIT) => betul,
+        (SIHAT, AMARAN) => betul,
+        (AMARAN, SAKIT) => betul,
+        (SAKIT, SIHAT) => betul,
+        (SAKIT, AMARAN) => betul,
+        _ => salah,
+    };
+
+    kalau perlu_amaran {
+        biar mesej_amaran = format!(
+            "AMARAN: {} berubah dari {} kepada {} pada {}",
+            nama,
+            keadaan_ke_teks(keadaan_lama),
+            keadaan_ke_teks(keadaan_baru),
+            Masa::format_unix(Masa::masa_unix())
+        );
+
+        amaran = amaran + [mesej_amaran];
+        cetak_baris(mesej_amaran);
+    }
+}
+
+/// Perform health check on multiple services
+fungsi semak_semua_perkhidmatan(konfigur_senarai: Senarai<KonfigurPerkhidmatan>) -> kesan Rangkaian {
+    untuk konfigur dalam konfigur_senarai {
+        biar hasil = semak_perkhidmatan(konfigur);
+
+        // Check if status changed
+        biar mungkin_rekod_lama = cari_rekod(konfigur.nama);
+        padan mungkin_rekod_lama {
+            Ada(rekod_lama) => {
+                kalau rekod_lama.keadaan_semasa != hasil.keadaan {
+                    jana_amaran(konfigur.nama, rekod_lama.keadaan_semasa, hasil.keadaan);
+                }
+            },
+            Tiada => {},
+        };
+
+        kemaskini_rekod(hasil);
+    }
+}
+
+/// Find health record by service name
+fungsi cari_rekod(nama: Teks) -> Mungkin<RekodKesihatan> kesan Bersih {
+    untuk rekod dalam rekod_kesihatan {
+        kalau rekod.nama_perkhidmatan == nama {
+            pulang Ada(rekod);
+        }
+    }
+
+    pulang Tiada;
+}
+
+/// Get dashboard status
+fungsi dapat_status_papan_pemuka() -> (KeadaanKesihatan, Nombor, Nombor) kesan Bersih {
+    biar keadaan_keseluruhan = SIHAT;
+    biar sihat = 0;
+    biar sakit = 0;
+
+    untuk rekod dalam rekod_kesihatan {
+        padan rekod.keadaan_semasa {
+            SIHAT => sihat = sihat + 1,
+            SAKIT => {
+                sakit = sakit + 1;
+                keadaan_keseluruhan = SAKIT;
+            },
+            AMARAN => {
+                kalau keadaan_keseluruhan == SIHAT {
+                    keadaan_keseluruhan = AMARAN;
+                }
+            },
+            _ => {},
+        };
+    }
+
+    pulang (keadaan_keseluruhan, sihat, sakit);
+}
+
+/// Format health state as text
+fungsi keadaan_ke_teks(keadaan: KeadaanKesihatan) -> Teks kesan Bersih {
+    padan keadaan {
+        SIHAT => "SIHAT",
+        AMARAN => "AMARAN",
+        SAKIT => "SAKIT",
+        TIDAK_DIKETAHUI => "TIDAK_DIKETAHUI",
+    };
+}
+
+/// Main health checker loop
+awam fungsi utama() -> kesan Rangkaian {
+    cetak_baris("=== PENYEMAK KESIHATAN PERKHIDMATAN ===");
+
+    biar konfigur_perkhidmatan = [
+        {
+            nama: "API Pengguna",
+            alamat_url: "http://api-pengguna:8080/kesihatan",
+            timeout_ms: 5000,
+            had_kesuksesan_ms: 1000,
+        },
+        {
+            nama: "Pangkalan Data",
+            alamat_url: "http://db-utama:5432/kesihatan",
+            timeout_ms: 5000,
+            had_kesuksesan_ms: 500,
+        },
+        {
+            nama: "Perkhidmatan Penyimpanan",
+            alamat_url: "http://penyimpanan:3000/status",
+            timeout_ms: 5000,
+            had_kesuksesan_ms: 2000,
+        },
+    ];
+
+    // Run checks every 30 seconds
+    ulang {
+        cetak_baris(format!("Semakan kesihatan pada {}", Masa::format_unix(Masa::masa_unix())));
+        semak_semua_perkhidmatan(konfigur_perkhidmatan);
+
+        biar (keadaan, sihat, sakit) = dapat_status_papan_pemuka();
+        cetak_baris(format!("Status keseluruhan: {} (Sihat: {}, Sakit: {})", keadaan_ke_teks(keadaan), sihat, sakit));
+
+        Masa::rehat_saat(30);
+    };
+}
+
+// Helper functions
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi buang_kepala(senarai: Senarai<T>, jumlah: Nombor) -> Senarai<T> kesan Bersih {
+    pulang [];
+}
+
+fungsi format(s: Teks, args: Senarai<Teks>) -> Teks kesan Bersih {
+    pulang s;
+}

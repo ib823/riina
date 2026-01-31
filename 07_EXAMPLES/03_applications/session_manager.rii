@@ -1,0 +1,353 @@
+/// session_manager.rii
+/// Session management with capability tokens and timeouts
+/// Demonstrates security properties with stateful operations
+///
+/// Features:
+/// - Capability-based token generation
+/// - Session lifecycle management
+/// - Timeout enforcement
+/// - Concurrent session limiting
+
+modul pengurus_sesi;
+
+guna std::kripto;
+guna std::masa;
+guna std::teks;
+guna std::senarai;
+
+jenis TokenSesuai = Keupayaan<{
+    pengguna_id: Teks,
+    token_id: Teks,
+    skop: Senarai<Teks>,
+}>;
+
+jenis Sesi = {
+    token_id: Teks,
+    pengguna_id: Teks,
+    skop: Senarai<Teks>,
+    masa_cipta: Nombor,
+    masa_tamat: Nombor,
+    alamat_ip: Teks,
+    agen_pengguna: Teks,
+    aktif: Benar,
+};
+
+jenis RekodSesi = {
+    pengguna_id: Teks,
+    senarai_sesi: Senarai<Sesi>,
+    sesi_maksimal: Nombor,
+};
+
+/// Global session store
+biar ubah stor_sesi: Senarai<RekodSesi> = [];
+
+/// Generate secure session token
+/// Kesan: Kripto
+fungsi jana_token() -> Teks kesan Kripto {
+    pulang Kripto::jana_rawak_hex(32);
+}
+
+/// Create new session
+/// Kesan: Kripto (token generation)
+fungsi cipta_sesi(
+    pengguna_id: Teks,
+    alamat_ip: Teks,
+    agen_pengguna: Teks,
+    ttl_saat: Nombor
+) -> TokenSesuai kesan Kripto {
+    biar token_id = jana_token();
+    biar masa_sekarang = Masa::masa_unix();
+    biar masa_tamat = masa_sekarang + ttl_saat;
+
+    biar sesi_baru = {
+        token_id: token_id,
+        pengguna_id: pengguna_id,
+        skop: ["baca", "tulis"],
+        masa_cipta: masa_sekarang,
+        masa_tamat: masa_tamat,
+        alamat_ip: alamat_ip,
+        agen_pengguna: agen_pengguna,
+        aktif: betul,
+    };
+
+    // Find or create user record
+    biar rekod_pengguna = cari_rekod_pengguna(pengguna_id);
+
+    padan rekod_pengguna {
+        Ada(rekod) => {
+            // Check session limit
+            kalau panjang(rekod.senarai_sesi) >= rekod.sesi_maksimal {
+                // Terminate oldest session
+                biar senarai_sesi_baru = hapus_sesi_tertua(rekod.senarai_sesi);
+                kemaskini_rekod_pengguna(pengguna_id, senarai_sesi_baru + [sesi_baru]);
+            } lain {
+                kemaskini_rekod_pengguna(pengguna_id, rekod.senarai_sesi + [sesi_baru]);
+            }
+        },
+        Tiada => {
+            biar rekod_baru = {
+                pengguna_id: pengguna_id,
+                senarai_sesi: [sesi_baru],
+                sesi_maksimal: 5,
+            };
+            stor_sesi = stor_sesi + [rekod_baru];
+        },
+    };
+
+    // Return capability token
+    pulang Keupayaan({
+        pengguna_id: pengguna_id,
+        token_id: token_id,
+        skop: sesi_baru.skop,
+    });
+}
+
+/// Validate session token
+fungsi sahkan_sesi(token_id: Teks) -> Mungkin<Sesi> kesan Bersih {
+    untuk rekod dalam stor_sesi {
+        untuk sesi dalam rekod.senarai_sesi {
+            kalau sesi.token_id == token_id {
+                // Check if expired
+                kalau Masa::masa_unix() > sesi.masa_tamat {
+                    pulang Tiada;
+                }
+
+                kalau !sesi.aktif {
+                    pulang Tiada;
+                }
+
+                pulang Ada(sesi);
+            }
+        }
+    }
+
+    pulang Tiada;
+}
+
+/// Check if session has required scope
+fungsi ada_skop(sesi: Sesi, skop_perlu: Teks) -> Benar kesan Bersih {
+    untuk skop dalam sesi.skop {
+        kalau skop == skop_perlu {
+            pulang betul;
+        }
+    }
+
+    pulang salah;
+}
+
+/// Refresh session (extend timeout)
+fungsi segar_sesi(token_id: Teks, tambah_saat: Nombor) -> Benar kesan Bersih {
+    untuk rekod dalam stor_sesi {
+        biar senarai_baru = [];
+        biar didapati = salah;
+
+        untuk sesi dalam rekod.senarai_sesi {
+            kalau sesi.token_id == token_id {
+                didapati = betul;
+
+                kalau Masa::masa_unix() < sesi.masa_tamat {
+                    biar sesi_segar = {
+                        token_id: sesi.token_id,
+                        pengguna_id: sesi.pengguna_id,
+                        skop: sesi.skop,
+                        masa_cipta: sesi.masa_cipta,
+                        masa_tamat: sesi.masa_tamat + tambah_saat,
+                        alamat_ip: sesi.alamat_ip,
+                        agen_pengguna: sesi.agen_pengguna,
+                        aktif: sesi.aktif,
+                    };
+                    senarai_baru = senarai_baru + [sesi_segar];
+                } lain {
+                    senarai_baru = senarai_baru + [sesi];
+                }
+            } lain {
+                senarai_baru = senarai_baru + [sesi];
+            }
+        }
+
+        kalau didapati {
+            kemaskini_rekod_pengguna(rekod.pengguna_id, senarai_baru);
+            pulang betul;
+        }
+    }
+
+    pulang salah;
+}
+
+/// Terminate session
+fungsi tamatkan_sesi(token_id: Teks) -> Benar kesan Bersih {
+    untuk rekod dalam stor_sesi {
+        biar senarai_baru = [];
+
+        untuk sesi dalam rekod.senarai_sesi {
+            kalau sesi.token_id != token_id {
+                senarai_baru = senarai_baru + [sesi];
+            }
+        }
+
+        kalau panjang(senarai_baru) < panjang(rekod.senarai_sesi) {
+            kemaskini_rekod_pengguna(rekod.pengguna_id, senarai_baru);
+            pulang betul;
+        }
+    }
+
+    pulang salah;
+}
+
+/// Terminate all sessions for user (logout)
+fungsi tamatkan_semua_sesi(pengguna_id: Teks) -> kesan Bersih {
+    biar stor_baru = [];
+
+    untuk rekod dalam stor_sesi {
+        kalau rekod.pengguna_id != pengguna_id {
+            stor_baru = stor_baru + [rekod];
+        }
+    }
+
+    stor_sesi = stor_baru;
+}
+
+/// Clean up expired sessions
+fungsi bersih_sesi_tamat() -> kesan Bersih {
+    biar masa_sekarang = Masa::masa_unix();
+
+    untuk rekod dalam stor_sesi {
+        biar senarai_sah = [];
+
+        untuk sesi dalam rekod.senarai_sesi {
+            kalau masa_sekarang <= sesi.masa_tamat && sesi.aktif {
+                senarai_sah = senarai_sah + [sesi];
+            }
+        }
+
+        kalau panjang(senarai_sah) == 0 {
+            // Remove user record if no active sessions
+            stor_sesi = saring_pengguna(stor_sesi, rekod.pengguna_id);
+        } lain {
+            kemaskini_rekod_pengguna(rekod.pengguna_id, senarai_sah);
+        }
+    }
+}
+
+/// Get active sessions for user
+fungsi dapat_sesi_aktif(pengguna_id: Teks) -> Senarai<Sesi> kesan Bersih {
+    biar masa_sekarang = Masa::masa_unix();
+
+    untuk rekod dalam stor_sesi {
+        kalau rekod.pengguna_id == pengguna_id {
+            biar senarai_aktif = [];
+
+            untuk sesi dalam rekod.senarai_sesi {
+                kalau sesi.aktif && masa_sekarang <= sesi.masa_tamat {
+                    senarai_aktif = senarai_aktif + [sesi];
+                }
+            }
+
+            pulang senarai_aktif;
+        }
+    }
+
+    pulang [];
+}
+
+/// Demo: Protected API endpoint
+awam fungsi uruskan_permintaan_dilindungi(
+    token_id: Teks,
+    skop_perlu: Teks,
+    data_permintaan: Teks
+) -> Mungkin<Teks> kesan Bersih {
+    biar mungkin_sesi = sahkan_sesi(token_id);
+
+    padan mungkin_sesi {
+        Ada(sesi) => {
+            kalau ada_skop(sesi, skop_perlu) {
+                cetak_baris(format!("Permintaan dari {} dibenarkan", sesi.pengguna_id));
+                pulang Ada("{\"berjaya\":true}");
+            } lain {
+                cetak_baris("Skop tidak mencukupi");
+                pulang Tiada;
+            }
+        },
+        Tiada => {
+            cetak_baris("Sesi tidak sah atau tamat");
+            pulang Tiada;
+        },
+    };
+}
+
+// Helper functions
+fungsi cari_rekod_pengguna(pengguna_id: Teks) -> Mungkin<RekodSesi> kesan Bersih {
+    untuk rekod dalam stor_sesi {
+        kalau rekod.pengguna_id == pengguna_id {
+            pulang Ada(rekod);
+        }
+    }
+    pulang Tiada;
+}
+
+fungsi kemaskini_rekod_pengguna(pengguna_id: Teks, senarai_sesi: Senarai<Sesi>) -> kesan Bersih {
+    biar stor_baru = [];
+
+    untuk rekod dalam stor_sesi {
+        kalau rekod.pengguna_id == pengguna_id {
+            stor_baru = stor_baru + [{
+                pengguna_id: rekod.pengguna_id,
+                senarai_sesi: senarai_sesi,
+                sesi_maksimal: rekod.sesi_maksimal,
+            }];
+        } lain {
+            stor_baru = stor_baru + [rekod];
+        }
+    }
+
+    stor_sesi = stor_baru;
+}
+
+fungsi hapus_sesi_tertua(senarai: Senarai<Sesi>) -> Senarai<Sesi> kesan Bersih {
+    kalau panjang(senarai) == 0 {
+        pulang [];
+    }
+
+    biar sesi_tertua_idx = 0;
+    biar masa_terawal = senarai[0].masa_cipta;
+
+    untuk i dari 1 hingga panjang(senarai) {
+        kalau senarai[i].masa_cipta < masa_terawal {
+            masa_terawal = senarai[i].masa_cipta;
+            sesi_tertua_idx = i;
+        }
+    }
+
+    biar hasil = [];
+    untuk i dari 0 hingga panjang(senarai) {
+        kalau i != sesi_tertua_idx {
+            hasil = hasil + [senarai[i]];
+        }
+    }
+
+    pulang hasil;
+}
+
+fungsi saring_pengguna(senarai: Senarai<RekodSesi>, pengguna_id: Teks) -> Senarai<RekodSesi> kesan Bersih {
+    biar hasil = [];
+    untuk rekod dalam senarai {
+        kalau rekod.pengguna_id != pengguna_id {
+            hasil = hasil + [rekod];
+        }
+    }
+    pulang hasil;
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+modul Masa {
+    fungsi masa_unix() -> Nombor kesan Bersih {
+        pulang 0;
+    }
+}

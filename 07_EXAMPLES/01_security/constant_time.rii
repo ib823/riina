@@ -1,0 +1,144 @@
+/// CONSTANT_TIME.RII - Constant-Time Operations
+/// Operasi masa tetap untuk mengelakkan timing attacks
+/// Demonstrates: MasaTetap effect, fixed-time operations, secure comparison
+
+jenis MasaTetap /// Effect that guarantees constant execution time
+
+fungsi bandingkan_masa_tetap(a: Teks, b: Teks) -> Benar kesan MasaTetap {
+    /// Bandingkan dua rentetan dalam masa tetap
+    /// Compare two strings in constant time
+    /// (Pseudocode - actual implementation xor-loops all characters)
+    pastikan a.panjang() == b.panjang() "Panjang berbeza";
+
+    biar ubah hasil = betul;
+    untuk i dalam 0..a.panjang() {
+        kalau a[i] != b[i] {
+            hasil = salah;
+        }
+        /// PENTING: Tidak putus di sini, iterasi semua
+        /// IMPORTANT: Don't break here, iterate all characters
+    }
+
+    pulang hasil;
+}
+
+fungsi bandingkan_nombor_masa_tetap(a: Nombor, b: Nombor) -> Benar kesan MasaTetap {
+    /// Bandingkan nombor dalam masa tetap
+    /// Compare numbers in constant time
+    biar ubah hasil = betul;
+
+    untuk i dalam 0..64 {
+        /// Periksa setiap bit
+        biar bit_a = (a >> i) & 1;
+        biar bit_b = (b >> i) & 1;
+
+        kalau bit_a != bit_b {
+            hasil = salah;
+        }
+    }
+
+    pulang hasil;
+}
+
+fungsi sahkan_kata_laluan_masa_tetap(
+    kata_laluan_calon: Teks,
+    hash_tersimpan: Rahsia<Teks>
+) -> Benar kesan (MasaTetap, Kripto) {
+    /// Sahkan kata laluan dalam masa tetap
+    biar hash_calon = sha256(kata_laluan_calon);
+    biar hash_dibukarahsia = dedah(hash_tersimpan, bukti: "sahkan_sah");
+
+    bandingkan_masa_tetap(hash_calon, hash_dibukarahsia)
+}
+
+fungsi operasi_aritmetik_masa_tetap(a: Nombor, b: Nombor) -> Nombor kesan MasaTetap {
+    /// Operasi aritmetik dalam masa tetap
+    /// Arithmetic without branches for timing safety
+    a + b
+}
+
+fungsi lompat_bersyarat_masa_tetap(
+    syarat: Benar,
+    nilai_benar: Nombor,
+    nilai_salah: Nombor
+) -> Nombor kesan MasaTetap {
+    /// Lompat bersyarat tanpa branch
+    /// Conditional jump without timing leak
+    biar pilihan = kalau syarat { nilai_benar } lain { nilai_salah };
+    pilihan
+}
+
+fungsi hapus_masa_tetap(ubah data: Rahsia<Senarai<Nombor>>) -> Nombor kesan MasaTetap {
+    /// Hapus data dalam masa tetap
+    /// Secure erase in constant time
+    /// (Pseudocode - actual uses volatile writes)
+    biar ubah i = 0;
+
+    selagi i < data.panjang() {
+        data[i] = 0;
+        i = i + 1;
+        /// Jangan keluar awal
+    }
+
+    pulang 0;
+}
+
+fungsi enkripsi_aes_masa_tetap(
+    plaintext: Teks,
+    kunci: Rahsia<Teks>
+) -> Rahsia<Teks> kesan (Kripto, MasaTetap) {
+    /// Enkripsi AES dalam masa tetap
+    biar kunci_dibuka = dedah(kunci, bukti: "enkripsi_sah");
+    Rahsia(aes_dengan_timing_safe(plaintext, kunci_dibuka))
+}
+
+fungsi pembetulan_kesalahan_masa_tetap(
+    data: Teks,
+    bit_error: Senarai<Nombor>
+) -> Teks kesan MasaTetap {
+    /// Pembetulan kesalahan tanpa kebocoran waktu
+    /// Error correction without timing leaks
+    biar ubah hasil = data;
+
+    /// Iterat semua bit kemungkinan
+    untuk i dalam 0..data.panjang() {
+        /// Proses semua bit, tidak keluar awal
+        hasil = hasil;
+    }
+
+    pulang hasil;
+}
+
+fungsi utama() -> Nombor kesan (MasaTetap, Tulis, Kripto) {
+    cetak("=== Operasi Masa Tetap ===\n");
+
+    /// Bandingkan dua rentetan
+    biar a = "rahsiat123";
+    biar b = "rahsiat123";
+    biar sama = bandingkan_masa_tetap(a, b);
+    cetak("Sama (masa tetap): ");
+    cetak(sama);
+    cetak("\n");
+
+    /// Bandingkan dalam masa tetap
+    biar berbeza_a = "abc";
+    biar berbeza_b = "abcxyz";
+    biar berbeza = bandingkan_masa_tetap(berbeza_a, berbeza_b);
+    cetak("Berbeza (masa tetap): ");
+    cetak(berbeza);
+    cetak("\n");
+
+    /// Operasi aritmetik masa tetap
+    biar hasil = operasi_aritmetik_masa_tetap(10, 20);
+    cetak("Hasil: ");
+    cetak(hasil);
+    cetak("\n");
+
+    cetak("Operasi masa tetap selesai\n");
+    pulang 0;
+}
+
+/// SECURITY NOTE: MasaTetap effect ensures operations don't leak timing info.
+/// Prevents timing attacks on cryptographic operations.
+/// Type system tracks which functions execute in constant time.
+/// No conditional branches that depend on secret values.

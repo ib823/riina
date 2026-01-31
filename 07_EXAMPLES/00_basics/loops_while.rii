@@ -1,0 +1,112 @@
+/// LOOPS_WHILE.RII - While Loops for Conditional Iteration
+/// Gelung selagi (while) untuk iterasi bersyarat
+/// Demonstrates: while loops, conditions, loop control
+
+fungsi gelung_selagi_mudah() -> Nombor kesan Tulis {
+    /// Gelung selagi dengan syarat
+    /// While loop with condition
+    biar ubah i = 0;
+
+    selagi i < 5 {
+        cetak("Nilai i: ");
+        cetak(i);
+        cetak("\n");
+        i = i + 1;
+    }
+
+    pulang 0;
+}
+
+fungsi hitung_dengan_syarat() -> Nombor kesan Bersih {
+    /// Hitung dengan syarat kompleks
+    /// Count with complex condition
+    biar ubah bilangan = 1;
+    biar ubah kuasa = 1;
+
+    selagi kuasa < 100 {
+        kuasa = kuasa * 2;
+        bilangan = bilangan + 1;
+    }
+
+    pulang bilangan;    /// Bilangan bagi 2^n < 100
+}
+
+fungsi cari_elemen() -> Nombor kesan Bersih {
+    /// Cari indeks elemen dalam senarai
+    /// Find index of element in list
+    biar senarai = [10, 20, 30, 40, 50];
+    biar ubah indeks = 0;
+    biar ubah didapati = salah;
+
+    selagi indeks < senarai.panjang() {
+        kalau senarai[indeks] == 30 {
+            didapati = betul;
+            /// Keluar dari gelung dengan break (jika disokong)
+            /// Break from loop if supported
+            putus;
+        }
+        indeks = indeks + 1;
+    }
+
+    pulang indeks;
+}
+
+fungsi baca_sehingga_selesai() -> Nombor kesan Baca {
+    /// Gelung selagi dengan pembacaan
+    /// While loop with input (pseudo-code)
+    biar ubah garisan = baca_garisan();
+
+    selagi garisan != "selesai" {
+        cetak("Anda masukkan: ");
+        cetak(garisan);
+        cetak("\n");
+        garisan = baca_garisan();
+    }
+
+    cetak("Selesai!\n");
+    pulang 0;
+}
+
+fungsi selagi_dengan_atau() -> Nombor kesan Bersih {
+    /// Gelung dengan OR dalam syarat
+    /// While loop with OR condition
+    biar ubah x = 0;
+    biar ubah y = 10;
+
+    selagi x < 5 || y > 0 {
+        x = x + 1;
+        y = y - 1;
+    }
+
+    pulang x + y;
+}
+
+fungsi selagi_dengan_tidak() -> Nombor kesan Bersih {
+    /// Gelung dengan NOT dalam syarat
+    /// While loop with NOT condition
+    biar ubah selesai = salah;
+
+    selagi !selesai {
+        cetak("Bekerja...\n");
+        selesai = betul;
+    }
+
+    pulang 0;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    gelung_selagi_mudah();
+    cetak("---\n");
+
+    biar hasil = hitung_dengan_syarat();
+    cetak("Hasil: ");
+    cetak(hasil);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: selagi (while) with condition.
+/// Loop continues while condition is true.
+/// Use putus (break) to exit loop early.
+/// Use lanjut (continue) to skip to next iteration.

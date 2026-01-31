@@ -1,0 +1,123 @@
+/// PURE_FUNCTIONS.RII - Pure Function Semantics
+/// Fungsi tulen tanpa kesan samping
+/// Demonstrates: Bersih effect, referential transparency, pure computation
+
+fungsi tambah_dua(x: Nombor) -> Nombor kesan Bersih {
+    /// Fungsi tulen - tanpa kesan samping
+    /// Pure function - no side effects
+    pulang x + 2;
+}
+
+fungsi gandakan(x: Nombor) -> Nombor kesan Bersih {
+    /// Fungsi tulen
+    x * 2
+}
+
+fungsi kuadrat(x: Nombor) -> Nombor kesan Bersih {
+    x * x
+}
+
+fungsi ubah_ke_teks(x: Nombor) -> Teks kesan Bersih {
+    /// Tulen - tiada I/O
+    "nilai_{x}"
+}
+
+fungsi jumlah_senarai(s: Senarai<Nombor>) -> Nombor kesan Bersih {
+    /// Tulen - pengiraan sahaja
+    s.lipat(0, fungsi(a: Nombor, b: Nombor) -> Nombor {
+        a + b
+    })
+}
+
+fungsi panjang_min(s1: Senarai<Teks>, s2: Senarai<Teks>) -> Nombor kesan Bersih {
+    /// Tulen - perbandingan sahaja
+    biar p1 = s1.panjang();
+    biar p2 = s2.panjang();
+    kalau p1 < p2 { p1 } lain { p2 }
+}
+
+fungsi gabung_teks_tulen(
+    a: Teks,
+    b: Teks,
+    c: Teks
+) -> Teks kesan Bersih {
+    /// Tulen - tiada ketergantungan eksternal
+    a + " " + b + " " + c
+}
+
+fungsi kamposan(
+    f: Fn(Nombor) -> Nombor,
+    g: Fn(Nombor) -> Nombor
+) -> Fn(Nombor) -> Nombor kesan Bersih {
+    /// Komposisi tulen
+    fungsi hasil(x: Nombor) -> Nombor {
+        f(g(x))
+    }
+
+    hasil
+}
+
+fungsi cari_maksimum(s: Senarai<Nombor>) -> Mungkin<Nombor> kesan Bersih {
+    /// Cari maksimum - tulen
+    kalau s.panjang() == 0 {
+        Tidak
+    } lain {
+        Ada(s.lipat(s[0], fungsi(max: Nombor, x: Nombor) -> Nombor {
+            kalau x > max { x } lain { max }
+        }))
+    }
+}
+
+fungsi susun_gelombang(s: Senarai<Nombor>) -> Senarai<Nombor> kesan Bersih {
+    /// Susun - tulen
+    s.tapis(fungsi(x: Nombor) -> Benar {
+        betul  /// Placeholder
+    })
+}
+
+fungsi sah_emel_tulen(e: Teks) -> Benar kesan Bersih {
+    /// Validasi emel - tulen
+    e.ada("@") && e.ada(".")
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("=== Fungsi Tulen ===\n");
+
+    /// Panggil fungsi tulen
+    biar hasil1 = tambah_dua(5);
+    cetak("5 + 2 = ");
+    cetak(hasil1);
+    cetak("\n");
+
+    /// Jumlah senarai
+    biar s = [1, 2, 3, 4, 5];
+    biar jumlah = jumlah_senarai(s);
+    cetak("Jumlah: ");
+    cetak(jumlah);
+    cetak("\n");
+
+    /// Komposisi
+    biar komposit = kamposan(gandakan, kuadrat);
+    biar hasil2 = komposit(3);  /// 3^2 = 9, 9*2 = 18
+    cetak("Komposisi: ");
+    cetak(hasil2);
+    cetak("\n");
+
+    /// Cari maksimum
+    padan cari_maksimum(s) {
+        Ada(max) -> {
+            cetak("Maksimum: ");
+            cetak(max);
+            cetak("\n");
+        },
+        Tidak -> cetak("Senarai kosong\n"),
+    }
+
+    cetak("Semua tulen\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Bersih indicates pure functions.
+/// Compiler guarantees no side effects.
+/// Same input always produces same output.
+/// Enables aggressive optimization and memoization.

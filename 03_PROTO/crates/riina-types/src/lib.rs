@@ -367,6 +367,29 @@ pub enum BinOp {
     And, Or,
 }
 
+/// A source span (byte offsets) for LSP support.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
+}
+
+impl Span {
+    #[must_use]
+    pub const fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+
+    /// Merge two spans into one covering both.
+    #[must_use]
+    pub const fn merge(self, other: Self) -> Self {
+        Self {
+            start: if self.start < other.start { self.start } else { other.start },
+            end: if self.end > other.end { self.end } else { other.end },
+        }
+    }
+}
+
 /// A top-level declaration in a .rii file.
 /// These are parsed but desugared to expressions for typechecking/codegen.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -388,13 +411,36 @@ pub enum TopLevelDecl {
     Expr(Box<Expr>),
 }
 
+/// A spanned top-level declaration.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpannedDecl {
+    pub decl: TopLevelDecl,
+    pub span: Span,
+    /// Span of just the name (for go-to-definition).
+    pub name_span: Option<Span>,
+}
+
 /// A complete .rii file
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Program {
     pub decls: Vec<TopLevelDecl>,
+    /// Parallel span info for each decl (same length as `decls`).
+    pub spans: Vec<SpannedDecl>,
 }
 
 impl Program {
+    /// Create a Program without span info (backwards compat).
+    #[must_use]
+    pub fn new(decls: Vec<TopLevelDecl>) -> Self {
+        Self { spans: Vec::new(), decls }
+    }
+
+    /// Create a Program with span info.
+    #[must_use]
+    pub fn with_spans(decls: Vec<TopLevelDecl>, spans: Vec<SpannedDecl>) -> Self {
+        Self { decls, spans }
+    }
+
     /// Desugar a program into a single expression.
     /// Functions become Let + Lam, bindings become Let, and the final
     /// expression is the program's value.

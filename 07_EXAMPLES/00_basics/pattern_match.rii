@@ -1,0 +1,127 @@
+/// PATTERN_MATCH.RII - Pattern Matching with padan
+/// Pemadanan corak dengan padan (match)
+/// Demonstrates: match expressions, exhaustiveness, destructuring
+
+fungsi periksaNombor(x: Nombor) -> Teks kesan Bersih {
+    /// Padan dengan nilai literal
+    /// Match with literal values
+    padan x {
+        0 -> "kosong",
+        1 -> "satu",
+        2 -> "dua",
+        3 -> "tiga",
+        _ -> "lain",    /// Wildcard pattern
+    }
+}
+
+fungsi padanBenar(b: Benar) -> Teks kesan Bersih {
+    /// Padan boolean
+    /// Match boolean
+    padan b {
+        betul -> "Benar",
+        salah -> "Salah",
+    }
+}
+
+fungsi periksaMungkin(m: Mungkin<Nombor>) -> Teks kesan Bersih {
+    /// Padan dengan Option/Maybe type
+    /// Match with Option type
+    padan m {
+        Ada(n) -> "Ada nombor: {n}",
+        Tidak -> "Tiada nilai",
+    }
+}
+
+fungsi periksaHasil(h: Hasil<Nombor, Teks>) -> Teks kesan Bersih {
+    /// Padan dengan Result type
+    /// Match with Result type
+    padan h {
+        Ok(n) -> "Berjaya: {n}",
+        Ralat(e) -> "Ralat: {e}",
+    }
+}
+
+fungsi padanTeks(nama: Teks) -> Teks kesan Bersih {
+    /// Padan dengan string
+    /// Match with string
+    padan nama {
+        "Ahmad" -> "Selamat pagi Ahmad!",
+        "Siti" -> "Selamat pagi Siti!",
+        "Budi" -> "Selamat pagi Budi!",
+        _ -> "Selamat pagi, {nama}!",
+    }
+}
+
+fungsi padanGanda(x: Nombor, y: Nombor) -> Teks kesan Bersih {
+    /// Padan dengan tuple (pasangan)
+    /// Match with tuple
+    padan (x, y) {
+        (0, 0) -> "Kedua kosong",
+        (0, _) -> "x kosong",
+        (_, 0) -> "y kosong",
+        (a, b) -> "x={a}, y={b}",
+    }
+}
+
+fungsi padanRujukan(r: Ruj<Nombor>@Awam) -> Teks kesan Bersih {
+    /// Padan dengan rujukan (reference)
+    /// Match with reference
+    padan r {
+        ruj(0) -> "Rujuk ke kosong",
+        ruj(x) -> "Rujuk ke {x}",
+    }
+}
+
+fungsi padanListEmpty(s: Senarai<Nombor>) -> Teks kesan Bersih {
+    /// Padan dengan senarai
+    /// Match with list
+    padan s {
+        [] -> "Senarai kosong",
+        [x] -> "Satu elemen: {x}",
+        [x, y] -> "Dua elemen: {x}, {y}",
+        [x, y, ..rest] -> "Banyak elemen",
+    }
+}
+
+/// Enum dengan data berlainan
+/// Enum with associated data
+jenis Bentuk {
+    Bulatan(jejari: Nombor),
+    Segi(panjang: Nombor, lebar: Nombor),
+    Segitiga(a: Nombor, b: Nombor, c: Nombor),
+}
+
+fungsi luas_bentuk(b: Bentuk) -> Nombor kesan Bersih {
+    /// Padan dengan enum yang mempunyai data
+    /// Match with enum containing data
+    padan b {
+        Bulatan(r) -> 3 * r * r,
+        Segi(p, l) -> p * l,
+        Segitiga(a, b, c) -> {
+            /// Formula Heron (simplified)
+            biar s = (a + b + c) / 2;
+            s * (s - a) * (s - b) * (s - c)
+        }
+    }
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil1 = periksaNombor(2);
+    cetak(hasil1);
+    cetak("\n");
+
+    biar hasil2 = padanTeks("Ahmad");
+    cetak(hasil2);
+    cetak("\n");
+
+    biar hasil3 = padanGanda(5, 10);
+    cetak(hasil3);
+    cetak("\n");
+
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: padan (match) expression.
+/// Patterns are exhaustive — compiler checks all cases.
+/// _ is wildcard pattern matching anything.
+/// Patterns with guards: `padan { ... if condition -> ...}`

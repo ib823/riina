@@ -1,0 +1,65 @@
+/// factory.rii
+/// Factory pattern for creating objects without specifying classes
+/// Demonstrates polymorphic object creation
+
+modul corak_kilang;
+
+guna std::teks;
+
+jenis JenisPenyimpanan = FAIL | PERKHIDMATAN | CACHE;
+
+/// Abstract product
+jenis Penyimpanan = {
+    jenis: JenisPenyimpanan,
+    nama: Teks,
+};
+
+/// Factory function
+fungsi ciptakan_penyimpanan(jenis: JenisPenyimpanan) -> Penyimpanan kesan Bersih {
+    padan jenis {
+        FAIL => {
+            cetak_baris("Membuat penyimpanan fail");
+            {
+                jenis: FAIL,
+                nama: "PenyimpananFail",
+            }
+        },
+        PERKHIDMATAN => {
+            cetak_baris("Membuat penyimpanan perkhidmatan");
+            {
+                jenis: PERKHIDMATAN,
+                nama: "PenyimpananPerkhidmatan",
+            }
+        },
+        CACHE => {
+            cetak_baris("Membuat penyimpanan cache");
+            {
+                jenis: CACHE,
+                nama: "PenyimpananCache",
+            }
+        },
+    };
+}
+
+fungsi simpan(penyimpanan: Penyimpanan, kunci: Teks, nilai: Teks) -> kesan Bersih {
+    padan penyimpanan.jenis {
+        FAIL => cetak_baris(format!("Menyimpan ke fail: {} = {}", kunci, nilai)),
+        PERKHIDMATAN => cetak_baris(format!("Menyimpan ke API: {} = {}", kunci, nilai)),
+        CACHE => cetak_baris(format!("Menyimpan ke cache: {} = {}", kunci, nilai)),
+    };
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK KILANG ===\n");
+
+    // Factory creates appropriate storage
+    biar penyimpanan_fail = ciptakan_penyimpanan(FAIL);
+    biar penyimpanan_cache = ciptakan_penyimpanan(CACHE);
+
+    simpan(penyimpanan_fail, "data", "nilai1");
+    simpan(penyimpanan_cache, "cache", "nilai2");
+}
+
+fungsi format(s: Teks, a: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

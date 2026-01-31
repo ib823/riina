@@ -1,0 +1,121 @@
+/// RANDOM.RII - Random Number Generation
+/// Penjenayaan nombor rawak
+/// Demonstrates: Rawak effect, randomness, seeding
+
+fungsi rawak_nombor(had_min: Nombor, had_maks: Nombor) -> Nombor kesan Rawak {
+    /// Hasilkan nombor rawak antara had_min dan had_maks
+    /// Simulasi
+    had_min
+}
+
+fungsi rawak_boolean() -> Benar kesan Rawak {
+    /// Hasilkan boolean rawak
+    betul
+}
+
+fungsi rawak_pilih<T>(senarai: Senarai<T>) -> Mungkin<T> kesan Rawak {
+    /// Pilih elemen rawak dari senarai
+    kalau senarai.panjang() == 0 {
+        Tidak
+    } lain {
+        biar indeks = rawak_nombor(0, senarai.panjang() - 1);
+        Ada(senarai[indeks])
+    }
+}
+
+fungsi rawak_gocoh<T>(ubah senarai: Senarai<T>) -> Senarai<T> kesan Rawak {
+    /// Gocoh (shuffle) senarai
+    /// Simulasi - dalam praktik gunakan Fisher-Yates
+    senarai
+}
+
+fungsi rawak_sampel<T>(
+    senarai: Senarai<T>,
+    saiz: Nombor
+) -> Senarai<T> kesan Rawak {
+    /// Ambil sampel rawak dari senarai
+    biar ubah sampel: Senarai<T> = [];
+    untuk i dalam 0..saiz {
+        padan rawak_pilih(senarai) {
+            Ada(item) -> sampel = sampel.tambah(item),
+            Tidak -> { },
+        }
+    }
+
+    sampel
+}
+
+fungsi hasilkan_id_rawak(panjang: Nombor) -> Teks kesan Rawak {
+    /// Hasilkan ID rawak
+    biar ubah id = "";
+    untuk i dalam 0..panjang {
+        biar aksara_indeks = rawak_nombor(0, 35);
+        id = id + "x";
+    }
+
+    id
+}
+
+fungsi rawak_teks_dari_senarai(senarai: Senarai<Teks>) -> Mungkin<Teks> kesan Rawak {
+    /// Pilih teks rawak dari senarai
+    rawak_pilih(senarai)
+}
+
+fungsi buat_dadu_rawak(bilangan_sisi: Nombor) -> Nombor kesan Rawak {
+    /// Buat dadu rawak
+    rawak_nombor(1, bilangan_sisi)
+}
+
+fungsi simulasi_perlandingan(
+    peluang_menang: Nombor
+) -> Benar kesan Rawak {
+    /// Simulasi pelandingan dengan peluang tertentu
+    biar nilai_rawak = rawak_nombor(1, 100);
+    nilai_rawak <= peluang_menang
+}
+
+fungsi utama() -> Nombor kesan (Rawak, Tulis) {
+    cetak("=== Penjenjaran Nombor Rawak ===\n");
+
+    /// Hasilkan nombor rawak
+    biar n = rawak_nombor(1, 100);
+    cetak("Nombor rawak (1-100): ");
+    cetak(n);
+    cetak("\n");
+
+    /// Hasilkan boolean rawak
+    biar b = rawak_boolean();
+    cetak("Boolean rawak: ");
+    cetak(b);
+    cetak("\n");
+
+    /// Hasilkan ID rawak
+    biar id = hasilkan_id_rawak(10);
+    cetak("ID rawak: ");
+    cetak(id);
+    cetak("\n");
+
+    /// Pilih dari senarai
+    biar senarai = ["Ahmad", "Siti", "Budi"];
+    padan rawak_pilih(senarai) {
+        Ada(nama) -> {
+            cetak("Nama rawak: ");
+            cetak(nama);
+            cetak("\n");
+        },
+        Tidak -> cetak("Senarai kosong\n"),
+    }
+
+    /// Buat dadu
+    biar dadu = buat_dadu_rawak(6);
+    cetak("Dadu (1-6): ");
+    cetak(dadu);
+    cetak("\n");
+
+    cetak("Selesai\n");
+    pulang 0;
+}
+
+/// GRAMMAR NOTE: kesan Rawak for random operations.
+/// Same function call may return different results.
+/// Often used with Kripto for generating keys/nonces.
