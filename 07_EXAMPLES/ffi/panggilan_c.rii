@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: MPL-2.0
+// Contoh: Panggilan fungsi C dari RIINA menggunakan luaran "C"
+// Example: Calling C functions from RIINA using extern "C"
+
+luaran "C" {
+    fungsi puts(s: *CChar) -> CInt;
+}
+
+fungsi utama() -> CInt kesan Sistem {
+    puts("Selamat datang ke RIINA FFI!")
+}

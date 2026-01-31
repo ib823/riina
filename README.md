@@ -207,7 +207,7 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Rust crates | 13 |
-| Test count | 576 (all passing) |
+| Test count | 590 (all passing) |
 | External dependencies | **0** |
 | Lines of Rust | 24,614 |
 | Standard library builtins | 88 across 9 modules |
@@ -221,7 +221,7 @@ This is not a whitepaper. This is working software.
 | `riina-parser` | AST construction |
 | `riina-types` | Type system definitions (22 types, 17 effects, 6 security levels) |
 | `riina-typechecker` | Type inference and checking |
-| `riina-codegen` | IR lowering, C code generation, interpreter |
+| `riina-codegen` | IR lowering, C code generation, interpreter, FFI marshaling |
 | `riina-fmt` | Code formatter |
 | `riina-lsp` | Language Server Protocol (VS Code integration) |
 | `riina-doc` | HTML documentation generator |
@@ -245,7 +245,7 @@ This is not a whitepaper. This is working software.
 
 ### Example Programs
 
-101 example `.rii` files across 7 categories:
+103 example `.rii` files across 8 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -255,6 +255,7 @@ This is not a whitepaper. This is working software.
 | Applications | 15 | Web server, chat app, password manager, API gateway |
 | Compliance | 10 | GDPR, HIPAA, PCI-DSS, PDPA, SOX, NIST |
 | Design Patterns | 15 | Builder, state machine, visitor, monad, phantom types |
+| FFI | 2 | C function calls (puts, abs, rand) |
 | AI Context | 1 | Complete corpus for LLM training |
 
 ### Cryptographic Tooling
@@ -282,7 +283,7 @@ proof/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 03_PROTO/               Rust compiler (13 crates, 576 tests, 0 deps)
+├── 03_PROTO/               Rust compiler (13 crates, 590 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
@@ -300,7 +301,7 @@ proof/
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            101 example .rii files
+├── 07_EXAMPLES/            103 example .rii files
 ├── 01_RESEARCH/            Research archive (349 documents, 276K lines)
 └── riina-vscode/           VS Code extension
 ```
@@ -349,14 +350,14 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
 | 3. Formal Verification | 4,763+ Qed proofs, 5 justified axioms, 0 admits | Stable |
-| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 101 examples | Done |
+| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 103 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release scripts, installer | Done |
-| 6. Adoption | FFI, demo applications, community | Planned |
+| 6. Adoption | C FFI done; demo applications, community next | In Progress |
 | 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
 
-- **Phase 6:** C FFI (`luar "C" { ... }`), demo applications (web server, encrypted messenger, medical records system)
+- **Phase 6:** C FFI done (`luaran "C" { ... }` — parse, typecheck, codegen, C emission); demo applications next (web server, encrypted messenger, medical records system)
 - **Axiom elimination:** 3 of the 5 remaining axioms can be eliminated with `store_rel_n` restructuring; 2 are permanent (policy axiom + standard closure axiom from academic literature)
 
 ---
@@ -420,7 +421,7 @@ Read [`CLAUDE.md`](CLAUDE.md) for detailed development instructions.
 ## FAQ
 
 **Is RIINA production-ready?**
-The compiler, proofs, and toolchain are functional. Phases 1-5 (compiler, stdlib, proofs, developer tools, ecosystem) are complete. Phase 6 (FFI, demos) is next. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
+The compiler, proofs, and toolchain are functional. Phases 1-5 (compiler, stdlib, proofs, developer tools, ecosystem) are complete. Phase 6 is in progress — C FFI is done, demo applications are next. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
 
 **Do I need to know Bahasa Melayu?**
 No. The keywords are short and consistent — `fungsi` (function), `biar` (let), `kalau` (if), `pulang` (return). You'll learn them in minutes. A [cheatsheet](07_EXAMPLES/06_ai_context/RIINA_CHEATSHEET.md) is included.

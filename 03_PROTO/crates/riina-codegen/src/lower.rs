@@ -210,6 +210,13 @@ fn free_vars(expr: &Expr) -> HashSet<Ident> {
             fv.extend(fvh);
             fv
         }
+        Expr::FFICall { args, .. } => {
+            let mut fv = HashSet::new();
+            for arg in args {
+                fv.extend(free_vars(arg));
+            }
+            fv
+        }
     }
 }
 
@@ -369,6 +376,7 @@ impl Lower {
                 BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge
                 | BinOp::And | BinOp::Or => Ty::Bool,
             },
+            Expr::FFICall { ret_ty, .. } => ret_ty.clone(),
         }
     }
 
@@ -415,6 +423,13 @@ impl Lower {
             Expr::Grant(_, e) => self.infer_effect(e),
             Expr::BinOp(_, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
             Expr::Loc(_) => Effect::Pure,
+            Expr::FFICall { args, .. } => {
+                let mut eff = Effect::System;
+                for arg in args {
+                    eff = eff.join(self.infer_effect(arg));
+                }
+                eff
+            }
         }
     }
 
@@ -1130,6 +1145,19 @@ impl Lower {
                     result_ty,
                     SecurityLevel::Public,
                     Effect::Pure,
+                ))
+            }
+
+            Expr::FFICall { name, args, ret_ty } => {
+                let mut arg_vars = Vec::new();
+                for arg in args {
+                    arg_vars.push(self.lower_expr(arg)?);
+                }
+                Ok(self.emit(
+                    Instruction::FFICall { name: name.clone(), args: arg_vars },
+                    ret_ty.clone(),
+                    SecurityLevel::Public,
+                    Effect::System,
                 ))
             }
 

@@ -556,6 +556,15 @@ impl Interpreter {
             }
 
             // ═══════════════════════════════════════════════════════════════
+            // FFI CALLS — cannot be interpreted
+            // ═══════════════════════════════════════════════════════════════
+            Expr::FFICall { name, .. } => {
+                Err(Error::InvalidOperation(format!(
+                    "FFI call to '{}' cannot be interpreted; use `riinac build` to compile", name
+                )))
+            }
+
+            // ═══════════════════════════════════════════════════════════════
             // BINARY OPERATIONS (Expr::BinOp)
             // ═══════════════════════════════════════════════════════════════
             Expr::BinOp(op, lhs, rhs) => {

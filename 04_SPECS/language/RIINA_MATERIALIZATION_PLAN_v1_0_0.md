@@ -2271,20 +2271,27 @@ Content outline:
 
 ## 10. PHASE 6: ADOPTION & COMMUNITY
 
-### 10.1 FFI (Foreign Function Interface)
+### 10.1 FFI (Foreign Function Interface) — ✅ DONE (Session 61)
 
-**New file:** `03_PROTO/crates/riina-codegen/src/ffi.rs`
+**File:** `03_PROTO/crates/riina-codegen/src/ffi.rs`
 
 **C FFI syntax:**
 ```riina
-luar "C" {
-    fungsi printf(fmt: *Teks, ...) -> Nombor;
+luaran "C" {
+    fungsi puts(s: *CChar) -> CInt;
+    fungsi abs(x: CInt) -> CInt;
 }
 ```
 
-**Implementation:** The C emitter already generates C99. FFI functions emit `extern` declarations and call them directly.
-
-**Estimated:** ~200 lines.
+**Implemented (Session 61):**
+- `riina-types`: `RawPtr`, `CChar`, `CInt`, `CVoid`, `FFICall`, `ExternBlock`, `ExternDecl`
+- `riina-parser`: `parse_extern_block()`, C type keywords, `*T` raw pointer syntax
+- `riina-typechecker`: FFI calls typed with `Effect::System`
+- `riina-codegen`: `FFICall` IR instruction, lowering, C emission, interpreter rejection
+- `riina-codegen/ffi.rs`: `ty_to_c()` marshaling, `emit_extern_decl()` generation
+- `riina-fmt` + `riina-doc`: Updated for new AST variants
+- 14 new tests, 2 example files (`07_EXAMPLES/ffi/`)
+- **Total: ~350 lines across 11 files**
 
 ### 10.2 Demo Applications
 

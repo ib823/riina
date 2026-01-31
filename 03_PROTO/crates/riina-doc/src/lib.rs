@@ -144,6 +144,27 @@ pub fn extract_docs(source: &str, program: &Program) -> Vec<DocItem> {
                 });
             }
             TopLevelDecl::Expr(_) => {}
+            TopLevelDecl::ExternBlock { abi, decls } => {
+                for decl in decls {
+                    let params_str: Vec<String> = decl.params
+                        .iter()
+                        .map(|(n, t)| format!("{n}: {}", format_ty(t)))
+                        .collect();
+                    let mut sig = format!("luaran \"{abi}\" fungsi {}({})", decl.name, params_str.join(", "));
+                    if decl.ret_ty != Ty::Unit {
+                        sig.push_str(&format!(" -> {}", format_ty(&decl.ret_ty)));
+                    }
+                    if decl.effect != Effect::Pure {
+                        sig.push_str(&format!(" kesan {}", format_effect(&decl.effect)));
+                    }
+                    items.push(DocItem {
+                        name: decl.name.clone(),
+                        kind: DocKind::Function,
+                        doc: doc.clone(),
+                        signature: sig,
+                    });
+                }
+            }
         }
     }
 
