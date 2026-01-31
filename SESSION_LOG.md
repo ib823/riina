@@ -15,10 +15,12 @@
 | LinearTypes.v Admitted eliminated | Reformulated `weakening_invalid_for_linear` → provable → Qed | ✅ |
 | Tagline standardization | RIINA — Rigorous Immutable Invariant, No Assumptions / Q.E.D. Aeternum | ✅ |
 | Documentation sync | Updated PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md, materialization plan, README | ✅ |
+| 100% research coverage | All 55+ tracks in 01_RESEARCH/ have Coq proofs; 3 new gap-fill files created | ✅ |
+| ATTACK_PROOF_MAP.md | Updated to 5 axioms (was 6; val_rel_store_weaken_back eliminated) | ✅ |
 
 ### Final State
 
-- **Active Coq build**: 269 files, 0 Admitted, 0 admits, 5 justified axioms, 5,250+ Qed
+- **Active Coq build**: 244 files, 0 Admitted, 0 admits, 5 justified axioms, 5,250+ Qed
 - **Rust**: 13 crates, 572 tests, all passing
 - **Examples**: 101 .rii files across 7 categories
 
