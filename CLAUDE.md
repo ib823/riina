@@ -80,18 +80,19 @@ RIINA is the world's **first formally verified programming language** with:
 | **Qed Proofs (Active Build)** | 5,117+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (529 tests) | All green |
+| **Rust Tests** | ✅ PASSING (568 tests) | All green |
+| **Rust Crates** | 13 | +riina-pkg (Session 57) |
 | **Example .rii Files** | 100 | 6 directories |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
 | Materialization Phase | Status | Notes |
 |-----------------------|--------|-------|
-| Phase 1: Compiler Completion | ✅ ~98% | All 5.1-5.7 done; 477 tests passing |
-| Phase 2: Standard Library | ✅ ~90% | 3 new modules (masa/fail/json), 29 new builtins, 509 tests |
-| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971 Qed |
+| Phase 1: Compiler Completion | ✅ Done | All 5.1-5.7 done; 477 tests |
+| Phase 2: Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
+| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5117 Qed |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 100 examples |
-| Phase 5: Ecosystem | ⬜ | CI/CD, package manager |
+| Phase 5: Ecosystem | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution pending |
 | Phase 6: Adoption | ⬜ | FFI, demos, community |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
 
@@ -578,24 +579,22 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 4 DONE
+### Track B: Rust Prototype (03_PROTO/) — 🟡 PHASE 5 IN PROGRESS
 
 **Phase 1** (Compiler Completion): ✅ All items done.
 **Phase 2** (Standard Library): ✅ Done. 88 builtins, 9 modules.
 **Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 100 examples.
+**Phase 5** (Ecosystem): 🟡 ~60%. CI/CD done, package manager done; distribution/licensing pending.
 
-| Phase 4 Milestone | Description | Status |
-|-------------------|-------------|--------|
-| M1 | Span-annotated AST (SpannedDecl, AstSpan) | ✅ Done |
-| M2 | riina-fmt formatter crate + `riinac fmt` | ✅ Done |
-| M3 | riina-lsp server with diagnostics (P0) | ✅ Done |
-| M4 | LSP hover + completion (P1) | ✅ Done |
-| M5 | VS Code extension (syntax + LSP client) | ✅ Done |
-| M6 | riina-doc generator crate + `riinac doc` | ✅ Done |
-| M7 | Example corpus (100 .rii files) + AI context | ✅ Done |
-| M8 | Update planning documents | ✅ Done |
+| Phase 5 Item | Description | Status |
+|--------------|-------------|--------|
+| CI/CD | `riinac verify [--fast|--full]` — zero-trust verification gate | ✅ Done (Session 56) |
+| Package manager | `riina-pkg` crate (14 modules, 39 tests) + `riinac pkg` CLI | ✅ Done (Session 57) |
+| Distribution | Binary releases, Docker, WASM, Nix flake | ⬜ Pending |
+| Licensing | MPL-2.0 for compiler/proofs/stdlib | ⬜ Pending |
+| Website | `riina.my` / `riina.dev` | ⬜ Deferred to Phase 6+ |
 
-**Total: 529 Rust tests, 3 new crates (riina-fmt, riina-lsp, riina-doc), 100 example files.** Next: Phase 5 (Ecosystem).
+**Total: 568 Rust tests, 13 crates, 100 example files.** Next: Phase 5 distribution or Phase 6 (FFI/demos).
 
 ---
 
@@ -695,7 +694,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-31 (Session 56: Phase 4 Dev Experience done, 0 admits, 5 justified axioms, 529 Rust tests, 100 examples)*
+*Last updated: 2026-01-31 (Session 57: Phase 5 riina-pkg done, 0 admits, 5 justified axioms, 568 Rust tests, 13 crates, 100 examples)*
 
 ---
 
