@@ -12,7 +12,7 @@
 ║  ██║  ██║██║██║██║ ╚████║██║  ██║                                               ║
 ║  ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                               ║
 ║                                                                                  ║
-║  Rigorous Immutable Invariant — Normalized Axiom                                  ║
+║  Rigorous Immutable Invariant, No Assumptions                                  ║
 ║                                                                                  ║
 ║  RIINA PROOF REPOSITORY — CLAUDE CODE GUIDE                                      ║
 ║                                                                                  ║
@@ -20,7 +20,7 @@
 ║  Purpose: Formal proofs and prototype for RIINA                                  ║
 ║  Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE           ║
 ║                                                                                  ║
-║  "QED Eternum."                                     ║
+║  "Q.E.D. Aeternum."                                     ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -32,12 +32,12 @@
 ### 0.1 Name Origin
 
 ```
-RIINA = Rigorous Immutable Invariant — Normalized Axiom
+RIINA = Rigorous Immutable Invariant, No Assumptions
 
 R  — Rigorous (formal verification)
 I  — Immutable (security guarantees)
-I  — Integrity (data and code)
-NA — No-attack Assured (the guarantee)
+I  — Invariant (proven properties)
+NA — No Assumptions (zero-trust)
 ```
 
 ### 0.2 What Is RIINA?
@@ -77,12 +77,12 @@ RIINA is the world's **first formally verified programming language** with:
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Axioms (Active Build)** | 5 (all justified) | 4 in NI_v2_LR + 1 in NI_v2 |
 | **Admits (Active Build)** | 0 | All fixed (Session 53) |
-| **Qed Proofs (Active Build)** | 5,117+ | Verified |
+| **Qed Proofs (Active Build)** | 5,250+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
-| **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (568 tests) | All green |
+| **Coq Compilation** | ✅ PASSING | 269 files compile clean |
+| **Rust Tests** | ✅ PASSING (572 tests) | All green |
 | **Rust Crates** | 13 | +riina-pkg (Session 57) |
-| **Example .rii Files** | 100 | 6 directories |
+| **Example .rii Files** | 101 | 7 categories |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
@@ -90,8 +90,8 @@ RIINA is the world's **first formally verified programming language** with:
 |-----------------------|--------|-------|
 | Phase 1: Compiler Completion | ✅ Done | All 5.1-5.7 done; 477 tests |
 | Phase 2: Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
-| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5117 Qed |
-| Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 100 examples |
+| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 269 files |
+| Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
 | Phase 5: Ecosystem | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution pending |
 | Phase 6: Adoption | ⬜ | FFI, demos, community |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
@@ -568,7 +568,7 @@ The older 6-phase system in `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` is arch
 
 ### Track A: Formal Proofs (02_FORMAL/coq/) — 🟢 STABLE
 
-**Build: 0 admits, 0 Admitted, 5 justified axioms, 4971+ Qed proofs**
+**Build: 0 admits, 0 Admitted, 5 justified axioms, 5,250+ Qed proofs, 269 files**
 
 Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic Completeness).
 
@@ -583,7 +583,7 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **Phase 1** (Compiler Completion): ✅ All items done.
 **Phase 2** (Standard Library): ✅ Done. 88 builtins, 9 modules.
-**Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 100 examples.
+**Phase 4** (Developer Experience): ✅ Done. 3 new crates, VS Code extension, 101 examples.
 **Phase 5** (Ecosystem): 🟡 ~60%. CI/CD done, package manager done; distribution/licensing pending.
 
 | Phase 5 Item | Description | Status |
@@ -591,10 +591,10 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 | CI/CD | `riinac verify [--fast|--full]` — zero-trust verification gate | ✅ Done (Session 56) |
 | Package manager | `riina-pkg` crate (14 modules, 39 tests) + `riinac pkg` CLI | ✅ Done (Session 57) |
 | Distribution | Binary releases, Docker, WASM, Nix flake | ⬜ Pending |
-| Licensing | MPL-2.0 for compiler/proofs/stdlib | ⬜ Pending |
+| Licensing | MPL-2.0 for compiler/proofs/stdlib | ✅ Done (LICENSE file added) |
 | Website | `riina.my` / `riina.dev` | ⬜ Deferred to Phase 6+ |
 
-**Total: 568 Rust tests, 13 crates, 100 example files.** Next: Phase 5 distribution or Phase 6 (FFI/demos).
+**Total: 572 Rust tests, 13 crates, 101 example files.** Next: Phase 5 distribution or Phase 6 (FFI/demos).
 
 ---
 
@@ -690,11 +690,11 @@ When encountering old references, update them to the new naming.
 
 *This CLAUDE.md follows ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE principles.*
 
-*RIINA: Rigorous Immutable Invariant — Normalized Axiom*
+*RIINA: Rigorous Immutable Invariant, No Assumptions*
 
-*"QED Eternum."*
+*"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 57: Phase 5 riina-pkg done, 0 admits, 5 justified axioms, 568 Rust tests, 13 crates, 100 examples)*
+*Last updated: 2026-01-31 (Session 58: Domain integration complete, 0 admits, 5 justified axioms, 572 Rust tests, 13 crates, 101 examples, 269 Coq files)*
 
 ---
 

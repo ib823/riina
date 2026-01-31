@@ -1,5 +1,37 @@
 # Session Log
 
+## 2026-01-31 (Session 58): Domain Integration + LinearTypes Fix + README Overhaul
+
+**Goal:** Complete domain file integration, fix all broken proofs, eliminate last Admitted, and synchronize all documentation.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| README overhaul | Compelling rewrite with comparison table, code examples, FAQ, consistent tagline | ✅ |
+| Domain file integration | All 183 domain .v files added to _CoqProject (was 114) | ✅ |
+| 6 broken domain files fixed | AlgebraicEffects, All, CovertChannelElimination, PCIDSSCompliance, TimingSecurity, VerifiedAIML | ✅ |
+| 4 new proof files | PI001 (34 Qed), DELTA001 (31 Qed), OMEGA001 (30 Qed), PSI001 (38 Qed) | ✅ |
+| LinearTypes.v Admitted eliminated | Reformulated `weakening_invalid_for_linear` → provable → Qed | ✅ |
+| Tagline standardization | RIINA — Rigorous Immutable Invariant, No Assumptions / Q.E.D. Aeternum | ✅ |
+| Documentation sync | Updated PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md, materialization plan, README | ✅ |
+
+### Final State
+
+- **Active Coq build**: 269 files, 0 Admitted, 0 admits, 5 justified axioms, 5,250+ Qed
+- **Rust**: 13 crates, 572 tests, all passing
+- **Examples**: 101 .rii files across 7 categories
+
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| 573be6e | [ALL] Domain integration: 69 files added to build, 6 broken files fixed |
+| 2c1eabf | [TRACK_A] FIX: Eliminate last Admitted in active build (LinearTypes.v) |
+| (pending) | [ALL] DOCS: Session 58 documentation sync |
+
+---
+
 ## 2026-01-31 (Session 57): Phase 5 Ecosystem — riina-pkg
 
 **Goal:** Implement Phase 5 package manager (`riina-pkg`) and update all documentation.
