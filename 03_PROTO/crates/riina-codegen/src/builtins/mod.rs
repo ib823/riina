@@ -13,6 +13,7 @@ pub(crate) mod matematik;
 pub(crate) mod penukaran;
 pub(crate) mod ujian;
 pub(crate) mod masa;
+pub(crate) mod fail;
 
 use crate::value::{Env, Value};
 use crate::{Error, Result};
@@ -86,6 +87,12 @@ pub fn register_builtins(env: &Env) -> Env {
 
     // Time builtins (masa)
     for (bm, en, canonical) in masa::BUILTINS {
+        e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
+        e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
+    }
+
+    // File I/O builtins (fail)
+    for (bm, en, canonical) in fail::BUILTINS {
         e = e.extend(bm.to_string(), Value::Builtin(canonical.to_string()));
         e = e.extend(en.to_string(), Value::Builtin(canonical.to_string()));
     }
@@ -169,6 +176,11 @@ pub fn apply_builtin(name: &str, arg: Value) -> Result<Value> {
 
     // Time
     if let Some(result) = masa::apply(name, &arg)? {
+        return Ok(result);
+    }
+
+    // File I/O
+    if let Some(result) = fail::apply(name, &arg)? {
         return Ok(result);
     }
 
