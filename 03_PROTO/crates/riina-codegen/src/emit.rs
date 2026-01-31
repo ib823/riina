@@ -1983,6 +1983,232 @@ impl CEmitter {
         self.writeln("    return riina_make_list(nl);");
         self.writeln("}");
         self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // JSON BUILTINS
+        // ═══════════════════════════════════════════════════════════════════
+
+        // Forward-declare the recursive parser
+        self.writeln("static riina_value_t* riina_json_parse_value(const char** p);");
+        self.writeln("");
+
+        // Skip whitespace helper
+        self.writeln("static void riina_json_skip_ws(const char** p) {");
+        self.writeln("    while (**p == ' ' || **p == '\\t' || **p == '\\n' || **p == '\\r') (*p)++;");
+        self.writeln("}");
+        self.writeln("");
+
+        // Parse string (returns riina_value_t* STRING)
+        self.writeln("static riina_value_t* riina_json_parse_string(const char** p) {");
+        self.writeln("    if (**p != '\"') abort();");
+        self.writeln("    (*p)++;");
+        self.writeln("    size_t cap = 64, len = 0;");
+        self.writeln("    char* buf = (char*)malloc(cap);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    while (**p && **p != '\"') {");
+        self.writeln("        if (len + 4 >= cap) { cap *= 2; buf = (char*)realloc(buf, cap); if (!buf) abort(); }");
+        self.writeln("        if (**p == '\\\\') {");
+        self.writeln("            (*p)++;");
+        self.writeln("            switch (**p) {");
+        self.writeln("                case '\"': buf[len++] = '\"'; break;");
+        self.writeln("                case '\\\\': buf[len++] = '\\\\'; break;");
+        self.writeln("                case '/': buf[len++] = '/'; break;");
+        self.writeln("                case 'n': buf[len++] = '\\n'; break;");
+        self.writeln("                case 'r': buf[len++] = '\\r'; break;");
+        self.writeln("                case 't': buf[len++] = '\\t'; break;");
+        self.writeln("                case 'b': buf[len++] = '\\b'; break;");
+        self.writeln("                case 'f': buf[len++] = '\\f'; break;");
+        self.writeln("                default: buf[len++] = **p; break;");
+        self.writeln("            }");
+        self.writeln("        } else {");
+        self.writeln("            buf[len++] = **p;");
+        self.writeln("        }");
+        self.writeln("        (*p)++;");
+        self.writeln("    }");
+        self.writeln("    if (**p == '\"') (*p)++;");
+        self.writeln("    buf[len] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // Parse number
+        self.writeln("static riina_value_t* riina_json_parse_number(const char** p) {");
+        self.writeln("    char* end;");
+        self.writeln("    long long val = strtoll(*p, &end, 10);");
+        self.writeln("    *p = end;");
+        self.writeln("    /* Skip fractional/exponent parts */");
+        self.writeln("    if (**p == '.') { strtod(*p - (end - *p), &end); *p = end; }");
+        self.writeln("    return riina_int((uint64_t)val);");
+        self.writeln("}");
+        self.writeln("");
+
+        // Parse object
+        self.writeln("static riina_value_t* riina_json_parse_object(const char** p) {");
+        self.writeln("    (*p)++; /* skip '{' */");
+        self.writeln("    riina_map_t m = { NULL, 0 };");
+        self.writeln("    riina_map_entry_t** tail = &m.head;");
+        self.writeln("    riina_json_skip_ws(p);");
+        self.writeln("    if (**p == '}') { (*p)++; return riina_make_map(m); }");
+        self.writeln("    for (;;) {");
+        self.writeln("        riina_json_skip_ws(p);");
+        self.writeln("        riina_value_t* key = riina_json_parse_string(p);");
+        self.writeln("        riina_json_skip_ws(p);");
+        self.writeln("        if (**p == ':') (*p)++;");
+        self.writeln("        riina_value_t* val = riina_json_parse_value(p);");
+        self.writeln("        riina_map_entry_t* e = (riina_map_entry_t*)malloc(sizeof(riina_map_entry_t));");
+        self.writeln("        if (!e) abort();");
+        self.writeln("        e->key = strdup(key->data.string_val.data);");
+        self.writeln("        e->value = val;");
+        self.writeln("        e->next = NULL;");
+        self.writeln("        *tail = e; tail = &e->next;");
+        self.writeln("        m.len++;");
+        self.writeln("        riina_json_skip_ws(p);");
+        self.writeln("        if (**p == ',') { (*p)++; continue; }");
+        self.writeln("        if (**p == '}') { (*p)++; break; }");
+        self.writeln("        break;");
+        self.writeln("    }");
+        self.writeln("    return riina_make_map(m);");
+        self.writeln("}");
+        self.writeln("");
+
+        // Parse array
+        self.writeln("static riina_value_t* riina_json_parse_array(const char** p) {");
+        self.writeln("    (*p)++; /* skip '[' */");
+        self.writeln("    riina_list_t l = riina_list_new();");
+        self.writeln("    riina_json_skip_ws(p);");
+        self.writeln("    if (**p == ']') { (*p)++; return riina_make_list(l); }");
+        self.writeln("    for (;;) {");
+        self.writeln("        riina_value_t* val = riina_json_parse_value(p);");
+        self.writeln("        riina_list_push(&l, val);");
+        self.writeln("        riina_json_skip_ws(p);");
+        self.writeln("        if (**p == ',') { (*p)++; continue; }");
+        self.writeln("        if (**p == ']') { (*p)++; break; }");
+        self.writeln("        break;");
+        self.writeln("    }");
+        self.writeln("    return riina_make_list(l);");
+        self.writeln("}");
+        self.writeln("");
+
+        // Parse value (recursive dispatch)
+        self.writeln("static riina_value_t* riina_json_parse_value(const char** p) {");
+        self.writeln("    riina_json_skip_ws(p);");
+        self.writeln("    switch (**p) {");
+        self.writeln("        case '\"': return riina_json_parse_string(p);");
+        self.writeln("        case '{': return riina_json_parse_object(p);");
+        self.writeln("        case '[': return riina_json_parse_array(p);");
+        self.writeln("        case 't': (*p) += 4; return riina_bool(true);");
+        self.writeln("        case 'f': (*p) += 5; return riina_bool(false);");
+        self.writeln("        case 'n': (*p) += 4; return riina_unit();");
+        self.writeln("        default: return riina_json_parse_number(p);");
+        self.writeln("    }");
+        self.writeln("}");
+        self.writeln("");
+
+        // json_urai (json_parse): Teks -> Value
+        self.writeln("static riina_value_t* riina_builtin_json_urai(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    const char* p = arg->data.string_val.data;");
+        self.writeln("    return riina_json_parse_value(&p);");
+        self.writeln("}");
+        self.writeln("");
+
+        // JSON stringify helper (forward declare for recursion)
+        self.writeln("static void riina_json_stringify_impl(riina_value_t* v, char** buf, size_t* len, size_t* cap);");
+        self.writeln("");
+        self.writeln("static void riina_json_buf_append(char** buf, size_t* len, size_t* cap, const char* s, size_t slen) {");
+        self.writeln("    while (*len + slen + 1 >= *cap) { *cap *= 2; *buf = (char*)realloc(*buf, *cap); if (!*buf) abort(); }");
+        self.writeln("    memcpy(*buf + *len, s, slen);");
+        self.writeln("    *len += slen;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static void riina_json_stringify_impl(riina_value_t* v, char** buf, size_t* len, size_t* cap) {");
+        self.writeln("    char tmp[64];");
+        self.writeln("    switch (v->tag) {");
+        self.writeln("        case RIINA_TAG_UNIT: riina_json_buf_append(buf, len, cap, \"null\", 4); break;");
+        self.writeln("        case RIINA_TAG_BOOL:");
+        self.writeln("            if (v->data.bool_val) riina_json_buf_append(buf, len, cap, \"true\", 4);");
+        self.writeln("            else riina_json_buf_append(buf, len, cap, \"false\", 5);");
+        self.writeln("            break;");
+        self.writeln("        case RIINA_TAG_INT: {");
+        self.writeln("            int n = snprintf(tmp, sizeof(tmp), \"%llu\", (unsigned long long)v->data.int_val);");
+        self.writeln("            riina_json_buf_append(buf, len, cap, tmp, (size_t)n);");
+        self.writeln("            break;");
+        self.writeln("        }");
+        self.writeln("        case RIINA_TAG_STRING: {");
+        self.writeln("            riina_json_buf_append(buf, len, cap, \"\\\"\", 1);");
+        self.writeln("            for (size_t i = 0; i < v->data.string_val.len; i++) {");
+        self.writeln("                char c = v->data.string_val.data[i];");
+        self.writeln("                if (c == '\"') riina_json_buf_append(buf, len, cap, \"\\\\\\\"\", 2);");
+        self.writeln("                else if (c == '\\\\') riina_json_buf_append(buf, len, cap, \"\\\\\\\\\", 2);");
+        self.writeln("                else if (c == '\\n') riina_json_buf_append(buf, len, cap, \"\\\\n\", 2);");
+        self.writeln("                else if (c == '\\r') riina_json_buf_append(buf, len, cap, \"\\\\r\", 2);");
+        self.writeln("                else if (c == '\\t') riina_json_buf_append(buf, len, cap, \"\\\\t\", 2);");
+        self.writeln("                else { riina_json_buf_append(buf, len, cap, &c, 1); }");
+        self.writeln("            }");
+        self.writeln("            riina_json_buf_append(buf, len, cap, \"\\\"\", 1);");
+        self.writeln("            break;");
+        self.writeln("        }");
+        self.writeln("        case RIINA_TAG_LIST: {");
+        self.writeln("            riina_list_t* l = RIINA_LIST_DATA(v);");
+        self.writeln("            riina_json_buf_append(buf, len, cap, \"[\", 1);");
+        self.writeln("            for (size_t i = 0; i < l->len; i++) {");
+        self.writeln("                if (i > 0) riina_json_buf_append(buf, len, cap, \",\", 1);");
+        self.writeln("                riina_json_stringify_impl(l->items[i], buf, len, cap);");
+        self.writeln("            }");
+        self.writeln("            riina_json_buf_append(buf, len, cap, \"]\", 1);");
+        self.writeln("            break;");
+        self.writeln("        }");
+        self.writeln("        case RIINA_TAG_MAP: {");
+        self.writeln("            riina_map_t* m = RIINA_MAP_DATA(v);");
+        self.writeln("            riina_json_buf_append(buf, len, cap, \"{\", 1);");
+        self.writeln("            size_t idx = 0;");
+        self.writeln("            for (riina_map_entry_t* e = m->head; e; e = e->next, idx++) {");
+        self.writeln("                if (idx > 0) riina_json_buf_append(buf, len, cap, \",\", 1);");
+        self.writeln("                riina_json_buf_append(buf, len, cap, \"\\\"\", 1);");
+        self.writeln("                riina_json_buf_append(buf, len, cap, e->key, strlen(e->key));");
+        self.writeln("                riina_json_buf_append(buf, len, cap, \"\\\":\", 2);");
+        self.writeln("                riina_json_stringify_impl(e->value, buf, len, cap);");
+        self.writeln("            }");
+        self.writeln("            riina_json_buf_append(buf, len, cap, \"}\", 1);");
+        self.writeln("            break;");
+        self.writeln("        }");
+        self.writeln("        default: riina_json_buf_append(buf, len, cap, \"null\", 4); break;");
+        self.writeln("    }");
+        self.writeln("}");
+        self.writeln("");
+
+        // json_ke_teks (json_stringify): Value -> Teks
+        self.writeln("static riina_value_t* riina_builtin_json_ke_teks(riina_value_t* arg) {");
+        self.writeln("    size_t cap = 256, len = 0;");
+        self.writeln("    char* buf = (char*)malloc(cap);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    riina_json_stringify_impl(arg, &buf, &len, &cap);");
+        self.writeln("    buf[len] = '\\0';");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // json_dapat (json_get): (Map, String) -> Value
+        self.writeln("static riina_value_t* riina_builtin_json_dapat(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_peta_dapat(arg);");
+        self.writeln("}");
+        self.writeln("");
+
+        // json_letak (json_set): (Map, (String, Value)) -> Map
+        self.writeln("static riina_value_t* riina_builtin_json_letak(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_peta_letak(arg);");
+        self.writeln("}");
+        self.writeln("");
+
+        // json_ada (json_has): (Map, String) -> Bool
+        self.writeln("static riina_value_t* riina_builtin_json_ada(riina_value_t* arg) {");
+        self.writeln("    return riina_builtin_peta_mengandungi(arg);");
+        self.writeln("}");
+        self.writeln("");
     }
 
     /// Emit forward declarations for all functions
