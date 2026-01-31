@@ -80,14 +80,14 @@ RIINA is the world's **first formally verified programming language** with:
 | **Qed Proofs (Active Build)** | 4,971 | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (452 tests) | All green |
+| **Rust Tests** | ✅ PASSING (477 tests) | All green |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
 | Materialization Phase | Status | Notes |
 |-----------------------|--------|-------|
-| Phase 1: Compiler Completion | 🟡 ~70% | Parser needs extension (5.3), codegen not wired (5.1) |
-| Phase 2: Standard Library | ⬜ | Blocked on Phase 1 |
+| Phase 1: Compiler Completion | ✅ ~98% | All 5.1-5.7 done; 477 tests passing |
+| Phase 2: Standard Library | ⬜ | Unblocked — Phase 1 complete |
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971 Qed |
 | Phase 4: Developer Experience | ⬜ | LSP, VS Code, formatter |
 | Phase 5: Ecosystem | ⬜ | CI/CD, package manager |
@@ -577,23 +577,21 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-### Track B: Rust Prototype (03_PROTO/) — 🟡 ACTIVE
+### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 1 COMPLETE
 
-Corresponds to **Materialization Plan Phase 1** (Compiler Completion).
-
-**Critical path:** 5.2 Lexer → 5.3 Parser → 5.1 Wire codegen → 5.4 C emitter → Gate 3 (end-to-end)
+Corresponds to **Materialization Plan Phase 1** (Compiler Completion). **All items done.**
 
 | Item | Description | Status |
 |------|-------------|--------|
-| 5.1 | Wire codegen into riinac | 🟡 Partial (driver exists, codegen not imported) |
-| 5.2 | Lexer changes | 🟢 ~90% (70+ keywords, some gaps) |
-| 5.3 | Parser extension | ❌ Critical gap (expressions only, no functions/modules) |
-| 5.4 | C emitter completion | 🟡 ~85% (missing closures, effect handlers) |
-| 5.5 | REPL | ❌ Stub |
-| 5.6 | Error diagnostics | ❌ Not started |
+| 5.1 | Wire codegen into riinac | ✅ Done (5 subcommands: check, run, build, emit-c, emit-ir) |
+| 5.2 | Lexer changes | ✅ Done (~80 bilingual keywords incl. fst/snd/require/grant/Option/Result) |
+| 5.3 | Parser extension | ✅ Done (27/27 Expr variants, BM aliases, all types, functions/modules) |
+| 5.4 | C emitter completion | ✅ Done (effect handlers via setjmp/longjmp, closures with captures) |
+| 5.5 | REPL | ✅ Done (7 bilingual commands, eval/type/ir/c backends) |
+| 5.6 | Error diagnostics | ✅ Done (Display impls, caret-style source context) |
 | 5.7 | Built-in functions | ✅ Done (59 builtins) |
 
-**See materialization plan sections 5.1-5.7 for exact implementation instructions.**
+**Phase 1 complete (477 Rust tests passing).** Next: Phase 2 (Standard Library) or Phase 4 (Developer Experience).
 
 ---
 
@@ -693,7 +691,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-30 (Session 53: 0 admits, 0 Admitted, 5 justified axioms)*
+*Last updated: 2026-01-31 (Session 54: Phase 1 complete, 0 admits, 5 justified axioms, 477 Rust tests)*
 
 ---
 
