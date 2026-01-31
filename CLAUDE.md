@@ -82,11 +82,17 @@ RIINA is the world's **first formally verified programming language** with:
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
 | **Rust Tests** | ✅ PASSING (452 tests) | All green |
 
-**Phase Status:**
-- Phase 0 (Foundation): ✅ Complete (well_typed_SN proven)
-- Phase 1 (Axiom Elimination): 🟢 5 justified axioms, 0 admits, 0 Admitted
-- Phase 3 (Domain Properties): ✅ Complete (876 lemmas)
-- Track B (Materialization): 🟢 In Progress — Phase 1 ~90% complete, gap remediation active
+**Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
+
+| Materialization Phase | Status | Notes |
+|-----------------------|--------|-------|
+| Phase 1: Compiler Completion | 🟡 ~70% | Parser needs extension (5.3), codegen not wired (5.1) |
+| Phase 2: Standard Library | ⬜ | Blocked on Phase 1 |
+| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971 Qed |
+| Phase 4: Developer Experience | ⬜ | LSP, VS Code, formatter |
+| Phase 5: Ecosystem | ⬜ | CI/CD, package manager |
+| Phase 6: Adoption | ⬜ | FFI, demos, community |
+| Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
 
 **See `PROGRESS.md` for detailed status.**
 
@@ -553,47 +559,41 @@ git add -A && git commit -m "[RECOVERY] Uncommitted work from disconnect"
 
 ## 8. CURRENT PRIORITIES
 
-### Phase 0: Foundation Verification — ✅ COMPLETE
+### SINGLE SOURCE OF TRUTH
 
-Phase 0 is complete. `well_typed_SN` proven. All foundations compile.
+**All planning follows `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md`** (7 phases).
+The older 6-phase system in `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` is archived research — do NOT use it for execution planning.
 
-### Phase 1: Axiom Elimination — 🟢 STABLE (5 justified axioms)
+### Track A: Formal Proofs (02_FORMAL/coq/) — 🟢 STABLE
 
-**Active Build: 5 Justified Axioms, 0 Admits, 0 Admitted**
+**Build: 0 admits, 0 Admitted, 5 justified axioms, 4971+ Qed proofs**
+
+Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic Completeness).
 
 | File | `admit.` | `Admitted.` | Axioms | Notes |
 |------|----------|-------------|--------|-------|
 | NonInterference_v2_LogicalRelation.v | 0 | 0 | 4 | ref/deref/assign/declassify (all justified) |
 | NonInterference_v2.v | 0 | 0 | 1 | fundamental_theorem_step_0 (justified) |
-| Declassification.v | 0 | 0 | 0 | exp_rel_le_declassify removed (dead code) |
-| ReferenceOps.v | 0 | 0 | 0 | All proven |
-| SN_Closure.v | 0 | 0 | 0 | All proven |
-| MaximumAxiomElimination.v | 0 | 0 | 0 | All proven |
 
-**Axiom names (5, all justified):**
-1. `logical_relation_ref` (NI_v2_LR) — store_rel_n loses val_rel for HIGH locations; would need restructuring
-2. `logical_relation_deref` (NI_v2_LR) — HIGH ref deref at step 0 for FO stored type needs val_rel info lost by is_low_dec
-3. `logical_relation_assign` (NI_v2_LR) — same store_rel_n limitation as ref/deref
-4. `logical_relation_declassify` (NI_v2_LR) — policy axiom (declassification is inherently axiomatic)
-5. `fundamental_theorem_step_0` (NI_v2) — val_rel_n 0 for HO types is True; val_rel_at_type needs structural content
+**5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-**Eliminated axioms (Sessions 50-52):**
-- `exp_rel_le_declassify` — dead code, removed (Session 50b)
-- `val_rel_store_weaken_back` — eliminated via Σ_base generalization (Session 52)
+### Track B: Rust Prototype (03_PROTO/) — 🟡 ACTIVE
 
-**Fixed regressions (Session 53):**
-- `exp_rel_step1_fst_general` — Admitted→Qed via fundamental_theorem_step_0
-- `exp_rel_step1_snd_general` — Admitted→Qed via fundamental_theorem_step_0
+Corresponds to **Materialization Plan Phase 1** (Compiler Completion).
 
-### Phase 2-6: Future Phases
+**Critical path:** 5.2 Lexer → 5.3 Parser → 5.1 Wire codegen → 5.4 C emitter → Gate 3 (end-to-end)
 
-- **Phase 2**: Core Properties (~375 theorems)
-- **Phase 3**: Domain Properties — ✅ COMPLETE (876 lemmas)
-- **Phase 4**: Implementation Verification
-- **Phase 5**: Multi-Prover Verification (Coq + Lean + Isabelle)
-- **Phase 6**: Production Hardening
+| Item | Description | Status |
+|------|-------------|--------|
+| 5.1 | Wire codegen into riinac | 🟡 Partial (driver exists, codegen not imported) |
+| 5.2 | Lexer changes | 🟢 ~90% (70+ keywords, some gaps) |
+| 5.3 | Parser extension | ❌ Critical gap (expressions only, no functions/modules) |
+| 5.4 | C emitter completion | 🟡 ~85% (missing closures, effect handlers) |
+| 5.5 | REPL | ❌ Stub |
+| 5.6 | Error diagnostics | ❌ Not started |
+| 5.7 | Built-in functions | ✅ Done (59 builtins) |
 
-**See `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` for full phase definitions.**
+**See materialization plan sections 5.1-5.7 for exact implementation instructions.**
 
 ---
 
