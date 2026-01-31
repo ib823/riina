@@ -1801,6 +1801,75 @@ impl CEmitter {
         self.writeln("    return riina_builtin_senarai_panjang(arg);");
         self.writeln("}");
         self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // TIME BUILTINS (masa)
+        // ═══════════════════════════════════════════════════════════════════
+
+        self.writeln("#include <time.h>");
+        self.writeln("");
+
+        // masa_sekarang (time_now): () -> Int
+        self.writeln("static riina_value_t* riina_builtin_masa_sekarang(riina_value_t* arg) {");
+        self.writeln("    (void)arg;");
+        self.writeln("    return riina_int((uint64_t)time(NULL));");
+        self.writeln("}");
+        self.writeln("");
+
+        // masa_sekarang_ms (time_now_ms): () -> Int
+        self.writeln("static riina_value_t* riina_builtin_masa_sekarang_ms(riina_value_t* arg) {");
+        self.writeln("    (void)arg;");
+        self.writeln("    struct timespec ts;");
+        self.writeln("    clock_gettime(CLOCK_REALTIME, &ts);");
+        self.writeln("    return riina_int((uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000);");
+        self.writeln("}");
+        self.writeln("");
+
+        // masa_format (time_format): (Int, String) -> String
+        self.writeln("static riina_value_t* riina_builtin_masa_format(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* ts = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* fmt = arg->data.pair_val.snd;");
+        self.writeln("    if (ts->tag != RIINA_TAG_INT || fmt->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    time_t t = (time_t)ts->data.int_val;");
+        self.writeln("    struct tm* tm_p = gmtime(&t);");
+        self.writeln("    char buf[256];");
+        self.writeln("    strftime(buf, sizeof(buf), fmt->data.string_val.data, tm_p);");
+        self.writeln("    return riina_string(buf);");
+        self.writeln("}");
+        self.writeln("");
+
+        // masa_urai (time_parse): (String, String) -> Int
+        self.writeln("static riina_value_t* riina_builtin_masa_urai(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* s = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* fmt = arg->data.pair_val.snd;");
+        self.writeln("    if (s->tag != RIINA_TAG_STRING || fmt->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    struct tm tm_s = {0};");
+        self.writeln("    strptime(s->data.string_val.data, fmt->data.string_val.data, &tm_s);");
+        self.writeln("    return riina_int((uint64_t)mktime(&tm_s));");
+        self.writeln("}");
+        self.writeln("");
+
+        // masa_tidur (time_sleep): Int -> ()
+        self.writeln("static riina_value_t* riina_builtin_masa_tidur(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_INT) abort();");
+        self.writeln("    struct timespec ts;");
+        self.writeln("    ts.tv_sec = (time_t)(arg->data.int_val / 1000);");
+        self.writeln("    ts.tv_nsec = (long)((arg->data.int_val % 1000) * 1000000);");
+        self.writeln("    nanosleep(&ts, NULL);");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // masa_jam (time_clock): () -> Int (monotonic nanoseconds)
+        self.writeln("static riina_value_t* riina_builtin_masa_jam(riina_value_t* arg) {");
+        self.writeln("    (void)arg;");
+        self.writeln("    struct timespec ts;");
+        self.writeln("    clock_gettime(CLOCK_MONOTONIC, &ts);");
+        self.writeln("    return riina_int((uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec);");
+        self.writeln("}");
+        self.writeln("");
     }
 
     /// Emit forward declarations for all functions
