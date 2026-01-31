@@ -17,5 +17,6 @@ riina-fmt.workspace = true
 riina-lexer.workspace = true
 riina-lsp.workspace = true
 riina-parser.workspace = true
+riina-pkg.workspace = true
 riina-types.workspace = true
 riina-typechecker.workspace = true
