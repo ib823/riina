@@ -1687,3 +1687,67 @@ fn test_parse_unknown_type_errors() {
     let result = p.parse_ty();
     assert!(result.is_err(), "Unknown type name should return error, not Unit");
 }
+
+// =============================================================================
+// PROJECTION TESTS (fst / snd)
+// =============================================================================
+
+#[test]
+fn test_parse_fst() {
+    let mut p = Parser::new("fst x");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Fst(Box::new(Expr::Var("x".to_string()))));
+}
+
+#[test]
+fn test_parse_snd() {
+    let mut p = Parser::new("snd x");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Snd(Box::new(Expr::Var("x".to_string()))));
+}
+
+#[test]
+fn test_parse_fst_bm() {
+    let mut p = Parser::new("pertama x");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Fst(Box::new(Expr::Var("x".to_string()))));
+}
+
+#[test]
+fn test_parse_snd_bm() {
+    let mut p = Parser::new("kedua x");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Snd(Box::new(Expr::Var("x".to_string()))));
+}
+
+// =============================================================================
+// CAPABILITY REQUIRE/GRANT TESTS
+// =============================================================================
+
+#[test]
+fn test_parse_require() {
+    let mut p = Parser::new("require Write 42");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Require(Effect::Write, Box::new(Expr::Int(42))));
+}
+
+#[test]
+fn test_parse_grant() {
+    let mut p = Parser::new("grant Network 0");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Grant(Effect::Network, Box::new(Expr::Int(0))));
+}
+
+#[test]
+fn test_parse_require_bm() {
+    let mut p = Parser::new("perlukan Tulis 42");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Require(Effect::Write, Box::new(Expr::Int(42))));
+}
+
+#[test]
+fn test_parse_grant_bm() {
+    let mut p = Parser::new("beri Rangkaian 0");
+    let expr = p.parse_expr().unwrap();
+    assert_eq!(expr, Expr::Grant(Effect::Network, Box::new(Expr::Int(0))));
+}
