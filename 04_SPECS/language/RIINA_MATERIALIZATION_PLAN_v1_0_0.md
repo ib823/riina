@@ -1440,8 +1440,9 @@ This phase addresses ALL gaps identified by the exhaustive 4-agent audit (2026-0
 | Incomplete proofs (admit.) | 0 | ALL ELIMINATED |
 | Incomplete proofs (Admitted.) | 0 | ALL ELIMINATED (LinearTypes.v fixed Session 58) |
 | Axioms (active build) | 5 | See 7.2 for elimination plan |
-| Compilation status | ✅ PASSING | 269 files compile clean |
-| Domain files outside build | 0 | All 183 domain files integrated (Session 58) |
+| Compilation status | ✅ PASSING | 244 files compile clean |
+| Domain files outside build | 0 | All domain files integrated (Session 58) |
+| Research track coverage | 100% | All 55 01_RESEARCH/ tracks have Coq proofs |
 | Threat model coverage | ~1-3% | 350+ threats documented, <5 with proofs |
 | Type enforcement gaps | 14 | Across 8 type categories (annotation-only) |
 | Rust semantic alignment | 94% structural | 0% semantic (no evaluator) |
