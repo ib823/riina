@@ -1090,7 +1090,7 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
     <div style={pageTopStyle}>
       <PageHeader
         title="Examples"
-        subtitle="108 example .rii files across 8 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
+        subtitle="111 example .rii files across 9 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
       />
 
       <section style={{ padding: '0 32px 80px' }}>
@@ -1567,7 +1567,7 @@ Every security claim has a machine-checked proof behind it.`
             color: '#666',
             fontSize: '14px'
           }}>
-            218 research tracks across 55 domains. 588 Rust tests, 13 crates, 108 example .rii files.
+            218 research tracks across 55 domains. 588 Rust tests, 13 crates, 111 example .rii files.
           </p>
         </div>
       </section>
@@ -1617,7 +1617,7 @@ Every security claim has a machine-checked proof behind it.`
         links: [{ text: 'Module Reference', page: 'stdlib' }, { text: 'std::kripto', page: 'stdlib' }, { text: 'std::io', page: 'stdlib' }] },
       { title: 'Formal Proofs', desc: '278 Coq files, 5,304 theorems', page: 'research',
         links: [{ text: 'Proof Architecture', page: 'research' }, { text: 'Axiom Justifications', page: 'research' }, { text: 'Building Proofs', page: 'research' }] },
-      { title: 'Examples', desc: '108 example .rii files in 8 categories', page: 'examples',
+      { title: 'Examples', desc: '111 example .rii files in 9 categories', page: 'examples',
         links: [{ text: 'pengesahan.rii', page: 'examples' }, { text: 'kripto.rii', page: 'examples' }, { text: 'hello_dunia.rii', page: 'examples' }] },
     ];
 
