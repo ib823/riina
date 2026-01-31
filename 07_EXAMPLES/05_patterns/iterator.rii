@@ -1,0 +1,56 @@
+/// iterator.rii
+/// Iterator pattern for sequential access to collection elements
+/// Demonstrates abstraction of iteration logic
+
+modul corak_pengulangi;
+
+guna std::senarai;
+guna std::teks;
+
+jenis Pengulangi = {
+    elemen_semasa: Nombor,
+    senarai_lengkap: Senarai<Teks>,
+};
+
+fungsi cipta_pengulangi(senarai: Senarai<Teks>) -> Pengulangi kesan Bersih {
+    pulang {
+        elemen_semasa: 0,
+        senarai_lengkap: senarai,
+    };
+}
+
+fungsi ada_seterusnya(ubah pengulangi: Pengulangi) -> Benar kesan Bersih {
+    pulang pengulangi.elemen_semasa < panjang(pengulangi.senarai_lengkap);
+}
+
+fungsi dapat_seterusnya(ubah pengulangi: Pengulangi) -> Mungkin<Teks> kesan Bersih {
+    kalau ada_seterusnya(pengulangi) {
+        biar nilai = pengulangi.senarai_lengkap[pengulangi.elemen_semasa];
+        pengulangi.elemen_semasa = pengulangi.elemen_semasa + 1;
+        pulang Ada(nilai);
+    }
+
+    pulang Tiada;
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK PENGULANGI ===\n");
+
+    biar senarai = ["pertama", "kedua", "ketiga"];
+    biar ubah pengulangi = cipta_pengulangi(senarai);
+
+    ulang {
+        padan dapat_seterusnya(pengulangi) {
+            Ada(nilai) => cetak_baris(format!("- {}", nilai)),
+            Tiada => ulang_akhir,
+        };
+    };
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

@@ -1,0 +1,174 @@
+/// builder.rii
+/// Builder pattern for complex object construction
+/// Demonstrates fluent interface and step-by-step object building
+///
+/// Pattern: Creational - Builder
+
+modul corak_pembina;
+
+guna std::teks;
+guna std::senarai;
+
+/// Product: Complex configuration object
+jenis KonfigurasiPelayan = {
+    nama_hos: Teks,
+    pelabuhan: Nombor,
+    kedalaman_thread: Nombor,
+    masa_timeout: Nombor,
+    membolehkan_gzip: Benar,
+    sertifikat_ssl: Mungkin<Teks>,
+    pengepala_tersuai: Senarai<(Teks, Teks)>,
+};
+
+/// Builder: Step-by-step construction
+jenis PembinaKonfigurasi = {
+    hos: Teks,
+    port: Nombor,
+    threads: Nombor,
+    timeout: Nombor,
+    gzip_enabled: Benar,
+    ssl_cert: Mungkin<Teks>,
+    headers: Senarai<(Teks, Teks)>,
+};
+
+/// Create empty builder
+fungsi pembinabarukai() -> PembinaKonfigurasi kesan Bersih {
+    pulang {
+        hos: "localhost",
+        port: 8080,
+        threads: 10,
+        timeout: 30,
+        gzip_enabled: betul,
+        ssl_cert: Tiada,
+        headers: [],
+    };
+}
+
+/// Fluent builder methods
+fungsi tetapkan_hos(ubah pembina: PembinaKonfigurasi, hos: Teks) -> PembinaKonfigurasi kesan Bersih {
+    pembina.hos = hos;
+    pulang pembina;
+}
+
+fungsi tetapkan_pelabuhan(ubah pembina: PembinaKonfigurasi, pelabuhan: Nombor) -> PembinaKonfigurasi kesan Bersih {
+    pembina.port = pelabuhan;
+    pulang pembina;
+}
+
+fungsi tetapkan_thread(ubah pembina: PembinaKonfigurasi, jumlah: Nombor) -> PembinaKonfigurasi kesan Bersih {
+    pembina.threads = jumlah;
+    pulang pembina;
+}
+
+fungsi tetapkan_timeout(ubah pembina: PembinaKonfigurasi, saat: Nombor) -> PembinaKonfigurasi kesan Bersih {
+    pembina.timeout = saat;
+    pulang pembina;
+}
+
+fungsi dayakan_gzip(ubah pembina: PembinaKonfigurasi, aktif: Benar) -> PembinaKonfigurasi kesan Bersih {
+    pembina.gzip_enabled = aktif;
+    pulang pembina;
+}
+
+fungsi tetapkan_ssl(ubah pembina: PembinaKonfigurasi, laluan_cert: Teks) -> PembinaKonfigurasi kesan Bersih {
+    pembina.ssl_cert = Ada(laluan_cert);
+    pulang pembina;
+}
+
+fungsi tambah_pengepala(ubah pembina: PembinaKonfigurasi, kunci: Teks, nilai: Teks) -> PembinaKonfigurasi kesan Bersih {
+    pembina.headers = pembina.headers + [(kunci, nilai)];
+    pulang pembina;
+}
+
+/// Build final object with validation
+fungsi bina(pembina: PembinaKonfigurasi) -> Mungkin<KonfigurasiPelayan> kesan Bersih {
+    // Validate required fields
+    kalau teks::panjang(pembina.hos) == 0 {
+        cetak_baris("Ralat: Hos harus ditentukan");
+        pulang Tiada;
+    }
+
+    kalau pembina.port <= 0 || pembina.port > 65535 {
+        cetak_baris("Ralat: Pelabuhan tidak sah");
+        pulang Tiada;
+    }
+
+    kalau pembina.threads <= 0 {
+        cetak_baris("Ralat: Thread harus > 0");
+        pulang Tiada;
+    }
+
+    // Build the object
+    biar konfigurasi = {
+        nama_hos: pembina.hos,
+        pelabuhan: pembina.port,
+        kedalaman_thread: pembina.threads,
+        masa_timeout: pembina.timeout,
+        membolehkan_gzip: pembina.gzip_enabled,
+        sertifikat_ssl: pembina.ssl_cert,
+        pengepala_tersuai: pembina.headers,
+    };
+
+    cetak_baris("Konfigurasi pembina berjaya");
+    pulang Ada(konfigurasi);
+}
+
+/// Display configuration
+fungsi papar_konfigurasi(config: KonfigurasiPelayan) -> kesan Bersih {
+    cetak_baris("=== KONFIGURASI PELAYAN ===");
+    cetak_baris(format!("Hos: {}", config.nama_hos));
+    cetak_baris(format!("Pelabuhan: {}", config.pelabuhan));
+    cetak_baris(format!("Thread: {}", config.kedalaman_thread));
+    cetak_baris(format!("Timeout: {} saat", config.masa_timeout));
+    cetak_baris(format!("GZip: {}", config.membolehkan_gzip));
+
+    padan config.sertifikat_ssl {
+        Ada(cert) => cetak_baris(format!("Sertifikat SSL: {}", cert)),
+        Tiada => cetak_baris("SSL: Dimatikan"),
+    };
+
+    cetak_baris(format!("Pengepala Tersuai: {}", panjang(config.pengepala_tersuai)));
+}
+
+/// Example usage
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK PEMBINA ===\n");
+
+    // Build configuration with fluent interface
+    biar pembina = pembinabarukai();
+
+    biar pembina_dikonfigurasi = tetapkan_hos(pembina, "api.contoh.my")
+        |> tetapkan_pelabuhan(_, 443)
+        |> tetapkan_thread(_, 50)
+        |> tetapkan_timeout(_, 60)
+        |> dayakan_gzip(_, betul)
+        |> tetapkan_ssl(_, "/etc/ssl/cert.pem")
+        |> tambah_pengepala(_, "X-API-Version", "2.0");
+
+    // Build and validate
+    biar mungkin_config = bina(pembina_dikonfigurasi);
+
+    padan mungkin_config {
+        Ada(config) => {
+            papar_konfigurasi(config);
+        },
+        Tiada => {
+            cetak_baris("Konfigurasi tidak sah");
+        },
+    };
+}
+
+// Helper functions
+modul teks {
+    fungsi panjang(t: Teks) -> Nombor kesan Bersih {
+        pulang 0;
+    }
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}

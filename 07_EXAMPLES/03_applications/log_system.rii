@@ -1,0 +1,243 @@
+/// log_system.rii
+/// Structured logging system with multiple severity levels
+/// Demonstrates time-based operations and file I/O coordination
+///
+/// Features:
+/// - Log levels: DEBUG, INFO, WARN, ERROR, FATAL
+/// - Timestamp tracking
+/// - Structured logging with context
+/// - File rotation support
+
+modul sistem_log;
+
+guna std::fail;
+guna std::masa;
+guna std::teks;
+guna std::senarai;
+
+jenis TarafKepentingan =
+    | DEBUG
+    | INFO
+    | WARN
+    | ERROR
+    | FATAL;
+
+jenis CatatanLog = {
+    masa: Nombor,
+    taraf: TarafKepentingan,
+    sumber: Teks,
+    mesej: Teks,
+    konteks: Senarai<(Teks, Teks)>,
+};
+
+jenis PengkonfigLogging = {
+    nama_fail: Teks,
+    taraf_minima: TarafKepentingan,
+    saiz_maksimal_kb: Nombor,
+    tutup_konsol: Benar,
+};
+
+/// Logger state (mutable global)
+biar ubah catatan: Senarai<CatatanLog> = [];
+biar ubah konfigurasi: PengkonfigLogging = {
+    nama_fail: "aplikasi.log",
+    taraf_minima: DEBUG,
+    saiz_maksimal_kb: 10240,
+    tutup_konsol: betul,
+};
+
+/// Check if log level should be recorded
+fungsi sepatutnya_log(taraf: TarafKepentingan) -> Benar kesan Bersih {
+    biar min = konfigurasi.taraf_minima;
+
+    padan (taraf, min) {
+        (_, DEBUG) => betul,
+        (INFO, INFO) => betul,
+        (INFO, WARN) => salah,
+        (INFO, ERROR) => salah,
+        (INFO, FATAL) => salah,
+        (WARN, WARN) => betul,
+        (WARN, ERROR) => salah,
+        (WARN, FATAL) => salah,
+        (ERROR, ERROR) => betul,
+        (ERROR, FATAL) => salah,
+        (FATAL, FATAL) => betul,
+        (FATAL, _) => betul,
+        _ => salah,
+    };
+}
+
+/// Format severity level as string
+fungsi format_taraf(taraf: TarafKepentingan) -> Teks kesan Bersih {
+    padan taraf {
+        DEBUG => "[DEBUG]",
+        INFO => "[INFO ]",
+        WARN => "[WARN ]",
+        ERROR => "[ERROR]",
+        FATAL => "[FATAL]",
+    };
+}
+
+/// Create formatted log entry
+fungsi format_catatan(catatan: CatatanLog) -> Teks kesan Bersih {
+    biar masa_format = Masa::format_unix(catatan.masa);
+    biar taraf_format = format_taraf(catatan.taraf);
+
+    biar konteks_format = "";
+    untuk (kunci, nilai) dalam catatan.konteks {
+        konteks_format = konteks_format + format!(" {}={}", kunci, nilai);
+    }
+
+    pulang format!(
+        "{} {} [{}]{} {}",
+        masa_format,
+        taraf_format,
+        catatan.sumber,
+        konteks_format,
+        catatan.mesej
+    );
+}
+
+/// Record log entry
+/// Kesan: SistemFail (may write to file)
+fungsi log_catatan(
+    taraf: TarafKepentingan,
+    sumber: Teks,
+    mesej: Teks,
+    konteks: Senarai<(Teks, Teks)>
+) -> kesan SistemFail {
+    kalau !sepatutnya_log(taraf) {
+        pulang ();
+    }
+
+    biar catatan_baru = {
+        masa: Masa::masa_unix(),
+        taraf: taraf,
+        sumber: sumber,
+        mesej: mesej,
+        konteks: konteks,
+    };
+
+    catatan = catatan + [catatan_baru];
+
+    // Output to console if enabled
+    kalau konfigurasi.tutup_konsol {
+        biar teks_format = format_catatan(catatan_baru);
+        cetak_baris(teks_format);
+    }
+
+    // Write to file
+    biar teks_format = format_catatan(catatan_baru);
+    biar hasil = coba SistemFail::tambah_fail(konfigurasi.nama_fail, teks_format + "\n");
+
+    padan hasil {
+        Berjaya(_) => {},
+        Kegagalan(ralat) => {
+            cetak_ralat(format!("Gagal menulis log: {}", ralat));
+        },
+    };
+}
+
+/// Log at DEBUG level
+fungsi log_debug(sumber: Teks, mesej: Teks) -> kesan SistemFail {
+    log_catatan(DEBUG, sumber, mesej, []);
+}
+
+/// Log at INFO level
+fungsi log_info(sumber: Teks, mesej: Teks) -> kesan SistemFail {
+    log_catatan(INFO, sumber, mesej, []);
+}
+
+/// Log at WARN level
+fungsi log_amaran(sumber: Teks, mesej: Teks) -> kesan SistemFail {
+    log_catatan(WARN, sumber, mesej, []);
+}
+
+/// Log at ERROR level
+fungsi log_ralat(sumber: Teks, mesej: Teks) -> kesan SistemFail {
+    log_catatan(ERROR, sumber, mesej, []);
+}
+
+/// Log at FATAL level
+fungsi log_musnah(sumber: Teks, mesej: Teks) -> kesan SistemFail {
+    log_catatan(FATAL, sumber, mesej, []);
+}
+
+/// Get all logs for given source
+fungsi dapat_catatan_dari_sumber(sumber: Teks) -> Senarai<CatatanLog> kesan Bersih {
+    biar hasil = [];
+
+    untuk catatan dalam catatan {
+        kalau catatan.sumber == sumber {
+            hasil = hasil + [catatan];
+        }
+    }
+
+    pulang hasil;
+}
+
+/// Clear all logs
+fungsi padam_semua_log() -> kesan Bersih {
+    catatan = [];
+}
+
+/// Export logs to JSON
+fungsi eksport_json() -> Teks kesan Bersih {
+    biar hasil = "[";
+
+    untuk i, catatan dalam catatan {
+        kalau i > 0 {
+            hasil = hasil + ",";
+        }
+
+        biar json_item = format!(
+            "{{\"masa\":{},\"taraf\":\"{}\",\"sumber\":\"{}\",\"mesej\":\"{}\"}}",
+            catatan.masa,
+            taraf_ke_teks(catatan.taraf),
+            catatan.sumber,
+            teks::lepas_kecil(catatan.mesej)
+        );
+
+        hasil = hasil + json_item;
+    }
+
+    hasil = hasil + "]";
+    pulang hasil;
+}
+
+/// Example usage: Database operations
+awam fungsi contoh_operasi_db() -> kesan SistemFail {
+    biar sumber = "DatabaseModule";
+
+    log_info(sumber, "Memulai sambungan ke pangkalan data");
+
+    // Simulate database operation
+    biar id_sambungan = 12345;
+    log_debug(sumber, format!("Sambungan dibuka: {}", id_sambungan));
+
+    // Check status
+    biar status_ok = betul;
+    kalau status_ok {
+        log_info(sumber, "Kueri dijalankan berjaya");
+    } lain {
+        log_ralat(sumber, "Kueri gagal");
+    }
+
+    log_info(sumber, "Sambungan ditutup");
+    pulang ();
+}
+
+// Helper functions
+fungsi taraf_ke_teks(taraf: TarafKepentingan) -> Teks kesan Bersih {
+    padan taraf {
+        DEBUG => "DEBUG",
+        INFO => "INFO",
+        WARN => "WARN",
+        ERROR => "ERROR",
+        FATAL => "FATAL",
+    };
+}
+
+fungsi cetak_ralat(mesej: Teks) -> kesan Tulis {
+    // Print to stderr equivalent
+}

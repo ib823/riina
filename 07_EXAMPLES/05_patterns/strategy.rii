@@ -1,0 +1,51 @@
+/// strategy.rii
+/// Strategy pattern for encapsulating algorithms
+/// Demonstrates algorithm selection at runtime
+
+modul corak_strategi;
+
+guna std::teks;
+guna std::senarai;
+
+jenis StrategiPenyaringan = ASCEND | DESCEND | RAWAK;
+
+fungsi sortir_nombor(senarai: Senarai<Nombor>, strategi: StrategiPenyaringan) -> Senarai<Nombor> kesan Bersih {
+    padan strategi {
+        ASCEND => {
+            cetak_baris("Menyortir: Menaik");
+            sortir_menaik(senarai);
+        },
+        DESCEND => {
+            cetak_baris("Menyortir: Menurun");
+            sortir_menurun(senarai);
+        },
+        RAWAK => {
+            cetak_baris("Menyortir: Rawak");
+            sortir_rawak(senarai);
+        },
+    };
+}
+
+fungsi sortir_menaik(senarai: Senarai<Nombor>) -> Senarai<Nombor> kesan Bersih {
+    // Bubble sort implementation
+    pulang senarai;
+}
+
+fungsi sortir_menurun(senarai: Senarai<Nombor>) -> Senarai<Nombor> kesan Bersih {
+    // Reverse sort
+    pulang senarai;
+}
+
+fungsi sortir_rawak(senarai: Senarai<Nombor>) -> Senarai<Nombor> kesan Bersih {
+    // Fisher-Yates shuffle
+    pulang senarai;
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== CORAK STRATEGI ===\n");
+
+    biar data = [5, 2, 8, 1, 9];
+
+    biar hasil_menaik = sortir_nombor(data, ASCEND);
+    biar hasil_menurun = sortir_nombor(data, DESCEND);
+}

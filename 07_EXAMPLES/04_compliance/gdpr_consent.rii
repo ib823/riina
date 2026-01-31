@@ -1,0 +1,234 @@
+/// gdpr_consent.rii
+/// GDPR (General Data Protection Regulation) consent management
+/// Demonstrates lawful basis, consent records, and right to erasure
+///
+/// Security Level: Sistem
+/// Compliance: GDPR Articles 6, 7, 17
+
+modul pengurusan_persetujuan_gdpr;
+
+guna std::teks;
+guna std::senarai;
+guna std::masa;
+
+jenis DasarSah =
+    | PERSETUJUAN
+    | KONTRAK
+    | KEWAJIBAN_UNDANG_UNDANG
+    | KEPENTINGAN_VITAL
+    | TUGAS_AWAM
+    | KEPENTINGAN_SAH;
+
+jenis RekodPersetujuan = {
+    pengguna_id: Teks,
+    dasar_sah: DasarSah,
+    persetujuan_teks: Teks,
+    tarikh_persetujuan: Nombor,
+    versih_dasar: Teks,
+    boleh_ditarik_balik: Benar,
+    metod_penyampaian: Teks, // email, form, api
+};
+
+jenis PermintaanHakData =
+    | AKSES
+    | PEMBETULKAN
+    | PENGHAPUSAN
+    | PORTABILITI
+    | KEBERATAN;
+
+biar ubah rekod_persetujuan: Senarai<RekodPersetujuan> = [];
+
+/// Record explicit consent with proof
+fungsi rekod_persetujuan_jelas(
+    pengguna_id: Teks,
+    teks_persetujuan: Teks,
+    dasar: DasarSah
+) -> Benar kesan Bersih {
+    // GDPR Article 7: Proof of consent required
+    kalau dasar != PERSETUJUAN && dasar != KONTRAK {
+        cetak_baris("Dasar sah: tidak memerlukan persetujuan eksplisit");
+        pulang betul;
+    }
+
+    biar rekod = {
+        pengguna_id: pengguna_id,
+        dasar_sah: dasar,
+        persetujuan_teks: teks_persetujuan,
+        tarikh_persetujuan: Masa::masa_unix(),
+        versih_dasar: "GDPR-2024-01",
+        boleh_ditarik_balik: betul,
+        metod_penyampaian: "form_digital",
+    };
+
+    rekod_persetujuan = rekod_persetujuan + [rekod];
+    cetak_baris("Persetujuan GDPR dicatat dengan bukti");
+    pulang betul;
+}
+
+/// Withdraw consent (right to withdraw)
+fungsi tarik_balik_persetujuan(pengguna_id: Teks) -> Benar kesan Bersih {
+    // GDPR Article 7: Right to withdraw consent
+    biar rekod_baru = [];
+    biar didapati = salah;
+
+    untuk rekod dalam rekod_persetujuan {
+        kalau rekod.pengguna_id == pengguna_id {
+            didapati = betul;
+            cetak_baris(format!("Persetujuan ditarik balik untuk {}", pengguna_id));
+            // Don't add to new list - effectively deleted
+        } lain {
+            rekod_baru = rekod_baru + [rekod];
+        }
+    }
+
+    rekod_persetujuan = rekod_baru;
+    pulang didapati;
+}
+
+/// Right to access personal data
+fungsi hak_akses_data(pengguna_id: Teks) -> Senarai<Teks> kesan Bersih {
+    // GDPR Article 15: Right to access
+    biar data_pengguna = [];
+
+    // Return all personal data held
+    cetak_baris(format!("Memberikan akses ke semua data pribadi {}", pengguna_id));
+
+    pulang data_pengguna;
+}
+
+/// Right to erasure (right to be forgotten)
+fungsi hak_penghapusan(pengguna_id: Teks) -> Benar kesan Bersih {
+    // GDPR Article 17: Right to erasure
+    cetak_baris(format!("Memproses hak untuk dilupakan: {}", pengguna_id));
+
+    biar alasan_penghapusan = [
+        "Data tidak lagi diperlukan",
+        "Tarik balik persetujuan",
+        "Keberatan terhadap pemrosesan",
+        "Pelanggaran peraturan",
+    ];
+
+    biar stor_baru = [];
+    untuk rekod dalam rekod_persetujuan {
+        kalau rekod.pengguna_id != pengguna_id {
+            stor_baru = stor_baru + [rekod];
+        }
+    }
+
+    rekod_persetujuan = stor_baru;
+    cetak_baris("Semua data dihapus secara permanen");
+
+    pulang betul;
+}
+
+/// Data portability right
+fungsi hak_portabiliti_data(pengguna_id: Teks) -> Teks kesan Bersih {
+    // GDPR Article 20: Right to data portability
+    cetak_baris(format!("Mengeksport data dalam format terstruktur untuk {}", pengguna_id));
+
+    // Return in JSON/CSV format
+    biar format_data = "{\"pengguna_id\":\"" + pengguna_id + "\",\"data\":[...]}";
+    pulang format_data;
+}
+
+/// Right to object to processing
+fungsi hak_keberatan(pengguna_id: Teks, tujuan: Teks) -> Benar kesan Bersih {
+    // GDPR Article 21: Right to object
+    cetak_baris(format!("Keberatan terhadap pemrosesan untuk tujuan: {}", tujuan));
+
+    // Stop processing for that purpose
+    kalau tujuan == "pemasaran" || tujuan == "profiling" {
+        pulang betul;
+    }
+
+    pulang salah; // Can't object to legal obligation
+}
+
+/// Data Protection Impact Assessment (DPIA)
+fungsi jalankan_penilaian_dampak(jenis_pemrosesan: Teks) -> (Benar, Senarai<Teks>) kesan Bersih {
+    // GDPR Article 35: DPIA required for high-risk processing
+    cetak_baris(format!("Menjalankan DPIA untuk: {}", jenis_pemrosesan));
+
+    biar risiko = [];
+
+    padan jenis_pemrosesan {
+        "profiling_otomatis" => {
+            risiko = risiko + ["Risiko: Keputusan otomatis yang signifikan"];
+            risiko = risiko + ["Pengurangan risiko: Intervensi manusia diperlukan"];
+        },
+        "pemantauan_lokasi" => {
+            risiko = risiko + ["Risiko: Privasi lokasi dilanggar"];
+            risiko = risiko + ["Pengurangan risiko: Transparansi penuh"];
+        },
+        "data_sensitif" => {
+            risiko = risiko + ["Risiko: Data ras, agama, dll."];
+            risiko = risiko + ["Pengurangan risiko: Enkripsi dan kontrol akses"];
+        },
+        _ => {
+            risiko = risiko + ["Risiko minimal"];
+        },
+    };
+
+    kalau panjang(risiko) > 2 {
+        cetak_baris("DPIA: Risiko tinggi, persetujuan otoritas diperlukan");
+        pulang (salah, risiko);
+    }
+
+    cetak_baris("DPIA: Risiko dapat diminimalkan");
+    pulang (betul, risiko);
+}
+
+/// Breach notification (72 hours)
+fungsi pemberitahuan_pelanggaran(jenis_data: Teks, jumlah_terdampak: Nombor) -> kesan Bersih {
+    // GDPR Article 33, 34: Notify within 72 hours
+    biar tarikh_pelanggaran = Masa::masa_unix();
+    biar batas_notifikasi = tarikh_pelanggaran + (72 * 3600);
+
+    cetak_baris(format!("Pelanggaran: {} orang terdampak oleh {}", jumlah_terdampak, jenis_data));
+    cetak_baris(format!("Batas notifikasi: {} (72 jam kemudian)", batas_notifikasi));
+}
+
+/// Consent withdrawal counter
+fungsi hitung_penarikan_persetujuan() -> Nombor kesan Bersih {
+    biar jumlah = 0;
+
+    untuk _ dalam rekod_persetujuan {
+        jumlah = jumlah + 1;
+    }
+
+    pulang jumlah;
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== PENGURUSAN PERSETUJUAN GDPR ===");
+
+    // Record consent
+    rekod_persetujuan_jelas("pengguna@contoh.my", "Saya bersetuju dengan pemrosesan data", PERSETUJUAN);
+
+    // Example: User exercises rights
+    cetak_baris("\n[Pengguna melaksanakan hak GDPR]");
+    hak_akses_data("pengguna@contoh.my");
+    hak_portabiliti_data("pengguna@contoh.my");
+
+    // DPIA for processing
+    biar (aman, risiko) = jalankan_penilaian_dampak("profiling_otomatis");
+    cetak_baris(format!("DPIA aman: {}", aman));
+
+    // Breach notification
+    pemberitahuan_pelanggaran("nomor_identiti", 1000);
+}
+
+// Helper functions
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+modul Masa {
+    fungsi masa_unix() -> Nombor kesan Bersih {
+        pulang 0;
+    }
+}

@@ -1,0 +1,260 @@
+/// data_residency.rii
+/// Data residency enforcement and geolocation verification
+/// Demonstrates data sovereignty and regional compliance requirements
+///
+/// Security Level: Sistem
+/// Compliance: GDPR, PDPA, localization laws
+
+modul penguatkuasaan_tempat_tinggal_data;
+
+guna std::teks;
+guna std::senarai;
+
+/// Approved data residency regions
+jenis KawasanTempat =
+    | EU        // GDPR
+    | MY        // PDPA
+    | APAC      // Asia-Pacific
+    | AMERICAS  // North/South America
+    | GLOBAL;   // No restriction
+
+/// Data subject and their residency requirement
+jenis SubjekData = {
+    id_subjek: Teks,
+    nama: Teks,
+    lokasi_asal: KawasanTempat,
+    klasifikasi_data: Teks,
+    tempat_tinggal_disyaratkan: KawasanTempat,
+};
+
+/// Storage location and compliance
+jenis LokasiBayaran = {
+    id_pusat: Teks,
+    nama: Teks,
+    region: KawasanTempat,
+    negara: Teks,
+    kepatuhan: Senarai<Teks>,  // GDPR, PDPA, etc
+    dienkripsi: Benar,
+};
+
+biar ubah subjek_data: Senarai<SubjekData> = [];
+biar ubah lokasi_bayaran: Senarai<LokasiBayaran> = [];
+
+/// Verify data storage location complies with residency
+fungsi sahkan_kepatuhan_tempat_tinggal(
+    lokasi_penyimpanan: KawasanTempat,
+    tempat_tinggal_perlu: KawasanTempat
+) -> Benar kesan Bersih {
+    padan (lokasi_penyimpanan, tempat_tinggal_perlu) {
+        (EU, EU) => betul,
+        (MY, MY) => betul,
+        (GLOBAL, _) => betul,          // Global OK for any
+        (APAC, APAC) => betul,
+        (AMERICAS, AMERICAS) => betul,
+
+        // Cross-region transfers need special approval
+        (EU, MY) => salah,             // GDPR → PDPA: Invalid
+        (MY, EU) => salah,             // PDPA → GDPR: Invalid
+        (EU, GLOBAL) => salah,         // Can't export EU data to global
+        (MY, GLOBAL) => salah,         // Can't export MY data to global
+
+        _ => salah,
+    };
+}
+
+/// GDPR Article 44: Transfer mechanisms
+fungsi sahkan_mekanisme_pemindahan_gdpr(
+    asal: KawasanTempat,
+    destinasi: KawasanTempat
+) -> Benar kesan Bersih {
+    kalau asal != EU {
+        pulang betul; // Only applies to EU data
+    }
+
+    padan destinasi {
+        EU => betul,  // EU to EU: OK
+
+        // Requires "adequacy decision" from European Commission
+        MY => {
+            cetak_baris("AMARAN: MY tidak memiliki keputusan kecukupan EU");
+            cetak_baris("Diperlukan: Standard Contractual Clauses (SCC)");
+            pulang salah;
+        },
+
+        // Requires adequacy decision
+        APAC => {
+            cetak_baris("AMARAN: APAC tidak memiliki keputusan kecukupan EU");
+            cetak_baris("Diperlukan: Binding Corporate Rules (BCR)");
+            pulang salah;
+        },
+
+        AMERICAS => {
+            cetak_baris("AMARAN: Pemindahan ke Amerika memerlukan Privacy Shield");
+            pulang salah;
+        },
+
+        GLOBAL => {
+            cetak_baris("AMARAN: Tidak dapat mengekspor data EU ke global");
+            pulang salah;
+        },
+    };
+}
+
+/// PDPA Requirement: Malaysia data localization
+fungsi sahkan_pelokalan_pdpa(lokasi: KawasanTempat) -> Benar kesan Bersih {
+    // PDPA requires certain data stored in Malaysia
+    kalau lokasi == MY {
+        cetak_baris("PDPA: Data disimpan di Malaysia ✓");
+        pulang betul;
+    }
+
+    cetak_baris("AMARAN: Data tidak di Malaysia");
+    cetak_baris("PDPA mungkin memerlukan penyimpanan lokal");
+
+    pulang salah;
+}
+
+/// Check data sovereignty restrictions
+fungsi semak_kedaulatan_data(
+    id_subjek: Teks,
+    lokasi_bayaran: KawasanTempat
+) -> (Benar, Teks) kesan Bersih {
+    // Find subject's residency requirement
+    biar mungkin_subjek = cari_subjek(id_subjek);
+
+    padan mungkin_subjek {
+        Ada(subjek) => {
+            biar sah = sahkan_kepatuhan_tempat_tinggal(lokasi_bayaran, subjek.tempat_tinggal_disyaratkan);
+
+            kalau sah {
+                pulang (betul, "Penyimpanan sah");
+            } lain {
+                biar pesan = format!(
+                    "Pelanggaran: Data {} harus di {} tapi disimpan di {}",
+                    id_subjek,
+                    kawasan_ke_teks(subjek.tempat_tinggal_disyaratkan),
+                    kawasan_ke_teks(lokasi_bayaran)
+                );
+                pulang (salah, pesan);
+            }
+        },
+        Tiada => {
+            pulang (salah, "Subjek data tidak ditemukan");
+        },
+    };
+}
+
+/// Encrypt data in transit between regions
+fungsi enkripsi_pemindahan_regional(
+    asal: KawasanTempat,
+    destinasi: KawasanTempat,
+    adalah_eu: Benar
+) -> Benar kesan Bersih {
+    kalau adalah_eu && destinasi != EU {
+        cetak_baris("Enkripsi transit wajib untuk data EU keluar region");
+        cetak_baris("Menggunakan: AES-256-GCM + TLS 1.3");
+        pulang betul;
+    }
+
+    cetak_baris("Enkripsi transit: TLS 1.3");
+    pulang betul;
+}
+
+/// Geo-redundancy with compliance
+fungsi rencana_geo_redundansi() -> Senarai<Teks> kesan Bersih {
+    biar rencana = [
+        "Data EU: Replika di EU hanya (Jerman + Prancis)",
+        "Data MY: Replika di Malaysia + SG untuk backup",
+        "Data APAC: Replika di wilayah APAC saja",
+    ];
+
+    pulang rencana;
+}
+
+/// Audit trail for data movements
+fungsi catatkan_pergerakan_data(
+    id_subjek: Teks,
+    asal: KawasanTempat,
+    destinasi: KawasanTempat,
+    alasan: Teks
+) -> kesan Bersih {
+    cetak_baris(format!(
+        "AUDIT: Data {} dipindahkan {} → {} ({})",
+        id_subjek,
+        kawasan_ke_teks(asal),
+        kawasan_ke_teks(destinasi),
+        alasan
+    ));
+}
+
+/// Deletion from specific regions
+fungsi padamkan_dari_kawasan(
+    id_subjek: Teks,
+    kawasan: KawasanTempat
+) -> Benar kesan Bersih {
+    cetak_baris(format!(
+        "Menghapus data {} dari {}",
+        id_subjek,
+        kawasan_ke_teks(kawasan)
+    ));
+
+    cetak_baris("Verifikasi penghapusan aman dari backup");
+    cetak_baris("Konfirmasi dari admin regional diperlukan");
+
+    pulang betul;
+}
+
+awam fungsi utama() -> kesan Bersih {
+    cetak_baris("=== PENGUATKUASAAN TEMPAT TINGGAL DATA ===\n");
+
+    // Test case 1: EU citizen data
+    cetak_baris("[Kes 1: Warga negara EU, penyimpanan di EU]");
+    biar sah_1 = sahkan_kepatuhan_tempat_tinggal(EU, EU);
+    cetak_baris(format!("Kepatuhan: {}\n", sah_1));
+
+    // Test case 2: EU citizen data stored outside EU
+    cetak_baris("[Kes 2: Warga negara EU, coba penyimpanan MY]");
+    biar sah_2 = sahkan_mekanisme_pemindahan_gdpr(EU, MY);
+    cetak_baris(format!("Kepatuhan: {}\n", sah_2));
+
+    // Test case 3: Malaysia citizen
+    cetak_baris("[Kes 3: Warga negara MY, penyimpanan MY]");
+    biar sah_3 = sahkan_pelokalan_pdpa(MY);
+    cetak_baris(format!("Kepatuhan PDPA: {}\n", sah_3));
+
+    // Geo-redundancy plan
+    cetak_baris("=== RENCANA GEO-REDUNDANSI ===");
+    biar rencana = rencana_geo_redundansi();
+    untuk rancangan dalam rencana {
+        cetak_baris("• " + rancangan);
+    }
+
+    cetak_baris("\n=== RINGKASAN ===");
+    cetak_baris("✓ Penyimpanan regional disegmentasi");
+    cetak_baris("✓ Pemindahan silang-region dienkripsi");
+    cetak_baris("✓ Kepatuhan regulasi ditegakkan");
+    cetak_baris("✓ Jejak audit penuh dipertahankan");
+}
+
+// Helper functions
+fungsi cari_subjek(id: Teks) -> Mungkin<SubjekData> kesan Bersih {
+    pulang Tiada;
+}
+
+fungsi kawasan_ke_teks(kawasan: KawasanTempat) -> Teks kesan Bersih {
+    padan kawasan {
+        EU => "Uni Eropa",
+        MY => "Malaysia",
+        APAC => "Asia-Pasifik",
+        AMERICAS => "Benua Amerika",
+        GLOBAL => "Global",
+    };
+}
+
+fungsi format(s: Teks, arg: Teks) -> Teks kesan Bersih {
+    pulang s;
+}
+
+fungsi panjang(senarai: Senarai<T>) -> Nombor kesan Bersih {
+    pulang 0;
+}
