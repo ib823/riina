@@ -33,8 +33,8 @@ exclude = [
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.84.0"
-license = "PROPRIETARY"
-repository = "https://internal.riina.my/git/riina"
+license = "MPL-2.0"
+repository = "https://github.com/ib823/proof"
 authors = ["RIINA Team <security@riina.my>"]
 
 [workspace.dependencies]
