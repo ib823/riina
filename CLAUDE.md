@@ -69,7 +69,7 @@ RIINA is the world's **first formally verified programming language** with:
 
 **Full syntax specification:** `01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md`
 
-### 0.5 Current Project Status (2026-01-30)
+### 0.5 Current Project Status (2026-01-31)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
@@ -77,17 +77,17 @@ RIINA is the world's **first formally verified programming language** with:
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Axioms (Active Build)** | 5 (all justified) | 4 in NI_v2_LR + 1 in NI_v2 |
 | **Admits (Active Build)** | 0 | All fixed (Session 53) |
-| **Qed Proofs (Active Build)** | 4,971 | Verified |
+| **Qed Proofs (Active Build)** | 5,117+ | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Coq Compilation** | ✅ PASSING | 98 files compile clean |
-| **Rust Tests** | ✅ PASSING (477 tests) | All green |
+| **Rust Tests** | ✅ PASSING (509 tests) | All green |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
 | Materialization Phase | Status | Notes |
 |-----------------------|--------|-------|
 | Phase 1: Compiler Completion | ✅ ~98% | All 5.1-5.7 done; 477 tests passing |
-| Phase 2: Standard Library | ⬜ | Unblocked — Phase 1 complete |
+| Phase 2: Standard Library | ✅ ~90% | 3 new modules (masa/fail/json), 29 new builtins, 509 tests |
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971 Qed |
 | Phase 4: Developer Experience | ⬜ | LSP, VS Code, formatter |
 | Phase 5: Ecosystem | ⬜ | CI/CD, package manager |
@@ -577,21 +577,21 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 
 **5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
 
-### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 1 COMPLETE
+### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 2 ~90%
 
-Corresponds to **Materialization Plan Phase 1** (Compiler Completion). **All items done.**
+**Phase 1** (Compiler Completion): ✅ All items done.
+**Phase 2** (Standard Library): ✅ 5/6 milestones done (M1-M5). 29 new builtins, 3 new modules.
 
-| Item | Description | Status |
-|------|-------------|--------|
-| 5.1 | Wire codegen into riinac | ✅ Done (5 subcommands: check, run, build, emit-c, emit-ir) |
-| 5.2 | Lexer changes | ✅ Done (~80 bilingual keywords incl. fst/snd/require/grant/Option/Result) |
-| 5.3 | Parser extension | ✅ Done (27/27 Expr variants, BM aliases, all types, functions/modules) |
-| 5.4 | C emitter completion | ✅ Done (effect handlers via setjmp/longjmp, closures with captures) |
-| 5.5 | REPL | ✅ Done (7 bilingual commands, eval/type/ir/c backends) |
-| 5.6 | Error diagnostics | ✅ Done (Display impls, caret-style source context) |
-| 5.7 | Built-in functions | ✅ Done (59 builtins) |
+| Phase 2 Milestone | Description | Status |
+|-------------------|-------------|--------|
+| M1 | C runtime types + 39 builtin C implementations | ✅ Done |
+| M2 | masa (time) module — 6 builtins | ✅ Done |
+| M3 | fail (file I/O) module — 8 builtins | ✅ Done |
+| M4 | json module — 5 builtins (hand-written parser) | ✅ Done |
+| M5 | Expand teks/senarai/matematik — 10 new builtins | ✅ Done |
+| M6 | Update planning documents | ✅ Done |
 
-**Phase 1 complete (477 Rust tests passing).** Next: Phase 2 (Standard Library) or Phase 4 (Developer Experience).
+**Total: 88 builtins across 9 modules, 509 Rust tests passing.** Next: Phase 4 (Developer Experience).
 
 ---
 
@@ -691,7 +691,7 @@ When encountering old references, update them to the new naming.
 
 *"QED Eternum."*
 
-*Last updated: 2026-01-31 (Session 54: Phase 1 complete, 0 admits, 5 justified axioms, 477 Rust tests)*
+*Last updated: 2026-01-31 (Session 55: Phase 2 stdlib ~90%, 0 admits, 5 justified axioms, 509 Rust tests)*
 
 ---
 
