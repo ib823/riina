@@ -23,6 +23,9 @@ pub static BUILTINS: &[(&str, &str, &str)] = &[
     ("senarai_ekor", "list_tail", "senarai_ekor"),
     ("senarai_zip", "list_zip", "senarai_zip"),
     ("senarai_nombor", "list_enumerate", "senarai_nombor"),
+    ("senarai_rata", "list_flatten", "senarai_rata"),
+    ("senarai_unik", "list_unique", "senarai_unik"),
+    ("senarai_potong", "list_slice", "senarai_potong"),
 ];
 
 /// Apply a list builtin. Returns Ok(None) if name doesn't match.
@@ -135,6 +138,50 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                 .map(|(i, v)| Value::Pair(Box::new(Value::Int(i as u64)), Box::new(v.clone())))
                 .collect();
             Ok(Some(Value::List(enumerated)))
+        }
+        "senarai_rata" => {
+            // List<List<T>> -> List<T>
+            let items = extract_list(arg, "senarai_rata")?;
+            let mut flat = Vec::new();
+            for item in items {
+                match item {
+                    Value::List(inner) => flat.extend(inner.iter().cloned()),
+                    other => flat.push(other.clone()),
+                }
+            }
+            Ok(Some(Value::List(flat)))
+        }
+        "senarai_unik" => {
+            // List<T> -> List<T>
+            let items = extract_list(arg, "senarai_unik")?;
+            let mut result = Vec::new();
+            for item in items {
+                if !result.contains(item) {
+                    result.push(item.clone());
+                }
+            }
+            Ok(Some(Value::List(result)))
+        }
+        "senarai_potong" => {
+            // (List, Int, Int) -> List
+            // Encoded as (list, (int, int))
+            match arg {
+                Value::Pair(list, range) => {
+                    let items = extract_list(list, "senarai_potong")?;
+                    match range.as_ref() {
+                        Value::Pair(start, end) => {
+                            let s = extract_int(start, "senarai_potong")? as usize;
+                            let e = extract_int(end, "senarai_potong")? as usize;
+                            let s = s.min(items.len());
+                            let e = e.min(items.len());
+                            let e = e.max(s);
+                            Ok(Some(Value::List(items[s..e].to_vec())))
+                        }
+                        _ => Err(type_err("(list, (int, int))", arg, "senarai_potong")),
+                    }
+                }
+                _ => Err(type_err("(list, (int, int))", arg, "senarai_potong")),
+            }
         }
         // Higher-order builtins handled in interp.rs
         "senarai_peta" | "senarai_tapis" | "senarai_lipat" => Ok(None),
@@ -261,6 +308,39 @@ mod tests {
                 Value::Pair(Box::new(Value::Int(1)), Box::new(Value::String("a".to_string()))),
                 Value::Pair(Box::new(Value::Int(2)), Box::new(Value::String("b".to_string()))),
             ])
+        );
+    }
+
+    #[test]
+    fn test_senarai_rata() {
+        let inner1 = Value::List(vec![Value::Int(1), Value::Int(2)]);
+        let inner2 = Value::List(vec![Value::Int(3)]);
+        let list = Value::List(vec![inner1, inner2]);
+        assert_eq!(
+            apply("senarai_rata", &list).unwrap(),
+            Some(Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]))
+        );
+    }
+
+    #[test]
+    fn test_senarai_unik() {
+        let list = Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(1), Value::Int(3)]);
+        assert_eq!(
+            apply("senarai_unik", &list).unwrap(),
+            Some(Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]))
+        );
+    }
+
+    #[test]
+    fn test_senarai_potong() {
+        let list = Value::List(vec![Value::Int(10), Value::Int(20), Value::Int(30), Value::Int(40)]);
+        let arg = Value::Pair(
+            Box::new(list),
+            Box::new(Value::Pair(Box::new(Value::Int(1)), Box::new(Value::Int(3)))),
+        );
+        assert_eq!(
+            apply("senarai_potong", &arg).unwrap(),
+            Some(Value::List(vec![Value::Int(20), Value::Int(30)]))
         );
     }
 
