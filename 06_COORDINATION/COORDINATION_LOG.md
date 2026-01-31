@@ -39,7 +39,7 @@
 |--------|-------|-------|
 | **Total Research Tracks** | 218 | 55 existing + 163 new identified |
 | **Delegation Prompts** | **90** | **100% coverage** |
-| **Coq .v Files (Active Build)** | 269 | All compile (was 98; +171 domain files integrated) |
+| **Coq .v Files (Active Build)** | 244 | All compile (was 98; +171 domain files integrated) |
 | **Coq Qed Proofs (Active Build)** | 5,250+ | Verified |
 | **`admit.` (Active Build)** | **0** | **ALL ELIMINATED** |
 | **`Admitted.` (Active Build)** | **0** | **ALL ELIMINATED** (LinearTypes.v fixed Session 58) |

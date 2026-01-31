@@ -266,3 +266,60 @@ domains/VerifiedRuntime.v
 domains/VerifiedUI.v
 domains/WCETBounds.v
 domains/WebSecurity.v
+
+# Phase 14: Gap-fill domain proofs (Session 58 — 100% research coverage)
+# Track L (FFI/Attack Research), RIINA_PHYSICS, RIINA_CAPITAL_MARKETS
+domains/FFIAttackResearch.v
+domains/PhysicsSecurity.v
+domains/CapitalMarkets.v
+
+# Subdirectory domain proofs — mobile_os (27 files)
+domains/mobile_os/AnimationSystem.v
+domains/mobile_os/AppDistribution.v
+domains/mobile_os/ApplicationLifecycle.v
+domains/mobile_os/BiometricSystem.v
+domains/mobile_os/CameraAudioSystem.v
+domains/mobile_os/CellularStack.v
+domains/mobile_os/ComputerVision.v
+domains/mobile_os/ConcurrencyFramework.v
+domains/mobile_os/DataPersistence.v
+domains/mobile_os/EncryptionSystem.v
+domains/mobile_os/FileSystem.v
+domains/mobile_os/GraphicsEngine.v
+domains/mobile_os/LocationServices.v
+domains/mobile_os/MemoryManagement.v
+domains/mobile_os/MultiDeviceContinuity.v
+domains/mobile_os/NetworkSecurity.v
+domains/mobile_os/NetworkingStack.v
+domains/mobile_os/NotificationSystem.v
+domains/mobile_os/OnDeviceML.v
+domains/mobile_os/PowerManagement.v
+domains/mobile_os/SystemApps.v
+domains/mobile_os/SystemArchitecture.v
+domains/mobile_os/TouchGestureSystem.v
+domains/mobile_os/TrackingPrevention.v
+domains/mobile_os/UIComponents.v
+domains/mobile_os/VoiceAssistant.v
+domains/mobile_os/WirelessProtocols.v
+
+# Subdirectory domain proofs — security_foundation (11 files)
+domains/security_foundation/BootVerification.v
+domains/security_foundation/DisplayDriver.v
+domains/security_foundation/GarbageCollector.v
+domains/security_foundation/HardwareRootOfTrust.v
+domains/security_foundation/IOMMUProtection.v
+domains/security_foundation/InterruptVirtualization.v
+domains/security_foundation/MemoryVirtualization.v
+domains/security_foundation/NetworkDriver.v
+domains/security_foundation/RollbackProtection.v
+domains/security_foundation/SensorDrivers.v
+domains/security_foundation/VerifiedCrypto.v
+
+# Subdirectory domain proofs — uiux (7 files)
+domains/uiux/AnimationEngine.v
+domains/uiux/CognitiveAccessibility.v
+domains/uiux/GestureSystem.v
+domains/uiux/MotorAccessibility.v
+domains/uiux/ScrollPhysics.v
+domains/uiux/Transitions.v
+domains/uiux/VisualAccessibility.v

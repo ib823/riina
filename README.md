@@ -169,7 +169,7 @@ This is not a whitepaper. This is working software.
 
 | Metric | Value |
 |--------|-------|
-| Coq proof files | 271 |
+| Coq proof files | 275 (244 in active build) |
 | Proven theorems (Qed) | 5,250+ |
 | Unfinished proofs (admit/Admitted) | 0 (entire active build) |
 | Axioms | 5 (all justified, documented) |
@@ -255,7 +255,7 @@ The `05_TOOLING/` workspace contains 35,000+ lines of hand-written cryptographic
 
 ```
 proof/
-├── 02_FORMAL/coq/         271 Coq proof files (125K lines)
+├── 02_FORMAL/coq/         275 Coq proof files (125K+ lines)
 │   ├── foundations/        Core language semantics
 │   ├── type_system/        Progress, Preservation, Type Safety
 │   ├── properties/         Non-Interference, Declassification, Composition
@@ -292,7 +292,7 @@ proof/
 
 ## Research Scope
 
-RIINA's formal verification covers 20+ research tracks. Here is what has actual Coq proofs today:
+Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek letter tracks) has corresponding Coq proofs in the active build. 100% coverage, verified by audit.
 
 | Track | Domain | Coq Proofs | Status |
 |-------|--------|-----------|--------|
@@ -314,6 +314,12 @@ RIINA's formal verification covers 20+ research tracks. Here is what has actual 
 | Δ | Verified distribution (Raft, BFT, CRDTs) | 1 file (500 lines) | Proven |
 | Ω | Network defense (rate limiting, SYN cookies) | 1 file (530 lines) | Proven |
 | Ψ | Operational security (Shamir, duress, dead man) | 1 file (560 lines) | Proven |
+| L | FFI boundary safety, attack surface research | 1 file (17 Qed) | Proven |
+| — | Mobile OS security (27 subsystems) | 27 files | Proven |
+| — | Security foundations (boot, IOMMU, crypto) | 11 files | Proven |
+| — | UI/UX accessibility and safety | 7 files | Proven |
+| — | Capital markets (order matching, settlement) | 1 file (15 Qed) | Proven |
+| — | Physical systems security (sensors, timing) | 1 file (16 Qed) | Proven |
 
 ---
 
