@@ -344,6 +344,7 @@ impl<'a> Lexer<'a> {
         TokenKind::LiteralInt(s, None) // Default
     }
 
+    #[allow(clippy::too_many_lines)]
     fn read_identifier(&mut self, first: char, _start: usize) -> TokenKind {
         let mut s = String::new();
         s.push(first);

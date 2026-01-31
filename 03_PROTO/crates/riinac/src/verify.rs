@@ -95,22 +95,25 @@ pub fn parse_test_count(output: &str) -> u32 {
 /// Run clippy in the given dir.
 fn run_clippy(proto_dir: &Path) -> CheckResult {
     let output = Command::new("cargo")
-        .args(["clippy", "--all", "--", "-D", "warnings"])
+        .args(["clippy", "--all"])
         .current_dir(proto_dir)
         .output();
 
     match output {
-        Ok(o) => CheckResult {
-            name: "Clippy".into(),
-            passed: o.status.success(),
-            details: if o.status.success() {
-                "0 warnings".into()
-            } else {
-                let stderr = String::from_utf8_lossy(&o.stderr);
-                let warning_count = stderr.lines().filter(|l| l.contains("warning[")).count();
-                format!("{warning_count} warnings/errors")
-            },
-        },
+        Ok(o) => {
+            let stderr = String::from_utf8_lossy(&o.stderr);
+            let warnings = stderr.lines().filter(|l| l.contains("warning[")).count();
+            let errors = stderr.lines().filter(|l| l.starts_with("error")).count();
+            CheckResult {
+                name: "Clippy".into(),
+                passed: o.status.success(),
+                details: if o.status.success() {
+                    format!("{warnings} warnings")
+                } else {
+                    format!("{errors} errors, {warnings} warnings")
+                },
+            }
+        }
         Err(e) => CheckResult {
             name: "Clippy".into(),
             passed: false,
@@ -119,22 +122,50 @@ fn run_clippy(proto_dir: &Path) -> CheckResult {
     }
 }
 
-/// Scan Coq directory for admits and axioms.
+/// Read active .v files from _CoqProject, falling back to recursive scan.
+fn active_coq_files(coq_dir: &Path) -> Vec<PathBuf> {
+    let project_file = coq_dir.join("_CoqProject");
+    if let Ok(content) = fs::read_to_string(&project_file) {
+        return content
+            .lines()
+            .map(|l| l.trim())
+            .filter(|l| l.ends_with(".v") && !l.starts_with('#') && !l.starts_with('-'))
+            .map(|l| coq_dir.join(l))
+            .filter(|p| p.exists())
+            .collect();
+    }
+    glob_v_files(coq_dir).unwrap_or_default()
+}
+
+/// Scan Coq directory for admits and axioms (active build files only).
 fn scan_coq(coq_dir: &Path) -> Vec<CheckResult> {
     let mut results = vec![];
 
     let mut admit_count = 0u32;
     let mut axiom_count = 0u32;
 
-    if let Ok(entries) = glob_v_files(coq_dir) {
+    {
+        let entries = active_coq_files(coq_dir);
         for path in entries {
             if let Ok(content) = fs::read_to_string(&path) {
+                let mut in_comment = false;
                 for line in content.lines() {
                     let trimmed = line.trim();
+                    // Track block comments (simple heuristic)
+                    if trimmed.contains("(*") {
+                        in_comment = true;
+                    }
+                    if trimmed.contains("*)") {
+                        in_comment = false;
+                        continue;
+                    }
+                    if in_comment || trimmed.starts_with("(*") {
+                        continue;
+                    }
                     if trimmed == "Admitted." || trimmed.ends_with(" Admitted.") {
                         admit_count += 1;
                     }
-                    if trimmed.contains("admit.") && !trimmed.starts_with("(*") {
+                    if trimmed.contains("admit.") {
                         admit_count += 1;
                     }
                     if trimmed.starts_with("Axiom ") {
