@@ -6,7 +6,7 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 use riina_lexer::{Token, TokenKind, Lexer, Span};
-use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program};
+use riina_types::{BinOp, Expr, Ty, Ident, SecurityLevel, Effect, TopLevelDecl, Program, TaintSource, Sanitizer, CapabilityKind};
 use std::iter::Peekable;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -808,7 +808,60 @@ impl<'a> Parser<'a> {
                         self.consume(TokenKind::Gt)?;
                         Ok(Ty::Sum(Box::new(t1), Box::new(t2)))
                     },
-                    _ => Ok(Ty::Unit), // Fallback
+                    // Function type: Fn(T1, T2) or Fn(T1, T2, Effect)
+                    "Fn" => {
+                        self.consume(TokenKind::LParen)?;
+                        let param_ty = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let ret_ty = self.parse_ty()?;
+                        // Optional effect as third argument
+                        let eff = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Comma)) {
+                            self.consume(TokenKind::Comma)?;
+                            self.parse_effect()?
+                        } else {
+                            Effect::Pure
+                        };
+                        self.consume(TokenKind::RParen)?;
+                        Ok(Ty::Fn(Box::new(param_ty), Box::new(ret_ty), eff))
+                    },
+                    // Labeled<T, Level> / Berlabel<T, Level>
+                    "Labeled" | "Berlabel" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let level = self.parse_security_level()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Labeled(Box::new(inner), level))
+                    },
+                    // Tainted<T, Source> / Tercemar<T, Source>
+                    "Tainted" | "Tercemar" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let source = self.parse_taint_source()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Tainted(Box::new(inner), source))
+                    },
+                    // Sanitized<T, Sanitizer> / Disanitasi<T, Sanitizer>
+                    "Sanitized" | "Disanitasi" => {
+                        self.consume(TokenKind::Lt)?;
+                        let inner = self.parse_ty()?;
+                        self.consume(TokenKind::Comma)?;
+                        let san = self.parse_sanitizer()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Sanitized(Box::new(inner), san))
+                    },
+                    // Capability<Kind> / Keupayaan<Kind>
+                    "Capability" | "Keupayaan" => {
+                        self.consume(TokenKind::Lt)?;
+                        let kind = self.parse_capability_kind()?;
+                        self.consume(TokenKind::Gt)?;
+                        Ok(Ty::Capability(kind))
+                    },
+                    _ => Err(ParseError {
+                        kind: ParseErrorKind::ExpectedType,
+                        span: self.current_span,
+                    }),
                 }
             },
             _ => Err(ParseError {
@@ -821,12 +874,12 @@ impl<'a> Parser<'a> {
     fn parse_security_level(&mut self) -> Result<SecurityLevel, ParseError> {
         let ident = self.parse_ident()?;
         match ident.as_str() {
-            "Public" => Ok(SecurityLevel::Public),
-            "Internal" => Ok(SecurityLevel::Internal),
-            "Session" => Ok(SecurityLevel::Session),
-            "User" => Ok(SecurityLevel::User),
-            "System" => Ok(SecurityLevel::System),
-            "Secret" => Ok(SecurityLevel::Secret),
+            "Public" | "Awam" => Ok(SecurityLevel::Public),
+            "Internal" | "Dalaman" => Ok(SecurityLevel::Internal),
+            "Session" | "Sesi" => Ok(SecurityLevel::Session),
+            "User" | "Pengguna" => Ok(SecurityLevel::User),
+            "System" | "Sistem" => Ok(SecurityLevel::System),
+            "Secret" | "Rahsia" => Ok(SecurityLevel::Secret),
              _ => Err(ParseError { kind: ParseErrorKind::InvalidSecurityLevel, span: self.current_span })
         }
     }
@@ -834,17 +887,17 @@ impl<'a> Parser<'a> {
     fn parse_effect(&mut self) -> Result<Effect, ParseError> {
          let ident = self.parse_ident()?;
          match ident.as_str() {
-             "Pure" => Ok(Effect::Pure),
-             "Read" => Ok(Effect::Read),
-             "Write" => Ok(Effect::Write),
-             "FileSystem" => Ok(Effect::FileSystem),
-             "Network" => Ok(Effect::Network),
-             "NetworkSecure" => Ok(Effect::NetworkSecure),
-             "Crypto" => Ok(Effect::Crypto),
-             "Random" => Ok(Effect::Random),
-             "System" => Ok(Effect::System),
-             "Time" => Ok(Effect::Time),
-             "Process" => Ok(Effect::Process),
+             "Pure" | "Bersih" => Ok(Effect::Pure),
+             "Read" | "Baca" => Ok(Effect::Read),
+             "Write" | "Tulis" => Ok(Effect::Write),
+             "FileSystem" | "SistemFail" => Ok(Effect::FileSystem),
+             "Network" | "Rangkaian" => Ok(Effect::Network),
+             "NetworkSecure" | "RangkaianSelamat" => Ok(Effect::NetworkSecure),
+             "Crypto" | "Kripto" => Ok(Effect::Crypto),
+             "Random" | "Rawak" => Ok(Effect::Random),
+             "System" | "Sistem" => Ok(Effect::System),
+             "Time" | "Masa" => Ok(Effect::Time),
+             "Process" | "Proses" => Ok(Effect::Process),
              "Panel" => Ok(Effect::Panel),
              "Zirah" => Ok(Effect::Zirah),
              "Benteng" => Ok(Effect::Benteng),
@@ -853,6 +906,76 @@ impl<'a> Parser<'a> {
              "Gapura" => Ok(Effect::Gapura),
              _ => Err(ParseError { kind: ParseErrorKind::InvalidEffect, span: self.current_span })
          }
+    }
+
+    fn parse_taint_source(&mut self) -> Result<TaintSource, ParseError> {
+        let ident = self.parse_ident()?;
+        match ident.as_str() {
+            "NetworkExternal" => Ok(TaintSource::NetworkExternal),
+            "NetworkInternal" => Ok(TaintSource::NetworkInternal),
+            "UserInput" => Ok(TaintSource::UserInput),
+            "FileSystem" => Ok(TaintSource::FileSystem),
+            "Database" => Ok(TaintSource::Database),
+            "Environment" => Ok(TaintSource::Environment),
+            "GapuraRequest" => Ok(TaintSource::GapuraRequest),
+            "ZirahEvent" => Ok(TaintSource::ZirahEvent),
+            "ZirahEndpoint" => Ok(TaintSource::ZirahEndpoint),
+            "BentengBiometric" => Ok(TaintSource::BentengBiometric),
+            "SandiSignature" => Ok(TaintSource::SandiSignature),
+            "MenaraDevice" => Ok(TaintSource::MenaraDevice),
+            _ => Err(ParseError { kind: ParseErrorKind::ExpectedType, span: self.current_span }),
+        }
+    }
+
+    fn parse_sanitizer(&mut self) -> Result<Sanitizer, ParseError> {
+        let ident = self.parse_ident()?;
+        match ident.as_str() {
+            "HtmlEscape" => Ok(Sanitizer::HtmlEscape),
+            "UrlEncode" => Ok(Sanitizer::UrlEncode),
+            "JsEscape" => Ok(Sanitizer::JsEscape),
+            "CssEscape" => Ok(Sanitizer::CssEscape),
+            "SqlEscape" => Ok(Sanitizer::SqlEscape),
+            "SqlParam" => Ok(Sanitizer::SqlParam),
+            "XssFilter" => Ok(Sanitizer::XssFilter),
+            "PathTraversal" => Ok(Sanitizer::PathTraversal),
+            "CommandEscape" => Ok(Sanitizer::CommandEscape),
+            "LdapEscape" => Ok(Sanitizer::LdapEscape),
+            "XmlEscape" => Ok(Sanitizer::XmlEscape),
+            "JsonValidation" => Ok(Sanitizer::JsonValidation),
+            "XmlValidation" => Ok(Sanitizer::XmlValidation),
+            "EmailValidation" => Ok(Sanitizer::EmailValidation),
+            "PhoneValidation" => Ok(Sanitizer::PhoneValidation),
+            "HashVerify" => Ok(Sanitizer::HashVerify),
+            "SignatureVerify" => Ok(Sanitizer::SignatureVerify),
+            "MacVerify" => Ok(Sanitizer::MacVerify),
+            "GapuraAuth" => Ok(Sanitizer::GapuraAuth),
+            "ZirahSession" => Ok(Sanitizer::ZirahSession),
+            "BentengBiometric" => Ok(Sanitizer::BentengBiometric),
+            "SandiDecrypt" => Ok(Sanitizer::SandiDecrypt),
+            "MenaraAttestation" => Ok(Sanitizer::MenaraAttestation),
+            _ => Err(ParseError { kind: ParseErrorKind::ExpectedType, span: self.current_span }),
+        }
+    }
+
+    fn parse_capability_kind(&mut self) -> Result<CapabilityKind, ParseError> {
+        let ident = self.parse_ident()?;
+        match ident.as_str() {
+            "FileRead" => Ok(CapabilityKind::FileRead),
+            "FileWrite" => Ok(CapabilityKind::FileWrite),
+            "FileExecute" => Ok(CapabilityKind::FileExecute),
+            "FileDelete" => Ok(CapabilityKind::FileDelete),
+            "NetConnect" => Ok(CapabilityKind::NetConnect),
+            "NetListen" => Ok(CapabilityKind::NetListen),
+            "NetBind" => Ok(CapabilityKind::NetBind),
+            "ProcSpawn" => Ok(CapabilityKind::ProcSpawn),
+            "ProcSignal" => Ok(CapabilityKind::ProcSignal),
+            "SysTime" => Ok(CapabilityKind::SysTime),
+            "SysRandom" => Ok(CapabilityKind::SysRandom),
+            "SysEnv" => Ok(CapabilityKind::SysEnv),
+            "RootProduct" => Ok(CapabilityKind::RootProduct),
+            "ProductAccess" => Ok(CapabilityKind::ProductAccess),
+            _ => Err(ParseError { kind: ParseErrorKind::ExpectedType, span: self.current_span }),
+        }
     }
 }
 
