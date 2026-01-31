@@ -801,17 +801,132 @@ Proof.
       - rewrite store_rel_n_S_unfold in Hsrel.
         destruct Hsrel as [_ [Hmax _]]. rewrite Hmax. reflexivity. }
     subst loc2.
-    (* Result: ELoc loc1 in both, with updated stores *)
+    (* Extended store typing *)
+    set (Σ'' := store_ty_update loc1 T l Σ').
+    (* Need: store_ty_lookup loc1 Σ' = None (fresh location not yet in Σ') *)
+    assert (Hfresh_none : store_ty_lookup loc1 Σ' = None).
+    { apply fresh_loc_not_in_store_ty. exact Hwf1'. }
     exists (ELoc loc1), (ELoc loc1),
            (store_update loc1 v1 st1'), (store_update loc1 v2 st2'),
-           ctx', Σ'.
-    (* TODO: Need extended store typing Σ'' that includes loc1 : (T, l) *)
-    (* For now, use Σ' — but this is wrong, we need Σ' extended with loc1 *)
-    (* Actually, the exp_rel_n output allows returning a Σ' that extends Σ_cur *)
-    (* We need Σ'' = Σ' ∪ {loc1 : (T, l)} *)
-    (* This requires store_ty_update or store_ty_extend *)
-    admit.
-Admitted.
+           ctx', Σ''.
+    split.
+    { (* store_ty_extends Σ_cur Σ'' *)
+      apply store_ty_extends_trans_early with Σ'.
+      - exact Hext'.
+      - apply store_ty_extends_alloc. exact Hfresh_none. }
+    split.
+    { (* multi_step for ERef (subst_rho rho1 e) l *)
+      eapply multi_step_trans.
+      - apply multi_step_ref. exact Hstep1.
+      - eapply MS_Step.
+        + apply ST_RefValue. exact Hval1. reflexivity.
+        + apply MS_Refl. }
+    split.
+    { eapply multi_step_trans.
+      - apply multi_step_ref. exact Hstep2.
+      - eapply MS_Step.
+        + apply ST_RefValue. exact Hval2. fold loc1. reflexivity.
+        + apply MS_Refl. }
+    split. { constructor. }
+    split. { constructor. }
+    split.
+    { (* val_rel_n n' Σ'' (TRef T l) (ELoc loc1) (ELoc loc1) *)
+      destruct n' as [| m].
+      - (* n' = 0 *)
+        rewrite val_rel_n_0_unfold. repeat split.
+        + constructor.
+        + constructor.
+        + apply closed_expr_loc.
+        + apply closed_expr_loc.
+        + apply T_Loc. apply store_ty_lookup_update_eq.
+        + apply T_Loc. apply store_ty_lookup_update_eq.
+        + (* first_order_type (TRef T l) = first_order_type T *)
+          destruct (first_order_type (TRef T l)) eqn:Hfo.
+          * simpl. exists loc1. split; reflexivity.
+          * exact I.
+      - (* n' = S m *)
+        rewrite val_rel_n_S_unfold. split.
+        + (* val_rel_n m — by mono from S m *)
+          apply val_rel_n_mono with (n := S m). lia.
+          rewrite val_rel_n_S_unfold. split.
+          * (* recursive: val_rel_n 0 for TRef *)
+            clear. induction m.
+            -- rewrite val_rel_n_0_unfold. repeat split; try constructor; try apply closed_expr_loc.
+               ++ apply T_Loc. apply store_ty_lookup_update_eq.
+               ++ apply T_Loc. apply store_ty_lookup_update_eq.
+               ++ destruct (first_order_type (TRef T l)); [simpl; exists loc1; split; reflexivity | exact I].
+            -- apply val_rel_n_mono with (n := S m). lia. apply IHm.
+          * repeat split; try constructor; try apply closed_expr_loc.
+            -- apply T_Loc. apply store_ty_lookup_update_eq.
+            -- apply T_Loc. apply store_ty_lookup_update_eq.
+            -- simpl. exists loc1. split; reflexivity.
+        + repeat split; try constructor; try apply closed_expr_loc.
+          * apply T_Loc. apply store_ty_lookup_update_eq.
+          * apply T_Loc. apply store_ty_lookup_update_eq.
+          * simpl. exists loc1. split; reflexivity. }
+    split.
+    { (* store_rel_n n' Σ'' (store_update ...) *)
+      apply store_rel_n_alloc.
+      - exact Hsrel.
+      - apply val_rel_n_mono_store with Σ'.
+        + apply store_ty_extends_refl.
+        + exact Hvrel.
+      - exact Hfresh_none.
+      - reflexivity. }
+    assert (Hst_fresh1 : store_lookup loc1 st1' = None).
+    { apply store_lookup_fresh. }
+    assert (Hfresh_eq : fresh_loc st2' = loc1).
+    { unfold loc1, fresh_loc.
+      destruct n' as [| m].
+      - apply store_rel_n_0_domain in Hsrel as Hmax. rewrite Hmax. reflexivity.
+      - rewrite store_rel_n_S_unfold in Hsrel.
+        destruct Hsrel as [_ [Hmax _]]. rewrite Hmax. reflexivity. }
+    assert (Hst_fresh2 : store_lookup loc1 st2' = None).
+    { rewrite <- Hfresh_eq. apply store_lookup_fresh. }
+    assert (Hty1 : has_type nil Σ' Public v1 T EffectPure).
+    { exact (proj1 (val_rel_n_typing n' Σ' T v1 v2 Hvrel)). }
+    assert (Hty2 : has_type nil Σ' Public v2 T EffectPure).
+    { exact (proj2 (val_rel_n_typing n' Σ' T v1 v2 Hvrel)). }
+    split.
+    { (* store_wf Σ'' (store_update loc1 v1 st1') *)
+      apply store_wf_update_fresh; assumption. }
+    split.
+    { (* store_wf Σ'' (store_update loc1 v2 st2') *)
+      apply store_wf_update_fresh.
+      - exact Hwf2'.
+      - exact Hst_fresh2.
+      - exact Hfresh_none.
+      - exact Hval2.
+      - exact Hty2. }
+    { (* stores_agree_low_fo Σ'' (store_update loc1 v1 st1') (store_update loc1 v2 st2') *)
+      intros l0 T0 sl0 Hlook0 Hfo0 Hlow0.
+      unfold Σ'' in Hlook0.
+      destruct (Nat.eqb l0 loc1) eqn:Heql.
+      - (* l0 = loc1: new location *)
+        apply Nat.eqb_eq in Heql. subst l0.
+        rewrite store_lookup_update_eq. rewrite store_lookup_update_eq.
+        (* Both lookups give v1 and v2. Need val_rel_at_type_fo T v1 v2. *)
+        rewrite store_ty_lookup_update_eq in Hlook0.
+        inversion Hlook0; subst T0 sl0.
+        (* From val_rel_n, for FO types we get structural equality *)
+        destruct n' as [| m].
+        + (* n' = 0 *)
+          rewrite val_rel_n_0_unfold in Hvrel.
+          destruct Hvrel as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+          rewrite Hfo0 in Hrat.
+          apply val_rel_at_type_fo_eq. exact Hrat.
+        + (* n' = S m *)
+          rewrite val_rel_n_S_unfold in Hvrel.
+          destruct Hvrel as [_ [_ [_ [_ [_ [_ [_ Hrat]]]]]]].
+          simpl in Hrat.
+          apply val_rel_at_type_fo_eq. exact Hrat.
+      - (* l0 <> loc1: old location *)
+        apply Nat.eqb_neq in Heql.
+        rewrite store_lookup_update_neq by exact Heql.
+        rewrite store_lookup_update_neq by exact Heql.
+        rewrite store_ty_lookup_update_neq in Hlook0 by exact Heql.
+        exact (Hagree' l0 T0 sl0 Hlook0 Hfo0 Hlow0). }
+Qed.
 
 (** PROVEN: T_Deref — Dereferencing preserves relatedness.
     With store_rel_n tracking val_rel for ALL locations (no is_low_dec),
