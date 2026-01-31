@@ -524,6 +524,28 @@ impl<'a> Parser<'a> {
                 let e = self.parse_unary()?;
                 Ok(Expr::Prove(Box::new(e)))
             },
+            Some(TokenKind::KwFst) => {
+                self.consume(TokenKind::KwFst)?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Fst(Box::new(e)))
+            },
+            Some(TokenKind::KwSnd) => {
+                self.consume(TokenKind::KwSnd)?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Snd(Box::new(e)))
+            },
+            Some(TokenKind::KwRequire) => {
+                self.consume(TokenKind::KwRequire)?;
+                let eff = self.parse_effect()?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Require(eff, Box::new(e)))
+            },
+            Some(TokenKind::KwGrant) => {
+                self.consume(TokenKind::KwGrant)?;
+                let eff = self.parse_effect()?;
+                let e = self.parse_unary()?;
+                Ok(Expr::Grant(eff, Box::new(e)))
+            },
             Some(TokenKind::KwInl) => {
                 self.consume(TokenKind::KwInl)?;
                 let e = self.parse_unary()?;
