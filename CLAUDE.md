@@ -498,6 +498,7 @@ Examples:
 6. **NEVER skip verification before commit**
 7. **NEVER force push to main**
 8. **NEVER modify 01_RESEARCH/** (read-only reference, except for new tracks)
+9. **NEVER suggest GitHub Actions, external CI/CD, or external verification pipelines** — RIINA uses `riinac verify [--fast|--full]` as the zero-trust verification gate. Verification lives INSIDE the compiler, not in external infrastructure. This is a deliberate architectural decision.
 
 ### 6.2 ALWAYS Do These
 
