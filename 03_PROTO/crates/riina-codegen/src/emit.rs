@@ -1870,6 +1870,119 @@ impl CEmitter {
         self.writeln("    return riina_int((uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec);");
         self.writeln("}");
         self.writeln("");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FILE I/O BUILTINS (fail)
+        // ═══════════════════════════════════════════════════════════════════
+
+        self.writeln("#include <sys/stat.h>");
+        self.writeln("#include <dirent.h>");
+        self.writeln("#include <unistd.h>");
+        self.writeln("");
+
+        // fail_baca (file_read): Teks -> Teks
+        self.writeln("static riina_value_t* riina_builtin_fail_baca(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    FILE* f = fopen(arg->data.string_val.data, \"r\");");
+        self.writeln("    if (!f) { fprintf(stderr, \"RIINA: cannot open file '%s'\\n\", arg->data.string_val.data); abort(); }");
+        self.writeln("    fseek(f, 0, SEEK_END);");
+        self.writeln("    long sz = ftell(f);");
+        self.writeln("    fseek(f, 0, SEEK_SET);");
+        self.writeln("    char* buf = (char*)malloc((size_t)sz + 1);");
+        self.writeln("    if (!buf) abort();");
+        self.writeln("    size_t rd = fread(buf, 1, (size_t)sz, f);");
+        self.writeln("    buf[rd] = '\\0';");
+        self.writeln("    fclose(f);");
+        self.writeln("    riina_value_t* r = riina_string(buf);");
+        self.writeln("    free(buf);");
+        self.writeln("    return r;");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_tulis (file_write): (Teks, Teks) -> ()
+        self.writeln("static riina_value_t* riina_builtin_fail_tulis(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* path = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* content = arg->data.pair_val.snd;");
+        self.writeln("    if (path->tag != RIINA_TAG_STRING || content->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    FILE* f = fopen(path->data.string_val.data, \"w\");");
+        self.writeln("    if (!f) { fprintf(stderr, \"RIINA: cannot write file '%s'\\n\", path->data.string_val.data); abort(); }");
+        self.writeln("    fwrite(content->data.string_val.data, 1, content->data.string_val.len, f);");
+        self.writeln("    fclose(f);");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_tambah (file_append): (Teks, Teks) -> ()
+        self.writeln("static riina_value_t* riina_builtin_fail_tambah(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_PAIR) abort();");
+        self.writeln("    riina_value_t* path = arg->data.pair_val.fst;");
+        self.writeln("    riina_value_t* content = arg->data.pair_val.snd;");
+        self.writeln("    if (path->tag != RIINA_TAG_STRING || content->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    FILE* f = fopen(path->data.string_val.data, \"a\");");
+        self.writeln("    if (!f) { fprintf(stderr, \"RIINA: cannot append file '%s'\\n\", path->data.string_val.data); abort(); }");
+        self.writeln("    fwrite(content->data.string_val.data, 1, content->data.string_val.len, f);");
+        self.writeln("    fclose(f);");
+        self.writeln("    return riina_unit();");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_ada (file_exists): Teks -> Bool
+        self.writeln("static riina_value_t* riina_builtin_fail_ada(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    return riina_bool(access(arg->data.string_val.data, F_OK) == 0);");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_buang (file_delete): Teks -> Bool
+        self.writeln("static riina_value_t* riina_builtin_fail_buang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    return riina_bool(remove(arg->data.string_val.data) == 0);");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_panjang (file_size): Teks -> Int
+        self.writeln("static riina_value_t* riina_builtin_fail_panjang(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    struct stat st;");
+        self.writeln("    if (stat(arg->data.string_val.data, &st) != 0) { fprintf(stderr, \"RIINA: cannot stat '%s'\\n\", arg->data.string_val.data); abort(); }");
+        self.writeln("    return riina_int((uint64_t)st.st_size);");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_senarai (file_list_dir): Teks -> List<Teks>
+        self.writeln("static riina_value_t* riina_builtin_fail_senarai(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    DIR* d = opendir(arg->data.string_val.data);");
+        self.writeln("    if (!d) { fprintf(stderr, \"RIINA: cannot open dir '%s'\\n\", arg->data.string_val.data); abort(); }");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    struct dirent* ent;");
+        self.writeln("    while ((ent = readdir(d)) != NULL) {");
+        self.writeln("        if (ent->d_name[0] == '.' && (ent->d_name[1] == '\\0' || (ent->d_name[1] == '.' && ent->d_name[2] == '\\0'))) continue;");
+        self.writeln("        riina_list_push(&nl, riina_string(ent->d_name));");
+        self.writeln("    }");
+        self.writeln("    closedir(d);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
+
+        // fail_baca_baris (file_read_lines): Teks -> List<Teks>
+        self.writeln("static riina_value_t* riina_builtin_fail_baca_baris(riina_value_t* arg) {");
+        self.writeln("    if (arg->tag != RIINA_TAG_STRING) abort();");
+        self.writeln("    FILE* f = fopen(arg->data.string_val.data, \"r\");");
+        self.writeln("    if (!f) { fprintf(stderr, \"RIINA: cannot open '%s'\\n\", arg->data.string_val.data); abort(); }");
+        self.writeln("    riina_list_t nl = riina_list_new();");
+        self.writeln("    char line[4096];");
+        self.writeln("    while (fgets(line, sizeof(line), f)) {");
+        self.writeln("        size_t len = strlen(line);");
+        self.writeln("        if (len > 0 && line[len-1] == '\\n') line[--len] = '\\0';");
+        self.writeln("        if (len > 0 && line[len-1] == '\\r') line[--len] = '\\0';");
+        self.writeln("        riina_list_push(&nl, riina_string(line));");
+        self.writeln("    }");
+        self.writeln("    fclose(f);");
+        self.writeln("    return riina_make_list(nl);");
+        self.writeln("}");
+        self.writeln("");
     }
 
     /// Emit forward declarations for all functions
