@@ -919,7 +919,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Mat. Plan Phase | Name | Status | Key Metric |
 |-----------------|------|--------|------------|
-| 1 | Compiler Completion | 🟡 ~70% | Parser extension (5.3) is critical blocker |
+| 1 | Compiler Completion | 🟢 ~98% | All 5.1-5.7 complete; 477 tests passing |
 | 2 | Standard Library | ⬜ | Blocked on Phase 1 |
 | 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4971+ Qed |
 | 4 | Developer Experience | ⬜ | LSP, VS Code, formatter |
@@ -931,15 +931,15 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Item | Description | Status |
 |------|-------------|--------|
-| 5.1 | Wire codegen into riinac | 🟡 Driver exists (385 lines), codegen not imported |
-| 5.2 | Lexer changes | 🟢 ~90% (70+ bilingual keywords) |
-| 5.3 | Parser extension | ❌ **CRITICAL** — expressions only, no functions/modules/types |
-| 5.4 | C emitter completion | 🟡 ~85% (missing closures, effect handlers) |
-| 5.5 | REPL | ❌ Stub |
-| 5.6 | Error diagnostics | ❌ Not started |
+| 5.1 | Wire codegen into riinac | ✅ Done (5 subcommands: check, run, build, emit-c, emit-ir) |
+| 5.2 | Lexer changes | ✅ Done (~80 bilingual keywords, fst/snd/require/grant/Option/Result) |
+| 5.3 | Parser extension | ✅ Done (27/27 Expr variants, BM aliases, all types, functions/modules) |
+| 5.4 | C emitter completion | ✅ Done (effect handlers via setjmp/longjmp, closures with captures) |
+| 5.5 | REPL | ✅ Done (7 bilingual commands, eval/type/ir/c backends) |
+| 5.6 | Error diagnostics | ✅ Done (Display impls, caret-style source context) |
 | 5.7 | Built-in functions | ✅ Done (59 builtins) |
 
-**Critical path:** 5.2 → 5.3.1 → 5.3.2 → 5.1 → 5.4 → Gate 3 (end-to-end compilation)
+**Phase 1 complete.** Next: Phase 2 (Standard Library) or Phase 4 (Developer Experience).
 
 ### Phase 3 (Formal Verification) — Track A Status
 

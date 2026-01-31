@@ -2980,3 +2980,29 @@ val_rel_n_mono (Admitted) ──► store_rel_n_mono (Admitted)
 
 ### Status
 - Coordination and status docs aligned; no build impact.
+
+---
+
+## 2026-01-31: Track B Phase 1 Completion (Session 54)
+
+### Work Done
+1. **5.2 Lexer** — Added 8 bilingual keyword pairs: fst/pertama, snd/kedua, require/perlukan, grant/beri, Some/Ada, None/Tiada, Ok/Jadi, Err/Gagal. 3 new tests.
+2. **5.3 Parser** — BM effect aliases (Tulis, Baca, Bersih, etc.), BM security level aliases (Awam, Rahsia, etc.), missing type variants (Fn, Labeled/Berlabel, Tainted/Tercemar, Sanitized/Disanitasi, Capability/Keupayaan), unknown type error (was silent fallback to Unit), fst/snd/require/grant expression parsing. 20 new tests.
+3. **5.4 C emitter** — Effect handler stack via setjmp/longjmp (riina_handler_frame_t, push/pop, 64 max depth). riina_perform now searches handler stack and longjmps. Fixed stale closure TODO.
+4. **5.5 REPL** — Already complete (7 bilingual commands, all backends). Status was stale.
+5. **5.6 Error diagnostics** — Display impls for ParseError/ParseErrorKind. New diagnostics module with caret-style source context (line/column, source line, underline).
+6. **Track A** — Committed pre-existing store-rel monotonicity lemmas and allocation helpers (0 admits).
+7. **Planning docs** — Updated PROGRESS.md, CLAUDE.md, COORDINATION_LOG.md, SESSION_LOG.md.
+
+### Commits
+- 1da1bbf: 5.3 Parser BM aliases + type variants
+- 288c475: 5.2 Lexer keyword gaps
+- 944d277: 5.3 Parser fst/snd/require/grant
+- e1e3d21: 5.4 C emitter effect handlers
+- eb779ce: 5.6 Error diagnostics
+- 144256e: Track A store-rel monotonicity lemmas
+
+### Status
+- **Phase 1 (Compiler Completion): COMPLETE** — All 5.1-5.7 done
+- Rust tests: 477 passing (0 failures)
+- Next: Phase 2 (Standard Library) or Phase 4 (Developer Experience)
