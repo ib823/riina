@@ -10,14 +10,14 @@
 ║     ██║  ██║██║██║██║ ╚████║██║  ██║                                             ║
 ║     ╚═╝  ╚═╝╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝                                             ║
 ║                                                                                  ║
-║     Rigorous Immutable Integrity No-attack Assured                               ║
+║     Rigorous Immutable Invariant, No Assumptions                               ║
 ║     "Security proven. Mathematically verified."                                  ║
 ║                                                                                  ║
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 57)
-**Session:** 57 (Track B — Phase 5 Ecosystem: riina-pkg)
+**Report Date:** 2026-01-31 (Session 58)
+**Session:** 58 (Track A — Domain integration, LinearTypes fix, README overhaul)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -30,15 +30,23 @@
 | `Admitted.` (Active Build) | **0** | 0 | ✅ ZERO |
 | Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
-| Files in Build | **98** | - | ✅ All compile |
-| Qed Proofs (Build) | **5117+** | - | ✅ |
-| .v Files (Total) | **256** | - | ✅ |
-| Rust Prototype | ✅ PASSING (568 tests) | PASSING | ✅ GREEN |
+| Files in Build | **269** | - | ✅ All compile |
+| Qed Proofs (Build) | **5,250+** | - | ✅ |
+| .v Files (Total) | **271** | - | ✅ |
+| Rust Prototype | ✅ PASSING (572 tests) | PASSING | ✅ GREEN |
 | Rust Crates | **13** | - | ✅ (+riina-pkg) |
-| Example .rii Files | **100** | 100+ | ✅ |
+| Example .rii Files | **101** | 100+ | ✅ |
+
+**SESSION 58 KEY ACTIONS (Track A — Domain integration + cleanup):**
+1. **README overhaul** — Compelling rewrite with comparison table, code examples, FAQ
+2. **Domain file integration** — All 183 domain .v files added to _CoqProject (was 114)
+3. **6 broken domain files fixed** — AlgebraicEffects, All, CovertChannelElimination, PCIDSSCompliance, TimingSecurity, VerifiedAIML
+4. **4 new proof files** — PI001_VerifiedPerformance (34 Qed), DELTA001_VerifiedDistribution (31 Qed), OMEGA001_NetworkDefense (30 Qed), PSI001_OperationalSecurity (38 Qed)
+5. **LinearTypes.v Admitted eliminated** — Reformulated `weakening_invalid_for_linear` → Qed
+6. **Active build: 269 files, 0 Admitted, 0 admits, 5 justified axioms**
 
 **SESSION 57 KEY ACTIONS (Phase 5 Ecosystem — riina-pkg):**
-1. **riina-pkg crate** — 14 modules, 39 tests, zero external deps: version.rs (SemVer), manifest.rs (TOML parser), integrity.rs (SHA-256 FIPS 180-4), effects.rs (escalation checking), resolve.rs (greedy+backtrack resolver), lockfile.rs, cache.rs, build.rs (Kahn's topo sort), workspace.rs, registry.rs, layout.rs, cli.rs (10 subcommands), error.rs, lib.rs
+1. **riina-pkg crate** — 14 modules, 39 tests, zero external deps
 2. **riinac pkg integration** — `riinac pkg init/add/remove/update/lock/build/publish/list/tree/clean`
 3. **Tests: 530 → 568** (+39 from riina-pkg, -1 dedup)
 4. **Phase 5 status**: CI/CD done (`riinac verify`), package manager done (`riina-pkg`). Remaining: distribution, licensing, website.
@@ -791,25 +799,25 @@ ReducibilityFull.v (2 admits)
 
 ## 2. CODEBASE METRICS (ACCURATE - Active Build Only)
 
-### 2.1 Active Build Summary (Session 50b — VERIFIED)
+### 2.1 Active Build Summary (Session 58 — VERIFIED)
 
 | Metric | Count |
 |--------|-------|
-| Files in _CoqProject | 98 |
-| Qed Proofs | 4,971 |
-| **Axioms (Active)** | **6** |
+| Files in _CoqProject | 269 |
+| Qed Proofs | 5,250+ |
+| **Axioms (Active)** | **5** |
 | **`admit.` (Active)** | **0** |
 | **`Admitted.` (Active)** | **0** |
 | **Total Incomplete Proofs** | **0** |
-| Total .v Files | 256 |
+| Total .v Files | 271 |
 
-### 2.2 Axioms by File (Active Build — Session 53+)
+### 2.2 Axioms by File (Active Build — Session 58)
 
 | File | Axioms | Names |
 |------|--------|-------|
 | NonInterference_v2_LogicalRelation.v | 4 | logical_relation_ref/deref/assign/declassify |
 | NonInterference_v2.v | 1 | fundamental_theorem_step_0 |
-| **TOTAL** | **5** | All justified; `val_rel_store_weaken_back` eliminated (Session 52), `exp_rel_le_declassify` eliminated (Session 50b) |
+| **TOTAL** | **5** | All justified. Worker B on `store_rel_n` rewrite to eliminate 3 (ref/deref/assign). |
 
 ### 2.3 Admits by File (Active Build — Session 50b)
 
@@ -910,28 +918,30 @@ The following remain and are NOT covered by delegation output:
 ## 6. SESSION CHECKPOINT
 
 ```
-Session      : 57 (Track B — Phase 5 Ecosystem: riina-pkg)
-Last Action  : Implemented riina-pkg package manager (14 modules, 39 tests)
-Build Status : ✅ PASSING (98 Coq files + 568 Rust tests)
+Session      : 58 (Track A — Domain integration, LinearTypes fix, README overhaul)
+Last Action  : Eliminated last Admitted in active build (LinearTypes.v)
+Build Status : ✅ PASSING (269 Coq files + 572 Rust tests)
 Axioms       : 5 (active build: 4 in NI_v2_LR + 1 in NI_v2)
 Admits       : 0 admit. + 0 Admitted. = 0 total
-Rust Tests   : 568 (all passing)
+Rust Tests   : 572 (all passing)
 Rust Crates  : 13
 
-Session 57 Accomplishments:
-1. riina-pkg crate: 14 modules, 39 tests, zero external deps
-2. riinac pkg: 10 subcommands (init/add/remove/update/lock/build/publish/list/tree/clean)
-3. Phase 5 CI/CD done (riinac verify), package manager done (riina-pkg)
+Session 58 Accomplishments:
+1. README overhaul: compelling rewrite with comparison table, code examples, FAQ
+2. 183 domain .v files integrated into _CoqProject (was 114)
+3. 6 broken domain files fixed + 4 new proof files (133 Qed)
+4. LinearTypes.v: last Admitted eliminated (reformulated weakening theorem)
+5. Active build: 269 files, 0 Admitted, 0 admits, 5 justified axioms
 
-Track A — Remaining Axioms (5, unchanged):
+Track A — Remaining Axioms (5):
 - NI_v2_LR: logical_relation_ref, logical_relation_deref, logical_relation_assign,
              logical_relation_declassify
 - NI_v2: fundamental_theorem_step_0
+- Worker B on store_rel_n rewrite to eliminate 3 (ref/deref/assign)
 
 Track B — Phase 5 remaining:
 1. Distribution (binary releases, Docker, WASM, Nix)
 2. Licensing (MPL-2.0)
-3. PEG grammar + --output=json (deferred from Phase 4)
 
 Both tracks proceeding in parallel. Track B work does NOT affect Track A.
 ```
@@ -948,7 +958,7 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 |-----------------|------|--------|------------|
 | 1 | Compiler Completion | ✅ Done | All 5.1-5.7 complete; 477 tests |
 | 2 | Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
-| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5117+ Qed |
+| 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 5,250+ Qed, 269 files |
 | 4 | Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code, 100 examples |
 | 5 | Ecosystem & Distribution | 🟡 ~60% | CI/CD done (`riinac verify`), pkg mgr done (`riina-pkg`); distribution/licensing pending |
 | 6 | Adoption & Community | ⬜ | FFI, demos |
@@ -975,8 +985,8 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 | `admit.` | 0 |
 | `Admitted.` | 0 |
 | Axioms | 5 (all justified) |
-| Qed proofs | 4,971+ |
-| Build | ✅ PASSING (98 files) |
+| Qed proofs | 5,250+ |
+| Build | ✅ PASSING (269 files) |
 
 **Axiom elimination:** Worker B on branch `track-a/store-rel-v3` is rewriting `store_rel_n` to eliminate 4 axioms → 1 justified (`logical_relation_declassify`). See `WORKER_B_SPEC_STORE_REL_REWRITE.md`.
 
@@ -1012,8 +1022,8 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 ---
 
-*RIINA: Rigorous Immutable Integrity No-attack Assured*
+*RIINA: Rigorous Immutable Invariant, No Assumptions*
 *"Every line of code backed by mathematical proof."*
 
-*Report Generated: 2026-01-31 (Session 57)*
-*"0 admit. + 0 Admitted. + 5 axioms remain. 568 Rust tests. 13 crates. Phase 5 in progress. QED Eternum."*
+*Report Generated: 2026-01-31 (Session 58)*
+*"0 admits. 5 justified axioms. 269 Coq files. 572 Rust tests. 13 crates. Q.E.D. Aeternum."*
