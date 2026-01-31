@@ -158,3 +158,22 @@ domains/QuantumTypes.v
 domains/DistributedConsensus.v
 domains/MultiProverValidation.v
 domains/ASEANCompliance.v
+
+# Phase 11: Malaysia & Singapore Regulatory Compliance (Session 54)
+# Zero admits, standalone domain proofs
+# Spec: 04_SPECS/industries/REGULATORY_COMPLIANCE_MALAYSIA_SINGAPORE_2026.md
+domains/MalaysiaPDPA.v
+domains/MalaysiaCybersecurityAct.v
+domains/MalaysiaBNMRMiT.v
+domains/MalaysiaSCGTRM.v
+domains/MalaysiaDigitalSignature.v
+domains/MalaysiaMCMC.v
+domains/MalaysiaKKMHealthcare.v
+domains/MalaysiaMAMPU.v
+domains/MalaysiaBursaGov.v
+domains/SingaporePDPA.v
+domains/SingaporeMAS_TRM.v
+domains/SingaporeCybersecurityAct.v
+domains/SingaporeHealthInfo.v
+domains/SingaporeCyberTrustMark.v
+domains/SingaporeMTCS.v
