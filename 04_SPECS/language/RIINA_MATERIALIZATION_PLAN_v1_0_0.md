@@ -2258,7 +2258,24 @@ Content outline:
 4. **WASM:** Compile riinac to WebAssembly for browser playground
 5. **Nix flake:** Reproducible dev environments
 
-### 9.5 Licensing
+### 9.5 Release System — ✅ DONE (Session 65)
+
+**Files:**
+- `VERSION` — Single-line semver source of truth
+- `CHANGELOG.md` — Keep a Changelog format, public-facing
+- `scripts/bump-version.sh` — Updates version in 6 locations (VERSION, 03_PROTO/Cargo.toml, 05_TOOLING/Cargo.toml, flake.nix, website/package.json, website footer)
+- `scripts/release.sh` — One-command release workflow
+
+**Release command:**
+```bash
+bash scripts/release.sh 0.2.0
+```
+
+This validates (clean main, tests pass), bumps version, finalizes CHANGELOG, commits + tags, pushes, builds tarball + SHA256SUMS, syncs to public, creates GitHub Release on ib823/riina, and updates website releases array.
+
+**Tagging:** `v0.1.0` format (v-prefixed semver), annotated tags with changelog excerpt.
+
+### 9.6 Licensing
 
 **Recommended dual license:**
 - **Compiler + Proofs + Stdlib:** MPL-2.0 (Mozilla Public License)
