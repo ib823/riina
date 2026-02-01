@@ -174,6 +174,10 @@ fi
 # Step 9: Commit on public
 ORIGINAL_MSG=$(git log --format=%B -n 1 "$COMMIT_ARG" 2>/dev/null | head -1)
 git add -A
+# Final cleanup: force-remove any internal files that git add -A may have re-added
+for pattern in "${INTERNAL_PATHS[@]}"; do
+    git rm -rf --quiet "$pattern" 2>/dev/null || true
+done
 git commit -m "$(cat <<EOF
 $ORIGINAL_MSG
 
