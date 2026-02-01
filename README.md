@@ -253,7 +253,7 @@ This is not a whitepaper. This is working software.
 
 ### Example Programs
 
-111 example `.rii` files across 9 categories:
+112 example `.rii` files across 9 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -292,7 +292,7 @@ riina/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 03_PROTO/               Rust compiler (13 crates, 588 tests, 0 deps)
+├── 03_PROTO/               Rust compiler (14 crates, 612 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
@@ -306,11 +306,12 @@ riina/
 │       ├── riina-doc/      Doc generator
 │       ├── riina-arena/    Memory allocator
 │       ├── riina-span/     Source spans
-│       └── riina-symbols/  String interning
+│       ├── riina-symbols/  String interning
+│       └── riina-compliance/ Compliance profile validator
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            111 example .rii files
+├── 07_EXAMPLES/            112 example .rii files
 ├── docs/                   Enterprise docs, multilingual READMEs
 ├── VERSION                 Semver source of truth (0.1.0)
 ├── CHANGELOG.md            Public-facing changelog
