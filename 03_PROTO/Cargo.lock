@@ -14,6 +14,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "riina-compliance"
+version = "0.1.0"
+dependencies = [
+ "riina-types",
+]
+
+[[package]]
 name = "riina-doc"
 version = "0.1.0"
 dependencies = [
@@ -87,6 +94,7 @@ name = "riinac"
 version = "0.1.0"
 dependencies = [
  "riina-codegen",
+ "riina-compliance",
  "riina-doc",
  "riina-fmt",
  "riina-lexer",

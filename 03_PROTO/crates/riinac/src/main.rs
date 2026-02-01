@@ -34,10 +34,30 @@ enum Command {
     Lsp,
     Verify(verify::Mode),
     Pkg(Vec<String>),
+    ListCompliance,
+}
+
+/// Report output format.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReportFormat {
+    Text,
+    Json,
+}
+
+/// Parsed CLI options (beyond command + file).
+#[derive(Debug, Default)]
+struct Options {
+    compliance: Vec<riina_compliance::ComplianceProfile>,
+    report: Option<ReportFormat>,
+    report_output: Option<PathBuf>,
+}
+
+impl Default for ReportFormat {
+    fn default() -> Self { Self::Text }
 }
 
 fn usage() -> ! {
-    eprintln!("Usage: riinac [command] <file.rii>");
+    eprintln!("Usage: riinac [command] [options] <file.rii>");
     eprintln!();
     eprintln!("Commands:");
     eprintln!("  check    Parse and typecheck only (default)");
@@ -51,15 +71,22 @@ fn usage() -> ! {
     eprintln!("  repl     Interactive read-eval-print loop");
     eprintln!("  verify   Run verification gate [--fast|--full]");
     eprintln!("  pkg      Package manager (init/add/remove/lock/build/...)");
+    eprintln!();
+    eprintln!("Options:");
+    eprintln!("  --compliance <profiles>  Run compliance checks (comma-separated)");
+    eprintln!("  --report                 Generate compliance report (text)");
+    eprintln!("  --report-json            Generate compliance report (JSON)");
+    eprintln!("  --report-output <file>   Write report to file instead of stdout");
+    eprintln!("  --list-compliance        List available compliance profiles");
     process::exit(1);
 }
 
-fn parse_args() -> (Command, Option<PathBuf>) {
+fn parse_args() -> (Command, Option<PathBuf>, Options) {
     let args: Vec<String> = std::env::args().collect();
 
     // Handle pkg early — it takes subcommands, not a file
     if args.len() >= 2 && args[1] == "pkg" {
-        return (Command::Pkg(args[2..].to_vec()), None);
+        return (Command::Pkg(args[2..].to_vec()), None, Options::default());
     }
 
     // Handle verify early — it takes flags, not a file
@@ -76,50 +103,95 @@ fn parse_args() -> (Command, Option<PathBuf>) {
         } else {
             verify::Mode::Fast
         };
-        return (Command::Verify(mode), None);
+        return (Command::Verify(mode), None, Options::default());
     }
 
-    match args.len() {
-        2 => {
-            if args[1] == "repl" {
-                return (Command::Repl, None);
-            }
-            if args[1] == "lsp" {
-                return (Command::Lsp, None);
-            }
-            // riinac <file.rii> — default to check (backwards compat)
-            (Command::Check, Some(PathBuf::from(&args[1])))
-        }
-        3 => {
-            let cmd = match args[1].as_str() {
-                "check" => Command::Check,
-                "run" => Command::Run,
-                "build" => Command::Build,
-                "emit-c" => Command::EmitC,
-                "emit-ir" => Command::EmitIR,
-                "doc" => Command::Doc,
-                "fmt" => Command::Fmt,
-                "repl" => {
-                    eprintln!("repl does not take a file argument");
-                    usage();
-                }
-                "lsp" => {
-                    eprintln!("lsp does not take a file argument");
-                    usage();
-                }
-                other => {
-                    eprintln!("Unknown command: {}", other);
-                    usage();
-                }
-            };
-            (cmd, Some(PathBuf::from(&args[2])))
-        }
-        _ => usage(),
+    if args.len() < 2 {
+        usage();
     }
+
+    // Parse command
+    let (cmd, rest) = match args[1].as_str() {
+        "check" => (Command::Check, &args[2..]),
+        "run" => (Command::Run, &args[2..]),
+        "build" => (Command::Build, &args[2..]),
+        "emit-c" => (Command::EmitC, &args[2..]),
+        "emit-ir" => (Command::EmitIR, &args[2..]),
+        "doc" => (Command::Doc, &args[2..]),
+        "fmt" => (Command::Fmt, &args[2..]),
+        "repl" => return (Command::Repl, None, Options::default()),
+        "lsp" => return (Command::Lsp, None, Options::default()),
+        _ => {
+            // No command given — default to Check, treat arg[1] as file
+            (Command::Check, &args[1..])
+        }
+    };
+
+    // Parse options and file from remaining args
+    let mut opts = Options::default();
+    let mut file: Option<PathBuf> = None;
+    let mut i = 0;
+    let rest_slice: Vec<&str> = rest.iter().map(|s| s.as_str()).collect();
+
+    while i < rest_slice.len() {
+        match rest_slice[i] {
+            "--list-compliance" => {
+                return (Command::ListCompliance, None, Options::default());
+            }
+            "--compliance" => {
+                i += 1;
+                if i >= rest_slice.len() {
+                    eprintln!("--compliance requires a comma-separated list of profiles");
+                    usage();
+                }
+                match riina_compliance::parse_profiles(rest_slice[i]) {
+                    Ok(profiles) => opts.compliance = profiles,
+                    Err(e) => {
+                        eprintln!("{e}");
+                        eprintln!("Use --list-compliance to see available profiles");
+                        process::exit(1);
+                    }
+                }
+            }
+            "--report" => {
+                opts.report = Some(ReportFormat::Text);
+            }
+            "--report-json" => {
+                opts.report = Some(ReportFormat::Json);
+            }
+            "--report-output" => {
+                i += 1;
+                if i >= rest_slice.len() {
+                    eprintln!("--report-output requires a file path");
+                    usage();
+                }
+                opts.report_output = Some(PathBuf::from(rest_slice[i]));
+            }
+            arg if arg.starts_with('-') => {
+                eprintln!("Unknown option: {arg}");
+                usage();
+            }
+            path => {
+                file = Some(PathBuf::from(path));
+            }
+        }
+        i += 1;
+    }
+
+    (cmd, file, opts)
 }
 
 fn main() {
-    let (command, input) = parse_args();
+    let (command, input, opts) = parse_args();
+
+    if let Command::ListCompliance = command {
+        eprintln!("Available compliance profiles:");
+        eprintln!();
+        for p in riina_compliance::ComplianceProfile::ALL {
+            eprintln!("  {:<14} {}", p.slug(), p.description());
+        }
+        return;
+    }
 
     if let Command::Repl = command {
         repl::run();
@@ -179,7 +251,47 @@ fn main() {
         }
     };
 
-    // 3. Dispatch by command
+    // 3. Compliance validation (if profiles selected)
+    if !opts.compliance.is_empty() {
+        let violations = riina_compliance::validate(&expr, &opts.compliance);
+
+        // Generate report if requested
+        if let Some(fmt) = opts.report {
+            let report = riina_compliance::report::generate(
+                &filename,
+                &source,
+                &opts.compliance,
+                &violations,
+            );
+            let report_text = match fmt {
+                ReportFormat::Text => report.to_text(),
+                ReportFormat::Json => report.to_json(),
+            };
+            if let Some(ref path) = opts.report_output {
+                if let Err(e) = fs::write(path, &report_text) {
+                    eprintln!("Error writing report: {e}");
+                    process::exit(1);
+                }
+                eprintln!("Compliance report written to: {}", path.display());
+            } else {
+                println!("{report_text}");
+            }
+            if riina_compliance::has_errors(&violations) {
+                process::exit(1);
+            }
+        } else if !violations.is_empty() {
+            for v in &violations {
+                eprintln!("{v}");
+            }
+            if riina_compliance::has_errors(&violations) {
+                eprintln!();
+                eprintln!("Compliance check failed with errors");
+                process::exit(1);
+            }
+        }
+    }
+
+    // 4. Dispatch by command
     match command {
         Command::Check => {
             eprintln!("RIINA Compiler v0.1.0");
@@ -287,5 +399,6 @@ fn main() {
         Command::Lsp => unreachable!("handled above"),
         Command::Verify(_) => unreachable!("handled above"),
         Command::Pkg(_) => unreachable!("handled above"),
+        Command::ListCompliance => unreachable!("handled above"),
     }
 }

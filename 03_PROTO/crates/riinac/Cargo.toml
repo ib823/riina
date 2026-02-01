@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 riina-codegen.workspace = true
+riina-compliance.workspace = true
 riina-doc.workspace = true
 riina-fmt.workspace = true
 riina-lexer.workspace = true
