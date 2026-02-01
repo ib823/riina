@@ -18,8 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developer tools: `riina-fmt`, `riina-lsp`, `riina-doc`
 - VS Code extension (`riina-vscode`)
 - Package manager (`riina-pkg`)
-- 111 example `.rii` files across 9 categories
-- Formal verification: 5,304 Qed proofs in Coq (0 admits, 5 justified axioms)
+- 112 example `.rii` files across 9 categories
+- Formal verification: 5,308 Qed proofs in Coq (0 admits, 4 justified axioms)
+- Compliance system: 15 industry profiles with audit report generation
 - C FFI support via `luaran "C" { ... }`
 - REPL with `:jenis` (type) and `:kesan` (effect) commands
 - Nix flake, Dockerfile, and install script

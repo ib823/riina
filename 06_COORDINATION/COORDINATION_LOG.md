@@ -1,7 +1,7 @@
 # RIINA Coordination Log
 
-## Version: 3.15.0
-## Last Updated: 2026-02-01 (Session 65)
+## Version: 3.16.0
+## Last Updated: 2026-02-01 (Session 66)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════╗
@@ -41,15 +41,15 @@
 | **Delegation Prompts** | **90** | **100% coverage** |
 | **Prover** | **Rocq 9.1 (Coq 8.21)** | Migrated from 8.18.0 (Session 53) |
 | **Coq .v Files (Total)** | 278 | 244 in active build |
-| **Coq Qed Proofs (Total)** | **5,304** | Verified |
+| **Coq Qed Proofs (Total)** | **5,308** | Verified |
 | **`admit.` (Active Build)** | **0** | **ALL ELIMINATED** |
 | **`Admitted.` (Active Build)** | **0** | **ALL ELIMINATED** (LinearTypes.v fixed Session 58) |
-| **Axioms (Active Build)** | 5 | All justified |
+| **Axioms (Active Build)** | 4 | All justified (deref eliminated Session 66) |
 | **Domain Admits (non-critical)** | 11 | In 8 domain/auxiliary files outside core chain |
-| **Rust Tests** | **588** | All passing |
+| **Rust Tests** | **612** | All passing |
 | **Rust Builtins** | **88** | 9 modules (Phase 2 stdlib done) |
-| **Rust Crates** | **13** | +riina-pkg (Phase 5 ecosystem) |
-| **Example .rii Files** | **111** | 9 categories (+FFI, +demos, +showcase) |
+| **Rust Crates** | **14** | +riina-compliance (Session 66) |
+| **Example .rii Files** | **112** | 9 categories (+FFI, +demos, +showcase, +compliance) |
 | **Build Status** | ✅ GREEN | All files compile |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Attack→Proof Map** | ✅ | `06_COORDINATION/ATTACK_PROOF_MAP.md` |

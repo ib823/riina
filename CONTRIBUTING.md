@@ -31,8 +31,8 @@ cd 03_PROTO && cargo test --all && cd ..
 
 | Directory | What | Language |
 |-----------|------|---------|
-| `02_FORMAL/coq/` | Formal proofs (5,304 theorems) | Coq |
-| `03_PROTO/crates/` | Compiler (13 crates) | Rust |
+| `02_FORMAL/coq/` | Formal proofs (5,308 theorems) | Coq |
+| `03_PROTO/crates/` | Compiler (14 crates) | Rust |
 | `04_SPECS/` | Language specifications | Markdown |
 | `05_TOOLING/` | Crypto primitives, build tools | Rust |
 | `07_EXAMPLES/` | Example `.rii` programs | RIINA |

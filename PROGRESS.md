@@ -16,9 +16,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-02-01 (Session 65)
-**Session:** 65 (Release System — VERSION, CHANGELOG, bump-version.sh, release.sh, Releases page)
-**Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
+**Report Date:** 2026-02-01 (Session 66)
+**Session:** 66 (Compliance System — riina-compliance crate, report generator, business model)
+**Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 4 justified axioms)
 
 ---
 
@@ -28,15 +28,26 @@
 |--------|---------|--------|--------|
 | `admit.` (Active Build) | **0** | 0 | ✅ ZERO |
 | `Admitted.` (Active Build) | **0** | 0 | ✅ ZERO |
-| Axioms (Active Build) | **5** | 1 | 🟢 All 5 justified (4 in NI_v2_LR + 1 in NI_v2) |
+| Axioms (Active Build) | **4** | 1 | 🟢 All 4 justified (3 in NI_v2_LR + 1 in NI_v2) |
 | Coq Build | ✅ PASSING | PASSING | ✅ GREEN |
 | Files in Build | **244** | - | ✅ All compile |
-| Qed Proofs (Total) | **5,304** | - | ✅ |
+| Qed Proofs (Total) | **5,308** | - | ✅ |
 | .v Files (Total) | **278** | - | ✅ |
-| Rust Prototype | ✅ PASSING (588 tests) | PASSING | ✅ GREEN |
-| Rust Crates | **13** | - | ✅ (+riina-pkg) |
-| Example .rii Files | **111** | 100+ | ✅ (+5 demos, +3 showcase) |
+| Rust Prototype | ✅ PASSING (612 tests) | PASSING | ✅ GREEN |
+| Rust Crates | **14** | - | ✅ (+riina-compliance) |
+| Example .rii Files | **112** | 100+ | ✅ (+5 demos, +3 showcase, +compliance) |
 | Prover | **Rocq 9.1 (Coq 8.21)** | - | ✅ Migrated from 8.18 |
+
+**SESSION 66 KEY ACTIONS (Compliance System — riina-compliance crate, audit reports, business model):**
+1. **`riina-compliance` crate** — New crate (14th): 15 compliance profiles (PCI-DSS, PDPA, BNM, HIPAA, CMMC, SOX, GDPR, DO-178C, IEC 62443, NERC CIP, FDA 21 CFR, ISO 27001, NIST 800-53, MAS TRM, ITAR)
+2. **6 initial rules** — PCI-DSS-3.4 (Prove guard), PCI-DSS-6.5 (Secret<_>), PCI-DSS-8.3 (Crypto effect), PDPA-S7 (Tainted<_>), PDPA-S24 (Network sanitization), BNM-RMiT-10 (ConstantTime<_>)
+3. **Report generator** — Text + JSON audit artifacts with SHA-256 integrity hash, per-profile coverage metrics, PASS/FAIL/PASS_WITH_WARNINGS verdict, ISO 8601 timestamps
+4. **CLI flags** — `--compliance`, `--report`, `--report-json`, `--report-output`, `--list-compliance`
+5. **Business model** — `04_SPECS/business/RIINA_BUSINESS_MODEL_v1_0_0.md` (confidential, excluded from public)
+6. **Clippy fixes** — boxed_local in riina-types, identity_op in ml_dsa.rs
+7. **Audit sync** — All docs updated: 4 axioms (was 5), 5,308 Qed (was 5,304), 14 crates (was 13), 612 tests (was 588), 112 examples (was 111)
+8. **Tests: 588 → 612** (+24 compliance tests)
+9. **Example: ewallet_pci.rii** — PCI-DSS + PDPA compliant e-wallet example
 
 **SESSION 65 KEY ACTIONS (Release System — Versioning, CHANGELOG, Release Script, Releases Page):**
 1. **`VERSION` file** — Single-line semver source of truth (`0.1.0`)

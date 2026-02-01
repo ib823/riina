@@ -73,17 +73,17 @@ RIINA is the world's **first formally verified programming language** with:
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Overall Grade** | A (build passing) | 0 admits, 5 justified axioms |
+| **Overall Grade** | A (build passing) | 0 admits, 4 justified axioms |
 | **Research Tracks** | 218 | 55 existing + 163 new identified |
-| **Axioms (Active Build)** | 5 (all justified) | 4 in NI_v2_LR + 1 in NI_v2 |
+| **Axioms (Active Build)** | 4 (all justified) | 3 in NI_v2_LR + 1 in NI_v2 |
 | **Admits (Active Build)** | 0 | All fixed (Session 53) |
-| **Qed Proofs (Total)** | 5,304 | Verified |
+| **Qed Proofs (Total)** | 5,308 | Verified |
 | **Threats Covered** | 1,231+ | All made obsolete |
 | **Prover** | Rocq 9.1 (Coq 8.21) | Migrated from 8.18.0 |
-| **Coq Compilation** | ✅ PASSING | 278 files (244 in active build) |
-| **Rust Tests** | ✅ PASSING (588 tests) | All green |
-| **Rust Crates** | 13 | +riina-pkg (Session 57) |
-| **Example .rii Files** | 111 | 9 categories (+FFI, +demos, +showcase) |
+| **Coq Compilation** | ✅ PASSING | 278 files (245 in active build) |
+| **Rust Tests** | ✅ PASSING (612 tests) | All green |
+| **Rust Crates** | 14 | +riina-compliance (Session 66) |
+| **Example .rii Files** | 112 | 9 categories (+FFI, +demos, +showcase, +compliance) |
 
 **Roadmap:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` (SINGLE SOURCE OF TRUTH)
 
@@ -91,7 +91,7 @@ RIINA is the world's **first formally verified programming language** with:
 |-----------------------|--------|-------|
 | Phase 1: Compiler Completion | ✅ Done | All 5.1-5.7 done; 477 tests |
 | Phase 2: Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
-| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
+| Phase 3: Formal Verification | 🟢 Stable | 0 admits, 4 justified axioms, 5,308 Qed, 245 files |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
 | Phase 5: Ecosystem | ✅ Done | CI/CD, pkg mgr, Docker, Nix, VERSION, CHANGELOG, release.sh, installer, MPL-2.0 |
 | Phase 6: Adoption | ✅ Done | C FFI, 5 demos, 3 showcase, community, enterprise, public branch |
@@ -623,16 +623,16 @@ The older 6-phase system in `01_RESEARCH/MASTER_ATTACK_PLAN_COMPLETE.md` is arch
 
 ### Track A: Formal Proofs (02_FORMAL/coq/) — 🟢 STABLE
 
-**Build: 0 admits, 0 Admitted, 5 justified axioms, 5,304 Qed proofs, 278 files (Rocq 9.1 / Coq 8.21)**
+**Build: 0 admits, 0 Admitted, 4 justified axioms, 5,308 Qed proofs, 278 files (Rocq 9.1 / Coq 8.21)**
 
 Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic Completeness).
 
 | File | `admit.` | `Admitted.` | Axioms | Notes |
 |------|----------|-------------|--------|-------|
-| NonInterference_v2_LogicalRelation.v | 0 | 0 | 4 | ref/deref/assign/declassify (all justified) |
+| NonInterference_v2_LogicalRelation.v | 0 | 0 | 3 | ref/assign/declassify (all justified; deref eliminated) |
 | NonInterference_v2.v | 0 | 0 | 1 | fundamental_theorem_step_0 (justified) |
 
-**5 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom.
+**4 justified axioms** — elimination requires `store_rel_n` restructuring (see `WORKER_B_SPEC_STORE_REL_REWRITE.md`). `logical_relation_declassify` is a permanent policy axiom. `logical_relation_deref` was eliminated in Session 66.
 
 ### Track B: Rust Prototype (03_PROTO/) — 🟢 PHASE 6 IN PROGRESS
 
@@ -657,7 +657,7 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 | Website "Why Proof" | Executive page: breach costs, assurance hierarchy, quantum/AI immunity, DARPA/AWS/Microsoft proof points, C-suite value props | ✅ Done (Session 65) |
 | Website audit | All links → ib823/riina; Enterprise: 15 industry verticals; Research: 26 domains; Home: 8 industries; 14 pages total | ✅ Done (Session 65) |
 
-**Total: 588 Rust tests, 13 crates, 111 example files. Phase 6 COMPLETE.**
+**Total: 612 Rust tests, 14 crates, 112 example files. Phase 6 COMPLETE.**
 
 ---
 
@@ -757,7 +757,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-02-01 (Session 65: Release system, "Why Proof" exec page, 15 industry verticals, website audit, 14 web pages, 0 admits, 5 justified axioms, 588 Rust tests, 13 crates, 111 examples, 278 Coq files, 5,304 Qed proofs)*
+*Last updated: 2026-02-01 (Session 66: Compliance system, report generator, business model, audit sync — 0 admits, 4 justified axioms, 612 Rust tests, 14 crates, 112 examples, 278 Coq files, 5,308 Qed proofs)*
 
 ---
 

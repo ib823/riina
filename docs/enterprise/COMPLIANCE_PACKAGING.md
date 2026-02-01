@@ -93,7 +93,7 @@ RIINA compliance certificates can supplement or replace manual code review for s
 
 - **Which controls are covered** — mapped to specific regulation sections
 - **The proof** — a Coq theorem that can be independently verified
-- **The assumptions** — any axioms used (5 justified axioms, fully documented)
+- **The assumptions** — any axioms used (4 justified axioms, fully documented)
 
 ### For Compliance Officers
 

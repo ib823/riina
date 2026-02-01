@@ -274,7 +274,7 @@ const RiinaWebsite = () => {
           borderTop: '1px solid #eee'
         }}>
           {[
-            { value: '5,304', label: 'Theorems Proven' },
+            { value: '5,308', label: 'Theorems Proven' },
             { value: '0', label: 'Admits' },
             { value: '278', label: 'Coq Files Verified' },
           ].map((stat, i) => (
@@ -1090,7 +1090,7 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
     <div style={pageTopStyle}>
       <PageHeader
         title="Examples"
-        subtitle="108 example .rii files across 8 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
+        subtitle="112 example .rii files across 8 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
       />
 
       <section style={{ padding: '0 32px 80px' }}>
@@ -1240,7 +1240,7 @@ awam fungsi sulit(
                 fontSize: '14px'
               }}
             >
-              Browse all 108 examples on GitHub
+              Browse all 112 examples on GitHub
             </a>
           </div>
         </div>
@@ -1294,7 +1294,7 @@ allowed — no network, no logging. Enforced at compile time.`
 • Timing-sensitive code in masa_tetap executes in constant time
 • Secrets are zeroed before memory is freed
 
-5,304 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
+5,308 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
             },
             {
               step: '04',
@@ -1303,7 +1303,7 @@ allowed — no network, no logging. Enforced at compile time.`
 No external CI/CD — verification lives inside the compiler.
 
 The formal proofs (278 Coq files) ship with the compiler. You can audit them.
-5 justified axioms — all documented, none hidden.
+4 justified axioms — all documented, none hidden.
 Every security claim has a machine-checked proof behind it.`
             }
           ].map((item, i) => (
@@ -1376,7 +1376,7 @@ Every security claim has a machine-checked proof behind it.`
     <div style={pageTopStyle}>
       <PageHeader
         title="Research"
-        subtitle="RIINA is built on formal verification in Coq, with 5,304 machine-checked theorems across 244 files. Every security property has a proof."
+        subtitle="RIINA is built on formal verification in Coq, with 5,308 machine-checked theorems across 244 files. Every security property has a proof."
       />
 
       {/* Stats */}
@@ -1389,7 +1389,7 @@ Every security claim has a machine-checked proof behind it.`
             marginBottom: '64px'
           }}>
             {[
-              { value: '5,304', label: 'Qed Proofs' },
+              { value: '5,308', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
               { value: '5', label: 'Justified Axioms' },
               { value: '278', label: 'Coq Files' },
@@ -1503,7 +1503,7 @@ Every security claim has a machine-checked proof behind it.`
             color: '#666',
             fontSize: '14px'
           }}>
-            218 research tracks across 55 domains. 588 Rust tests, 13 crates, 108 example .rii files.
+            218 research tracks across 55 domains. 612 Rust tests, 14 crates, 112 example .rii files.
           </p>
         </div>
       </section>
@@ -1551,9 +1551,9 @@ Every security claim has a machine-checked proof behind it.`
         links: [{ text: 'Keyword Table (60+)', page: 'syntax' }, { text: 'Security Keywords', page: 'securityTypes' }, { text: 'Effect Keywords', page: 'effectSystem' }] },
       { title: 'Standard Library', desc: '88 builtins across 9 modules', page: 'stdlib',
         links: [{ text: 'Module Reference', page: 'stdlib' }, { text: 'std::kripto', page: 'stdlib' }, { text: 'std::io', page: 'stdlib' }] },
-      { title: 'Formal Proofs', desc: '278 Coq files, 5,304 theorems', page: 'research',
+      { title: 'Formal Proofs', desc: '278 Coq files, 5,308 theorems', page: 'research',
         links: [{ text: 'Proof Architecture', page: 'research' }, { text: 'Axiom Justifications', page: 'research' }, { text: 'Building Proofs', page: 'research' }] },
-      { title: 'Examples', desc: '108 example .rii files in 8 categories', page: 'examples',
+      { title: 'Examples', desc: '112 example .rii files in 8 categories', page: 'examples',
         links: [{ text: 'pengesahan.rii', page: 'examples' }, { text: 'kripto.rii', page: 'examples' }, { text: 'hello_dunia.rii', page: 'examples' }] },
     ];
 
@@ -1809,7 +1809,7 @@ cd ../../02_FORMAL/coq && make
 cd ../../03_PROTO && cargo build --all
 
 # Run all tests
-cargo test --all        # 588 tests, all must pass`}
+cargo test --all        # 612 tests, all must pass`}
           </pre>
 
           <h2 style={sectionLabel}>COMMIT FORMAT</h2>
@@ -1849,7 +1849,7 @@ grep -r "Admitted" *.v  # Must be empty`}
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {[
               'All Coq proofs must compile with 0 Admitted',
-              'All Rust tests must pass (588+)',
+              'All Rust tests must pass (612+)',
               'No unsafe Rust without documented justification',
               'No third-party crypto dependencies (zero supply chain trust)',
               'Use Bahasa Melayu keywords in all .rii examples',
