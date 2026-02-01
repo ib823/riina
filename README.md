@@ -63,13 +63,17 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 
 ---
 
+**Website:** [ib823.github.io/riina](https://ib823.github.io/riina/)
+
+---
+
 ## Quick Start
 
 ### Install
 
 ```bash
-git clone https://github.com/ib823/proof.git
-cd proof/03_PROTO
+git clone https://github.com/ib823/riina.git
+cd riina/03_PROTO
 cargo build --release
 ```
 
@@ -242,7 +246,8 @@ This is not a whitepaper. This is working software.
 - **Verification gate** — `riinac verify --fast` (zero-trust: runs tests, clippy, Coq audit)
 - **Docker image** — Multi-stage build, ~85MB runtime image
 - **Nix flake** — `nix run github:ib823/proof` or `nix develop` for full dev shell
-- **Release scripts** — `scripts/release.sh` (one-command release: bump, tag, tarball, GitHub Release), `scripts/bump-version.sh`, `scripts/install.sh`
+- **Release scripts** — `scripts/release.sh` (one-command release: bump, tag, tarball, GitHub Release, deploy website), `scripts/bump-version.sh`, `scripts/install.sh`
+- **Website** — `scripts/deploy-website.sh` deploys to [ib823.github.io/riina](https://ib823.github.io/riina/)
 - **REPL** — Interactive mode for experimentation
 
 ### Example Programs

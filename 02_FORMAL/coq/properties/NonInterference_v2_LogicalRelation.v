@@ -2755,17 +2755,18 @@ Proof.
 Qed.
 
 Lemma val_rel_loc : forall Σ l,
+  store_ty_lookup l Σ = Some (TUnit, Public) ->
   val_rel Σ (TRef TUnit Public) (ELoc l) (ELoc l).
 Proof.
-  intros Σ l n.
+  intros Σ l Hlook n.
   apply val_rel_n_of_first_order.
   - reflexivity.
   - constructor.
   - constructor.
   - apply closed_expr_loc.
   - apply closed_expr_loc.
-  - constructor.
-  - constructor.
+  - apply T_Loc. exact Hlook.
+  - apply T_Loc. exact Hlook.
   - intros sp vl sl svp. simpl. exists l. split; reflexivity.
 Qed.
 
@@ -2889,56 +2890,26 @@ Proof.
   induction Hty; intro Δ2; try (econstructor; eauto; fail).
 Qed.
 
-(** The mutual induction theorem.
-    Since val_rel_n_step_up is fully proven in the base file (NonInterference_v2.v),
-    step_up_at is trivially proven for all n. The fundamental theorem part
-    requires induction on typing derivations and is admitted pending
-    completion of the logical_relation proof. *)
-Theorem step_up_and_fundamental_mutual : forall n,
-  step_up_and_fundamental n.
+(** Fresh location is not in store typing — follows from store_wf. *)
+Lemma store_wf_fresh_not_in_ty : forall Σ st,
+  store_wf Σ st ->
+  store_ty_lookup (fresh_loc st) Σ = None.
 Proof.
-  intro n.
-  unfold step_up_and_fundamental.
-  split.
-  - (* step_up at n: follows directly from val_rel_n_step_up *)
-    unfold step_up_at. intros Σ T v1 v2 Hrel Hty1 Hty2.
-    apply val_rel_n_step_up; assumption.
-  - (* fundamental at n *)
-    destruct n as [| n'].
-    + apply fundamental_at_0.
-    + (* fundamental at S n': requires induction on typing derivation *)
-      unfold fundamental_at_step.
-      intros Γ Σ Δ e0 T ε rho1 rho2 Hty Henv Hno1 Hno2.
-      (* Convert typing from arbitrary Δ to Public *)
-      assert (Hty_pub : has_type Γ Σ Public e0 T ε).
-      { exact (has_type_level_irrelevant Γ Σ Δ e0 T ε Hty Public). }
-      (* Apply the logical_relation theorem *)
-      exact (logical_relation Γ Σ e0 T ε rho1 rho2 Hty_pub Henv Hno1 Hno2 (S n')).
+  intros Σ st Hwf.
+  destruct (store_ty_lookup (fresh_loc st) Σ) as [[T sl] |] eqn:Hlook; auto.
+  destruct (proj1 Hwf _ _ _ Hlook) as [v [Hst [_ _]]].
+  rewrite store_lookup_fresh in Hst. discriminate.
 Qed.
 
-(** Corollary: step_up holds at all steps *)
-Corollary val_rel_n_step_up_proven : forall n Σ T v1 v2,
-  val_rel_n n Σ T v1 v2 ->
-  has_type nil Σ Public v1 T EffectPure ->
-  has_type nil Σ Public v2 T EffectPure ->
-  val_rel_n (S n) Σ T v1 v2.
+(** Related stores have the same fresh location. *)
+Lemma store_rel_n_same_fresh : forall n Σ st1 st2,
+  store_rel_n n Σ st1 st2 ->
+  fresh_loc st1 = fresh_loc st2.
 Proof.
-  intros n.
-  destruct (step_up_and_fundamental_mutual n) as [Hsu _].
-  exact Hsu.
-Qed.
-
-(** Corollary: fundamental theorem holds at all steps *)
-Corollary fundamental_at_all_steps : forall n Γ Σ Δ e T ε rho1 rho2,
-  has_type Γ Σ Δ e T ε ->
-  env_rel Σ Γ rho1 rho2 ->
-  rho_no_free_all rho1 ->
-  rho_no_free_all rho2 ->
-  exp_rel_n n Σ T (subst_rho rho1 e) (subst_rho rho2 e).
-Proof.
-  intros n.
-  destruct (step_up_and_fundamental_mutual n) as [_ Hf].
-  exact Hf.
+  intros n Σ st1 st2 Hrel. unfold fresh_loc.
+  destruct n; simpl in Hrel.
+  - rewrite Hrel. reflexivity.
+  - destruct Hrel as [_ [Hmax _]]. rewrite Hmax. reflexivity.
 Qed.
 
 (* The fundamental theorem - proof by induction on typing derivation.
@@ -2981,26 +2952,20 @@ Proof.
       split. { constructor. }
       split. { apply closed_expr_loc. }
       split. { apply closed_expr_loc. }
+      split. { apply T_Loc. exact H_base. }
+      split. { apply T_Loc. exact H_base. }
       destruct (NonInterference_v2.first_order_type T) eqn:Hfo.
       * simpl. exists l. split; reflexivity.
-      * (* HO type: need typing for TRef — use T_Loc with store lookup *)
-        split; apply T_Loc; exact H_base.
+      * exact I.
     + (* n = S n' *)
       rewrite val_rel_n_S_unfold. split; [exact IHn |].
       split. { constructor. }
       split. { constructor. }
       split. { apply closed_expr_loc. }
       split. { apply closed_expr_loc. }
-      split.
-      { (* typing conjunct for TRef *)
-        change (NonInterference_v2.first_order_type (TRef T sl)) with (first_order_type (TRef T sl)).
-        simpl.
-        change (NonInterference_v2.first_order_type T) with (first_order_type T).
-        destruct (first_order_type T) eqn:Hfo.
-        - exact I.
-        - (* HO type: use T_Loc *)
-          split; apply T_Loc; exact H_base. }
-      simpl. exists l. split; reflexivity.
+      split. { apply T_Loc. exact H_base. }
+      split. { apply T_Loc. exact H_base. }
+      simpl val_rel_at_type. exists l. auto.
 
   - (* T_Var *)
     (* subst_rho rho (EVar x) = rho x by definition.
@@ -3022,15 +2987,16 @@ Proof.
     (* Note: IHHty is for the body under extended context *)
     (* Obtain typing for both substituted lambdas from env_rel at Σ_base *)
     assert (Hty_base : has_type ((x, T1) :: Γ) Σ_base Public e T2 ε).
-    { apply (store_ty_extends_preserves_typing ((x, T1) :: Γ) Σ Σ_base Public e T2 ε Hext_base Hty). }
+    { apply (store_ty_extends_preserves_typing ((x, T1) :: Γ) Σ Σ_base Public e T2 ε Hext_base
+             (has_type_level_irrelevant _ _ _ _ _ _ Hty Public)). }
     assert (Hlam_ty : has_type nil Σ_base Public (ELam x T1 (subst_rho (rho_shadow rho1 x) e)) (TFn T1 T2 ε) EffectPure /\
                       has_type nil Σ_base Public (ELam x T1 (subst_rho (rho_shadow rho2 x) e)) (TFn T1 T2 ε) EffectPure).
     { apply (lam_typing_from_env_rel Γ Σ_base x T1 T2 e ε rho1 rho2 Hty_base Henv). }
     destruct Hlam_ty as [Hlam_ty1 Hlam_ty2].
     assert (Hcl1 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho1 x) e))).
-    { apply (typing_nil_closed Σ_base Public). exact Hlam_ty1. }
+    { exact (typing_nil_closed Σ_base Public _ _ _ Hlam_ty1). }
     assert (Hcl2 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho2 x) e))).
-    { apply (typing_nil_closed Σ_base Public). exact Hlam_ty2. }
+    { exact (typing_nil_closed Σ_base Public _ _ _ Hlam_ty2). }
     (* We prove exp_rel from val_rel *)
     apply exp_rel_of_val_rel.
     unfold val_rel. intro n.
@@ -3042,9 +3008,10 @@ Proof.
       split. { constructor. }
       split. { exact Hcl1. }
       split. { exact Hcl2. }
-      (* TFn is HO, so needs typing *)
-      change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
-      simpl. split; assumption.
+      (* TFn is HO — first_order_type (TFn _ _ _) = false, so last conjunct is True *)
+      split. { exact Hlam_ty1. }
+      split. { exact Hlam_ty2. }
+      simpl. exact I.
     + (* S n' case - prove val_rel_n (S n') for TFn *)
       rewrite val_rel_n_S_unfold.
       split.
@@ -3055,12 +3022,11 @@ Proof.
         split. { constructor. }
         split. { exact Hcl1. }
         split. { exact Hcl2. }
-        split. { (* typing conjunct for TFn *)
-          change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
-          simpl. split; assumption. }
+        split. { exact Hlam_ty1. }
+        split. { exact Hlam_ty2. }
         (* val_rel_at_type Σ_base (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
         simpl.
-        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
+        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree Hsvr_cur.
         (* Apply lambdas: EApp (ELam x T1 body) arg --> [x := arg] body *)
         (* lam1 = ELam x T1 (subst_rho (rho_shadow rho1 x) e) *)
         (* lam2 = ELam x T1 (subst_rho (rho_shadow rho2 x) e) *)
@@ -3095,8 +3061,8 @@ Proof.
         { apply subst_rho_extend. exact Hno2. }
 
         (* Apply exp_rel at step S n' with Σ_cur = Σ' (reflexive extension) *)
-        specialize (He_rel (S n') Σ' st1 st2 ctx (store_ty_extends_refl Σ') Hstrel Hwf1 Hwf2 Hagree) as
-          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
+        specialize (He_rel (S n') Σ' st1 st2 ctx (store_ty_extends_refl Σ') Hstrel Hwf1 Hwf2 Hagree Hsvr_cur) as
+          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]].
 
         (* Result *)
         exists v1, v2, st1', st2', ctx', Σ''.
@@ -3115,7 +3081,8 @@ Proof.
         split. { exact Hstore'. }
         split. { exact Hwf1'. }
         split. { exact Hwf2'. }
-        { exact Hagree'. }
+        split. { exact Hagree'. }
+        { exact Hsvr'. }
   - (* T_App - function application *)
     simpl.
     specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
@@ -3124,17 +3091,17 @@ Proof.
     destruct n as [| n'].
     + simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
 
       (* Step 1: Evaluate function to lambda *)
-      specialize (Hf_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep_f1 [Hstep_f2 [Hvalf1 [Hvalf2 [Hfrel [Hstore1 [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
+      specialize (Hf_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [f1 [f2 [st1' [st2' [ctx' [Σ' [Hext1 [Hstep_f1 [Hstep_f2 [Hvalf1 [Hvalf2 [Hfrel [Hstore1 [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]].
 
       (* Step 2: Evaluate argument *)
       assert (Hext_arg : store_ty_extends Σ_base Σ').
       { apply (store_ty_extends_trans_early Σ_base Σ_cur Σ' Hext_cur Hext1). }
-      specialize (Ha_rel (S n') Σ' st1' st2' ctx' Hext_arg Hstore1 Hwf1' Hwf2' Hagree') as
-        [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_a1 [Hstep_a2 [Hvala1 [Hvala2 [Harel [Hstore2 [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]].
+      specialize (Ha_rel (S n') Σ' st1' st2' ctx' Hext_arg Hstore1 Hwf1' Hwf2' Hagree' Hsvr') as
+        [a1 [a2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_a1 [Hstep_a2 [Hvala1 [Hvala2 [Harel [Hstore2 [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]].
 
       (* Step 3: Apply function to argument *)
       (* f1, f2 are val_rel_n n' at TFn - extract val_rel_at_type *)
@@ -3153,8 +3120,8 @@ Proof.
         simpl in Hfat.
         destruct (val_rel_n_closed 0 Σ'' T1 a1 a2 Harel) as [Hcla1 Hcla2].
         specialize (Hfat Σ'' (store_ty_extends_refl Σ'') a1 a2 Hvala1 Hvala2 Hcla1 Hcla2).
-        specialize (Hfat Harel st1'' st2'' ctx'' Hstore2 Hwf1'' Hwf2'' Hagree'') as
-          [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' Hagree''']]]]]]]]]]]]].
+        specialize (Hfat Harel st1'' st2'' ctx'' Hstore2 Hwf1'' Hwf2'' Hagree'' Hsvr'') as
+          [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' [Hagree''' Hsvr''']]]]]]]]]]]]]].
         exists r1, r2, st1''', st2''', ctx''', Σ'''.
         split. { apply (store_ty_extends_trans_early Σ_cur Σ'' Σ''').
                  - apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext1 Hext2).
@@ -3178,12 +3145,12 @@ Proof.
         split. { exact Hstore3. }
         split. { exact Hwf1'''. }
         split. { exact Hwf2'''. }
-        { exact Hagree'''. } }
+        split. { exact Hagree'''. } { exact Hsvr'''. } }
 
       (* n' = S n'': have val_rel_n (S n'') which includes val_rel_at_type *)
       (* Extract the function application property from Hfrel *)
       rewrite val_rel_n_S_unfold in Hfrel.
-      destruct Hfrel as [Hfrel_lower [Hvf1 [Hvf2 [Hclf1 [Hclf2 [_ Hfn_at_type]]]]]].
+      destruct Hfrel as [Hfrel_lower [Hvf1 [Hvf2 [Hclf1 [Hclf2 [_ [_ Hfn_at_type]]]]]]].
 
       (* Use val_rel_at_type for TFn: given related args, apps produce related results *)
       simpl in Hfn_at_type.
@@ -3191,11 +3158,13 @@ Proof.
       (* Get closed_expr for arguments from val_rel_n at S n'' *)
       destruct (val_rel_n_closed (S n'') Σ'' T1 a1 a2 Harel) as [Hcla1 Hcla2].
 
-      (* Downgrade Harel and Hstore2 to step n'' for Hfn_at_type *)
+      (* Downgrade Harel, Hstore2, Hsvr'' to step n'' for Hfn_at_type *)
       assert (Harel' : val_rel_n n'' Σ'' T1 a1 a2).
       { apply (val_rel_n_mono n'' (S n'') Σ'' T1 a1 a2); [lia | exact Harel]. }
       assert (Hstore2' : store_rel_n n'' Σ'' st1'' st2'').
       { apply (store_rel_n_mono n'' (S n'') Σ'' st1'' st2''); [lia | exact Hstore2]. }
+      assert (Hsvr2' : store_vals_rel n'' Σ'' st1'' st2'').
+      { apply (store_vals_rel_mono n'' (S n'')); [lia | exact Hsvr'']. }
 
       (* Apply Hfn_at_type with:
          - Σ' extended to Σ''
@@ -3203,8 +3172,8 @@ Proof.
          - stores st1'', st2'' which are store_rel_n n'' at Σ'' *)
       specialize (Hfn_at_type Σ'' Hext2 a1 a2 Hvala1 Hvala2 Hcla1 Hcla2).
 
-      specialize (Hfn_at_type Harel' st1'' st2'' ctx'' Hstore2' Hwf1'' Hwf2'' Hagree'') as
-        [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' Hagree''']]]]]]]]]]]]].
+      specialize (Hfn_at_type Harel' st1'' st2'' ctx'' Hstore2' Hwf1'' Hwf2'' Hagree'' Hsvr2') as
+        [r1 [r2 [st1''' [st2''' [ctx''' [Σ''' [Hext3 [Hstep_app1 [Hstep_app2 [Hrrel [Hstore3 [Hwf1''' [Hwf2''' [Hagree''' Hsvr''']]]]]]]]]]]]]].
 
       (* Build result *)
       exists r1, r2, st1''', st2''', ctx''', Σ'''.
@@ -3246,7 +3215,9 @@ Proof.
         - exact Hagree'''. }
       split. { exact Hwf1'''. }
       split. { exact Hwf2'''. }
-      { exact Hagree'''. }
+      split. { exact Hagree'''. }
+      { (* store_vals_rel step-up from n'' to S n'' *)
+        apply store_vals_rel_step_up; assumption. }
   - (* T_Pair - With Kripke-style exp_rel_n, the proof chains evaluations *)
     (* IH for e1 and e2 accept any current store typing extending Σ.
        We chain: Σ_cur → Σ' (after e1) → Σ'' (after e2). *)
@@ -3258,19 +3229,18 @@ Proof.
     + (* n = 0: exp_rel_n 0 is trivially True *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Evaluate e1 using IH with current store typing Σ_cur *)
-      assert (Hext1_input : store_ty_extends Σ Σ_cur) by exact Hext_cur.
-      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext1_input Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v1 [v1' [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv1' [Hval1 [Hstore1 [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]]].
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v1 [v1' [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv1' [Hval1 [Hstore1 [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]]].
       (* After e1: Σ_cur → Σ' and stores related at Σ' *)
 
       (* Step 2: Evaluate e2 using IH with Σ' as current store typing *)
       (* First show Σ ⊆ Σ' for the IH *)
-      assert (Hext2_input : store_ty_extends Σ Σ').
-      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext1). }
-      specialize (He2_rel (S n') Σ' st1' st2' ctx' Hext2_input Hstore1 Hwf1' Hwf2' Hagree') as
-        [v2 [v2' [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep2 [Hstep2' [Hvalv2 [Hvalv2' [Hval2 [Hstore2 [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+      assert (Hext2_input : store_ty_extends Σ_base Σ').
+      { apply (store_ty_extends_trans_early Σ_base Σ_cur Σ' Hext_cur Hext1). }
+      specialize (He2_rel (S n') Σ' st1' st2' ctx' Hext2_input Hstore1 Hwf1' Hwf2' Hagree' Hsvr') as
+        [v2 [v2' [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep2 [Hstep2' [Hvalv2 [Hvalv2' [Hval2 [Hstore2 [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
       (* After e2: Σ' → Σ'' and stores related at Σ'' *)
 
       (* Step 3: Construct the result *)
@@ -3314,7 +3284,7 @@ Proof.
         split. { exact Hstore2. }
         split. { exact Hwf1''. }
         split. { exact Hwf2''. }
-        { exact Hagree''. }
+        split. { exact Hagree''. } { exact Hsvr''. }
   - (* T_Fst - First projection *)
     simpl.
     specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
@@ -3323,10 +3293,10 @@ Proof.
     + (* n = 0: exp_rel_n 0 is trivially True *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Run the product expression using IH *)
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* v and v' are related products at type TProd T1 T2 *)
 
       destruct n' as [| n''].
@@ -3387,7 +3357,7 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Snd - Second projection *)
     simpl.
     specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
@@ -3396,10 +3366,10 @@ Proof.
     + (* n = 0: exp_rel_n 0 is trivially True *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Run the product expression using IH *)
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* v and v' are related products at type TProd T1 T2 *)
 
       destruct n' as [| n''].
@@ -3460,16 +3430,16 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Inl - Left injection *)
     simpl.
     specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + simpl. trivial.
-    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       exists (EInl v T2), (EInl v' T2), st1', st2', ctx', Σ'.
       split. { exact Hext. }
       split. { apply multi_step_inl. exact Hstep. }
@@ -3482,16 +3452,16 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Inr - Right injection *)
     simpl.
     specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
     unfold exp_rel in *. intros n.
     destruct n as [| n'].
     + simpl. trivial.
-    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+    + simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       exists (EInr v T1), (EInr v' T1), st1', st2', ctx', Σ'.
       split. { exact Hext. }
       split. { apply multi_step_inr. exact Hstep. }
@@ -3504,7 +3474,7 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Case - Pattern matching on sums *)
     simpl.
     specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.  (* scrutinee *)
@@ -3514,10 +3484,10 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Evaluate the scrutinee *)
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
 
       destruct n' as [| n''].
       { (* n' = 0: Step-1 case — compose IHs directly *)
@@ -3565,8 +3535,8 @@ Proof.
                             subst_rho (rho_extend rho2 x1 a2) e1).
           { apply subst_rho_extend. exact Hno2. }
 
-          specialize (He1_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-            [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+          specialize (He1_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+            [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
           exists v1, v2, st1'', st2'', ctx'', Σ''.
           split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2). }
@@ -3588,8 +3558,7 @@ Proof.
           split. { exact Hstore''. }
           split. { exact Hwf1''. }
           split. { exact Hwf2''. }
-          exact Hagree''.
-
+          split. { exact Hagree''. } exact Hsvr''.
         * (* EInr case *)
           subst v v'.
           assert (Hval_b_at_Σ' : val_rel Σ' T2 b1 b2).
@@ -3617,8 +3586,8 @@ Proof.
                             subst_rho (rho_extend rho2 x2 b2) e2).
           { apply subst_rho_extend. exact Hno2. }
 
-          specialize (He2_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-            [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval_e2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+          specialize (He2_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+            [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval_e2 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
           exists v1, v2, st1'', st2'', ctx'', Σ''.
           split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2). }
@@ -3686,8 +3655,8 @@ Proof.
         { apply subst_rho_extend. exact Hno2. }
 
         (* Apply IH at step (S (S n'')) with Σ_cur = Σ' (reflexive) *)
-        specialize (He1_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+        specialize (He1_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e1 [Hstep_e1' [Hvalv1 [Hvalv2 [Hval1 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
         exists v1, v2, st1'', st2'', ctx'', Σ''.
         split; [apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2) |].
@@ -3713,7 +3682,7 @@ Proof.
         split. { exact Hstore''. }
         split. { exact Hwf1''. }
         split. { exact Hwf2''. }
-        { exact Hagree''. }
+        split. { exact Hagree''. } { exact Hsvr''. }
 
       * (* EInr case: v = EInr b1 T1, v' = EInr b2 T1 *)
         subst v v'.
@@ -3753,8 +3722,8 @@ Proof.
         { apply subst_rho_extend. exact Hno2. }
 
         (* Apply IH at step (S (S n'')) with Σ_cur = Σ' (reflexive) *)
-        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+        specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
         exists v1, v2, st1'', st2'', ctx'', Σ''.
         split; [apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2) |].
@@ -3780,7 +3749,7 @@ Proof.
         split. { exact Hstore''. }
         split. { exact Hwf1''. }
         split. { exact Hwf2''. }
-        { exact Hagree''. }
+        split. { exact Hagree''. } { exact Hsvr''. }
   - (* T_If - Conditional with same boolean evaluates same branch *)
     simpl.
     specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* condition *)
@@ -3791,10 +3760,10 @@ Proof.
     + (* n = 0: exp_rel_n 0 is trivially True *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Evaluate condition using IH1 *)
-      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* v and v' are related booleans: val_rel_n (S n') Σ' TBool v v' *)
 
       destruct n' as [| n''].
@@ -3809,8 +3778,8 @@ Proof.
 
         destruct b.
         - (* b = true: both step to then branch, apply He2_rel at step 1 *)
-          specialize (He2_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree') as
-            [w1 [w2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepB1 [HstepB2 [Hvalw1 [Hvalw2 [Hvalrel [Hstorerel [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+          specialize (He2_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+            [w1 [w2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepB1 [HstepB2 [Hvalw1 [Hvalw2 [Hvalrel [Hstorerel [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
           exists w1, w2, st1'', st2'', ctx'', Σ''.
           split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
           split. { apply multi_step_trans with (cfg2 := (EIf (EBool true) (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
@@ -3825,10 +3794,10 @@ Proof.
           split. { exact Hstorerel. }
           split. { exact Hwf1''. }
           split. { exact Hwf2''. }
-          exact Hagree''.
+          split. { exact Hagree''. } exact Hsvr''.
         - (* b = false: both step to else branch, apply He3_rel at step 1 *)
-          specialize (He3_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree') as
-            [w1 [w2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepB1 [HstepB2 [Hvalw1 [Hvalw2 [Hvalrel [Hstorerel [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+          specialize (He3_rel 1 Σ' st1' st2' ctx' HextΣ Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+            [w1 [w2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [HstepB1 [HstepB2 [Hvalw1 [Hvalw2 [Hvalrel [Hstorerel [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
           exists w1, w2, st1'', st2'', ctx'', Σ''.
           split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
           split. { apply multi_step_trans with (cfg2 := (EIf (EBool false) (subst_rho rho1 e2) (subst_rho rho1 e3), st1', ctx')).
@@ -3859,8 +3828,8 @@ Proof.
         (* Apply IH2 for then branch at step (S n') = (S (S n''))
            This needs store_rel_n n' = store_rel_n (S n''), which is Hstore' *)
         specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx'
-                     HextΣ' Hstore' Hwf1' Hwf2' Hagree') as
-          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [Hstep2 [Hstep2' [Hvalr1 [Hvalr2 [Hval2 [Hstore2 [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+                     HextΣ' Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [Hstep2 [Hstep2' [Hvalr1 [Hvalr2 [Hval2 [Hstore2 [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
         exists r1, r2, st1'', st2'', ctx'', Σ''.
         split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
         split.
@@ -3883,15 +3852,15 @@ Proof.
         split. { exact Hstore2. }
         split. { exact Hwf1''. }
         split. { exact Hwf2''. }
-        { exact Hagree''. }
+        split. { exact Hagree''. } { exact Hsvr''. }
       * (* b = false: both step to else branch *)
         assert (HextΣ' : store_ty_extends Σ Σ').
         { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext). }
         (* Apply IH3 for else branch at step (S n') = (S (S n''))
            This needs store_rel_n n' = store_rel_n (S n''), which is Hstore' *)
         specialize (He3_rel (S (S n'')) Σ' st1' st2' ctx'
-                     HextΣ' Hstore' Hwf1' Hwf2' Hagree') as
-          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [Hstep3 [Hstep3' [Hvalr1 [Hvalr2 [Hval3 [Hstore3 [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+                     HextΣ' Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext'' [Hstep3 [Hstep3' [Hvalr1 [Hvalr2 [Hval3 [Hstore3 [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
         exists r1, r2, st1'', st2'', ctx'', Σ''.
         split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext''). }
         split.
@@ -3914,7 +3883,7 @@ Proof.
         split. { exact Hstore3. }
         split. { exact Hwf1''. }
         split. { exact Hwf2''. }
-        { exact Hagree''. }
+        split. { exact Hagree''. } { exact Hsvr''. }
   - (* T_Let - Variable binding *)
     simpl.
     specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He1_rel.  (* bound expression *)
@@ -3924,10 +3893,10 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Evaluate the bound expression e1 *)
-      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
 
       destruct n' as [| n''].
       { (* n' = 0: Step-1 case — compose IHs directly *)
@@ -3961,8 +3930,8 @@ Proof.
                           subst_rho (rho_extend rho2 x v') e2).
         { apply subst_rho_extend. exact Hno2. }
 
-        specialize (He2_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+        specialize (He2_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+          [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
         exists v1, v2, st1'', st2'', ctx'', Σ''.
         split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2). }
@@ -4023,8 +3992,8 @@ Proof.
       { apply subst_rho_extend. exact Hno2. }
 
       (* Apply IH at step (S (S n'')) with Σ_cur = Σ' (reflexive) *)
-      specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-        [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+      specialize (He2_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+        [v1 [v2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_e2 [Hstep_e2' [Hvalv1 [Hvalv2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
       exists v1, v2, st1'', st2'', ctx'', Σ''.
       split; [apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2) |].
@@ -4048,7 +4017,7 @@ Proof.
       split. { exact Hstore''. }
       split. { exact Hwf1''. }
       split. { exact Hwf2''. }
-      { exact Hagree''. }
+      split. { exact Hagree''. } { exact Hsvr''. }
   - (* T_Perform - Effect perform just passes through the value *)
     (* EPerform eff e evaluates e to a value v, then EPerform eff v --> v *)
     simpl.
@@ -4058,9 +4027,9 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* EPerform eff v --> v by ST_PerformValue *)
       exists v, v', st1', st2', ctx', Σ'.
       split. { exact Hext. }
@@ -4084,7 +4053,7 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Handle - Effect handler is like let-binding *)
     (* EHandle e x h evaluates e to v, then steps to [x := v] h *)
     simpl.
@@ -4094,9 +4063,9 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep1 [Hstep1' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
 
       destruct n' as [| n''].
       { (* n' = 0: Step-1 case — compose IHs directly *)
@@ -4130,8 +4099,8 @@ Proof.
                           subst_rho (rho_extend rho2 x v') h).
         { apply subst_rho_extend. exact Hno2. }
 
-        specialize (Hh_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+        specialize (Hh_rel 1 Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+          [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
         exists r1, r2, st1'', st2'', ctx'', Σ''.
         split. { apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2). }
@@ -4185,8 +4154,8 @@ Proof.
                         subst_rho (rho_extend rho2 x v') h).
       { apply subst_rho_extend. exact Hno2. }
 
-      specialize (Hh_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree') as
-        [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' Hagree'']]]]]]]]]]]]]]]]].
+      specialize (Hh_rel (S (S n'')) Σ' st1' st2' ctx' (store_ty_extends_refl Σ') Hstore' Hwf1' Hwf2' Hagree' Hsvr') as
+        [r1 [r2 [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep_h [Hstep_h' [Hvalr1 [Hvalr2 [Hval2 [Hstore'' [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
 
       exists r1, r2, st1'', st2'', ctx'', Σ''.
       split; [apply (store_ty_extends_trans_early Σ_cur Σ' Σ'' Hext Hext2) |].
@@ -4208,7 +4177,7 @@ Proof.
       split. { exact Hstore''. }
       split. { exact Hwf1''. }
       split. { exact Hwf2''. }
-      { exact Hagree''. }
+      split. { exact Hagree''. } { exact Hsvr''. }
   - (* T_Ref - Uses logical_relation_ref axiom *)
     (* The axiom logical_relation_ref directly proves this case. *)
     simpl.
@@ -4218,15 +4187,63 @@ Proof.
     + exact Henv.
     + exact Hno1.
     + exact Hno2.
-  - (* T_Deref - Uses logical_relation_deref axiom *)
-    (* The axiom logical_relation_deref directly proves this case. *)
+  - (* T_Deref - PROVEN using store_vals_rel *)
     simpl.
-    unfold exp_rel. intro n.
-    eapply logical_relation_deref.
-    + eassumption.  (* has_type for e *)
-    + exact Henv.
-    + exact Hno1.
-    + exact Hno2.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0 *) simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
+      (* v, v' : val_rel_n n' Σ' (TRef T l) v v' *)
+      (* Extract: v = ELoc loc, v' = ELoc loc *)
+      destruct (val_rel_n_typing _ _ _ _ _ Hval) as [Htyv1 Htyv2].
+      destruct (canonical_forms_ref nil Σ' Public v T l EffectPure Hvalv Htyv1) as [loc Heqv].
+      destruct (canonical_forms_ref nil Σ' Public v' T l EffectPure Hvalv' Htyv2) as [loc' Heqv'].
+      subst v v'.
+      (* From val_rel_at_type for TRef: loc = loc' *)
+      assert (Hloc_eq : loc = loc').
+      { destruct n' as [| n''].
+        - rewrite val_rel_n_0_unfold in Hval.
+          destruct Hval as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+          simpl in Hrat. destruct (first_order_type T) eqn:Hfo.
+          + simpl in Hrat. destruct Hrat as [loc0 [Heq1 Heq2]].
+            inversion Heq1; subst. inversion Heq2; subst. reflexivity.
+          + simpl in Hrat. destruct Hrat as [loc0 [Heq1 Heq2]].
+            inversion Heq1; subst. inversion Heq2; subst. reflexivity.
+        - rewrite val_rel_n_S_unfold in Hval.
+          destruct Hval as [_ [_ [_ [_ [_ [_ [_ Hrat]]]]]]].
+          simpl in Hrat. destruct Hrat as [loc0 [Heq1 Heq2]].
+          inversion Heq1; subst. inversion Heq2; subst. reflexivity. }
+      subst loc'.
+      (* Get store_ty_lookup for the location *)
+      inversion Htyv1; subst.
+      rename H1 into Hlook_loc.
+      (* From store_vals_rel: extract val_rel_n for the stored values *)
+      destruct (Hsvr' loc T l Hlook_loc) as [w1 [w2 [Hlook1 [Hlook2 Hvrel_w]]]].
+      (* Deref steps *)
+      exists w1, w2, st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split. { apply multi_step_trans with (cfg2 := (EDeref (ELoc loc), st1', ctx')).
+               - apply multi_step_deref. exact Hstep.
+               - eapply MS_Step. apply ST_DerefLoc. exact Hlook1. apply MS_Refl. }
+      split. { apply multi_step_trans with (cfg2 := (EDeref (ELoc loc), st2', ctx')).
+               - apply multi_step_deref. exact Hstep'.
+               - eapply MS_Step. apply ST_DerefLoc. exact Hlook2. apply MS_Refl. }
+      split. { (* value w1 *)
+               destruct (proj1 (Hwf1') loc T l Hlook_loc) as [v1 [Hl1 [Hval1 _]]].
+               rewrite Hlook1 in Hl1. inversion Hl1; subst. exact Hval1. }
+      split. { (* value w2 *)
+               destruct (proj1 (Hwf2') loc T l Hlook_loc) as [v2 [Hl2 [Hval2 _]]].
+               rewrite Hlook2 in Hl2. inversion Hl2; subst. exact Hval2. }
+      split. { exact Hvrel_w. }
+      split. { exact Hstore'. }
+      split. { exact Hwf1'. }
+      split. { exact Hwf2'. }
+      split. { exact Hagree'. }
+      exact Hsvr'.
   - (* T_Assign - Uses logical_relation_assign axiom *)
     (* The axiom logical_relation_assign directly proves this case. *)
     simpl.
@@ -4245,9 +4262,9 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* Classify wraps the value *)
       exists (EClassify v), (EClassify v'), st1', st2', ctx', Σ'.
       split. { exact Hext. }
@@ -4264,7 +4281,7 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Declassify - Uses logical_relation_declassify axiom *)
     (* The axiom logical_relation_declassify directly proves this case. *)
     simpl.
@@ -4283,9 +4300,9 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* EProve v is a value *)
       exists (EProve v), (EProve v'), st1', st2', ctx', Σ'.
       split. { exact Hext. }
@@ -4302,7 +4319,7 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Require - Effect require just passes through the value *)
     (* ERequire eff e evaluates e to v, then ERequire eff v --> v *)
     simpl.
@@ -4312,9 +4329,9 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* ERequire eff v --> v by ST_RequireValue *)
       exists v, v', st1', st2', ctx', Σ'.
       split. { exact Hext. }
@@ -4336,7 +4353,7 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
   - (* T_Grant - Effect grant just passes through the value *)
     (* EGrant eff e evaluates e to v, then EGrant eff v --> v *)
     simpl.
@@ -4346,9 +4363,9 @@ Proof.
     + (* n = 0: trivially true *)
       simpl. trivial.
     + (* n = S n' *)
-      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur.
-      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur) as
-        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]]].
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
       (* EGrant eff v --> v by ST_GrantValue *)
       exists v, v', st1', st2', ctx', Σ'.
       split. { exact Hext. }
@@ -4370,8 +4387,60 @@ Proof.
       split. { exact Hstore'. }
       split. { exact Hwf1'. }
       split. { exact Hwf2'. }
-      { exact Hagree'. }
+      split. { exact Hagree'. } { exact Hsvr'. }
 Qed. (* Remaining cases admitted for v2 migration *)
+
+(** The mutual induction theorem.
+    Since val_rel_n_step_up is fully proven in the base file (NonInterference_v2.v),
+    step_up_at is trivially proven for all n. The fundamental theorem part
+    requires induction on typing derivations and is admitted pending
+    completion of the logical_relation proof. *)
+Theorem step_up_and_fundamental_mutual : forall n,
+  step_up_and_fundamental n.
+Proof.
+  intro n.
+  unfold step_up_and_fundamental.
+  split.
+  - (* step_up at n: follows directly from val_rel_n_step_up *)
+    unfold step_up_at. intros Σ T v1 v2 Hrel Hty1 Hty2.
+    apply val_rel_n_step_up; assumption.
+  - (* fundamental at n *)
+    destruct n as [| n'].
+    + apply fundamental_at_0.
+    + (* fundamental at S n': requires induction on typing derivation *)
+      unfold fundamental_at_step.
+      intros Γ Σ Δ e0 T ε rho1 rho2 Hty Henv Hno1 Hno2.
+      (* Convert typing from arbitrary Δ to Public *)
+      assert (Hty_pub : has_type Γ Σ Public e0 T ε).
+      { exact (has_type_level_irrelevant Γ Σ Δ e0 T ε Hty Public). }
+      (* Apply the logical_relation theorem *)
+      exact (logical_relation Γ Σ e0 T ε Hty_pub Σ (store_ty_extends_refl Σ) rho1 rho2 Henv Hno1 Hno2 (S n')).
+Qed.
+
+(** Corollary: step_up holds at all steps *)
+Corollary val_rel_n_step_up_proven : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
+  val_rel_n (S n) Σ T v1 v2.
+Proof.
+  intros n.
+  destruct (step_up_and_fundamental_mutual n) as [Hsu _].
+  exact Hsu.
+Qed.
+
+(** Corollary: fundamental theorem holds at all steps *)
+Corollary fundamental_at_all_steps : forall n Γ Σ Δ e T ε rho1 rho2,
+  has_type Γ Σ Δ e T ε ->
+  env_rel Σ Γ rho1 rho2 ->
+  rho_no_free_all rho1 ->
+  rho_no_free_all rho2 ->
+  exp_rel_n n Σ T (subst_rho rho1 e) (subst_rho rho2 e).
+Proof.
+  intros n.
+  destruct (step_up_and_fundamental_mutual n) as [_ Hf].
+  exact Hf.
+Qed.
 
 
 (** Lemma: val_rel implies closed expressions *)
@@ -4419,8 +4488,8 @@ Proof.
   rewrite <- (subst_rho_single e x v2).
   (* Apply logical_relation *)
   apply (logical_relation ((x, T_in) :: nil) nil e T_out EffectPure
+                          Hty nil (store_ty_extends_refl nil)
                           (rho_single x v1) (rho_single x v2)).
-  - exact Hty.
   - apply env_rel_single. exact Hval.
   - (* rho_no_free_all for v1 *)
     apply rho_no_free_all_single.
