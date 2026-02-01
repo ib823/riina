@@ -52,7 +52,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 5,308 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 4,514 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
   ];
 
   // Footer link mapping
@@ -404,7 +404,7 @@ const RiinaWebsite = () => {
           borderTop: '1px solid #eee'
         }}>
           {[
-            { value: '5,308', label: 'Theorems Proven' },
+            { value: '4,514', label: 'Theorems Proven' },
             { value: '0', label: 'Admits' },
             { value: '278', label: 'Coq Files Verified' },
           ].map((stat, i) => (
@@ -672,9 +672,9 @@ fungsi hash_kata_laluan(
           <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
             {[
               { name: 'Native', desc: 'C backend — any platform with a C compiler', status: 'Done' },
-              { name: 'WebAssembly', desc: 'Direct IR → WASM binary emission', status: 'Done' },
-              { name: 'Android', desc: 'NDK cross-compilation + JNI bridges', status: 'Done' },
-              { name: 'iOS', desc: 'Xcode toolchain + Swift bridges', status: 'Done' },
+              { name: 'WebAssembly', desc: 'IR → WASM emission (scaffolding — no distributed binary)', status: 'Scaffolding' },
+              { name: 'Android', desc: 'JNI bridge generation (scaffolding — no compiled artifacts)', status: 'Scaffolding' },
+              { name: 'iOS', desc: 'Swift bridge generation (scaffolding — no compiled artifacts)', status: 'Scaffolding' },
             ].map((t, i) => (
               <div key={i} style={{ padding: '24px', border: '1px solid #ddd', backgroundColor: '#fff' }}>
                 <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>{t.name}</div>
@@ -832,7 +832,7 @@ fungsi hash_kata_laluan(
                 "hacked" it. It never will. <strong>RIINA applies this same principle to your software.</strong>
               </p>
               <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#e8f5e9', fontSize: '13px', color: '#2e7d32' }}>
-                5,308 machine-checked proofs guarantee security properties <em>before</em> the code runs.
+                4,514 machine-checked proofs guarantee security properties <em>before</em> the code runs.
               </div>
             </div>
           </div>
@@ -2020,7 +2020,7 @@ allowed — no network, no logging. Enforced at compile time.`
 • Timing-sensitive code in masa_tetap executes in constant time
 • Secrets are zeroed before memory is freed
 
-5,308 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
+4,514 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
             },
             {
               step: '04',
@@ -2028,7 +2028,7 @@ allowed — no network, no logging. Enforced at compile time.`
               content: `RIINA's compiler itself is verified with riinac verify [--fast|--full].
 No external CI/CD — verification lives inside the compiler.
 
-The formal proofs (278 Coq files) ship with the compiler. You can audit them.
+The formal proofs (282 Coq files) ship with the compiler. You can audit them.
 4 justified axioms — all documented, none hidden.
 Every security claim has a machine-checked proof behind it.`
             }
@@ -2102,7 +2102,7 @@ Every security claim has a machine-checked proof behind it.`
     <div style={pageTopStyle}>
       <PageHeader
         title="Research"
-        subtitle="RIINA is built on formal verification in Coq, with 5,308 machine-checked theorems across 244 files. Every security property has a proof."
+        subtitle="RIINA is built on formal verification in Coq, with 4,514 machine-checked theorems across 249 files. Every security property has a proof."
       />
 
       {/* Stats */}
@@ -2115,7 +2115,7 @@ Every security claim has a machine-checked proof behind it.`
             marginBottom: '64px'
           }}>
             {[
-              { value: '5,308', label: 'Qed Proofs' },
+              { value: '4,514', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
               { value: '5', label: 'Justified Axioms' },
               { value: '278', label: 'Coq Files' },
@@ -2270,7 +2270,7 @@ Every security claim has a machine-checked proof behind it.`
             color: '#666',
             fontSize: '14px'
           }}>
-            218 research tracks across 55 domains. 612 Rust tests, 14 crates, 112 example .rii files.
+            218 research tracks across 55 domains. 612 Rust tests, 15 crates, 112 example .rii files.
           </p>
         </div>
       </section>
@@ -2318,7 +2318,7 @@ Every security claim has a machine-checked proof behind it.`
         links: [{ text: 'Keyword Table (60+)', page: 'syntax' }, { text: 'Security Keywords', page: 'securityTypes' }, { text: 'Effect Keywords', page: 'effectSystem' }] },
       { title: 'Standard Library', desc: '88 builtins across 9 modules', page: 'stdlib',
         links: [{ text: 'Module Reference', page: 'stdlib' }, { text: 'std::kripto', page: 'stdlib' }, { text: 'std::io', page: 'stdlib' }] },
-      { title: 'Formal Proofs', desc: '278 Coq files, 5,308 theorems', page: 'research',
+      { title: 'Formal Proofs', desc: '282 Coq files, 4,514 theorems', page: 'research',
         links: [{ text: 'Proof Architecture', page: 'research' }, { text: 'Axiom Justifications', page: 'research' }, { text: 'Building Proofs', page: 'research' }] },
       { title: 'Examples', desc: '112 example .rii files in 9 categories', page: 'examples',
         links: [{ text: 'pengesahan.rii', page: 'examples' }, { text: 'kripto.rii', page: 'examples' }, { text: 'hello_dunia.rii', page: 'examples' }] },

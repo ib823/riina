@@ -58,7 +58,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (5,308 Qed theorems) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (4,514 Qed theorems) | No | No | Partial |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
 ---
@@ -189,8 +189,8 @@ This is not a whitepaper. This is working software.
 
 | Metric | Value |
 |--------|-------|
-| Proof files (.v) | 278 (244 in active build) |
-| Proven theorems (Qed) | 5,308 |
+| Proof files (.v) | 282 (249 in active build) |
+| Proven theorems (Qed) | 4,514 |
 | Unfinished proofs (admit/Admitted) | 0 (entire active build) |
 | Axioms | 4 (all justified, documented) |
 | Lines of proof | 125,186 |
@@ -212,7 +212,7 @@ This is not a whitepaper. This is working software.
 
 | Metric | Value |
 |--------|-------|
-| Rust crates | 14 |
+| Rust crates | 15 |
 | Test count | 651 (all passing) |
 | External dependencies | **0** |
 | Lines of Rust | 24,614 |
@@ -227,7 +227,8 @@ This is not a whitepaper. This is working software.
 | `riina-parser` | AST construction |
 | `riina-types` | Type system definitions (22 types, 17 effects, 6 security levels) |
 | `riina-typechecker` | Type inference and checking |
-| `riina-codegen` | IR lowering, C code generation, interpreter, FFI marshaling |
+| `riina-codegen` | IR lowering, C/WASM/mobile code generation, interpreter, FFI |
+| `riina-wasm` | WASM playground library (in-browser compiler via cdylib) |
 | `riina-fmt` | Code formatter |
 | `riina-lsp` | Language Server Protocol (VS Code integration) |
 | `riina-doc` | HTML documentation generator |
@@ -282,7 +283,7 @@ The `05_TOOLING/` workspace contains 35,000+ lines of hand-written cryptographic
 
 ```
 riina/
-├── 02_FORMAL/coq/         278 Coq proof files (125K+ lines)
+├── 02_FORMAL/coq/         282 Coq proof files (125K+ lines)
 │   ├── foundations/        Core language semantics
 │   ├── type_system/        Progress, Preservation, Type Safety
 │   ├── properties/         Non-Interference, Declassification, Composition
@@ -292,7 +293,7 @@ riina/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 03_PROTO/               Rust compiler (14 crates, 651 tests, 0 deps)
+├── 03_PROTO/               Rust compiler (15 crates, 651 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
@@ -315,7 +316,7 @@ riina/
 ├── docs/                   Enterprise docs, multilingual READMEs
 ├── VERSION                 Semver source of truth (0.2.0)
 ├── CHANGELOG.md            Public-facing changelog
-├── website/                14-page Vite/React website (Why Proof, Enterprise, Releases, etc.)
+├── website/                15-page Vite/React website (Why Proof, Enterprise, Playground, etc.)
 ├── scripts/                Build, install, release, deploy, sync scripts
 └── riina-vscode/           VS Code extension
 ```
@@ -362,16 +363,16 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 5,308 Qed proofs, 4 justified axioms, 0 admits | Stable |
+| 3. Formal Verification | 4,514 Qed proofs, 4 justified axioms, 0 admits | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 112 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
 | 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 14-page website (Why Proof, 15 industries, Releases) | Done |
-| 7. Platform Universality | Multi-backend (WASM, Android, iOS), platform-conditional stdlib, WASM playground | In Progress |
+| 7. Platform Universality | Multi-backend (WASM, Android, iOS), platform-conditional stdlib, WASM playground, backend verification | Done |
 | 8. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
 
-- **Phase 7 (Platform Universality):** WebAssembly backend, mobile cross-compilation (Android/iOS), platform-conditional stdlib, in-browser WASM playground
+- **Phase 7 (Platform Universality):** Done — WASM backend, mobile backends, platform stdlib, WASM playground, 63 backend verification proofs
 - **Phase 8 (Long-term):** Self-hosting compiler, hardware verification, verified OS
 - **Axiom elimination:** 2 of the 4 remaining axioms can be eliminated with `store_rel_n` restructuring; 2 are permanent (policy axiom + standard closure axiom from academic literature)
 - **Compliance system:** `--compliance` flag with 15 industry profiles, audit report generation (text + JSON), certification pipeline — see [Compliance Guide](docs/enterprise/COMPLIANCE_GUIDE.md)
