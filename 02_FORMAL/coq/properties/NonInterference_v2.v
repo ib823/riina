@@ -2472,6 +2472,32 @@ Proof.
   apply store_rel_n_step_up_from_combined; assumption.
 Qed.
 
+(** store_vals_rel monotonicity: step down *)
+Lemma store_vals_rel_mono : forall m n Σ st1 st2,
+  m <= n -> store_vals_rel n Σ st1 st2 -> store_vals_rel m Σ st1 st2.
+Proof.
+  intros m n Σ st1 st2 Hle Hsvr l T sl Hlook.
+  destruct (Hsvr l T sl Hlook) as [v1 [v2 [Hv1 [Hv2 Hvrel]]]].
+  exists v1, v2. split. exact Hv1. split. exact Hv2.
+  apply (val_rel_n_mono m n); assumption.
+Qed.
+
+(** store_vals_rel step-up: uses val_rel_n_step_up on each location *)
+Lemma store_vals_rel_step_up : forall n Σ st1 st2,
+  store_vals_rel n Σ st1 st2 ->
+  store_wf Σ st1 ->
+  store_wf Σ st2 ->
+  store_vals_rel (S n) Σ st1 st2.
+Proof.
+  intros n Σ st1 st2 Hsvr Hwf1 Hwf2 l T sl Hlook.
+  destruct (Hsvr l T sl Hlook) as [v1 [v2 [Hv1 [Hv2 Hvrel]]]].
+  exists v1, v2. split. exact Hv1. split. exact Hv2.
+  apply val_rel_n_step_up.
+  - exact Hvrel.
+  - destruct (val_rel_n_typing n Σ T v1 v2 Hvrel) as [Hty1 _]. exact Hty1.
+  - destruct (val_rel_n_typing n Σ T v1 v2 Hvrel) as [_ Hty2]. exact Hty2.
+Qed.
+
 (** ========================================================================
     SECTION 8: LIMIT DEFINITIONS (Compatibility with v1)
     ========================================================================

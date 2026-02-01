@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# sync-public.sh — Sync validated main commits to ib823/riina (public repo)
+# sync-public.sh — Sync validated main commits to public branch
 #
 # MANDATORY FLOW:
 #   1. All work happens on main
@@ -33,21 +33,12 @@ NC='\033[0m'
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Verify 'riina' remote exists (points to ib823/riina public repo)
-if ! git remote get-url riina &>/dev/null; then
-    echo -e "${RED}ERROR: 'riina' remote not configured.${NC}"
-    echo "Run: git remote add riina https://github.com/ib823/riina.git"
-    exit 1
-fi
-echo -e "${GREEN}[✓] 'riina' remote configured${NC}"
-
 # Internal files/dirs that must NEVER appear on public
 INTERNAL_PATHS=(
     "01_RESEARCH/"
     "06_COORDINATION/"
     "99_ARCHIVE/"
     "claude_ai_output/"
-    ".claude/"
     "dist/"
     "CLAUDE.md"
     "PROGRESS.md"
@@ -64,7 +55,6 @@ INTERNAL_PATHS=(
     "02_FORMAL/coq/AXIOM_ELIMINATION_STRATEGY.md"
     "02_FORMAL/coq/_CoqProject.backup"
     "02_FORMAL/coq/properties/_archive_deprecated/"
-    "scripts/sync-public.sh"
 )
 
 echo ""
@@ -188,15 +178,17 @@ $ORIGINAL_MSG
 
 Cherry-picked from main ($(echo $COMMIT_ARG | cut -c1-7)).
 Internal files excluded.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 EOF
 )" --quiet
 
 echo -e "${GREEN}[✓] Committed on public${NC}"
 
-# Step 10: Push public → riina remote as main
-echo "Pushing to ib823/riina..."
-git push riina public:main
-echo -e "${GREEN}[✓] Pushed to ib823/riina (main)${NC}"
+# Step 10: Push public
+echo "Pushing public..."
+git push origin public
+echo -e "${GREEN}[✓] Public branch pushed${NC}"
 
 # Step 11: Switch back to main (clean any conflict artifacts first)
 git reset --hard HEAD --quiet 2>/dev/null || true

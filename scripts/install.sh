@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # RIINA Installer — builds from source and installs riinac
-# Usage: curl -sSf https://raw.githubusercontent.com/ib823/riina/main/scripts/install.sh | bash
+# Usage: curl -sSf https://raw.githubusercontent.com/ib823/proof/main/scripts/install.sh | bash
 # Or:    bash scripts/install.sh
 
 set -euo pipefail
@@ -28,7 +28,7 @@ elif [ -f "Cargo.toml" ] && grep -q 'riinac' Cargo.toml; then
 else
     echo "ERROR: Cannot find RIINA source."
     echo "Run this script from the repository root, or clone first:"
-    echo "  git clone https://github.com/ib823/riina.git && cd riina"
+    echo "  git clone https://github.com/ib823/proof.git && cd proof"
     exit 1
 fi
 

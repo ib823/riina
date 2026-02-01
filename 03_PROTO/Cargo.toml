@@ -25,7 +25,7 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.84.0"
 license = "MPL-2.0"
-repository = "https://github.com/ib823/riina"
+repository = "https://github.com/ib823/proof"
 
 [workspace.dependencies]
 # Internal dependencies - Foundation crates (P0)

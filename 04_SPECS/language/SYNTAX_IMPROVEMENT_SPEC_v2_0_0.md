@@ -930,7 +930,7 @@ grep -r "Admitted" *.v       # Must be ≤ 18 (unchanged)
 | Add `EffConstantTime` / `EffSpecSafe` to `effect` | Category error: CT/SS are verification properties, not computational effects. Would break all 17 effect matches across 25+ Coq files. |
 | Change `TFn` to take `effect_row` (list effect) | Would break every `TFn` match in all 222 .v files. `effect_join` lattice is already sound. |
 | Add `EFor` / `EWhile` / `ELoop` to core `expr` | `ELoop` (infinite loop) directly contradicts `well_typed_SN` (strong normalization theorem). Loops must be bounded or effectful. |
-| Add 6 new `expr` constructors + admit downstream | Explicitly violates project policy: "NO `admit.` — No tactical admits allowed." |
+| Add 6 new `expr` constructors + admit downstream | Explicitly violates CLAUDE.md: "NO `admit.` — No tactical admits allowed." |
 | Add `TFloat` / `TChar` to Coq `ty` | These already exist in the BM syntax spec as desired types, but adding them to Coq now would break all `ty` matches across 222 files for no proof benefit. Defer until Phase 2. |
 | Security level 2→6 in Coq | Already done — Coq has 6 levels since initial implementation. |
 | Effect 6→18 in Coq | Already done — Coq has 17 effects. The v1 spec was counting stale data. |

@@ -26,8 +26,8 @@ RIINA 是一种编程语言，其中**每一个安全保证都有机器检查的
 ### 安装
 
 ```bash
-git clone https://github.com/ib823/riina.git
-cd riina/03_PROTO
+git clone https://github.com/ib823/proof.git
+cd proof/03_PROTO
 cargo build --release
 ```
 
