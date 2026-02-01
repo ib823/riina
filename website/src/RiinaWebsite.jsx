@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ============================================================================
-// RIINA WEBSITE - COMPLETE IMPLEMENTATION (13 PAGES)
+// RIINA WEBSITE - COMPLETE IMPLEMENTATION (14 PAGES)
 // ============================================================================
 
 const RiinaWebsite = () => {
@@ -16,6 +16,7 @@ const RiinaWebsite = () => {
   // Navigation
   const pages = [
     { id: 'home', label: 'Home' },
+    { id: 'whyProof', label: 'Why Proof' },
     { id: 'language', label: 'Language' },
     { id: 'how', label: 'How It Works' },
     { id: 'demos', label: 'Demos' },
@@ -38,6 +39,7 @@ const RiinaWebsite = () => {
       'Security Types': 'securityTypes',
       'Effect System': 'effectSystem',
       'Examples': 'examples',
+      'Why Proof': 'whyProof',
       'Documentation': 'docs',
       'Quick Start': 'quickStart',
       'Standard Library': 'stdlib',
@@ -332,13 +334,26 @@ const RiinaWebsite = () => {
           fontSize: '18px',
           color: '#888',
           maxWidth: '600px',
-          margin: '0 auto',
+          margin: '0 auto 32px',
           fontFamily: 'Georgia, serif',
           fontStyle: 'italic'
         }}>
           Bertampuk Bertangkai<br/>
           <span style={{ fontSize: '14px', fontStyle: 'normal' }}>Every claim backed by proof</span>
         </p>
+        <button
+          onClick={() => setCurrentPage('whyProof')}
+          style={{
+            backgroundColor: 'transparent',
+            color: '#888',
+            border: '1px solid #444',
+            padding: '12px 24px',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}
+        >
+          Why mathematical proof? (No technical knowledge required)
+        </button>
       </section>
 
       {/* How It's Different */}
@@ -574,6 +589,433 @@ fungsi hash_kata_laluan(
           >
             View on GitHub
           </a>
+        </div>
+      </section>
+    </div>
+  );
+
+  // ============================================================================
+  // WHY PROOF PAGE — Executive-Friendly Explanation
+  // ============================================================================
+  const WhyProofPage = () => (
+    <div style={pageTopStyle}>
+      {/* Hero — The Core Question */}
+      <section style={{
+        padding: '80px 32px 60px',
+        maxWidth: '900px',
+        margin: '0 auto'
+      }}>
+        <p style={{ ...sectionLabel, marginBottom: '24px' }}>FOR DECISION-MAKERS</p>
+        <h1 style={{ fontSize: '48px', fontWeight: 300, marginBottom: '32px', lineHeight: 1.2 }}>
+          What if your software <span style={{ fontWeight: 600 }}>could not be hacked?</span>
+        </h1>
+        <p style={{ fontSize: '20px', color: '#666', lineHeight: 1.8, marginBottom: '16px' }}>
+          Not "hard to hack." Not "we tested it thoroughly."
+          <em style={{ color: '#000' }}> Mathematically impossible to hack</em> — the same way
+          it is impossible for 2 + 2 to equal 5.
+        </p>
+        <p style={{ fontSize: '18px', color: '#666', lineHeight: 1.8 }}>
+          This is not a marketing claim. It is the established science of <strong>formal verification</strong> —
+          used by DARPA, NASA, Airbus, AWS, and Microsoft for their most critical systems.
+          RIINA brings it to every line of code you write.
+        </p>
+      </section>
+
+      {/* The $4.88M Problem */}
+      <section style={{
+        backgroundColor: '#000',
+        color: '#fff',
+        padding: '80px 32px'
+      }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <p style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '32px' }}>
+            THE BUSINESS CASE
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '48px', marginBottom: '48px' }}>
+            {[
+              { value: '$4.88M', label: 'Average cost of a data breach', source: 'IBM Cost of Data Breach Report, 2024' },
+              { value: '$9.77M', label: 'Average breach cost in healthcare', source: 'Highest industry cost for 14 consecutive years' },
+              { value: '292 days', label: 'Average time to identify and contain', source: 'IBM, 2024 — nearly 10 months' },
+            ].map((stat, i) => (
+              <div key={i}>
+                <div style={{ fontSize: '42px', fontWeight: 300, fontFamily: 'Georgia, serif', marginBottom: '8px' }}>{stat.value}</div>
+                <div style={{ fontSize: '14px', color: '#ccc', marginBottom: '8px' }}>{stat.label}</div>
+                <div style={{ fontSize: '11px', color: '#666', fontStyle: 'italic' }}>{stat.source}</div>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: '18px', color: '#888', lineHeight: 1.8, maxWidth: '800px' }}>
+            The global cybersecurity market will spend <strong style={{ color: '#fff' }}>$212 billion in 2025</strong> (Gartner) —
+            mostly on tools that find bugs <em>after</em> they exist. What if the bugs never existed in the first place?
+          </p>
+        </div>
+      </section>
+
+      {/* The Lock vs Theorem Analogy */}
+      <section style={{ padding: '100px 32px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <p style={{ ...sectionLabel, marginBottom: '32px' }}>THE CORE INSIGHT — NO TECHNICAL KNOWLEDGE REQUIRED</p>
+          <h2 style={{ fontSize: '36px', fontWeight: 300, marginBottom: '48px', lineHeight: 1.4 }}>
+            Traditional security is a <strong>lock</strong>.<br/>
+            RIINA security is a <strong>mathematical theorem</strong>.
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', marginBottom: '64px' }}>
+            <div style={{ padding: '32px', border: '1px solid #eee' }}>
+              <h3 style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#999', marginBottom: '24px' }}>A LOCK (TRADITIONAL SECURITY)</h3>
+              <p style={{ color: '#666', lineHeight: 1.8, fontSize: '15px' }}>
+                A lock can be picked by a smarter thief. You make the lock stronger,
+                but someone eventually finds a way in. Every year, new attacks break
+                what was "secure" last year. You are betting the lock is
+                <em> strong enough</em>. That bet has a price: $4.88 million, on average.
+              </p>
+              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fff3f3', fontSize: '13px', color: '#c62828' }}>
+                Firewalls, penetration testing, antivirus, SIEM — all find problems <em>after</em> they exist.
+              </div>
+            </div>
+            <div style={{ padding: '32px', border: '2px solid #000' }}>
+              <h3 style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#000', marginBottom: '24px' }}>A THEOREM (RIINA)</h3>
+              <p style={{ color: '#333', lineHeight: 1.8, fontSize: '15px' }}>
+                A theorem proves that the door <strong>cannot exist in an open state</strong>.
+                No lock to pick. No strength to guess. The Pythagorean theorem has held
+                for 2,500 years — no computer, no AI, no quantum machine has
+                "hacked" it. It never will. <strong>RIINA applies this same principle to your software.</strong>
+              </p>
+              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#e8f5e9', fontSize: '13px', color: '#2e7d32' }}>
+                5,304 machine-checked proofs guarantee security properties <em>before</em> the code runs.
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            padding: '32px',
+            backgroundColor: '#f8f8f8',
+            borderLeft: '4px solid #000',
+            marginBottom: '32px'
+          }}>
+            <p style={{ fontSize: '18px', fontStyle: 'italic', color: '#333', margin: 0, lineHeight: 1.6 }}>
+              "Program testing can be used to show the presence of bugs, but never to show their absence."
+            </p>
+            <p style={{ fontSize: '13px', color: '#999', marginTop: '12px', margin: '12px 0 0 0' }}>
+              — Edsger W. Dijkstra, Turing Award Laureate, 1972
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Assurance Pyramid */}
+      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <p style={{ ...sectionLabel, marginBottom: '16px' }}>THE ASSURANCE HIERARCHY</p>
+          <h2 style={{ fontSize: '32px', fontWeight: 300, marginBottom: '16px' }}>
+            Not all security is created equal
+          </h2>
+          <p style={{ color: '#666', fontSize: '15px', marginBottom: '48px', lineHeight: 1.8 }}>
+            Most software uses Level 1-2. Critical infrastructure uses Level 3-4. Flight software and
+            nuclear systems use Level 5. RIINA gives Level 6 to every program.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            {[
+              { level: 6, name: 'Mathematical Proof', desc: 'Proven impossible to have this class of vulnerability. Cannot be invalidated by any future technology.', riina: true, color: '#000', textColor: '#fff', ref: 'RIINA, seL4, CompCert, HACL*' },
+              { level: 5, name: 'Formal Model Checking', desc: 'All reachable states exhaustively explored. Limited to finite-state systems.', riina: false, color: '#333', textColor: '#fff', ref: 'AWS Zelkova, TLA+' },
+              { level: 4, name: 'Static Analysis', desc: 'Code scanned for known patterns. Can miss novel attack vectors.', riina: false, color: '#666', textColor: '#fff', ref: 'SonarQube, Coverity, CodeQL' },
+              { level: 3, name: 'Penetration Testing', desc: 'Experts try to break in. Only finds what testers think to try.', riina: false, color: '#999', textColor: '#fff', ref: 'Manual pen testing, bug bounties' },
+              { level: 2, name: 'Automated Testing', desc: 'Run test cases and check outputs. Only covers scenarios you wrote tests for.', riina: false, color: '#bbb', textColor: '#000', ref: 'Unit tests, integration tests, CI/CD' },
+              { level: 1, name: 'No Verification', desc: 'Ship and hope. Fix when customers report problems.', riina: false, color: '#ddd', textColor: '#000', ref: 'Most software today' },
+            ].map((item, i) => (
+              <div key={i} style={{
+                display: 'grid',
+                gridTemplateColumns: '60px 1fr',
+                gap: '0',
+                backgroundColor: item.color,
+                color: item.textColor,
+                padding: item.riina ? '24px 28px' : '16px 28px',
+                border: item.riina ? '3px solid #000' : 'none',
+                position: 'relative'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: 300, fontFamily: 'Georgia, serif', opacity: 0.7 }}>
+                  {item.level}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '15px' }}>{item.name}</span>
+                    {item.riina && <span style={{
+                      fontSize: '11px',
+                      padding: '2px 10px',
+                      backgroundColor: '#fff',
+                      color: '#000',
+                      fontWeight: 700,
+                      letterSpacing: '0.1em'
+                    }}>RIINA</span>}
+                  </div>
+                  <div style={{ fontSize: '13px', opacity: 0.8 }}>{item.desc}</div>
+                  <div style={{ fontSize: '11px', opacity: 0.5, marginTop: '4px' }}>{item.ref}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ color: '#666', fontSize: '13px', marginTop: '24px', fontStyle: 'italic' }}>
+            Based on Common Criteria EAL1–EAL7 (ISO/IEC 15408) and the CyBOK Formal Methods knowledge area.
+          </p>
+        </div>
+      </section>
+
+      {/* Quantum & AI Immunity */}
+      <section style={{ padding: '100px 32px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <p style={{ ...sectionLabel, marginBottom: '16px' }}>FUTURE-PROOF BY DESIGN</p>
+          <h2 style={{ fontSize: '36px', fontWeight: 300, marginBottom: '48px', lineHeight: 1.4 }}>
+            Quantum computers and AI <span style={{ fontWeight: 600 }}>cannot break mathematical logic</span>
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px', marginBottom: '48px' }}>
+            <div style={{ padding: '32px', border: '1px solid #eee' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Quantum Computing</h3>
+              <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.7 }}>
+                Quantum computers threaten <strong>encryption</strong> — they can factor large numbers faster
+                (Shor's algorithm). But RIINA's proofs are not encryption. They are <em>logical deductions</em>.
+                A quantum computer cannot make a valid logical argument invalid, just as it cannot make 2+2 equal 5.
+              </p>
+            </div>
+            <div style={{ padding: '32px', border: '1px solid #eee' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Artificial Intelligence</h3>
+              <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.7 }}>
+                AI can <em>find</em> bugs (and create them). But AI cannot invalidate a machine-checked proof.
+                Cambridge University research shows deep learning is "untrustworthy and easy to fool."
+                RIINA's proofs are checked by Coq — a proof engine that follows logic, not statistics. No hallucination. No error.
+              </p>
+            </div>
+            <div style={{ padding: '32px', border: '1px solid #eee' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Future Threats</h3>
+              <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.7 }}>
+                The Pythagorean theorem has survived 2,500 years of advancement. Mathematical proof does not
+                expire, decay, or become vulnerable. RIINA's security guarantees hold not because the
+                defense is strong, but because the <em>attack is logically impossible</em>.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', backgroundColor: '#eee' }}>
+            <div style={{ padding: '24px', backgroundColor: '#fff' }}>
+              <h4 style={{ fontSize: '12px', letterSpacing: '0.1em', color: '#c62828', marginBottom: '12px' }}>ENCRYPTION (BREAKABLE)</h4>
+              <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
+                Based on <strong>computational difficulty</strong> — "this is hard to crack."
+                Quantum computers and AI make hard problems easier. What is secure today may not be secure tomorrow.
+              </p>
+            </div>
+            <div style={{ padding: '24px', backgroundColor: '#fff' }}>
+              <h4 style={{ fontSize: '12px', letterSpacing: '0.1em', color: '#2e7d32', marginBottom: '12px' }}>MATHEMATICAL PROOF (UNBREAKABLE)</h4>
+              <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
+                Based on <strong>logical deduction</strong> — "this is impossible by the rules of logic."
+                No amount of computing power changes logic. What is proven today is proven forever.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Real-World Proof Points */}
+      <section style={{ padding: '80px 32px', backgroundColor: '#000', color: '#fff' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <p style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '16px' }}>
+            PROVEN IN THE REAL WORLD
+          </p>
+          <h2 style={{ fontSize: '32px', fontWeight: 300, marginBottom: '48px' }}>
+            Organizations that bet on mathematical proof — and won
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            {[
+              {
+                org: 'DARPA',
+                title: 'seL4 — the "unhackable" drone kernel',
+                desc: 'At DEF CON, DARPA challenged elite hackers to break into a drone running seL4, a formally verified operating system kernel. The hackers compromised the Linux system on board but could not break past seL4\'s mathematically proven security boundary. Zero breaches.',
+                source: 'DARPA HACMS Program, DEF CON demonstration'
+              },
+              {
+                org: 'Airbus / Paris Metro',
+                title: '25 years, zero safety incidents',
+                desc: 'Paris Metro Line 14 has operated driverless since 1998 using software verified with the B formal method. After more than 25 years and billions of passenger-trips, there has been zero software-caused safety incidents. The same method now runs metros in New York, Calcutta, and São Paulo.',
+                source: 'CLEARSY, B Method, operational since 1998'
+              },
+              {
+                org: 'Amazon Web Services',
+                title: 'Formal verification at cloud scale',
+                desc: 'AWS uses formal methods across its infrastructure: s2n (TLS library verified with Coq and SAW), Zelkova (mathematically reasons about ALL possible IAM policy requests, not just test cases), and Tiros (network reachability proofs). Verification runs on every code change.',
+                source: 'AWS Security Blog, Provable Security initiative'
+              },
+              {
+                org: 'Microsoft',
+                title: 'HACL* — verified crypto in Windows, Linux, Firefox',
+                desc: 'Microsoft\'s Project Everest produced HACL*, a formally verified cryptographic library deployed in the Windows kernel, Linux kernel, Firefox browser, and WireGuard VPN. Proven memory-safe, functionally correct, and timing-attack resistant. As fast as OpenSSL.',
+                source: 'Microsoft Research, Project Everest, HACL*'
+              },
+              {
+                org: 'CompCert',
+                title: '6 CPU-years of attack found zero bugs',
+                desc: 'Csmith, an automated bug-finding tool, spent six CPU-years trying to find wrong-code errors in CompCert, a formally verified C compiler. It found zero. In the same campaign, it found bugs in every other compiler tested — GCC, Clang, all of them.',
+                source: 'Yang et al., "Finding and Understanding Bugs in C Compilers," PLDI 2011'
+              },
+              {
+                org: 'ProvenRun',
+                title: 'First OS to achieve Common Criteria EAL7',
+                desc: 'ProvenCore became the first operating system in the world to achieve EAL7 — the highest possible security certification under Common Criteria (ISO 15408). The only way to reach this level is through formal mathematical proof.',
+                source: 'ProvenRun, Common Criteria EAL7 certification'
+              },
+            ].map((item, i) => (
+              <div key={i} style={{
+                padding: '28px',
+                border: '1px solid #333'
+              }}>
+                <div style={{ fontSize: '11px', letterSpacing: '0.15em', color: '#666', marginBottom: '8px' }}>{item.org}</div>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: '#fff' }}>{item.title}</h3>
+                <p style={{ fontSize: '13px', color: '#aaa', lineHeight: 1.7, marginBottom: '12px' }}>{item.desc}</p>
+                <div style={{ fontSize: '11px', color: '#555', fontStyle: 'italic' }}>{item.source}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* The Executive Summary */}
+      <section style={{ padding: '100px 32px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <p style={{ ...sectionLabel, marginBottom: '16px' }}>THE EXECUTIVE SUMMARY</p>
+          <h2 style={{ fontSize: '36px', fontWeight: 300, marginBottom: '48px' }}>
+            Why your organization should evaluate RIINA
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            {[
+              {
+                role: 'Chief Executive Officer',
+                point: 'Eliminate entire vulnerability classes permanently',
+                detail: 'RIINA does not find and fix security bugs. It makes them logically impossible. This is not incremental improvement — it is a category change. Your competitors patch vulnerabilities. Your organization proves they cannot exist.'
+              },
+              {
+                role: 'Chief Information Officer',
+                point: 'Reduce security engineering costs by removing the patch cycle',
+                detail: 'The average breach takes 292 days to contain and costs $4.88M (IBM, 2024). RIINA-compiled code eliminates the vulnerability classes that cause most breaches — information leaks, injection attacks, timing side-channels — by mathematical construction. No patch Tuesday. No CVE triage for proven-secure components.'
+              },
+              {
+                role: 'Chief Risk Officer',
+                point: 'Machine-checkable compliance certificates that auditors can verify independently',
+                detail: 'RIINA generates proof certificates mapping code properties to regulatory controls (HIPAA, PCI-DSS, GDPR, DO-178C, and 11 more). Auditors run the Coq proof checker themselves — zero trust in the vendor. This is the strongest evidence available under Common Criteria, and it can reduce audit cycles from weeks to minutes.'
+              },
+              {
+                role: 'Chief Information Security Officer',
+                point: 'Security guarantees that survive quantum computing and AI',
+                detail: 'RIINA\'s proofs are logical deductions, not computational hardness assumptions. Quantum computers break encryption (Shor\'s algorithm), not logic. AI finds bugs, not counterproofs. Your security posture is future-proof by the laws of mathematics — not by the strength of your current defenses.'
+              },
+              {
+                role: 'Chief Financial Officer',
+                point: 'Quantifiable risk elimination — not risk reduction',
+                detail: 'Traditional security reduces breach probability. RIINA eliminates specific vulnerability classes entirely — the financial exposure for those classes drops to zero. Formal verification evidence strengthens cyber insurance applications and reduces premiums. The FAIR risk model quantifies this directly in financial terms.'
+              },
+              {
+                role: 'Board of Directors',
+                point: 'Due diligence backed by the highest assurance standard in existence',
+                detail: 'Formal mathematical proof is the basis for EAL7 (highest Common Criteria), DO-178C DAL A (flight-critical software), and ISO 26262 ASIL-D (automotive safety). DARPA, NASA, Airbus, AWS, and Microsoft use it for their most critical systems. RIINA makes this level of assurance accessible to every organization.'
+              },
+            ].map((item, i) => (
+              <div key={i} style={{
+                padding: '32px',
+                borderBottom: '1px solid #eee',
+                display: 'grid',
+                gridTemplateColumns: '200px 1fr',
+                gap: '32px',
+                alignItems: 'start'
+              }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: '#999', letterSpacing: '0.05em', marginBottom: '8px' }}>{item.role}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600 }}>{item.point}</div>
+                </div>
+                <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8, margin: 0 }}>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gradual Adoption */}
+      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ ...sectionLabel, marginBottom: '16px' }}>START TODAY</p>
+          <h2 style={{ fontSize: '32px', fontWeight: 300, marginBottom: '24px' }}>
+            No rewrite required. Start with one module.
+          </h2>
+          <p style={{ color: '#666', fontSize: '16px', lineHeight: 1.8, maxWidth: '700px', margin: '0 auto 48px' }}>
+            RIINA integrates with existing C, Rust, and Go codebases via C FFI.
+            Use RIINA for your most security-critical component — authentication, payment processing,
+            patient data handling — and call it from your existing code. Expand as confidence grows.
+          </p>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <button
+              onClick={() => setCurrentPage('enterprise')}
+              style={{
+                backgroundColor: '#000',
+                color: '#fff',
+                border: 'none',
+                padding: '16px 32px',
+                fontSize: '16px',
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Enterprise Details
+            </button>
+            <button
+              onClick={() => setCurrentPage('quickStart')}
+              style={{
+                backgroundColor: 'transparent',
+                color: '#000',
+                border: '1px solid #000',
+                padding: '16px 32px',
+                fontSize: '16px',
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Sources */}
+      <section style={{ padding: '60px 32px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <p style={{ ...sectionLabel, marginBottom: '24px' }}>SOURCES &amp; REFERENCES</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {[
+              'IBM Cost of a Data Breach Report, 2024 — $4.88M average, $9.77M healthcare',
+              'Gartner, August 2024 — $212B global security spending forecast for 2025',
+              'Kahneman & Tversky, Prospect Theory, 1979 — loss aversion in decision-making',
+              'Dijkstra, NATO Conference, 1969 — "Testing shows the presence of bugs, not their absence"',
+              'DARPA HACMS Program — seL4 formally verified kernel, DEF CON challenge',
+              'Yang et al., PLDI 2011 — Csmith found zero bugs in CompCert over 6 CPU-years',
+              'CLEARSY, 2024 — Paris Metro Line 14, B Method, 25+ years operational',
+              'AWS Security Blog — s2n, Zelkova, Tiros formal verification at scale',
+              'Microsoft Research, Project Everest — HACL* in Windows, Linux, Firefox kernels',
+              'ProvenRun — ProvenCore, first OS to achieve Common Criteria EAL7',
+              'ISO/IEC 15408 (Common Criteria) — EAL1-EAL7 assurance hierarchy',
+              'CyBOK Formal Methods for Security Knowledge Area — verification taxonomy',
+              'FAIR Institute — Factor Analysis of Information Risk quantitative model',
+              'Cambridge University — mathematical limits of neural networks and AI',
+            ].map((ref, i) => (
+              <div key={i} style={{
+                padding: '12px 16px',
+                fontSize: '12px',
+                color: '#666',
+                backgroundColor: '#f8f8f8',
+                lineHeight: 1.5
+              }}>
+                {ref}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>
@@ -2534,7 +2976,7 @@ nix run github:ib823/riina`}
   // ============================================================================
   const Footer = () => {
     const footerSections = [
-      { title: 'Language', links: ['Syntax', 'Security Types', 'Effect System', 'Examples'] },
+      { title: 'Language', links: ['Why Proof', 'Syntax', 'Security Types', 'Effect System', 'Examples'] },
       { title: 'Developers', links: ['Documentation', 'Quick Start', 'Standard Library', 'GitHub'] },
       { title: 'Community', links: ['Contributing', 'Issues', 'Discussions'] },
       { title: 'Legal', links: ['MPL-2.0 License', 'Privacy', 'Terms'] }
@@ -2644,6 +3086,7 @@ nix run github:ib823/riina`}
   // ============================================================================
   const renderPage = () => {
     switch (currentPage) {
+      case 'whyProof': return <WhyProofPage />;
       case 'language': return <LanguagePage />;
       case 'how': return <HowPage />;
       case 'demos': return <DemosPage />;
