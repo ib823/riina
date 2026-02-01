@@ -479,6 +479,7 @@ impl Program {
         }
 
         // Helper: desugar a single function decl into the appropriate binding
+        #[allow(clippy::boxed_local)]
         fn desugar_function(name: Ident, params: Vec<(Ident, Ty)>, return_ty: Ty, effect: Effect, body: Box<Expr>, continuation: Box<Expr>) -> Expr {
             let lam = params.iter().rev().fold(*body, |acc, (p, ty)| {
                 Expr::Lam(p.clone(), ty.clone(), Box::new(acc))

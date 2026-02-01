@@ -722,7 +722,7 @@ fn pack_t0(t0: &PolyVecK, buf: &mut [u8]) {
                 vals[m] = ((1i32 << (params::D - 1)) - t0.polys[i].coeffs[8 * j + m]) as u32;
             }
             // Pack 8 x 13-bit values into 13 bytes
-            buf[base + 13 * j + 0] = vals[0] as u8;
+            buf[base + 13 * j] = vals[0] as u8;
             buf[base + 13 * j + 1] = ((vals[0] >> 8) | (vals[1] << 5)) as u8;
             buf[base + 13 * j + 2] = (vals[1] >> 3) as u8;
             buf[base + 13 * j + 3] = ((vals[1] >> 11) | (vals[2] << 2)) as u8;
@@ -790,7 +790,7 @@ fn pack_z(poly: &Poly, buf: &mut [u8]) {
             t[j] = (params::GAMMA1 as i32 - poly.coeffs[4 * i + j]) as u32;
         }
         // 4 * 20 bits = 80 bits = 10 bytes
-        buf[10 * i + 0] = t[0] as u8;
+        buf[10 * i] = t[0] as u8;
         buf[10 * i + 1] = (t[0] >> 8) as u8;
         buf[10 * i + 2] = ((t[0] >> 16) | (t[1] << 4)) as u8;
         buf[10 * i + 3] = (t[1] >> 4) as u8;
@@ -812,7 +812,7 @@ fn unpack_z(buf: &[u8], poly: &mut Poly) {
         let t2 = b(5) | (b(6) << 8) | ((b(7) & 0x0F) << 16);
         let t3 = (b(7) >> 4) | (b(8) << 4) | (b(9) << 12);
 
-        poly.coeffs[4 * i + 0] = params::GAMMA1 as i32 - (t0 & 0xFFFFF) as i32;
+        poly.coeffs[4 * i] = params::GAMMA1 as i32 - (t0 & 0xFFFFF) as i32;
         poly.coeffs[4 * i + 1] = params::GAMMA1 as i32 - (t1 & 0xFFFFF) as i32;
         poly.coeffs[4 * i + 2] = params::GAMMA1 as i32 - (t2 & 0xFFFFF) as i32;
         poly.coeffs[4 * i + 3] = params::GAMMA1 as i32 - (t3 & 0xFFFFF) as i32;

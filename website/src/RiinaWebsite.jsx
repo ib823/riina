@@ -29,7 +29,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 5,304 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 5,308 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
   ];
 
   // Footer link mapping
@@ -52,9 +52,9 @@ const RiinaWebsite = () => {
   };
 
   const externalLinks = {
-    'GitHub': 'https://github.com/ib823/proof',
-    'Issues': 'https://github.com/ib823/proof/issues',
-    'Discussions': 'https://github.com/ib823/proof/discussions',
+    'GitHub': 'https://github.com/ib823/riina',
+    'Issues': 'https://github.com/ib823/riina/issues',
+    'Discussions': 'https://github.com/ib823/riina/discussions',
   };
 
   // Shared styles
@@ -181,7 +181,7 @@ const RiinaWebsite = () => {
         </nav>
 
         <a
-          href="https://github.com/ib823/proof"
+          href="https://github.com/ib823/riina"
           style={{
             backgroundColor: '#000',
             color: '#fff',
@@ -258,7 +258,7 @@ const RiinaWebsite = () => {
             Get Started
           </button>
           <a
-            href="https://github.com/ib823/proof"
+            href="https://github.com/ib823/riina"
             style={{
               backgroundColor: 'transparent',
               color: '#000',
@@ -284,7 +284,7 @@ const RiinaWebsite = () => {
           borderTop: '1px solid #eee'
         }}>
           {[
-            { value: '5,304', label: 'Theorems Proven' },
+            { value: '5,308', label: 'Theorems Proven' },
             { value: '0', label: 'Admits' },
             { value: '278', label: 'Coq Files Verified' },
           ].map((stat, i) => (
@@ -513,10 +513,14 @@ fungsi hash_kata_laluan(
           gap: '24px'
         }}>
           {[
-            { name: 'Secure Web Services', desc: 'Taint tracking, injection prevention', icon: '⊢' },
-            { name: 'Post-Quantum Crypto', desc: 'Constant-time, verified primitives', icon: '⊢' },
-            { name: 'Healthcare (HIPAA)', desc: 'Patient data provably confidential', icon: '⊢' },
-            { name: 'Payment Processing', desc: 'Cardholder data cannot leak', icon: '⊢' },
+            { name: 'Defence & Military', desc: 'CMMC, ITAR-compliant classified data handling', icon: '⊢' },
+            { name: 'Healthcare', desc: 'HIPAA-proven PHI protection, audit trails', icon: '⊢' },
+            { name: 'Financial Services', desc: 'PCI-DSS, SOX — cardholder data cannot leak', icon: '⊢' },
+            { name: 'Post-Quantum Crypto', desc: 'ML-KEM, ML-DSA — constant-time, verified', icon: '⊢' },
+            { name: 'Aerospace & Aviation', desc: 'DO-178C DAL A formal verification evidence', icon: '⊢' },
+            { name: 'Energy & Utilities', desc: 'NERC CIP SCADA/ICS provable isolation', icon: '⊢' },
+            { name: 'Agriculture & IoT', desc: 'Sensor firmware, precision agriculture safety', icon: '⊢' },
+            { name: 'Government & GovTech', desc: 'FedRAMP, NIST 800-53 proven controls', icon: '⊢' },
           ].map((item, i) => (
             <div key={i} style={{
               padding: '32px 24px',
@@ -573,7 +577,7 @@ fungsi hash_kata_laluan(
             Get Started
           </button>
           <a
-            href="https://github.com/ib823/proof"
+            href="https://github.com/ib823/riina"
             style={{
               backgroundColor: 'transparent',
               color: '#fff',
@@ -682,7 +686,7 @@ fungsi hash_kata_laluan(
                 "hacked" it. It never will. <strong>RIINA applies this same principle to your software.</strong>
               </p>
               <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#e8f5e9', fontSize: '13px', color: '#2e7d32' }}>
-                5,304 machine-checked proofs guarantee security properties <em>before</em> the code runs.
+                5,308 machine-checked proofs guarantee security properties <em>before</em> the code runs.
               </div>
             </div>
           </div>
@@ -1540,7 +1544,7 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
     <div style={pageTopStyle}>
       <PageHeader
         title="Examples"
-        subtitle="111 example .rii files across 9 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
+        subtitle="112 example .rii files across 9 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
       />
 
       <section style={{ padding: '0 32px 80px' }}>
@@ -1806,7 +1810,7 @@ fungsi akses_rekod(
 
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
             <a
-              href="https://github.com/ib823/proof/tree/main/07_EXAMPLES"
+              href="https://github.com/ib823/riina/tree/main/07_EXAMPLES"
               style={{
                 display: 'inline-block',
                 padding: '14px 28px',
@@ -1816,7 +1820,7 @@ fungsi akses_rekod(
                 fontSize: '14px'
               }}
             >
-              Browse all 111 examples on GitHub
+              Browse all 112 examples on GitHub
             </a>
           </div>
         </div>
@@ -1870,7 +1874,7 @@ allowed — no network, no logging. Enforced at compile time.`
 • Timing-sensitive code in masa_tetap executes in constant time
 • Secrets are zeroed before memory is freed
 
-5,304 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
+5,308 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
             },
             {
               step: '04',
@@ -1879,7 +1883,7 @@ allowed — no network, no logging. Enforced at compile time.`
 No external CI/CD — verification lives inside the compiler.
 
 The formal proofs (278 Coq files) ship with the compiler. You can audit them.
-5 justified axioms — all documented, none hidden.
+4 justified axioms — all documented, none hidden.
 Every security claim has a machine-checked proof behind it.`
             }
           ].map((item, i) => (
@@ -1952,7 +1956,7 @@ Every security claim has a machine-checked proof behind it.`
     <div style={pageTopStyle}>
       <PageHeader
         title="Research"
-        subtitle="RIINA is built on formal verification in Coq, with 5,304 machine-checked theorems across 244 files. Every security property has a proof."
+        subtitle="RIINA is built on formal verification in Coq, with 5,308 machine-checked theorems across 244 files. Every security property has a proof."
       />
 
       {/* Stats */}
@@ -1965,7 +1969,7 @@ Every security claim has a machine-checked proof behind it.`
             marginBottom: '64px'
           }}>
             {[
-              { value: '5,304', label: 'Qed Proofs' },
+              { value: '5,308', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
               { value: '5', label: 'Justified Axioms' },
               { value: '278', label: 'Coq Files' },
@@ -2041,45 +2045,86 @@ Every security claim has a machine-checked proof behind it.`
             ))}
           </div>
 
-          <h2 style={sectionLabel}>RESEARCH SCOPE</h2>
+          <h2 style={sectionLabel}>26 RESEARCH DOMAINS</h2>
 
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '16px'
+            gap: '12px',
+            marginBottom: '48px'
           }}>
             {[
-              'A: Core Type Theory & Proofs',
-              'B: Compiler & Prototype (Rust)',
-              'C: Language Specifications',
-              'D–Q: Attack Surface Research',
-              'R: Certified Compilation',
-              'S: Hardware Contracts',
-              'T: Hermetic Bootstrap',
-              'U: Runtime Guardian',
-              'V: Termination Guarantees',
-              'W: Verified Memory',
-              'X: Concurrency Model',
-              'Y: Verified Standard Library',
-              'Z: Declassification Policy',
-              'AA–AJ: Extended Research'
+              { id: 'A', name: 'Core Type Theory & Proofs', desc: 'Type safety, non-interference, logical relations — the mathematical foundation' },
+              { id: 'B', name: 'Compiler & Prototype', desc: '13 Rust crates, 612 tests, Bahasa Melayu lexer through C code emission' },
+              { id: 'C', name: 'Language Specifications', desc: 'Grammar, AST, type system spec, effect system spec, Bahasa Melayu syntax' },
+              { id: 'D–Q', name: 'Attack Surface Research', desc: '14 domains covering networking, UI/UX, data storage, performance, and more — 1,231+ threats enumerated' },
+              { id: 'R', name: 'Certified Compilation', desc: 'Translation validation ensuring compiled binary matches source semantics' },
+              { id: 'S', name: 'Hardware Contracts', desc: 'CPU side-channel models — Spectre, Meltdown, cache timing formally addressed' },
+              { id: 'T', name: 'Hermetic Bootstrap', desc: 'Binary bootstrap from hex0 — trust nothing, build everything from scratch' },
+              { id: 'U', name: 'Runtime Guardian', desc: 'Verified micro-hypervisor for runtime protection even on untrusted hardware' },
+              { id: 'V', name: 'Termination Guarantees', desc: 'Sized types and strong normalization — pure code provably terminates' },
+              { id: 'W', name: 'Verified Memory', desc: 'Separation logic, verified allocator — no use-after-free, no buffer overflow, proven' },
+              { id: 'X', name: 'Concurrency Model', desc: 'Session types and data-race freedom — concurrent code that cannot deadlock or race' },
+              { id: 'Y', name: 'Verified Standard Library', desc: 'Every stdlib function proven correct — not just tested, mathematically verified' },
+              { id: 'Z', name: 'Declassification Policy', desc: 'Robust declassification with budgets — controlled secret release with formal guarantees' },
             ].map((domain, i) => (
               <div key={i} style={{
-                padding: '16px',
+                padding: '16px 20px',
                 backgroundColor: '#f8f8f8',
-                fontSize: '14px'
+                display: 'grid',
+                gridTemplateColumns: '48px 1fr',
+                gap: '12px',
+                alignItems: 'start'
               }}>
-                {domain}
+                <span style={{ fontWeight: 600, fontSize: '13px', color: '#999', fontFamily: 'monospace' }}>{domain.id}</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{domain.name}</div>
+                  <div style={{ fontSize: '13px', color: '#666' }}>{domain.desc}</div>
+                </div>
               </div>
             ))}
           </div>
 
+          <h2 style={sectionLabel}>INDUSTRY-SPECIFIC RESEARCH</h2>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.8 }}>
+            Beyond core language research, RIINA maintains dedicated security models for 15 industry verticals —
+            each with domain-specific threat models, compliance axioms, and formal verification strategies.
+          </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '12px',
+            marginBottom: '32px'
+          }}>
+            {[
+              'Defence & Military', 'Healthcare', 'Financial Services',
+              'Aerospace & Aviation', 'Energy & Utilities', 'Telecommunications',
+              'Government', 'Transportation', 'Manufacturing & ERP',
+              'Retail & E-Commerce', 'Media & Entertainment', 'Education',
+              'Agriculture & AgriTech', 'Real Estate & PropTech', 'Legal & LegalTech',
+            ].map((ind, i) => (
+              <button key={i}
+                onClick={() => setCurrentPage('enterprise')}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#fff',
+                  border: '1px solid #eee',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                ⊢ {ind}
+              </button>
+            ))}
+          </div>
+
           <p style={{
-            marginTop: '32px',
             color: '#666',
             fontSize: '14px'
           }}>
-            218 research tracks across 55 domains. 588 Rust tests, 13 crates, 111 example .rii files.
+            218 research tracks across 55 domains. 612 Rust tests, 14 crates, 112 example .rii files.
           </p>
         </div>
       </section>
@@ -2098,7 +2143,7 @@ Every security claim has a machine-checked proof behind it.`
           MPL-2.0 licensed. Explore the proofs yourself.
         </p>
         <a
-          href="https://github.com/ib823/proof"
+          href="https://github.com/ib823/riina"
           style={{
             display: 'inline-block',
             padding: '16px 32px',
@@ -2108,7 +2153,7 @@ Every security claim has a machine-checked proof behind it.`
             fontSize: '14px'
           }}
         >
-          github.com/ib823/proof
+          github.com/ib823/riina
         </a>
       </section>
     </div>
@@ -2127,9 +2172,9 @@ Every security claim has a machine-checked proof behind it.`
         links: [{ text: 'Keyword Table (60+)', page: 'syntax' }, { text: 'Security Keywords', page: 'securityTypes' }, { text: 'Effect Keywords', page: 'effectSystem' }] },
       { title: 'Standard Library', desc: '88 builtins across 9 modules', page: 'stdlib',
         links: [{ text: 'Module Reference', page: 'stdlib' }, { text: 'std::kripto', page: 'stdlib' }, { text: 'std::io', page: 'stdlib' }] },
-      { title: 'Formal Proofs', desc: '278 Coq files, 5,304 theorems', page: 'research',
+      { title: 'Formal Proofs', desc: '278 Coq files, 5,308 theorems', page: 'research',
         links: [{ text: 'Proof Architecture', page: 'research' }, { text: 'Axiom Justifications', page: 'research' }, { text: 'Building Proofs', page: 'research' }] },
-      { title: 'Examples', desc: '111 example .rii files in 9 categories', page: 'examples',
+      { title: 'Examples', desc: '112 example .rii files in 9 categories', page: 'examples',
         links: [{ text: 'pengesahan.rii', page: 'examples' }, { text: 'kripto.rii', page: 'examples' }, { text: 'hello_dunia.rii', page: 'examples' }] },
     ];
 
@@ -2197,7 +2242,7 @@ Every security claim has a machine-checked proof behind it.`
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>From Source</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`git clone https://github.com/ib823/proof.git
+{`git clone https://github.com/ib823/riina.git
 cd proof/03_PROTO
 cargo build --release`}
               </pre>
@@ -2212,13 +2257,13 @@ docker run --rm riina check myfile.rii`}
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Nix Flake</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`nix run github:ib823/proof`}
+{`nix run github:ib823/riina`}
               </pre>
             </div>
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Portable Installer</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`curl -sSf https://riina.my/install.sh | bash
+{`curl -sSf https://ib823.github.io/riina/install.sh | bash
 # or: bash scripts/install.sh`}
               </pre>
             </div>
@@ -2368,7 +2413,7 @@ riinac build hello.rii    # Compile to native binary via C`}
           <h2 style={sectionLabel}>SETUP</h2>
           <pre style={{ ...codeBlockStyle, marginBottom: '48px' }}>
 {`# Clone the repository
-git clone https://github.com/ib823/proof.git
+git clone https://github.com/ib823/riina.git
 cd proof
 
 # Install dependencies
@@ -2385,7 +2430,7 @@ cd ../../02_FORMAL/coq && make
 cd ../../03_PROTO && cargo build --all
 
 # Run all tests
-cargo test --all        # 588 tests, all must pass`}
+cargo test --all        # 612 tests, all must pass`}
           </pre>
 
           <h2 style={sectionLabel}>COMMIT FORMAT</h2>
@@ -2425,7 +2470,7 @@ grep -r "Admitted" *.v  # Must be empty`}
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {[
               'All Coq proofs must compile with 0 Admitted',
-              'All Rust tests must pass (588+)',
+              'All Rust tests must pass (612+)',
               'No unsafe Rust without documented justification',
               'No third-party crypto dependencies (zero supply chain trust)',
               'Use Bahasa Melayu keywords in all .rii examples',
@@ -2503,7 +2548,7 @@ grep -r "Admitted" *.v  # Must be empty`}
           </div>
 
           <a
-            href="https://github.com/ib823/proof/blob/main/LICENSE"
+            href="https://github.com/ib823/riina/blob/main/LICENSE"
             style={{
               display: 'inline-block',
               padding: '14px 28px',
@@ -2778,47 +2823,135 @@ fungsi akses_rekod(
     <div style={pageTopStyle}>
       <PageHeader
         title="Enterprise"
-        subtitle="Write code. Get compliance proofs. Machine-checkable certificates for 15 regulatory frameworks."
+        subtitle="Write code. Get compliance proofs. Machine-checkable certificates across 15 regulatory frameworks, 15 industries, and 218 research tracks — every angle covered."
       />
 
       <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>COMPLIANCE AUTOMATION</h2>
           <p style={{ color: '#666', fontSize: '16px', marginBottom: '32px', lineHeight: 1.8 }}>
             RIINA programs carry machine-checkable proof certificates that satisfy regulatory requirements.
             When you compile a RIINA program, the compiler generates a compliance report mapping your code's
-            proven properties to specific regulatory controls.
+            proven properties to specific regulatory controls. No manual audit. No "trust us". Mathematical proof.
           </p>
 
-          <h2 style={sectionLabel}>SUPPORTED REGULATIONS</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '48px' }}>
+          {/* Industry verticals */}
+          <h2 style={sectionLabel}>15 INDUSTRY VERTICALS — PROVEN SECURITY FOR YOUR DOMAIN</h2>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', lineHeight: 1.8 }}>
+            RIINA doesn't just cover generic compliance. We built dedicated security models for each industry —
+            with formal axioms, domain-specific types, and compiler-proven properties tailored to your exact regulatory landscape.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '64px' }}>
+            {[
+              { icon: '⊢', industry: 'Defence & Military', regs: 'CMMC, ITAR, NIST 800-171',
+                desc: 'Classified data handling with proven compartmentalization. CUI isolation enforced at the type level. Cross-domain guard verification. Side-channel resistance for signals intelligence. Formal evidence for DISA STIG compliance.' },
+              { icon: '⊢', industry: 'Healthcare', regs: 'HIPAA, HITECH, HL7 FHIR',
+                desc: 'PHI (Protected Health Information) wrapped in security types that mathematically prevent unauthorized disclosure. Audit trails proven complete. De-identification verified at compile time. Break-glass access with proof-carrying authorization.' },
+              { icon: '⊢', industry: 'Financial Services', regs: 'PCI-DSS, SOX, BNM RMiT, MAS TRM',
+                desc: 'Cardholder data isolation proven by construction. Transaction integrity with formal audit trails. Anti-money laundering data flows verified. Constant-time operations prevent timing attacks on financial algorithms.' },
+              { icon: '⊢', industry: 'Aerospace & Aviation', regs: 'DO-178C DAL A, DO-326A',
+                desc: 'Flight-critical software with formal verification evidence satisfying DAL A requirements. Deterministic execution proven. WCET bounds verified. No undefined behavior — mathematically guaranteed. Airborne cyber security per DO-326A.' },
+              { icon: '⊢', industry: 'Energy & Utilities', regs: 'NERC CIP, IEC 62351',
+                desc: 'SCADA/ICS control system isolation proven at the type level. Critical infrastructure command validation. Provable network segmentation between OT and IT. Smart grid firmware with verified sensor input sanitization.' },
+              { icon: '⊢', industry: 'Telecommunications', regs: 'NESAS, 3GPP TS 33.501',
+                desc: '5G network function security with proven signaling isolation. SIM credential handling in Rahsia types. Lawful intercept interface formally verified. Roaming security with proven cross-operator boundaries.' },
+              { icon: '⊢', industry: 'Government & GovTech', regs: 'FedRAMP, NIST 800-53, MyDIGITAL',
+                desc: 'Sovereign data residency proven by effect tracking — data cannot leave approved boundaries. Citizen PII protection with formal declassification gates. e-Government service security with proven access controls.' },
+              { icon: '⊢', industry: 'Transportation', regs: 'ISO 26262 ASIL-D, UNECE WP.29',
+                desc: 'Automotive ECU firmware with ASIL-D systematic capability evidence. Autonomous vehicle decision logic formally verified. V2X communication security with proven message authenticity. Railway CENELEC EN 50128 SIL 4 evidence.' },
+              { icon: '⊢', industry: 'Manufacturing & ERP', regs: 'IEC 62443, ISA/IEC 99',
+                desc: 'Industrial control system security with proven PLC command validation. ERP data flow isolation — financial, HR, and production data provably separated. Supply chain data integrity with formal provenance tracking. Industry 4.0 digital twin security.' },
+              { icon: '⊢', industry: 'Retail & E-Commerce', regs: 'PCI-DSS, CCPA, PDPA',
+                desc: 'Payment processing where cardholder data literally cannot leak — proven by the compiler. Consumer data rights (opt-out, deletion) enforced at the type level. Inventory and pricing integrity with formal audit trails.' },
+              { icon: '⊢', industry: 'Media & Entertainment', regs: 'DMCA, DRM, COPPA',
+                desc: 'Digital rights management with formally verified access controls. Content delivery with proven geo-restriction enforcement. Age-gated content with provable verification. Ad-tech data isolation preventing unauthorized profiling.' },
+              { icon: '⊢', industry: 'Education', regs: 'FERPA, COPPA, PDPA',
+                desc: 'Student records wrapped in security types that prevent unauthorized disclosure. Learning analytics with proven de-identification. Exam integrity with formally verified proctoring boundaries. Research data compartmentalization.' },
+              { icon: '⊢', industry: 'Agriculture & AgriTech', regs: 'FDA 21 CFR, IoT Security',
+                desc: 'Precision agriculture sensor firmware with proven input validation. Crop data and yield analytics with formal integrity guarantees. Livestock tracking with tamper-proof audit trails. Drone flight control with verified safety boundaries.' },
+              { icon: '⊢', industry: 'Real Estate & PropTech', regs: 'AML, PDPA, SOX',
+                desc: 'Property transaction integrity with proven audit trails. Tenant PII protection enforced at the type level. Smart building IoT with formally verified access controls. Anti-money laundering data flows for property transactions provably tracked.' },
+              { icon: '⊢', industry: 'Legal & LegalTech', regs: 'Attorney-Client Privilege, GDPR, eIDAS',
+                desc: 'Privileged communication provably isolated — the compiler mathematically guarantees no cross-matter data leakage. Document management with proven chain of custody. e-Discovery with formally verified data boundaries. Digital signature verification per eIDAS.' },
+            ].map((ind, i) => (
+              <div key={i} style={{
+                padding: '24px',
+                border: '1px solid #eee',
+                transition: 'border-color 0.2s',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 600, fontSize: '15px' }}>{ind.icon} {ind.industry}</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#999', letterSpacing: '0.05em', marginBottom: '12px' }}>{ind.regs}</div>
+                <p style={{ color: '#666', fontSize: '13px', lineHeight: 1.7, margin: 0 }}>{ind.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Regulatory frameworks */}
+          <h2 style={sectionLabel}>15 REGULATORY FRAMEWORKS — MACHINE-CHECKABLE COMPLIANCE</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '48px' }}>
             {[
               { reg: 'HIPAA', jurisdiction: 'United States', coverage: 'PHI access control, audit trails, encryption' },
               { reg: 'PCI-DSS', jurisdiction: 'Global', coverage: 'Cardholder data isolation, key management' },
-              { reg: 'GDPR', jurisdiction: 'European Union', coverage: 'Data minimization, purpose limitation, right to erasure' },
-              { reg: 'PDPA', jurisdiction: 'Malaysia', coverage: 'Personal data protection, cross-border transfer' },
-              { reg: 'PDPA', jurisdiction: 'Singapore', coverage: 'Data protection obligations, breach notification' },
+              { reg: 'GDPR', jurisdiction: 'European Union', coverage: 'Data minimization, purpose limitation, erasure' },
+              { reg: 'PDPA (MY)', jurisdiction: 'Malaysia', coverage: 'Personal data protection, cross-border transfer' },
+              { reg: 'PDPA (SG)', jurisdiction: 'Singapore', coverage: 'Data protection, breach notification' },
               { reg: 'SOX', jurisdiction: 'United States', coverage: 'Financial data integrity, audit trails' },
-              { reg: 'DO-178C', jurisdiction: 'Aviation', coverage: 'Deterministic execution, formal verification evidence' },
+              { reg: 'DO-178C', jurisdiction: 'Aviation', coverage: 'Deterministic execution, formal verification' },
               { reg: 'ISO 26262', jurisdiction: 'Automotive', coverage: 'ASIL-D systematic capability' },
-              { reg: 'Common Criteria EAL7', jurisdiction: 'International', coverage: 'Formally verified design' },
+              { reg: 'CC EAL7', jurisdiction: 'International', coverage: 'Formally verified design' },
               { reg: 'NIST 800-53', jurisdiction: 'United States', coverage: 'Security controls (AC, AU, SC)' },
               { reg: 'CCPA', jurisdiction: 'California', coverage: 'Consumer data rights, sale opt-out' },
               { reg: 'FERPA', jurisdiction: 'United States', coverage: 'Student record protection' },
-              { reg: 'BNM RMiT', jurisdiction: 'Malaysia', coverage: 'Financial institution technology risk' },
+              { reg: 'BNM RMiT', jurisdiction: 'Malaysia', coverage: 'Financial technology risk management' },
               { reg: 'MAS TRM', jurisdiction: 'Singapore', coverage: 'Technology risk management' },
               { reg: 'ISO 27001', jurisdiction: 'International', coverage: 'Information security management' },
             ].map((r, i) => (
               <div key={i} style={{ ...cardStyle, padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <span style={{ fontWeight: 600, fontSize: '14px' }}>{r.reg}</span>
-                  <span style={{ color: '#999', fontSize: '12px' }}>{r.jurisdiction}</span>
+                  <span style={{ color: '#999', fontSize: '11px' }}>{r.jurisdiction}</span>
                 </div>
-                <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>{r.coverage}</p>
+                <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>{r.coverage}</p>
               </div>
             ))}
           </div>
 
+          {/* Research depth */}
+          <div style={{
+            backgroundColor: '#000',
+            color: '#fff',
+            padding: '48px',
+            marginBottom: '48px'
+          }}>
+            <h2 style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '24px' }}>
+              RESEARCH DEPTH
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', marginBottom: '32px' }}>
+              {[
+                { value: '218', label: 'Research Tracks' },
+                { value: '1,231+', label: 'Threats Modeled' },
+                { value: '15', label: 'Industries' },
+                { value: '26+', label: 'Research Domains (A–Z)' },
+              ].map((stat, i) => (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '36px', fontWeight: 300, fontFamily: 'Georgia, serif' }}>{stat.value}</div>
+                  <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '8px' }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ color: '#888', fontSize: '14px', lineHeight: 1.8, maxWidth: '800px' }}>
+              Beyond regulatory compliance, RIINA's research covers certified compilation (Track R), hardware side-channel
+              contracts (Track S), hermetic binary bootstrap (Track T), verified micro-hypervisor runtime (Track U),
+              termination guarantees (Track V), separation-logic memory safety (Track W), session-typed concurrency (Track X),
+              verified standard library (Track Y), and robust declassification policies (Track Z). Every threat model
+              has a formal response.
+            </p>
+          </div>
+
+          {/* Proof certificate */}
           <h2 style={sectionLabel}>PROOF CERTIFICATE</h2>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
             Generate a machine-checkable compliance certificate:
@@ -2878,13 +3011,15 @@ $ Print Assumptions access_control_enforced.
             ))}
           </div>
 
-          <h2 style={{ ...sectionLabel, marginTop: '48px' }}>USE CASES</h2>
+          <h2 style={{ ...sectionLabel, marginTop: '48px' }}>WHY ENTERPRISE TEAMS CHOOSE RIINA</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             {[
-              { title: 'Security Auditors', desc: 'RIINA certificates supplement or replace manual code review. The certificate shows which controls are covered, the Coq proof, and all assumptions.' },
-              { title: 'Compliance Officers', desc: 'Include RIINA certificates in compliance packages. Demonstrates that security properties are mathematically guaranteed, not merely tested.' },
-              { title: 'Procurement', desc: 'RIINA programs meet formal methods requirements in Common Criteria EAL5-EAL7, DO-178C DAL A, and ISO 26262 ASIL-D TCL1.' },
-              { title: 'Gradual Adoption', desc: 'Use RIINA for security-critical modules via C FFI. Existing C/Rust codebases can call RIINA libraries for proven-secure components.' },
+              { title: 'Security Auditors', desc: 'RIINA certificates supplement or replace manual code review. The certificate shows which controls are covered, the Coq proof, and all assumptions. Audit cycles go from weeks to minutes.' },
+              { title: 'Compliance Officers', desc: 'Include RIINA certificates in compliance packages. Demonstrates that security properties are mathematically guaranteed, not merely tested. Regulators get machine-verifiable evidence.' },
+              { title: 'Procurement & Certification', desc: 'RIINA programs meet formal methods requirements in Common Criteria EAL5-EAL7, DO-178C DAL A, ISO 26262 ASIL-D TCL1, and NIST 800-53 High baseline.' },
+              { title: 'Gradual Adoption via C FFI', desc: 'No rewrite needed. Use RIINA for security-critical modules via C FFI (luaran "C"). Existing C/Rust/Go codebases call RIINA libraries for proven-secure components. Start with one module, expand as confidence grows.' },
+              { title: 'CTO & Engineering Leads', desc: 'Eliminate entire vulnerability classes by construction. No more CVE triage for information leaks, injection attacks, or timing side-channels in RIINA-compiled code. Reduce security engineering costs permanently.' },
+              { title: 'Insurance & Risk Management', desc: 'Formal verification evidence reduces cyber insurance premiums. Machine-checkable proofs demonstrate due diligence beyond industry standard. Quantifiable risk reduction for board-level reporting.' },
             ].map((uc, i) => (
               <div key={i} style={{ ...cardStyle, padding: '24px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>{uc.title}</h3>
@@ -2935,7 +3070,7 @@ $ Print Assumptions access_control_enforced.
         <div style={{ ...codeBlockStyle, marginBottom: '48px' }}>
           <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
 {`# Install RIINA
-curl -fsSL https://riina.my/install.sh | bash
+curl -fsSL https://ib823.github.io/riina/install.sh | bash
 
 # Or with Nix
 nix run github:ib823/riina`}
