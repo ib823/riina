@@ -87,7 +87,7 @@ docker pull riina
 docker run --rm riina check myfile.rii
 
 # Nix
-nix run github:ib823/proof
+nix run github:ib823/riina
 
 # Portable installer (builds from source)
 bash scripts/install.sh
@@ -206,7 +206,7 @@ This is not a whitepaper. This is working software.
 - Translation validation (certified compilation)
 - Hardware contract verification
 - Concurrency safety (session types, data-race freedom)
-- 15 industry compliance properties (Malaysia PDPA, Singapore regulations, HIPAA, PCI-DSS, DO-178C)
+- 15 industry compliance properties (HIPAA, PCI-DSS, GDPR, PDPA MY/SG, SOX, DO-178C, ISO 26262, CC EAL7, NIST 800-53, CCPA, FERPA, BNM RMiT, MAS TRM, ISO 27001)
 
 ### Compiler & Toolchain (Rust)
 
@@ -245,9 +245,9 @@ This is not a whitepaper. This is working software.
 - **Package manager** — `riinac pkg init/add/remove/lock/build/publish/list/tree/clean`
 - **Verification gate** — `riinac verify --fast` (zero-trust: runs tests, clippy, Coq audit)
 - **Docker image** — Multi-stage build, ~85MB runtime image
-- **Nix flake** — `nix run github:ib823/proof` or `nix develop` for full dev shell
+- **Nix flake** — `nix run github:ib823/riina` or `nix develop` for full dev shell
 - **Release scripts** — `scripts/release.sh` (one-command release: bump, tag, tarball, GitHub Release, deploy website), `scripts/bump-version.sh`, `scripts/install.sh`
-- **Website** — `scripts/deploy-website.sh` deploys to [ib823.github.io/riina](https://ib823.github.io/riina/)
+- **Website** — 14-page site at [ib823.github.io/riina](https://ib823.github.io/riina/) — includes "Why Proof" executive page, 15 industry verticals, Releases page; deployed via `scripts/deploy-website.sh`
 - **REPL** — Interactive mode for experimentation
 
 ### Example Programs
@@ -280,7 +280,7 @@ The `05_TOOLING/` workspace contains 35,000+ lines of hand-written cryptographic
 ## Repository Structure
 
 ```
-proof/
+riina/
 ├── 02_FORMAL/coq/         278 Coq proof files (125K+ lines)
 │   ├── foundations/        Core language semantics
 │   ├── type_system/        Progress, Preservation, Type Safety
@@ -313,7 +313,8 @@ proof/
 ├── docs/                   Enterprise docs, multilingual READMEs
 ├── VERSION                 Semver source of truth (0.1.0)
 ├── CHANGELOG.md            Public-facing changelog
-├── scripts/                Build, install, release, sync scripts
+├── website/                14-page Vite/React website (Why Proof, Enterprise, Releases, etc.)
+├── scripts/                Build, install, release, deploy, sync scripts
 └── riina-vscode/           VS Code extension
 ```
 
@@ -399,8 +400,8 @@ RIINA is open source under the [Mozilla Public License 2.0](LICENSE).
 
 ```bash
 # Clone and set up
-git clone https://github.com/ib823/proof.git
-cd proof
+git clone https://github.com/ib823/riina.git
+cd riina
 
 # Verify environment
 bash 00_SETUP/scripts/verify_setup.sh
