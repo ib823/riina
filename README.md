@@ -313,7 +313,7 @@ riina/
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
 ├── 07_EXAMPLES/            112 example .rii files
 ├── docs/                   Enterprise docs, multilingual READMEs
-├── VERSION                 Semver source of truth (0.1.0)
+├── VERSION                 Semver source of truth (0.2.0)
 ├── CHANGELOG.md            Public-facing changelog
 ├── website/                14-page Vite/React website (Why Proof, Enterprise, Releases, etc.)
 ├── scripts/                Build, install, release, deploy, sync scripts
@@ -372,7 +372,7 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 
 - **Phase 7 (Long-term):** Self-hosting compiler, hardware verification, verified OS
 - **Axiom elimination:** 2 of the 4 remaining axioms can be eliminated with `store_rel_n` restructuring; 2 are permanent (policy axiom + standard closure axiom from academic literature)
-- **Compliance system:** `--compliance` flag with 15 industry profiles, audit report generation (text + JSON), certification pipeline
+- **Compliance system:** `--compliance` flag with 15 industry profiles, audit report generation (text + JSON), certification pipeline — see [Compliance Guide](docs/enterprise/COMPLIANCE_GUIDE.md)
 
 ---
 

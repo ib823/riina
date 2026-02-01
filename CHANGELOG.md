@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-01
+
+### Added
+- Compliance system user guide (`docs/enterprise/COMPLIANCE_GUIDE.md`)
+- 15 industry compliance profiles with CLI integration (`--compliance`, `--report`, `--report-json`)
+- Audit report generation (text + JSON formats with SHA-256 integrity)
+- `riina-compliance` crate: PCI-DSS (3 rules), PDPA (2 rules), BNM RMiT (1 rule)
+
+### Changed
+- Version bump to 0.2.0 across all manifests
+
+### Fixed
+- CERTIFICATION.md: corrected axiom count (5 → 4) and file count (244 → 245)
+
 ## [0.1.0] - 2026-02-01
 
 ### Added
@@ -32,5 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Effect system soundness proven
 - Zero third-party runtime dependencies
 
-[Unreleased]: https://github.com/ib823/riina/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ib823/riina/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ib823/riina/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ib823/riina/releases/tag/v0.1.0

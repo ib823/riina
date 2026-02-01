@@ -24,6 +24,7 @@ const RiinaWebsite = () => {
     { id: 'releases', label: 'Releases' },
     { id: 'research', label: 'Research' },
     { id: 'docs', label: 'Documentation' },
+    { id: 'bisik', label: 'Bisik' },
   ];
 
   // Release data (auto-updated by scripts/release.sh)
@@ -47,6 +48,7 @@ const RiinaWebsite = () => {
       'MPL-2.0 License': 'license',
       'Privacy': 'privacy',
       'Terms': 'terms',
+      'Bisik': 'bisik',
     };
     return map[label] || null;
   };
@@ -3107,13 +3109,199 @@ nix run github:ib823/riina`}
   );
 
   // ============================================================================
+  // BISIK PAGE — Secure Contact
+  // ============================================================================
+  const BisikPage = () => {
+    const [bName, setBName] = useState('');
+    const [bEmail, setBEmail] = useState('');
+    const [bMsg, setBMsg] = useState('');
+    const [bStatus, setBStatus] = useState('idle');
+    const [encBlob, setEncBlob] = useState('');
+    const [ghUrl, setGhUrl] = useState('');
+    const [bCopied, setBCopied] = useState(false);
+
+    const OWNER_PUB_JWK = {
+      kty: 'EC', crv: 'P-256',
+      x: 'c9IFJxmxFbCoTs-cCbo8RzM3Ola5QSDA8mvrVSB7pTA',
+      y: 'HAmH4UvZn3I8IsKsdg-kB8Qgb56GW0-H1oDTy3M0uKk',
+    };
+
+    const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+
+    const doEncrypt = async () => {
+      if (!bMsg.trim()) return;
+      setBStatus('encrypting');
+      try {
+        const cs = window.crypto.subtle;
+        const ownerPub = await cs.importKey('jwk', { ...OWNER_PUB_JWK, key_ops: [] }, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+        const ephKp = await cs.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+        const shared = await cs.deriveBits({ name: 'ECDH', public: ownerPub }, ephKp.privateKey, 256);
+        const hkdfKey = await cs.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+        const aesKey = await cs.deriveKey(
+          { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: new TextEncoder().encode('bisik-v1') },
+          hkdfKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+        );
+        const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+        const pt = new TextEncoder().encode(JSON.stringify({ name: bName || null, email: bEmail || null, message: bMsg, timestamp: new Date().toISOString() }));
+        const ct = await cs.encrypt({ name: 'AES-GCM', iv: nonce }, aesKey, pt);
+        const ephRaw = await cs.exportKey('raw', ephKp.publicKey);
+        const blob = JSON.stringify({ v: 1, eph: toB64(ephRaw), nonce: toB64(nonce), ct: toB64(ct) });
+        setEncBlob(blob);
+        const title = encodeURIComponent('[Bisik] Encrypted message');
+        const body = encodeURIComponent('```json\n' + blob + '\n```\n\n_Encrypted with Bisik v1 \u2014 ECDH P-256 + AES-256-GCM_');
+        const url = `https://github.com/ib823/riina/issues/new?title=${title}&body=${body}&labels=bisik`;
+        if (url.length <= 8000) setGhUrl(url);
+        setBStatus('done');
+      } catch (e) {
+        console.error('Bisik encryption error:', e);
+        setBStatus('error');
+      }
+    };
+
+    const copyBlob = () => {
+      navigator.clipboard.writeText(encBlob).then(() => { setBCopied(true); setTimeout(() => setBCopied(false), 2000); });
+    };
+
+    const riiCode = `modul bisik
+
+guna teras::kripto::{ECDH, HKDF, AES_GCM}
+guna teras::keselamatan::Rahsia
+
+bentuk PesananSulit {
+    versi: Int,
+    kunci_awam_sementara: Senarai<Bait>,
+    nonce: Senarai<Bait>,
+    teks_sulit: Senarai<Bait>,
+}
+
+/// Pengkompil menjamin:
+///   Rahsia<KunciPersendirian> tidak bocor.
+fungsi hantar_bisik(
+    mesej: MesejAsal,
+    kunci_penerima: KunciAwam,
+) -> PesananSulit kesan Kripto {
+    biar (pub_s, priv_s) = ECDH::jana_pasangan("P-256")
+    biar rahsia = ECDH::terbit_bit(kunci_penerima, priv_s)
+    biar kunci = HKDF::terbit_sha256(rahsia, garam, "bisik-v1", 32)
+    biar nonce = Kripto::rawak_bait(12)
+    biar sulit = AES_GCM::sulit(kunci, nonce, mesej.ke_bait())
+
+    PesananSulit {
+        versi: 1,
+        kunci_awam_sementara: ECDH::eksport_mentah(pub_s),
+        nonce: nonce,
+        teks_sulit: sulit,
+    }
+    // priv_s: Rahsia<T> -- dipadamkan, tidak boleh bocor
+}`;
+
+    const steps = [
+      { num: '01', title: 'Jana', desc: 'Pasangan kunci ECDH sementara dijana dalam pelayar anda' },
+      { num: '02', title: 'Terbit', desc: 'Rahsia dikongsi melalui ECDH + HKDF-SHA256' },
+      { num: '03', title: 'Sulit', desc: 'AES-256-GCM \u2014 teks asal tidak pernah meninggalkan pelayar' },
+      { num: '04', title: 'Hantar', desc: 'Blob yang disulitkan dihantar melalui GitHub Issues' },
+    ];
+
+    const inputStyle = { width: '100%', padding: '12px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' };
+    const labelStyle = { display: 'block', fontSize: '12px', letterSpacing: '0.1em', color: '#999', marginBottom: '6px' };
+
+    return (
+      <div style={pageTopStyle}>
+        <PageHeader title="Bisik" subtitle="Secure contact \u2014 proven by mathematics. Your message is encrypted in your browser before it ever leaves." />
+
+        <section style={sectionStyle}>
+          <p style={sectionLabel}>HOW IT WORKS</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '32px' }}>
+            {steps.map((s) => (
+              <div key={s.num} style={cardStyle}>
+                <div style={{ fontSize: '32px', fontWeight: 200, color: '#ccc', marginBottom: '12px' }}>{s.num}</div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>{s.title}</h3>
+                <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ ...sectionStyle, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '48px', alignItems: 'start' }}>
+          <div>
+            <p style={sectionLabel}>HANTAR MESEJ</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={labelStyle}>NAMA (pilihan)</label>
+                <input type="text" value={bName} onChange={(e) => setBName(e.target.value)} placeholder="Nama anda" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>EMEL (pilihan)</label>
+                <input type="email" value={bEmail} onChange={(e) => setBEmail(e.target.value)} placeholder="emel@contoh.my" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>MESEJ *</label>
+                <textarea value={bMsg} onChange={(e) => setBMsg(e.target.value)} placeholder="Tulis mesej anda di sini..." rows={6} style={{ ...inputStyle, resize: 'vertical' }} />
+              </div>
+              <button onClick={doEncrypt} disabled={!bMsg.trim() || bStatus === 'encrypting'} style={{
+                padding: '14px 32px', backgroundColor: bStatus === 'encrypting' ? '#999' : '#000', color: '#fff',
+                border: 'none', fontSize: '14px', letterSpacing: '0.05em',
+                cursor: !bMsg.trim() || bStatus === 'encrypting' ? 'default' : 'pointer',
+                opacity: !bMsg.trim() ? 0.4 : 1,
+              }}>
+                {bStatus === 'encrypting' ? 'Menyulitkan...' : 'Hantar Bisik'}
+              </button>
+
+              {bStatus === 'done' && (
+                <div style={{ padding: '16px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>
+                  <p style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Mesej disulitkan.</p>
+                  {ghUrl ? (
+                    <a href={ghUrl} target="_blank" rel="noopener noreferrer" style={{
+                      display: 'inline-block', padding: '10px 20px', backgroundColor: '#000', color: '#fff',
+                      textDecoration: 'none', fontSize: '13px', marginBottom: '8px',
+                    }}>Buka GitHub Issues &rarr;</a>
+                  ) : (
+                    <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>Mesej terlalu panjang untuk URL. Sila salin dan emelkan.</p>
+                  )}
+                  <div style={{ marginTop: '8px' }}>
+                    <button onClick={copyBlob} style={{ padding: '8px 16px', backgroundColor: '#fff', border: '1px solid #ddd', fontSize: '13px', cursor: 'pointer' }}>
+                      {bCopied ? 'Disalin!' : 'Salin blob yang disulitkan'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {bStatus === 'error' && (
+                <p style={{ color: '#c00', fontSize: '14px' }}>Ralat penyulitan. Pelayar anda mungkin tidak menyokong Web Crypto API.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p style={sectionLabel}>PROTOKOL DALAM RIINA</p>
+            <pre style={{ ...codeBlockStyle, fontSize: '12px', lineHeight: 1.7 }}>{riiCode}</pre>
+          </div>
+        </section>
+
+        <section style={{ ...sectionStyle, textAlign: 'center', borderTop: '1px solid #eee' }}>
+          <p style={{ fontSize: '14px', color: '#666' }}>
+            Security backed by <span style={{ fontWeight: 600, color: '#000' }}>5,308 Qed proofs</span> in Coq &mdash;{' '}
+            <a href="https://github.com/ib823/riina/blob/main/04_VERIFICATION/proofs/NonInterference_v2.v" target="_blank" rel="noopener noreferrer" style={{ color: '#000', textDecoration: 'underline' }}>View proof</a>
+          </p>
+        </section>
+
+        <section style={{ ...sectionStyle, borderTop: '1px solid #eee' }}>
+          <p style={sectionLabel}>NO GITHUB ACCOUNT?</p>
+          <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8, maxWidth: '600px' }}>
+            Encrypt your message above, click "Salin blob yang disulitkan", and email the encrypted text to <span style={{ fontWeight: 600 }}>riina@pm.me</span>. Only the owner's private key can decrypt it.
+          </p>
+        </section>
+      </div>
+    );
+  };
+
+  // ============================================================================
   // FOOTER
   // ============================================================================
   const Footer = () => {
     const footerSections = [
       { title: 'Language', links: ['Why Proof', 'Syntax', 'Security Types', 'Effect System', 'Examples'] },
       { title: 'Developers', links: ['Documentation', 'Quick Start', 'Standard Library', 'GitHub'] },
-      { title: 'Community', links: ['Contributing', 'Issues', 'Discussions'] },
+      { title: 'Community', links: ['Contributing', 'Bisik', 'Issues', 'Discussions'] },
       { title: 'Legal', links: ['MPL-2.0 License', 'Privacy', 'Terms'] }
     ];
 
@@ -3209,7 +3397,7 @@ nix run github:ib823/riina`}
             © 2026 RIINA. All rights reserved.
           </p>
           <p style={{ color: '#999', fontSize: '12px' }}>
-            RIINA v0.1.0 · MPL-2.0
+            RIINA v0.2.0 · MPL-2.0
           </p>
         </div>
       </footer>
@@ -3239,6 +3427,7 @@ nix run github:ib823/riina`}
       case 'license': return <LicensePage />;
       case 'privacy': return <PrivacyPage />;
       case 'terms': return <TermsPage />;
+      case 'bisik': return <BisikPage />;
       default: return <HomePage />;
     }
   };

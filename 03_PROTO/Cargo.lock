@@ -4,25 +4,25 @@ version = 4
 
 [[package]]
 name = "riina-arena"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "riina-codegen"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-types",
 ]
 
 [[package]]
 name = "riina-compliance"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-types",
 ]
 
 [[package]]
 name = "riina-doc"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-lexer",
  "riina-parser",
@@ -31,7 +31,7 @@ dependencies = [
 
 [[package]]
 name = "riina-fmt"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-lexer",
  "riina-parser",
@@ -40,11 +40,11 @@ dependencies = [
 
 [[package]]
 name = "riina-lexer"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "riina-lsp"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-lexer",
  "riina-parser",
@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "riina-parser"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-lexer",
  "riina-types",
@@ -62,36 +62,36 @@ dependencies = [
 
 [[package]]
 name = "riina-pkg"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-types",
 ]
 
 [[package]]
 name = "riina-span"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "riina-symbols"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "riina-typechecker"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-types",
 ]
 
 [[package]]
 name = "riina-types"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-lexer",
 ]
 
 [[package]]
 name = "riinac"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-codegen",
  "riina-compliance",

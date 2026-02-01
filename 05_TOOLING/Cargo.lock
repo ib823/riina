@@ -550,14 +550,14 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "riina-artifact-sign"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "riina-build"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "serde",
@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "riina-build-manifest"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "clap",
@@ -579,21 +579,21 @@ dependencies = [
 
 [[package]]
 name = "riina-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
 name = "riina-effect"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-core",
 ]
 
 [[package]]
 name = "riina-hash-chain"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "clap",
@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "riina-lang-codegen"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-core",
  "riina-lang-types",
@@ -613,14 +613,14 @@ dependencies = [
 
 [[package]]
 name = "riina-lang-lexer"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-core",
 ]
 
 [[package]]
 name = "riina-lang-parser"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-core",
  "riina-lang-lexer",
@@ -628,21 +628,21 @@ dependencies = [
 
 [[package]]
 name = "riina-lang-types"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "riina-core",
 ]
 
 [[package]]
 name = "riina-verify"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "riinac"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "riina-core",

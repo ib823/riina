@@ -21,7 +21,7 @@
         let pkgs = pkgsFor system; in {
           default = pkgs.rustPlatform.buildRustPackage {
             pname = "riinac";
-            version = "0.1.0";
+            version = "0.2.0";
             src = ./03_PROTO;
             cargoLock.lockFile = ./03_PROTO/Cargo.lock;
             meta = with pkgs.lib; {

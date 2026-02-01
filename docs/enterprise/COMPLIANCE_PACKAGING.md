@@ -51,7 +51,7 @@ RIINA COMPLIANCE CERTIFICATE
 ============================
 Program: myapp.rii
 Date: 2026-01-31
-Compiler: riinac 0.1.0
+Compiler: riinac 0.2.0
 Prover: Rocq 9.1
 
 HIPAA §164.312(a) — Access Control
@@ -131,5 +131,7 @@ All proofs are in `02_FORMAL/coq/Industries/`:
 **Total: 150 proven compliance theorems, 0 admits, 0 unjustified axioms.**
 
 ---
+
+**For detailed CLI usage, rule coverage, and contributing rules, see [COMPLIANCE_GUIDE.md](COMPLIANCE_GUIDE.md).**
 
 *RIINA — Write code. Get compliance proofs. For free.*
