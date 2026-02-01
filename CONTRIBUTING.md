@@ -20,7 +20,7 @@ bash 00_SETUP/scripts/verify_setup.sh
 # Build the compiler
 cd 03_PROTO && cargo build --release -p riinac && cd ..
 
-# Run all tests (should show 612+ passing)
+# Run all tests (should show 651+ passing)
 cd 03_PROTO && cargo test --all && cd ..
 
 # Try it out

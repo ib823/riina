@@ -213,7 +213,7 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Rust crates | 14 |
-| Test count | 612 (all passing) |
+| Test count | 651 (all passing) |
 | External dependencies | **0** |
 | Lines of Rust | 24,614 |
 | Standard library builtins | 88 across 9 modules |
@@ -292,7 +292,7 @@ riina/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 03_PROTO/               Rust compiler (14 crates, 612 tests, 0 deps)
+├── 03_PROTO/               Rust compiler (14 crates, 651 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
