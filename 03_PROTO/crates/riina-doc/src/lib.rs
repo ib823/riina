@@ -34,11 +34,7 @@ fn extract_doc_comments(source: &str) -> Vec<(usize, String)> {
         .enumerate()
         .filter_map(|(i, line)| {
             let trimmed = line.trim();
-            if let Some(rest) = trimmed.strip_prefix("///") {
-                Some((i, rest.trim_start().to_string()))
-            } else {
-                None
-            }
+            trimmed.strip_prefix("///").map(|rest| (i, rest.trim_start().to_string()))
         })
         .collect()
 }

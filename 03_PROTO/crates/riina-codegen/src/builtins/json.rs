@@ -162,8 +162,8 @@ fn parse_object(s: &str) -> Result<(Value, &str)> {
     debug_assert!(s.starts_with('{'));
     let mut s = s[1..].trim_start();
     let mut map = BTreeMap::new();
-    if s.starts_with('}') {
-        return Ok((Value::Map(map), &s[1..]));
+    if let Some(rest) = s.strip_prefix('}') {
+        return Ok((Value::Map(map), rest));
     }
     loop {
         let s_trimmed = s.trim_start();
@@ -182,11 +182,11 @@ fn parse_object(s: &str) -> Result<(Value, &str)> {
         let (val, rest) = parse_value(&rest[1..])?;
         map.insert(key, val);
         let rest = rest.trim_start();
-        if rest.starts_with('}') {
-            return Ok((Value::Map(map), &rest[1..]));
+        if let Some(r) = rest.strip_prefix('}') {
+            return Ok((Value::Map(map), r));
         }
-        if rest.starts_with(',') {
-            s = &rest[1..];
+        if let Some(stripped) = rest.strip_prefix(',') {
+            s = stripped;
         } else {
             return Err(json_err("expected ',' or '}' in object"));
         }
@@ -197,18 +197,18 @@ fn parse_array(s: &str) -> Result<(Value, &str)> {
     debug_assert!(s.starts_with('['));
     let mut s = s[1..].trim_start();
     let mut items = Vec::new();
-    if s.starts_with(']') {
-        return Ok((Value::List(items), &s[1..]));
+    if let Some(rest) = s.strip_prefix(']') {
+        return Ok((Value::List(items), rest));
     }
     loop {
         let (val, rest) = parse_value(s)?;
         items.push(val);
         let rest = rest.trim_start();
-        if rest.starts_with(']') {
-            return Ok((Value::List(items), &rest[1..]));
+        if let Some(r) = rest.strip_prefix(']') {
+            return Ok((Value::List(items), r));
         }
-        if rest.starts_with(',') {
-            s = rest[1..].trim_start();
+        if let Some(stripped) = rest.strip_prefix(',') {
+            s = stripped.trim_start();
         } else {
             return Err(json_err("expected ',' or ']' in array"));
         }
@@ -216,18 +216,18 @@ fn parse_array(s: &str) -> Result<(Value, &str)> {
 }
 
 fn parse_bool(s: &str) -> Result<(Value, &str)> {
-    if s.starts_with("true") {
-        Ok((Value::Bool(true), &s[4..]))
-    } else if s.starts_with("false") {
-        Ok((Value::Bool(false), &s[5..]))
+    if let Some(rest) = s.strip_prefix("true") {
+        Ok((Value::Bool(true), rest))
+    } else if let Some(rest) = s.strip_prefix("false") {
+        Ok((Value::Bool(false), rest))
     } else {
         Err(json_err("expected 'true' or 'false'"))
     }
 }
 
 fn parse_null(s: &str) -> Result<(Value, &str)> {
-    if s.starts_with("null") {
-        Ok((Value::Unit, &s[4..]))
+    if let Some(rest) = s.strip_prefix("null") {
+        Ok((Value::Unit, rest))
     } else {
         Err(json_err("expected 'null'"))
     }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Phase 7: Platform Universality — modular backend trait architecture (`Backend` trait, `Target` enum)
+- WebAssembly backend (`--target=wasm32`) with direct IR-to-WASM binary emission
+- Platform-conditional standard library (`platform.rs`) for cross-platform compilation
+- Mobile backend scaffolding: Android JNI bridge generation, iOS Swift bridge generation
+- `--target` flag for `riinac build` and `riinac emit` commands
+- Roadmap updated across all documentation (11 files)
+
 ## [0.2.0] - 2026-02-01
 
 ### Added

@@ -72,13 +72,11 @@ pub fn run() -> io::Result<()> {
             "textDocument/didChange" => {
                 if let Some(td) = params.get("textDocument") {
                     let uri = td.get("uri").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    if let Some(changes) = params.get("contentChanges") {
-                        if let JsonValue::Array(arr) = changes {
-                            if let Some(change) = arr.first() {
-                                let text = change.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                                documents.insert(uri.clone(), text.clone());
-                                publish_diagnostics(&mut writer, &uri, &text)?;
-                            }
+                    if let Some(JsonValue::Array(arr)) = params.get("contentChanges") {
+                        if let Some(change) = arr.first() {
+                            let text = change.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                            documents.insert(uri.clone(), text.clone());
+                            publish_diagnostics(&mut writer, &uri, &text)?;
                         }
                     }
                 }

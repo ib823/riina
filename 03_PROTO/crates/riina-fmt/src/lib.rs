@@ -366,6 +366,7 @@ fn fmt_expr(out: &mut String, expr: &Expr, level: usize, cfg: &FmtConfig) {
 }
 
 /// Format an expression inline (no leading indent).
+#[allow(clippy::only_used_in_recursion)]
 fn fmt_expr_inline(out: &mut String, expr: &Expr, cfg: &FmtConfig) {
     match expr {
         Expr::Unit => out.push_str("()"),

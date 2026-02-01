@@ -84,6 +84,7 @@
 │  │  6. STANDARD LIBRARY          — riina-crypto, riina-io, riina-net, etc.      │ │
 │  │  7. RUNTIME                   — Minimal verified runtime                      │ │
 │  │  8. EFFECT GATE INTEGRATION   — Hardware security mediation                   │ │
+│  │  9. PLATFORM BACKENDS         — WASM, Android, iOS cross-compilation         │ │
 │  │                                                                               │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 │                                                                                     │
@@ -210,7 +211,18 @@ These are **NOT part of RIINA**. They are **applications that will be written in
 | **BENTENG** | eKYC/Identity Verification | github.com/[org]/benteng (future) |
 | **SANDI** | Digital Signatures | github.com/[org]/sandi (future) |
 
-## 3.2 Infrastructure TO BE WRITTEN in RIINA (Future)
+## 3.2 Platform Targets (Compiler Capability)
+
+Platform targeting is a **compiler backend capability** — not a separate product:
+
+| Target | Command | Output | Status |
+|--------|---------|--------|--------|
+| Native (C) | `riinac build file.rii` | Native binary via C compiler | Done |
+| WebAssembly | `riinac build --target=wasm32 file.rii` | `.wasm` binary + JS glue | Phase 7 |
+| Android | `riinac build --target=android-arm64 file.rii` | `.so` via NDK + JNI bridge | Phase 7 |
+| iOS | `riinac build --target=ios-arm64 file.rii` | `.a` via Xcode + Swift bridge | Phase 7 |
+
+## 3.3 Infrastructure TO BE WRITTEN in RIINA (Future)
 
 | Component | Purpose | Status |
 |-----------|---------|--------|

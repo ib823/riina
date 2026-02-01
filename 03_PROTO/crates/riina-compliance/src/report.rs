@@ -218,7 +218,7 @@ impl ComplianceReport {
         let thin = "─".repeat(72);
 
         out.push_str(&format!("{line}\n"));
-        out.push_str(&format!("  RIINA COMPLIANCE REPORT\n"));
+        out.push_str("  RIINA COMPLIANCE REPORT\n");
         out.push_str(&format!("{line}\n"));
         out.push_str(&format!("  Compiler:    RIINA v{}\n", self.riina_version));
         out.push_str(&format!("  File:        {}\n", self.file_path));
@@ -257,8 +257,8 @@ impl ComplianceReport {
         }
 
         out.push_str(&format!("\n{line}\n"));
-        out.push_str(&format!("  This report is a machine-generated audit artifact.\n"));
-        out.push_str(&format!("  Compliance rules are backed by Coq formal proofs.\n"));
+        out.push_str("  This report is a machine-generated audit artifact.\n");
+        out.push_str("  Compliance rules are backed by Coq formal proofs.\n");
         out.push_str(&format!("  Verify integrity: sha256sum <source_file> == {}\n", self.source_sha256));
         out.push_str(&format!("{line}\n"));
         out

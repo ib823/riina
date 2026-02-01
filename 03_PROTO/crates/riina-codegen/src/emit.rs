@@ -2926,10 +2926,10 @@ impl CEmitter {
                 // which copies to perform before jumping.
                 let has_then_phis = phi_map.get(then_block)
                     .and_then(|m| m.get(current_block))
-                    .map_or(false, |v| !v.is_empty());
+                    .is_some_and(|v| !v.is_empty());
                 let has_else_phis = phi_map.get(else_block)
                     .and_then(|m| m.get(current_block))
-                    .map_or(false, |v| !v.is_empty());
+                    .is_some_and(|v| !v.is_empty());
 
                 if has_then_phis || has_else_phis {
                     self.writeln(&format!("if ({}->data.bool_val) {{", self.var_name(cond)));
@@ -2956,9 +2956,9 @@ impl CEmitter {
             Terminator::Handle { body_block, handler_block, resume_var, result_block } => {
                 // Push handler frame, setjmp for non-local return from perform
                 self.writeln("riina_push_handler(RIINA_EFFECT_PURE); /* handler frame */");
-                self.writeln(&format!(
-                    "if (setjmp(riina_handler_stack[riina_handler_top - 1].env) == 0) {{"
-                ));
+                self.writeln(
+                    "if (setjmp(riina_handler_stack[riina_handler_top - 1].env) == 0) {"
+                );
                 self.indent();
                 // Normal path: execute body
                 self.emit_phi_copies(current_block, body_block, phi_map);

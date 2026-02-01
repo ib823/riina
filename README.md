@@ -366,11 +366,13 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 112 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
 | 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 14-page website (Why Proof, 15 industries, Releases) | Done |
-| 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
+| 7. Platform Universality | Multi-backend (WASM, Android, iOS), platform-conditional stdlib, WASM playground | In Progress |
+| 8. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
 
-- **Phase 7 (Long-term):** Self-hosting compiler, hardware verification, verified OS
+- **Phase 7 (Platform Universality):** WebAssembly backend, mobile cross-compilation (Android/iOS), platform-conditional stdlib, in-browser WASM playground
+- **Phase 8 (Long-term):** Self-hosting compiler, hardware verification, verified OS
 - **Axiom elimination:** 2 of the 4 remaining axioms can be eliminated with `store_rel_n` restructuring; 2 are permanent (policy axiom + standard closure axiom from academic literature)
 - **Compliance system:** `--compliance` flag with 15 industry profiles, audit report generation (text + JSON), certification pipeline — see [Compliance Guide](docs/enterprise/COMPLIANCE_GUIDE.md)
 
@@ -435,7 +437,7 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for detailed development instructions 
 ## FAQ
 
 **Is RIINA production-ready?**
-The compiler, proofs, and toolchain are functional. Phases 1-6 (compiler, stdlib, proofs, developer tools, ecosystem, adoption) are complete. Phase 7 (self-hosting, hardware verification) is the long-term vision. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
+The compiler, proofs, and toolchain are functional. Phases 1-6 (compiler, stdlib, proofs, developer tools, ecosystem, adoption) are complete. Phase 7 (Platform Universality — WASM, mobile backends) is in progress. Phase 8 (self-hosting, hardware verification) is the long-term vision. You can write, compile, and run RIINA programs today — via source build, Docker, or Nix.
 
 **Do I need to know Bahasa Melayu?**
 No. The keywords are short and consistent — `fungsi` (function), `biar` (let), `kalau` (if), `pulang` (return). You'll learn them in minutes. A [cheatsheet](07_EXAMPLES/06_ai_context/RIINA_CHEATSHEET.md) is included.

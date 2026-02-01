@@ -38,8 +38,9 @@ enum Command {
 }
 
 /// Report output format.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum ReportFormat {
+    #[default]
     Text,
     Json,
 }
@@ -50,10 +51,7 @@ struct Options {
     compliance: Vec<riina_compliance::ComplianceProfile>,
     report: Option<ReportFormat>,
     report_output: Option<PathBuf>,
-}
-
-impl Default for ReportFormat {
-    fn default() -> Self { Self::Text }
+    target: Option<riina_codegen::Target>,
 }
 
 fn usage() -> ! {
@@ -78,6 +76,7 @@ fn usage() -> ! {
     eprintln!("  --report-json            Generate compliance report (JSON)");
     eprintln!("  --report-output <file>   Write report to file instead of stdout");
     eprintln!("  --list-compliance        List available compliance profiles");
+    eprintln!("  --target <target>        Compilation target (native, wasm32, wasm64, android-arm64, ios-arm64)");
     process::exit(1);
 }
 
@@ -166,6 +165,21 @@ fn parse_args() -> (Command, Option<PathBuf>, Options) {
                     usage();
                 }
                 opts.report_output = Some(PathBuf::from(rest_slice[i]));
+            }
+            "--target" => {
+                i += 1;
+                if i >= rest_slice.len() {
+                    eprintln!("--target requires a target name (native, wasm32, wasm64, android-arm64, ios-arm64)");
+                    usage();
+                }
+                match riina_codegen::Target::from_str(rest_slice[i]) {
+                    Some(t) => opts.target = Some(t),
+                    None => {
+                        eprintln!("Unknown target: {}", rest_slice[i]);
+                        eprintln!("Available targets: native, wasm32, wasm64, android-arm64, ios-arm64");
+                        process::exit(1);
+                    }
+                }
             }
             arg if arg.starts_with('-') => {
                 eprintln!("Unknown option: {arg}");
@@ -310,8 +324,22 @@ fn main() {
             }
         }
         Command::EmitC => {
-            match riina_codegen::compile_to_c(&expr) {
-                Ok(c_code) => print!("{}", c_code),
+            let target = opts.target.unwrap_or(riina_codegen::Target::Native);
+            match riina_codegen::compile(&expr) {
+                Ok(program) => {
+                    let backend = riina_codegen::backend_for_target(target);
+                    match backend.emit(&program) {
+                        Ok(output) => {
+                            // Write primary output to stdout
+                            use std::io::Write;
+                            std::io::stdout().write_all(&output.primary).unwrap();
+                        }
+                        Err(e) => {
+                            eprintln!("Codegen Error: {}", e);
+                            process::exit(1);
+                        }
+                    }
+                }
                 Err(e) => {
                     eprintln!("Codegen Error: {}", e);
                     process::exit(1);
@@ -328,8 +356,19 @@ fn main() {
             }
         }
         Command::Build => {
-            let c_code = match riina_codegen::compile_to_c(&expr) {
-                Ok(c) => c,
+            let target = opts.target.unwrap_or(riina_codegen::Target::Native);
+
+            let program = match riina_codegen::compile(&expr) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("Codegen Error: {}", e);
+                    process::exit(1);
+                }
+            };
+
+            let backend = riina_codegen::backend_for_target(target);
+            let output = match backend.emit(&program) {
+                Ok(o) => o,
                 Err(e) => {
                     eprintln!("Codegen Error: {}", e);
                     process::exit(1);
@@ -339,38 +378,59 @@ fn main() {
             let stem = input.file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("output");
-            let output_name = input.parent()
-                .unwrap_or_else(|| std::path::Path::new("."))
-                .join(stem);
+            let output_dir = input.parent()
+                .unwrap_or_else(|| std::path::Path::new("."));
 
-            let tmp_c = std::env::temp_dir().join(format!("riina_{}.c", stem));
-            if let Err(e) = fs::write(&tmp_c, &c_code) {
-                eprintln!("Error writing temp file: {}", e);
-                process::exit(1);
-            }
-
-            let status = process::Command::new("cc")
-                .args([
-                    "-o", &output_name.to_string_lossy(),
-                    &*tmp_c.to_string_lossy(),
-                ])
-                .status();
-
-            // Clean up temp file
-            let _ = fs::remove_file(&tmp_c);
-
-            match status {
-                Ok(s) if s.success() => {
-                    eprintln!("Built: {}", output_name.display());
-                }
-                Ok(s) => {
-                    eprintln!("C compiler exited with: {}", s);
+            if target == riina_codegen::Target::Native {
+                // Native: write C, compile with cc
+                let output_name = output_dir.join(stem);
+                let tmp_c = std::env::temp_dir().join(format!("riina_{}.c", stem));
+                if let Err(e) = fs::write(&tmp_c, &output.primary) {
+                    eprintln!("Error writing temp file: {}", e);
                     process::exit(1);
                 }
-                Err(e) => {
-                    eprintln!("Failed to invoke cc: {}", e);
+
+                let status = process::Command::new("cc")
+                    .args([
+                        "-o", &output_name.to_string_lossy(),
+                        &*tmp_c.to_string_lossy(),
+                    ])
+                    .status();
+
+                let _ = fs::remove_file(&tmp_c);
+
+                match status {
+                    Ok(s) if s.success() => {
+                        eprintln!("Built: {}", output_name.display());
+                    }
+                    Ok(s) => {
+                        eprintln!("C compiler exited with: {}", s);
+                        process::exit(1);
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to invoke cc: {}", e);
+                        process::exit(1);
+                    }
+                }
+            } else {
+                // Non-native: write primary output + auxiliary files
+                let primary_name = output_dir.join(format!("{}{}", stem, output.extension));
+                if let Err(e) = fs::write(&primary_name, &output.primary) {
+                    eprintln!("Error writing output: {}", e);
                     process::exit(1);
                 }
+                eprintln!("Wrote: {}", primary_name.display());
+
+                for aux in &output.auxiliary {
+                    let aux_path = output_dir.join(&aux.name);
+                    if let Err(e) = fs::write(&aux_path, &aux.content) {
+                        eprintln!("Error writing auxiliary file: {}", e);
+                        process::exit(1);
+                    }
+                    eprintln!("Wrote: {}", aux_path.display());
+                }
+
+                eprintln!("Built for target: {}", target);
             }
         }
         Command::Fmt => {

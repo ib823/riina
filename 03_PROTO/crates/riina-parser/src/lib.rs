@@ -335,11 +335,7 @@ impl<'a> Parser<'a> {
             Some(TokenKind::KwReturn) => {
                 self.consume(TokenKind::KwReturn)?;
                 // pulang expr — return is identity (desugars to just the expression)
-                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::LParen)) {
-                    self.parse_pipe()
-                } else {
-                    self.parse_pipe()
-                }
+                self.parse_pipe()
             }
             Some(TokenKind::KwFor) => self.parse_for_in(),
             Some(TokenKind::KwWhile) => self.parse_while(),
@@ -835,7 +831,7 @@ impl<'a> Parser<'a> {
                 // *T = RawPtr(T) for FFI
                 self.next();
                 let inner = self.parse_ty()?;
-                return Ok(Ty::RawPtr(Box::new(inner)));
+                Ok(Ty::RawPtr(Box::new(inner)))
             },
             Some(TokenKind::LParen) => {
                 self.next();

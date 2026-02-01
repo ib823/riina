@@ -40,11 +40,18 @@
   - [8.5 AI-Native Developer Experience](#85-ai-native-developer-experience)
 - [9. PHASE 5: ECOSYSTEM & DISTRIBUTION](#9-phase-5-ecosystem--distribution)
 - [10. PHASE 6: ADOPTION & COMMUNITY](#10-phase-6-adoption--community)
-- [11. PHASE 7: LONG-TERM VISION](#11-phase-7-long-term-vision)
-- [12. EXECUTION ORDER & DEPENDENCY GRAPH](#12-execution-order--dependency-graph)
-- [13. FILES TO CREATE OR MODIFY](#13-files-to-create-or-modify)
-- [14. VERIFICATION GATES](#14-verification-gates)
-- [15. OPEN DECISIONS](#15-open-decisions)
+- [11. PHASE 7: PLATFORM UNIVERSALITY](#11-phase-7-platform-universality)
+  - [11.1 M7.1 — Backend Trait Architecture](#111-m71--backend-trait-architecture)
+  - [11.2 M7.2 — WebAssembly Backend](#112-m72--webassembly-backend)
+  - [11.3 M7.3 — Platform-Conditional Standard Library](#113-m73--platform-conditional-standard-library)
+  - [11.4 M7.4 — Mobile Backend](#114-m74--mobile-backend)
+  - [11.5 M7.5 — WASM Playground](#115-m75--wasm-playground)
+  - [11.6 M7.6 — Platform Backend Verification](#116-m76--platform-backend-verification)
+- [12. PHASE 8: LONG-TERM VISION](#12-phase-8-long-term-vision)
+- [13. EXECUTION ORDER & DEPENDENCY GRAPH](#13-execution-order--dependency-graph)
+- [14. FILES TO CREATE OR MODIFY](#14-files-to-create-or-modify)
+- [15. VERIFICATION GATES](#15-verification-gates)
+- [16. OPEN DECISIONS](#16-open-decisions)
 - [APPENDIX A: COQ-RUST TYPE CORRESPONDENCE](#appendix-a-coq-rust-type-correspondence)
 - [APPENDIX B: BAHASA MELAYU KEYWORD REFERENCE](#appendix-b-bahasa-melayu-keyword-reference)
 - [APPENDIX C: REJECTED PROPOSALS](#appendix-c-rejected-proposals)
@@ -2370,9 +2377,84 @@ luaran "C" {
 
 ---
 
-## 11. PHASE 7: LONG-TERM VISION
+## 11. PHASE 7: PLATFORM UNIVERSALITY
 
-### 11.1 Self-Hosting
+Extend RIINA from native-only to **every platform** — web, mobile, embedded — with formally verified backend correctness. Platform targeting is a **compiler capability**, not a separate product.
+
+Research backing: Track κ (Fullstack), Track λ (Mobile Platform), Track UX-01 (UI Verification), Track Mobile OS (1,850 theorems).
+
+### 11.1 M7.1 — Backend Trait Architecture
+
+Refactor `riina-codegen` from monolithic C-only to modular multi-backend:
+
+1. Define `Backend` trait: `fn emit(&self, program: &Program) -> Result<Vec<u8>>`
+2. Define `Target` enum: `Native`, `Wasm32`, `Wasm64`, `AndroidArm64`, `IosArm64`
+3. Refactor `CEmitter` to implement `Backend` trait
+4. Add `--target` flag to `riinac build` and `riinac emit`
+5. Backend registry dispatches to correct emitter based on target
+
+**Files:** `03_PROTO/crates/riina-codegen/src/backend.rs` (new), `lib.rs` (modify), `emit.rs` (modify), `03_PROTO/crates/riinac/src/main.rs` (modify)
+
+### 11.2 M7.2 — WebAssembly Backend
+
+Direct IR → WASM binary emission (no Emscripten dependency):
+
+1. WASM binary encoder: section types, function bodies, instruction encoding
+2. IR instruction mapping to WASM instructions (i32, i64, f64, memory, control flow)
+3. WASM memory model: linear memory with RIINA security invariants preserved
+4. DOM/Web API bindings via `luaran "wasm" { ... }` FFI syntax (extends existing `luaran "C"`)
+5. `riinac build --target=wasm32` produces `.wasm` + JS glue
+
+**Files:** `03_PROTO/crates/riina-codegen/src/wasm.rs` (new), `03_PROTO/crates/riina-codegen/src/wasm_encode.rs` (new)
+
+### 11.3 M7.3 — Platform-Conditional Standard Library
+
+Abstract POSIX assumptions so stdlib works on all targets:
+
+1. Platform abstraction layer in codegen (conditional emission based on target)
+2. Web target: file I/O → IndexedDB/OPFS, network → fetch API
+3. Mobile target: platform-native I/O via FFI bridges
+4. Compile-time platform detection: `#jika sasaran("wasm32")` / `#jika sasaran("android")`
+
+**Files:** `03_PROTO/crates/riina-codegen/src/platform.rs` (new), updates to `emit.rs` and `wasm.rs`
+
+### 11.4 M7.4 — Mobile Backend
+
+Cross-compilation to mobile platforms via C backend + NDK/Xcode toolchains:
+
+1. Android: `riinac build --target=android-arm64` → C → NDK → `.so`
+2. iOS: `riinac build --target=ios-arm64` → C → Xcode → `.a`
+3. JNI bridge generation for Android (auto-generate Java/Kotlin bindings)
+4. Swift bridge generation for iOS (auto-generate Swift bindings)
+
+**Files:** `03_PROTO/crates/riina-codegen/src/mobile.rs` (new), `jni.rs` (new), `swift_bridge.rs` (new)
+
+### 11.5 M7.5 — WASM Playground
+
+Compile `riinac` itself to WASM for browser-based editing:
+
+1. `riinac` compiled via `cargo build --target=wasm32-unknown-unknown`
+2. Web worker runs compiler, returns diagnostics + type info
+3. Live editor with syntax highlighting, error reporting, effect visualization
+4. Deployed at `ib823.github.io/riina/play`
+
+**Files:** `website/src/playground/` (new directory), `03_PROTO/Cargo.toml` (WASM target config)
+
+### 11.6 M7.6 — Platform Backend Verification
+
+Coq proofs that platform backends preserve security invariants:
+
+1. Prove WASM backend preserves non-interference (extends Track R)
+2. Prove mobile bridges preserve capability safety
+3. Prove platform-conditional stdlib maintains effect gate invariants
+
+**Files:** `02_FORMAL/coq/domains/` (new platform verification files)
+
+---
+
+## 12. PHASE 8: LONG-TERM VISION
+
+### 12.1 Self-Hosting
 
 Rewrite `riinac` in RIINA itself:
 1. RIINA lexer in RIINA
@@ -2381,14 +2463,14 @@ Rewrite `riinac` in RIINA itself:
 4. Prove self-hosted compiler correct (Track R)
 5. Bootstrap: Rust compiler compiles RIINA compiler written in RIINA
 
-### 11.2 Hardware Verification
+### 12.2 Hardware Verification
 
 Extend guarantees to hardware (Track S):
 1. Model CPU execution (side-channel freedom)
 2. Verify RIINA programs on specific hardware targets
 3. Partner with RISC-V ecosystem
 
-### 11.3 Verified Operating System
+### 12.3 Verified Operating System
 
 Build a verified microkernel using RIINA (Track U):
 1. RIINA-based microhypervisor with proven isolation
@@ -2397,9 +2479,9 @@ Build a verified microkernel using RIINA (Track U):
 
 ---
 
-## 12. EXECUTION ORDER & DEPENDENCY GRAPH
+## 13. EXECUTION ORDER & DEPENDENCY GRAPH
 
-### 12.1 Phase 1 Internal Dependencies
+### 13.1 Phase 1 Internal Dependencies
 
 ```
 IMMEDIATE (no dependencies, start in parallel):
@@ -2433,7 +2515,7 @@ AFTER 5.3.9 (modules work):
 +-- Phase 9: Package manager
 ```
 
-### 12.2 Phase 3 Internal Dependencies (NEW)
+### 13.2 Phase 3 Internal Dependencies
 
 ```
 IMMEDIATE (P0 — no dependencies, start in parallel):
@@ -2461,16 +2543,16 @@ CAN START IMMEDIATELY (Rust-only, no Coq dependency):
 +-- 7.7.2 Option B: Desugar BinOp to App in Rust
 ```
 
-### 12.3 Cross-Phase Dependencies
+### 13.3 Cross-Phase Dependencies
 
 ```
 Phase 1 (Compiler)
     |
-    +--> Phase 2 (Stdlib) -------> Phase 10 (Demos)
+    +--> Phase 2 (Stdlib) -------> Phase 6 (Demos)
     |                               |
-    +--> Phase 8 (DX) -----------> Phase 10 (Adoption)
+    +--> Phase 4 (DX) -----------> Phase 6 (Adoption)
     |                               |
-    +--> Phase 9 (Ecosystem) ----> Phase 10 (Adoption)
+    +--> Phase 5 (Ecosystem) ----> Phase 6 (Adoption)
 
 Phase 3 (Formal Verification + Semantic Completeness)
     |
@@ -2479,14 +2561,20 @@ Phase 3 (Formal Verification + Semantic Completeness)
     +-- 7.4 Fix uncompilable   ─┘        |
     +-- 7.6 Rust evaluator ──────────────> 7.11 Compiler correctness
     +-- 7.7 Alignment fixes ─────────────> Phase 1 (C emitter, builtins)
-    +-- 7.9 Traceability ────────────────> Phase 10 (Enterprise, compliance)
+    +-- 7.9 Traceability ────────────────> Phase 6 (Enterprise, compliance)
     |
-    +--> Phase 10 (Enterprise) --> Phase 11 (Long-term)
+    +--> Phase 6 (Enterprise) --> Phase 7 (Platform) --> Phase 8 (Long-term)
 
-Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
+Phase 7 (Platform Universality):
+    M7.1 Backend Trait ──> M7.2 WASM Backend ──> M7.5 WASM Playground
+    M7.1 Backend Trait ──> M7.3 Platform Stdlib
+    M7.1 Backend Trait ──> M7.4 Mobile Backend
+    M7.2 + M7.3 + M7.4 ──> M7.6 Formal Verification of Backends
+
+Phase 6.1 (FFI) --> Phase 6.3 (Community) --> Phase 6.4 (Enterprise)
 ```
 
-### 12.4 Critical Path
+### 13.4 Critical Path
 
 **Two parallel critical paths exist:**
 
@@ -2508,9 +2596,9 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 
 ---
 
-## 13. FILES TO CREATE OR MODIFY
+## 14. FILES TO CREATE OR MODIFY
 
-### 13.1 Phase 1 Files
+### 14.1 Phase 1 Files
 
 | # | File | Action | Est. Lines | Depends On |
 |---|------|--------|-----------|------------|
@@ -2534,7 +2622,7 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 
 **Phase 1 Total: ~3,031 new/modified lines across 17 files.**
 
-### 13.2 Phase 3 Files (Formal Verification & Semantic Completeness)
+### 14.2 Phase 3 Files (Formal Verification & Semantic Completeness)
 
 | # | File | Action | Est. Lines | Priority | Depends On |
 |---|------|--------|-----------|----------|------------|
@@ -2557,7 +2645,7 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 
 **Phase 3 Total: ~5,268 new/modified lines across 16+ files.**
 
-### 13.3 Phase 4 Files (Developer Experience)
+### 14.3 Phase 4 Files (Developer Experience)
 
 | # | File | Action | Est. Lines |
 |---|------|--------|-----------|
@@ -2574,7 +2662,7 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 | 44 | `03_PROTO/crates/riina-doc/Cargo.toml` | CREATE | ~15 |
 | 45 | `03_PROTO/crates/riina-doc/src/lib.rs` | CREATE: doc generator | ~1,500 |
 
-### 13.4 Phase 5 Files (Ecosystem)
+### 14.4 Phase 5 Files (Ecosystem)
 
 | # | File | Action | Est. Lines | Status |
 |---|------|--------|-----------|--------|
@@ -2584,7 +2672,7 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 | 49 | `.github/workflows/release.yml` | DEFERRED | ~80 | ⬜ Pending (distribution) |
 | 50 | `.github/workflows/nightly.yml` | DEFERRED | ~40 | ⬜ Superseded by `riinac verify` |
 
-### 13.5 Phase 6 Files (Adoption)
+### 14.5 Phase 6 Files (Adoption)
 
 | # | File | Action | Est. Lines |
 |---|------|--------|-----------|
@@ -2595,7 +2683,7 @@ Phase 10.1 (FFI) --> Phase 10.3 (Community) --> Phase 10.4 (Enterprise)
 
 ---
 
-## 14. VERIFICATION GATES
+## 15. VERIFICATION GATES
 
 ### Gate 1: Lexer + Driver (after 5.1, 5.2)
 
@@ -2698,7 +2786,7 @@ cat 06_COORDINATION/ATTACK_PROOF_MAP.md | grep "PROVEN" | wc -l
 
 ---
 
-## 15. OPEN DECISIONS
+## 16. OPEN DECISIONS
 
 ### Decision 1: While Loop Termination Strategy
 

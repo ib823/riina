@@ -78,11 +78,9 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                 Error::InvalidOperation(format!("fail_senarai: cannot read dir '{}': {}", path, e))
             })?;
             let mut items = Vec::new();
-            for entry in entries {
-                if let Ok(e) = entry {
-                    if let Some(name) = e.file_name().to_str() {
-                        items.push(Value::String(name.to_string()));
-                    }
+            for e in entries.flatten() {
+                if let Some(name) = e.file_name().to_str() {
+                    items.push(Value::String(name.to_string()));
                 }
             }
             Ok(Some(Value::List(items)))

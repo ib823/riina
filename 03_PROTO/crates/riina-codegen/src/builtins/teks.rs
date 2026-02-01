@@ -149,7 +149,7 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                             if current >= w {
                                 Ok(Some(Value::String(text)))
                             } else {
-                                let padding: String = std::iter::repeat(pad_char).take(w - current).collect();
+                                let padding: String = std::iter::repeat_n(pad_char, w - current).collect();
                                 Ok(Some(Value::String(format!("{}{}", padding, text))))
                             }
                         }
@@ -173,7 +173,7 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                             if current >= w {
                                 Ok(Some(Value::String(text)))
                             } else {
-                                let padding: String = std::iter::repeat(pad_char).take(w - current).collect();
+                                let padding: String = std::iter::repeat_n(pad_char, w - current).collect();
                                 Ok(Some(Value::String(format!("{}{}", text, padding))))
                             }
                         }

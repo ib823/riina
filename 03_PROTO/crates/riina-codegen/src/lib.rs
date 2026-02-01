@@ -75,6 +75,13 @@ pub mod interp;
 pub mod emit;
 pub mod builtins;
 pub mod ffi;
+pub mod backend;
+pub mod wasm;
+pub mod wasm_encode;
+pub mod platform;
+pub mod mobile;
+pub mod jni;
+pub mod swift_bridge;
 
 // Re-export primary interface
 pub use ir::{Instruction, BasicBlock, Function, Program};
@@ -82,6 +89,7 @@ pub use value::Value;
 pub use lower::Lower;
 pub use interp::Interpreter;
 pub use emit::{CEmitter, emit_c};
+pub use backend::{Backend, BackendOutput, Target, backend_for_target};
 
 /// Result type for code generation operations
 pub type Result<T> = std::result::Result<T, Error>;

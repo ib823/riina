@@ -613,4 +613,22 @@
 
 ---
 
+## PLATFORM BACKEND TARGETS (Phase 7)
+
+The UI/UX design system defined in this document applies to **all platform backends**:
+
+| Backend | Implementation Target | UI/UX Applicability |
+|---------|-----------------------|---------------------|
+| **M7.2 WASM** | Web applications via `--target=wasm32` | Full web design system: DOM components, CSS variables, WCAG AAA compliance, responsive layouts |
+| **M7.4 Android** | Android apps via `--target=android-arm64` | Material Design integration, Android accessibility services, JNI bridge for native UI |
+| **M7.4 iOS** | iOS apps via `--target=ios-arm64` | UIKit/SwiftUI bridge, iOS accessibility, Swift binding for native UI components |
+| **M7.5 Playground** | In-browser compiler at `play.riina.dev` | Code editor, syntax highlighting, real-time diagnostics, effect visualization |
+
+The 200 UI verification theorems from Track UX-01 ensure that:
+- Accessibility properties (WCAG AAA) are preserved across all platforms
+- Security-relevant UI states (secret data display, authentication flows) are formally verified
+- Platform-conditional stdlib (M7.3) ensures correct UI behavior per platform
+
+---
+
 **END OF RIINA UI/UX DESIGN TEMPLATES**

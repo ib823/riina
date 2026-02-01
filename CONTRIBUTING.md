@@ -20,7 +20,7 @@ bash 00_SETUP/scripts/verify_setup.sh
 # Build the compiler
 cd 03_PROTO && cargo build --release -p riinac && cd ..
 
-# Run all tests (should show 588 passing)
+# Run all tests (should show 612+ passing)
 cd 03_PROTO && cargo test --all && cd ..
 
 # Try it out
@@ -100,6 +100,16 @@ Use **Bahasa Melayu** keywords in all examples. See `07_EXAMPLES/06_ai_context/R
 - Use Bahasa Melayu keywords (`fungsi`, `biar`, `kalau`, etc.)
 - Include doc comments (`///`) explaining what the example demonstrates
 - Include the `riinac` command to run/check the file
+
+### Platform Backends (03_PROTO/crates/riina-codegen/)
+
+Backend contributions must:
+- Implement the `Backend` trait from `backend.rs`
+- Preserve RIINA's security invariants (non-interference, effect safety) in emitted code
+- Include tests that verify output validity for the target platform
+- Not introduce platform-specific dependencies — all encoding is hand-written
+
+Current backends: C (native), WASM (`wasm.rs`), Mobile (`mobile.rs` + `jni.rs` + `swift_bridge.rs`)
 
 ## Verification
 

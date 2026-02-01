@@ -93,8 +93,8 @@ const RiinaWebsite = () => {
 
   // Reusable page header
   const PageHeader = ({ title, subtitle }) => (
-    <section style={{ padding: '80px 32px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '48px', fontWeight: 300, marginBottom: '32px' }}>{title}</h1>
+    <section className="section" style={{ padding: '80px 32px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 className="page-title" style={{ fontSize: '48px', fontWeight: 300, marginBottom: '32px' }}>{title}</h1>
       <p style={{ fontSize: '20px', color: '#666', lineHeight: 1.8 }}>{subtitle}</p>
     </section>
   );
@@ -126,7 +126,7 @@ const RiinaWebsite = () => {
 
   // Header
   const Header = () => (
-    <header style={{
+    <header className="site-header" style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -136,7 +136,7 @@ const RiinaWebsite = () => {
       backdropFilter: 'blur(10px)',
       borderBottom: '1px solid #eee'
     }}>
-      <div style={{
+      <div className="header-inner" style={{
         maxWidth: '1200px',
         margin: '0 auto',
         padding: '16px 32px',
@@ -163,7 +163,19 @@ const RiinaWebsite = () => {
           }}>RIINA</span>
         </button>
 
-        <nav style={{ display: 'flex', gap: '32px' }}>
+        <button
+          className="hamburger"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <nav className="site-nav" style={{ display: 'flex', gap: '32px' }}>
           {pages.slice(1).map(page => (
             <button
               key={page.id}
@@ -183,6 +195,7 @@ const RiinaWebsite = () => {
         </nav>
 
         <a
+          className="header-github"
           href="https://github.com/ib823/riina"
           style={{
             backgroundColor: '#000',
@@ -198,6 +211,22 @@ const RiinaWebsite = () => {
           View on GitHub
         </a>
       </div>
+
+      {/* Mobile menu overlay */}
+      <div className={`mobile-menu-overlay${mobileMenuOpen ? ' open' : ''}`}>
+        <button className="mobile-menu-close" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">✕</button>
+        {pages.map(page => (
+          <button
+            key={page.id}
+            onClick={() => { setCurrentPage(page.id); setMobileMenuOpen(false); }}
+          >
+            {page.label}
+          </button>
+        ))}
+        <a href="https://github.com/ib823/riina" style={{ fontSize: '20px', padding: '12px 24px', color: '#333', textDecoration: 'none' }}>
+          GitHub
+        </a>
+      </div>
     </header>
   );
 
@@ -207,7 +236,7 @@ const RiinaWebsite = () => {
   const HomePage = () => (
     <div>
       {/* Hero */}
-      <section style={{
+      <section className="hero" style={{
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -220,7 +249,7 @@ const RiinaWebsite = () => {
           <Logo size={80} />
         </div>
 
-        <h1 style={{
+        <h1 className="hero-title" style={{
           fontSize: '64px',
           fontWeight: 300,
           letterSpacing: '-0.02em',
@@ -279,7 +308,7 @@ const RiinaWebsite = () => {
         </div>
 
         {/* Key Stats */}
-        <div style={{
+        <div className="hero-stats" style={{
           display: 'flex',
           gap: '64px',
           paddingTop: '48px',
@@ -308,7 +337,7 @@ const RiinaWebsite = () => {
       </section>
 
       {/* Core Insight */}
-      <section style={{
+      <section className="section-dark" style={{
         backgroundColor: '#000',
         color: '#fff',
         padding: '120px 32px',
@@ -359,7 +388,7 @@ const RiinaWebsite = () => {
       </section>
 
       {/* How It's Different */}
-      <section style={{ padding: '120px 32px', maxWidth: '1200px', margin: '0 auto' }}>
+      <section className="section" style={{ padding: '120px 32px', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
           <p style={{
             fontSize: '14px',
@@ -378,7 +407,7 @@ const RiinaWebsite = () => {
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px' }}>
+        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px' }}>
           <div>
             <h3 style={{
               fontSize: '12px',
@@ -463,7 +492,7 @@ const RiinaWebsite = () => {
             </h2>
           </div>
 
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// pengesahan.rii — Authentication in RIINA
 modul pengesahan;
 
@@ -494,7 +523,7 @@ fungsi hash_kata_laluan(
       </section>
 
       {/* Capabilities */}
-      <section style={{ padding: '120px 32px', maxWidth: '1200px', margin: '0 auto' }}>
+      <section className="section" style={{ padding: '120px 32px', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '64px' }}>
           <p style={{
             fontSize: '14px',
@@ -539,6 +568,32 @@ fungsi hash_kata_laluan(
               <div style={{ fontSize: '13px', color: '#666' }}>{item.desc}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Platform Targets */}
+      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#999', marginBottom: '16px' }}>
+            PLATFORM UNIVERSALITY
+          </p>
+          <h2 style={{ fontSize: '36px', fontWeight: 300, marginBottom: '48px' }}>
+            One language. <span style={{ fontWeight: 600 }}>Every platform.</span>
+          </h2>
+          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+            {[
+              { name: 'Native', desc: 'C backend — any platform with a C compiler', status: 'Done' },
+              { name: 'WebAssembly', desc: 'Direct IR → WASM binary emission', status: 'Phase 7' },
+              { name: 'Android', desc: 'NDK cross-compilation + JNI bridges', status: 'Phase 7' },
+              { name: 'iOS', desc: 'Xcode toolchain + Swift bridges', status: 'Phase 7' },
+            ].map((t, i) => (
+              <div key={i} style={{ padding: '24px', border: '1px solid #ddd', backgroundColor: '#fff' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>{t.name}</div>
+                <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>{t.desc}</div>
+                <span style={{ fontSize: '11px', padding: '4px 8px', backgroundColor: t.status === 'Done' ? '#e8f5e9' : '#fff3e0', borderRadius: '4px' }}>{t.status}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -637,7 +692,7 @@ fungsi hash_kata_laluan(
           <p style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '32px' }}>
             THE BUSINESS CASE
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '48px', marginBottom: '48px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '48px', marginBottom: '48px' }}>
             {[
               { value: '$4.88M', label: 'Average cost of a data breach', source: 'IBM Cost of Data Breach Report, 2024' },
               { value: '$9.77M', label: 'Average breach cost in healthcare', source: 'Highest industry cost for 14 consecutive years' },
@@ -776,7 +831,7 @@ fungsi hash_kata_laluan(
             Quantum computers and AI <span style={{ fontWeight: 600 }}>cannot break mathematical logic</span>
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px', marginBottom: '48px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px', marginBottom: '48px' }}>
             <div style={{ padding: '32px', border: '1px solid #eee' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Quantum Computing</h3>
               <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.7 }}>
@@ -1042,7 +1097,7 @@ fungsi hash_kata_laluan(
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>BAHASA MELAYU SYNTAX</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             {[
               { bm: 'fungsi', en: 'fn', ex: 'fungsi tambah(x: Nombor)' },
               { bm: 'biar', en: 'let', ex: 'biar nama = "Ahmad";' },
@@ -1088,7 +1143,7 @@ fungsi hash_kata_laluan(
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>SECURITY TYPES</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px' }}>
+          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px' }}>
             {[
               {
                 title: 'Rahsia<T> — Secret data',
@@ -1138,7 +1193,7 @@ fungsi hash_kata_laluan(
       <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ fontSize: '32px', marginBottom: '32px' }}>Real RIINA code</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// Verify password with full security guarantees
 fungsi sahkan_kata_laluan(
     input: Rahsia<Teks>,
@@ -1170,7 +1225,7 @@ fungsi sahkan_kata_laluan(
             marginBottom: '48px'
           }}>PROVEN AT COMPILE TIME</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
             {[
               'Type safety (Progress + Preservation)',
               'Non-interference',
@@ -1372,7 +1427,7 @@ fungsi sahkan_kata_laluan(
           </div>
 
           <h2 style={sectionLabel}>DECLASSIFICATION</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// dedah() — the ONLY way to extract secret data
 // Requires a proof that the security policy is satisfied
 
@@ -1400,7 +1455,7 @@ fungsi log_percubaan_masuk(
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>CONSTANT-TIME BLOCKS</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// masa_tetap blocks prove constant-time execution
 // No branching on secret values allowed inside
 
@@ -1455,7 +1510,7 @@ fungsi banding_rahsia(
           </div>
 
           <h2 style={sectionLabel}>BUILT-IN EFFECTS</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '64px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '64px' }}>
             {[
               { name: 'Bersih', en: 'Pure', desc: 'No side effects. Default. Provably terminating.' },
               { name: 'Baca', en: 'Read', desc: 'File system read access.' },
@@ -1477,7 +1532,7 @@ fungsi banding_rahsia(
           </div>
 
           <h2 style={sectionLabel}>EFFECT COMPOSITION</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// Effects compose with +
 fungsi muat_dan_nyahsulit(
     laluan: Teks,
@@ -1500,7 +1555,7 @@ fungsi tambah(a: Nombor, b: Nombor) -> Nombor {
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>EFFECT HANDLERS</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// Algebraic effect handlers intercept and transform effects
 
 kesan Log {
@@ -1576,7 +1631,7 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
           </div>
 
           <h2 style={sectionLabel}>HELLO WORLD</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// hello_dunia.rii — Hello World in RIINA
 modul hello_dunia;
 guna std::io;
@@ -1604,7 +1659,7 @@ fungsi gambar_nombor(n: Nombor) -> Teks {
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>AUTHENTICATION (SECURITY TYPES)</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// pengesahan.rii — Full authentication with security proofs
 modul pengesahan;
 guna std::kripto;
@@ -1654,7 +1709,7 @@ awam fungsi sahkan_pengguna(
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>POST-QUANTUM CRYPTOGRAPHY</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// kripto.rii — ML-KEM key encapsulation + ChaCha20-Poly1305
 modul kripto;
 
@@ -1732,7 +1787,7 @@ rand() = 1804289383` },
           ))}
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>SHOWCASE: PROVABLY SECURE WEB SERVER</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// pelayan_web_selamat.rii — Web server where the compiler PROVES:
 // ✓ No SQL injection (TeksSqlSelamat type)
 // ✓ No XSS (TeksHtmlSelamat type)
@@ -1760,7 +1815,7 @@ fungsi kendalikan(permintaan: Permintaan, db: Pangkalan)
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>SHOWCASE: POST-QUANTUM ENCRYPTED MESSENGER</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// utusan_pasca_kuantum.rii — E2E encrypted chat
 // Compiler PROVES: keys zeroized, no plaintext leakage, constant-time
 
@@ -1782,7 +1837,7 @@ fungsi hantar_mesej(
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '64px' }}>SHOWCASE: HIPAA-COMPLIANT MEDICAL RECORDS</h2>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`// rekod_perubatan_hipaa.rii — HIPAA medical records
 // Compiler PROVES: PHI never escapes authorized scope, full audit trail
 
@@ -2187,7 +2242,7 @@ Every security claim has a machine-checked proof behind it.`
             Documentation
           </h1>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
             {docCards.map((section, i) => (
               <div key={i} style={{
                 padding: '32px',
@@ -2502,7 +2557,7 @@ grep -r "Admitted" *.v  # Must be empty`}
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>SUMMARY</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px', marginBottom: '64px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px', marginBottom: '64px' }}>
             <div style={cardStyle}>
               <h3 style={{ fontSize: '14px', color: '#2e7d32', marginBottom: '12px' }}>PERMISSIONS</h3>
               <ul style={{ listStyle: 'none', padding: 0, fontSize: '14px', color: '#666' }}>
@@ -2716,7 +2771,7 @@ rand() = 1804289383` },
             <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
               The compiler PROVES: no SQL injection, no XSS, no path traversal, no secret leakage, no timing attacks.
             </p>
-            <pre style={codeBlockStyle}>
+            <pre className="code-block" style={codeBlockStyle}>
 {`// pelayan_web_selamat.rii
 modul pelayan_web_selamat;
 guna std::io;
@@ -2750,7 +2805,7 @@ fungsi kendalikan(permintaan: Permintaan, db: Pangkalan)
             <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
               ML-KEM-1024 key encapsulation, ML-DSA-87 signatures, ChaCha20-Poly1305 AEAD. Compiler proves keys are zeroized and no plaintext leaks.
             </p>
-            <pre style={codeBlockStyle}>
+            <pre className="code-block" style={codeBlockStyle}>
 {`// utusan_pasca_kuantum.rii
 modul utusan_pasca_kuantum;
 guna std::kripto;
@@ -2783,7 +2838,7 @@ fungsi hantar_mesej(
             <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
               PHI (Protected Health Information) handling with role-based access control, audit trails, and de-identification. Compiler proves PHI never escapes authorized scope.
             </p>
-            <pre style={codeBlockStyle}>
+            <pre className="code-block" style={codeBlockStyle}>
 {`// rekod_perubatan_hipaa.rii
 modul rekod_perubatan_hipaa;
 
@@ -2844,7 +2899,7 @@ fungsi akses_rekod(
             with formal axioms, domain-specific types, and compiler-proven properties tailored to your exact regulatory landscape.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '64px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '64px' }}>
             {[
               { icon: '⊢', industry: 'Defence & Military', regs: 'CMMC, ITAR, NIST 800-171',
                 desc: 'Classified data handling with proven compartmentalization. CUI isolation enforced at the type level. Cross-domain guard verification. Side-channel resistance for signals intelligence. Formal evidence for DISA STIG compliance.' },
@@ -2893,7 +2948,7 @@ fungsi akses_rekod(
 
           {/* Regulatory frameworks */}
           <h2 style={sectionLabel}>15 REGULATORY FRAMEWORKS — MACHINE-CHECKABLE COMPLIANCE</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '48px' }}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '48px' }}>
             {[
               { reg: 'HIPAA', jurisdiction: 'United States', coverage: 'PHI access control, audit trails, encryption' },
               { reg: 'PCI-DSS', jurisdiction: 'Global', coverage: 'Cardholder data isolation, key management' },
@@ -2931,7 +2986,7 @@ fungsi akses_rekod(
             <h2 style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '24px' }}>
               RESEARCH DEPTH
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', marginBottom: '32px' }}>
+            <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', marginBottom: '32px' }}>
               {[
                 { value: '218', label: 'Research Tracks' },
                 { value: '1,231+', label: 'Threats Modeled' },
@@ -2958,7 +3013,7 @@ fungsi akses_rekod(
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
             Generate a machine-checkable compliance certificate:
           </p>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`$ riinac verify --compliance hipaa,pci-dss myapp.rii
 
 RIINA COMPLIANCE CERTIFICATE
@@ -2988,7 +3043,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
             Auditors can independently verify certificates — zero trust:
           </p>
-          <pre style={codeBlockStyle}>
+          <pre className="code-block" style={codeBlockStyle}>
 {`$ cd 02_FORMAL/coq && make
 
 # Check specific theorems
@@ -2999,7 +3054,7 @@ $ Print Assumptions access_control_enforced.
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '48px' }}>PROOF METRICS</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '48px' }}>
+          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '48px' }}>
             {[
               { value: '150', label: 'Compliance Theorems' },
               { value: '15', label: 'Regulations Covered' },
@@ -3043,7 +3098,7 @@ $ Print Assumptions access_control_enforced.
         title="Releases"
         subtitle="Download RIINA releases and track changes across versions."
       />
-      <section style={sectionStyle}>
+      <section className="section" style={sectionStyle}>
         <div style={{ marginBottom: '48px' }}>
           <div style={{
             display: 'inline-block',
@@ -3175,12 +3230,12 @@ nix run github:ib823/riina`}
     ];
 
     return (
-      <footer style={{
+      <footer className="site-footer" style={{
         borderTop: '1px solid #eee',
         padding: '64px 32px',
         backgroundColor: '#fafafa'
       }}>
-        <div style={{
+        <div className="grid-footer" style={{
           maxWidth: '1200px',
           margin: '0 auto',
           display: 'grid',
@@ -3253,7 +3308,7 @@ nix run github:ib823/riina`}
           ))}
         </div>
 
-        <div style={{
+        <div className="footer-bottom" style={{
           maxWidth: '1200px',
           margin: '48px auto 0',
           paddingTop: '24px',
