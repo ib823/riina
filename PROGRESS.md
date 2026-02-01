@@ -976,7 +976,7 @@ The following remain and are NOT covered by delegation output:
 
 ```
 Session      : 65 (Release System)
-Last Action  : VERSION, CHANGELOG.md, bump-version.sh, release.sh, website Releases page
+Last Action  : Website "Why Proof" exec page, 15 industry verticals, link audit, deploy
 Build Status : ✅ PASSING (244 Coq files + 588 Rust tests)
 Version      : 0.1.0 (VERSION file is source of truth)
 Axioms       : 5 (active build: 4 in NI_v2_LR + 1 in NI_v2)
@@ -992,7 +992,16 @@ Session 65 Accomplishments:
 5. Website Releases page + releases data array + footer version
 6. GitHub Pages: website at ib823.github.io/riina/, /proof redirects to /riina
 7. scripts/deploy-website.sh (build + push to gh-pages on ib823/riina)
-8. Documentation sync across all tracking files
+8. Website audit: all GitHub links fixed from ib823/proof → ib823/riina
+9. "Why Proof" executive page (14th page) — breach cost data (IBM $4.88M), assurance
+   hierarchy (EAL1-EAL7), quantum/AI immunity, real-world proof points (DARPA seL4,
+   Paris Metro, AWS, Microsoft HACL*, CompCert, ProvenRun EAL7), C-suite role-by-role
+   value propositions (CEO/CIO/CRO/CISO/CFO/Board), sources & references
+10. Enterprise page expanded: 15 industry verticals with domain-specific descriptions,
+    research depth section (218 tracks, 1,231+ threats), 6 use cases (up from 4)
+11. Research page expanded: 26 research domains with descriptions, 15 industry links
+12. Home page: 8 industry-specific capability cards (up from 4)
+13. Documentation sync across all tracking files
 
 Release workflow:
   bash scripts/release.sh 0.2.0

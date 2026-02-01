@@ -1,8 +1,8 @@
 # Session Log
 
-## 2026-02-01 (Session 65): Release System — VERSION, CHANGELOG, release.sh, Releases Page
+## 2026-02-01 (Session 65): Release System + Website Executive Content
 
-**Goal:** Implement complete release workflow: versioning, changelog, bump script, release script, website Releases page.
+**Goal:** Implement complete release workflow, audit all website content, add executive-facing "Why Proof" page for C-suite decision-makers.
 
 ### Accomplishments
 
@@ -22,6 +22,12 @@
 | vite base path | `/proof/` → `/riina/` | Done |
 | Install URLs | `riina.my/install.sh` → `ib823.github.io/riina/install.sh` | Done |
 | release.sh | Website deploy step added; runs deploy-website.sh automatically | Done |
+| Link audit | All GitHub links fixed: ib823/proof → ib823/riina across entire website | Done |
+| "Why Proof" page | 14th page — executive-friendly: IBM breach costs, assurance hierarchy, quantum/AI immunity, DARPA/AWS/Microsoft proof points, C-suite role-by-role value propositions, 14 cited sources | Done |
+| Enterprise expansion | 15 industry verticals (Defence, Healthcare, Financial, Aerospace, Energy, Telecom, Gov, Transport, Manufacturing/ERP, Retail, Media, Education, Agriculture, Real Estate, Legal), research depth banner (218 tracks, 1,231+ threats), 6 use cases | Done |
+| Research expansion | 26 research domains (A-Z) with descriptions, 15 industry-specific links to Enterprise page | Done |
+| Home page | "What You Can Build" expanded to 8 industry cards; "Why mathematical proof?" button added to Core Insight | Done |
+| Website deploy | Rebuilt and deployed to gh-pages on ib823/riina | Done |
 
 ### Release Workflow
 

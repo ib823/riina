@@ -362,7 +362,7 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 3. Formal Verification | 5,304 Qed proofs, 5 justified axioms, 0 admits | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 111 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
-| 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, website Releases page | Done |
+| 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 14-page website (Why Proof, 15 industries, Releases) | Done |
 | 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
