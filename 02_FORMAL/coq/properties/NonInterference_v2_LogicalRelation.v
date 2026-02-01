@@ -2699,18 +2699,14 @@ Proof.
     + change (NonInterference_v2.first_order_type (TSecret T)) with (first_order_type (TSecret T)).
       simpl.
       destruct (first_order_type T); exact I.
-  - rewrite val_rel_n_S_unfold. split.
+  - rewrite val_rel_n_S_unfold. repeat split.
     + apply IHn; assumption.
-    + repeat split.
-      * constructor; assumption.
-      * constructor; assumption.
-      * intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
-      * intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
-      * apply T_Classify; assumption.
-      * apply T_Classify; assumption.
-      * change (NonInterference_v2.first_order_type (TSecret T)) with (first_order_type (TSecret T)).
-        simpl.
-        destruct (first_order_type T); exact I.
+    + constructor; assumption.
+    + constructor; assumption.
+    + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
+    + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Classify; assumption.
+    + apply T_Classify; assumption.
 Qed.
 
 (** Build val_rel_n for TProof type (val_rel_at_type is True) *)
@@ -2727,26 +2723,20 @@ Proof.
     + constructor; assumption.
     + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
     + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Prove; assumption.
+    + apply T_Prove; assumption.
     + change (NonInterference_v2.first_order_type (TProof T)) with (first_order_type (TProof T)).
       simpl.
       change (NonInterference_v2.first_order_type T) with (first_order_type T).
-      destruct (first_order_type T) eqn:Hfo.
-      * exact I.
-      * split; apply T_Prove; assumption.
-  - rewrite val_rel_n_S_unfold. split.
+      destruct (first_order_type T) eqn:Hfo; exact I.
+  - rewrite val_rel_n_S_unfold. repeat split.
     + apply IHn; assumption.
-    + repeat split.
-      * constructor; assumption.
-      * constructor; assumption.
-      * intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
-      * intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
-      * change (NonInterference_v2.first_order_type (TProof T)) with (first_order_type (TProof T)).
-        simpl.
-        change (NonInterference_v2.first_order_type T) with (first_order_type T).
-        destruct (first_order_type T) eqn:Hfo.
-        { exact I. }
-        { split; apply T_Prove; assumption. }
-      * exact I.
+    + constructor; assumption.
+    + constructor; assumption.
+    + intros y Hfree. simpl in Hfree. apply (Hc1 y Hfree).
+    + intros y Hfree. simpl in Hfree. apply (Hc2 y Hfree).
+    + apply T_Prove; assumption.
+    + apply T_Prove; assumption.
 Qed.
 
 Lemma val_rel_string : forall Σ s,
@@ -2765,17 +2755,18 @@ Proof.
 Qed.
 
 Lemma val_rel_loc : forall Σ l,
+  store_ty_lookup l Σ = Some (TUnit, Public) ->
   val_rel Σ (TRef TUnit Public) (ELoc l) (ELoc l).
 Proof.
-  intros Σ l n.
+  intros Σ l Hlook n.
   apply val_rel_n_of_first_order.
   - reflexivity.
   - constructor.
   - constructor.
   - apply closed_expr_loc.
   - apply closed_expr_loc.
-  - constructor.
-  - constructor.
+  - apply T_Loc. exact Hlook.
+  - apply T_Loc. exact Hlook.
   - intros sp vl sl svp. simpl. exists l. split; reflexivity.
 Qed.
 
@@ -2899,56 +2890,26 @@ Proof.
   induction Hty; intro Δ2; try (econstructor; eauto; fail).
 Qed.
 
-(** The mutual induction theorem.
-    Since val_rel_n_step_up is fully proven in the base file (NonInterference_v2.v),
-    step_up_at is trivially proven for all n. The fundamental theorem part
-    requires induction on typing derivations and is admitted pending
-    completion of the logical_relation proof. *)
-Theorem step_up_and_fundamental_mutual : forall n,
-  step_up_and_fundamental n.
+(** Fresh location is not in store typing — follows from store_wf. *)
+Lemma store_wf_fresh_not_in_ty : forall Σ st,
+  store_wf Σ st ->
+  store_ty_lookup (fresh_loc st) Σ = None.
 Proof.
-  intro n.
-  unfold step_up_and_fundamental.
-  split.
-  - (* step_up at n: follows directly from val_rel_n_step_up *)
-    unfold step_up_at. intros Σ T v1 v2 Hrel Hty1 Hty2.
-    apply val_rel_n_step_up; assumption.
-  - (* fundamental at n *)
-    destruct n as [| n'].
-    + apply fundamental_at_0.
-    + (* fundamental at S n': requires induction on typing derivation *)
-      unfold fundamental_at_step.
-      intros Γ Σ Δ e0 T ε rho1 rho2 Hty Henv Hno1 Hno2.
-      (* Convert typing from arbitrary Δ to Public *)
-      assert (Hty_pub : has_type Γ Σ Public e0 T ε).
-      { exact (has_type_level_irrelevant Γ Σ Δ e0 T ε Hty Public). }
-      (* Apply the logical_relation theorem *)
-      exact (logical_relation Γ Σ e0 T ε rho1 rho2 Hty_pub Henv Hno1 Hno2 (S n')).
+  intros Σ st Hwf.
+  destruct (store_ty_lookup (fresh_loc st) Σ) as [[T sl] |] eqn:Hlook; auto.
+  destruct (proj1 Hwf _ _ _ Hlook) as [v [Hst [_ _]]].
+  rewrite store_lookup_fresh in Hst. discriminate.
 Qed.
 
-(** Corollary: step_up holds at all steps *)
-Corollary val_rel_n_step_up_proven : forall n Σ T v1 v2,
-  val_rel_n n Σ T v1 v2 ->
-  has_type nil Σ Public v1 T EffectPure ->
-  has_type nil Σ Public v2 T EffectPure ->
-  val_rel_n (S n) Σ T v1 v2.
+(** Related stores have the same fresh location. *)
+Lemma store_rel_n_same_fresh : forall n Σ st1 st2,
+  store_rel_n n Σ st1 st2 ->
+  fresh_loc st1 = fresh_loc st2.
 Proof.
-  intros n.
-  destruct (step_up_and_fundamental_mutual n) as [Hsu _].
-  exact Hsu.
-Qed.
-
-(** Corollary: fundamental theorem holds at all steps *)
-Corollary fundamental_at_all_steps : forall n Γ Σ Δ e T ε rho1 rho2,
-  has_type Γ Σ Δ e T ε ->
-  env_rel Σ Γ rho1 rho2 ->
-  rho_no_free_all rho1 ->
-  rho_no_free_all rho2 ->
-  exp_rel_n n Σ T (subst_rho rho1 e) (subst_rho rho2 e).
-Proof.
-  intros n.
-  destruct (step_up_and_fundamental_mutual n) as [_ Hf].
-  exact Hf.
+  intros n Σ st1 st2 Hrel. unfold fresh_loc.
+  destruct n; simpl in Hrel.
+  - rewrite Hrel. reflexivity.
+  - destruct Hrel as [_ [Hmax _]]. rewrite Hmax. reflexivity.
 Qed.
 
 (* The fundamental theorem - proof by induction on typing derivation.
@@ -2991,26 +2952,20 @@ Proof.
       split. { constructor. }
       split. { apply closed_expr_loc. }
       split. { apply closed_expr_loc. }
+      split. { apply T_Loc. exact H_base. }
+      split. { apply T_Loc. exact H_base. }
       destruct (NonInterference_v2.first_order_type T) eqn:Hfo.
       * simpl. exists l. split; reflexivity.
-      * (* HO type: need typing for TRef — use T_Loc with store lookup *)
-        split; apply T_Loc; exact H_base.
+      * exact I.
     + (* n = S n' *)
       rewrite val_rel_n_S_unfold. split; [exact IHn |].
       split. { constructor. }
       split. { constructor. }
       split. { apply closed_expr_loc. }
       split. { apply closed_expr_loc. }
-      split.
-      { (* typing conjunct for TRef *)
-        change (NonInterference_v2.first_order_type (TRef T sl)) with (first_order_type (TRef T sl)).
-        simpl.
-        change (NonInterference_v2.first_order_type T) with (first_order_type T).
-        destruct (first_order_type T) eqn:Hfo.
-        - exact I.
-        - (* HO type: use T_Loc *)
-          split; apply T_Loc; exact H_base. }
-      simpl. exists l. split; reflexivity.
+      split. { apply T_Loc. exact H_base. }
+      split. { apply T_Loc. exact H_base. }
+      simpl val_rel_at_type. exists l. auto.
 
   - (* T_Var *)
     (* subst_rho rho (EVar x) = rho x by definition.
@@ -3032,15 +2987,16 @@ Proof.
     (* Note: IHHty is for the body under extended context *)
     (* Obtain typing for both substituted lambdas from env_rel at Σ_base *)
     assert (Hty_base : has_type ((x, T1) :: Γ) Σ_base Public e T2 ε).
-    { apply (store_ty_extends_preserves_typing ((x, T1) :: Γ) Σ Σ_base Public e T2 ε Hext_base Hty). }
+    { apply (store_ty_extends_preserves_typing ((x, T1) :: Γ) Σ Σ_base Public e T2 ε Hext_base
+             (has_type_level_irrelevant _ _ _ _ _ _ Hty Public)). }
     assert (Hlam_ty : has_type nil Σ_base Public (ELam x T1 (subst_rho (rho_shadow rho1 x) e)) (TFn T1 T2 ε) EffectPure /\
                       has_type nil Σ_base Public (ELam x T1 (subst_rho (rho_shadow rho2 x) e)) (TFn T1 T2 ε) EffectPure).
     { apply (lam_typing_from_env_rel Γ Σ_base x T1 T2 e ε rho1 rho2 Hty_base Henv). }
     destruct Hlam_ty as [Hlam_ty1 Hlam_ty2].
     assert (Hcl1 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho1 x) e))).
-    { apply (typing_nil_closed Σ_base Public). exact Hlam_ty1. }
+    { exact (typing_nil_closed Σ_base Public _ _ _ Hlam_ty1). }
     assert (Hcl2 : closed_expr (ELam x T1 (subst_rho (rho_shadow rho2 x) e))).
-    { apply (typing_nil_closed Σ_base Public). exact Hlam_ty2. }
+    { exact (typing_nil_closed Σ_base Public _ _ _ Hlam_ty2). }
     (* We prove exp_rel from val_rel *)
     apply exp_rel_of_val_rel.
     unfold val_rel. intro n.
@@ -3052,9 +3008,10 @@ Proof.
       split. { constructor. }
       split. { exact Hcl1. }
       split. { exact Hcl2. }
-      (* TFn is HO, so needs typing *)
-      change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
-      simpl. split; assumption.
+      (* TFn is HO — first_order_type (TFn _ _ _) = false, so last conjunct is True *)
+      split. { exact Hlam_ty1. }
+      split. { exact Hlam_ty2. }
+      simpl. exact I.
     + (* S n' case - prove val_rel_n (S n') for TFn *)
       rewrite val_rel_n_S_unfold.
       split.
@@ -3065,12 +3022,11 @@ Proof.
         split. { constructor. }
         split. { exact Hcl1. }
         split. { exact Hcl2. }
-        split. { (* typing conjunct for TFn *)
-          change (NonInterference_v2.first_order_type (TFn T1 T2 ε)) with (first_order_type (TFn T1 T2 ε)).
-          simpl. split; assumption. }
+        split. { exact Hlam_ty1. }
+        split. { exact Hlam_ty2. }
         (* val_rel_at_type Σ_base (store_rel_n n') (val_rel_n n') (store_rel_n n') (TFn T1 T2 ε) lam1 lam2 *)
         simpl.
-        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree.
+        intros Σ' Hext_Σ' arg1 arg2 Hvarg1 Hvarg2 Hclarg1 Hclarg2 Hargrel st1 st2 ctx Hstrel Hwf1 Hwf2 Hagree Hsvr_cur.
         (* Apply lambdas: EApp (ELam x T1 body) arg --> [x := arg] body *)
         (* lam1 = ELam x T1 (subst_rho (rho_shadow rho1 x) e) *)
         (* lam2 = ELam x T1 (subst_rho (rho_shadow rho2 x) e) *)
@@ -3105,8 +3061,8 @@ Proof.
         { apply subst_rho_extend. exact Hno2. }
 
         (* Apply exp_rel at step S n' with Σ_cur = Σ' (reflexive extension) *)
-        specialize (He_rel (S n') Σ' st1 st2 ctx (store_ty_extends_refl Σ') Hstrel Hwf1 Hwf2 Hagree) as
-          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval [Hstore' [Hwf1' [Hwf2' Hagree']]]]]]]]]]]]]]].
+        specialize (He_rel (S n') Σ' st1 st2 ctx (store_ty_extends_refl Σ') Hstrel Hwf1 Hwf2 Hagree Hsvr_cur) as
+          [v1 [v2 [st1' [st2' [ctx' [Σ'' [Hext'' [Hstep1 [Hstep2 [Hvalv1 [Hvalv2 [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]].
 
         (* Result *)
         exists v1, v2, st1', st2', ctx', Σ''.
@@ -3125,7 +3081,8 @@ Proof.
         split. { exact Hstore'. }
         split. { exact Hwf1'. }
         split. { exact Hwf2'. }
-        { exact Hagree'. }
+        split. { exact Hagree'. }
+        { exact Hsvr'. }
   - (* T_App - function application *)
     simpl.
     specialize (IHHty1 Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as Hf_rel.  (* function *)
@@ -4228,15 +4185,63 @@ Proof.
     + exact Henv.
     + exact Hno1.
     + exact Hno2.
-  - (* T_Deref - Uses logical_relation_deref axiom *)
-    (* The axiom logical_relation_deref directly proves this case. *)
+  - (* T_Deref - PROVEN using store_vals_rel *)
     simpl.
-    unfold exp_rel. intro n.
-    eapply logical_relation_deref.
-    + eassumption.  (* has_type for e *)
-    + exact Henv.
-    + exact Hno1.
-    + exact Hno2.
+    specialize (IHHty Σ_base Hext_base rho1 rho2 Henv Hno1 Hno2) as He_rel.
+    unfold exp_rel in *. intros n.
+    destruct n as [| n'].
+    + (* n = 0 *) simpl. trivial.
+    + (* n = S n' *)
+      simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
+      specialize (He_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+        [v [v' [st1' [st2' [ctx' [Σ' [Hext [Hstep [Hstep' [Hvalv [Hvalv' [Hval [Hstore' [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]].
+      (* v, v' : val_rel_n n' Σ' (TRef T l) v v' *)
+      (* Extract: v = ELoc loc, v' = ELoc loc *)
+      destruct (val_rel_n_typing _ _ _ _ _ Hval) as [Htyv1 Htyv2].
+      destruct (canonical_forms_ref nil Σ' Public v T l EffectPure Hvalv Htyv1) as [loc Heqv].
+      destruct (canonical_forms_ref nil Σ' Public v' T l EffectPure Hvalv' Htyv2) as [loc' Heqv'].
+      subst v v'.
+      (* From val_rel_at_type for TRef: loc = loc' *)
+      assert (Hloc_eq : loc = loc').
+      { destruct n' as [| n''].
+        - rewrite val_rel_n_0_unfold in Hval.
+          destruct Hval as [_ [_ [_ [_ [_ [_ Hrat]]]]]].
+          simpl in Hrat. destruct (first_order_type T) eqn:Hfo.
+          + simpl in Hrat. destruct Hrat as [loc0 [Heq1 Heq2]].
+            inversion Heq1; subst. inversion Heq2; subst. reflexivity.
+          + simpl in Hrat. destruct Hrat as [loc0 [Heq1 Heq2]].
+            inversion Heq1; subst. inversion Heq2; subst. reflexivity.
+        - rewrite val_rel_n_S_unfold in Hval.
+          destruct Hval as [_ [_ [_ [_ [_ [_ [_ Hrat]]]]]]].
+          simpl in Hrat. destruct Hrat as [loc0 [Heq1 Heq2]].
+          inversion Heq1; subst. inversion Heq2; subst. reflexivity. }
+      subst loc'.
+      (* Get store_ty_lookup for the location *)
+      inversion Htyv1; subst.
+      rename H1 into Hlook_loc.
+      (* From store_vals_rel: extract val_rel_n for the stored values *)
+      destruct (Hsvr' loc T l Hlook_loc) as [w1 [w2 [Hlook1 [Hlook2 Hvrel_w]]]].
+      (* Deref steps *)
+      exists w1, w2, st1', st2', ctx', Σ'.
+      split. { exact Hext. }
+      split. { apply multi_step_trans with (cfg2 := (EDeref (ELoc loc), st1', ctx')).
+               - apply multi_step_deref. exact Hstep.
+               - eapply MS_Step. apply ST_DerefLoc. exact Hlook1. apply MS_Refl. }
+      split. { apply multi_step_trans with (cfg2 := (EDeref (ELoc loc), st2', ctx')).
+               - apply multi_step_deref. exact Hstep'.
+               - eapply MS_Step. apply ST_DerefLoc. exact Hlook2. apply MS_Refl. }
+      split. { (* value w1 *)
+               destruct (proj1 (Hwf1') loc T l Hlook_loc) as [v1 [Hl1 [Hval1 _]]].
+               rewrite Hlook1 in Hl1. inversion Hl1; subst. exact Hval1. }
+      split. { (* value w2 *)
+               destruct (proj1 (Hwf2') loc T l Hlook_loc) as [v2 [Hl2 [Hval2 _]]].
+               rewrite Hlook2 in Hl2. inversion Hl2; subst. exact Hval2. }
+      split. { exact Hvrel_w. }
+      split. { exact Hstore'. }
+      split. { exact Hwf1'. }
+      split. { exact Hwf2'. }
+      split. { exact Hagree'. }
+      exact Hsvr'.
   - (* T_Assign - Uses logical_relation_assign axiom *)
     (* The axiom logical_relation_assign directly proves this case. *)
     simpl.
@@ -4383,6 +4388,58 @@ Proof.
       { exact Hagree'. }
 Qed. (* Remaining cases admitted for v2 migration *)
 
+(** The mutual induction theorem.
+    Since val_rel_n_step_up is fully proven in the base file (NonInterference_v2.v),
+    step_up_at is trivially proven for all n. The fundamental theorem part
+    requires induction on typing derivations and is admitted pending
+    completion of the logical_relation proof. *)
+Theorem step_up_and_fundamental_mutual : forall n,
+  step_up_and_fundamental n.
+Proof.
+  intro n.
+  unfold step_up_and_fundamental.
+  split.
+  - (* step_up at n: follows directly from val_rel_n_step_up *)
+    unfold step_up_at. intros Σ T v1 v2 Hrel Hty1 Hty2.
+    apply val_rel_n_step_up; assumption.
+  - (* fundamental at n *)
+    destruct n as [| n'].
+    + apply fundamental_at_0.
+    + (* fundamental at S n': requires induction on typing derivation *)
+      unfold fundamental_at_step.
+      intros Γ Σ Δ e0 T ε rho1 rho2 Hty Henv Hno1 Hno2.
+      (* Convert typing from arbitrary Δ to Public *)
+      assert (Hty_pub : has_type Γ Σ Public e0 T ε).
+      { exact (has_type_level_irrelevant Γ Σ Δ e0 T ε Hty Public). }
+      (* Apply the logical_relation theorem *)
+      exact (logical_relation Γ Σ e0 T ε Hty_pub Σ (store_ty_extends_refl Σ) rho1 rho2 Henv Hno1 Hno2 (S n')).
+Qed.
+
+(** Corollary: step_up holds at all steps *)
+Corollary val_rel_n_step_up_proven : forall n Σ T v1 v2,
+  val_rel_n n Σ T v1 v2 ->
+  has_type nil Σ Public v1 T EffectPure ->
+  has_type nil Σ Public v2 T EffectPure ->
+  val_rel_n (S n) Σ T v1 v2.
+Proof.
+  intros n.
+  destruct (step_up_and_fundamental_mutual n) as [Hsu _].
+  exact Hsu.
+Qed.
+
+(** Corollary: fundamental theorem holds at all steps *)
+Corollary fundamental_at_all_steps : forall n Γ Σ Δ e T ε rho1 rho2,
+  has_type Γ Σ Δ e T ε ->
+  env_rel Σ Γ rho1 rho2 ->
+  rho_no_free_all rho1 ->
+  rho_no_free_all rho2 ->
+  exp_rel_n n Σ T (subst_rho rho1 e) (subst_rho rho2 e).
+Proof.
+  intros n.
+  destruct (step_up_and_fundamental_mutual n) as [_ Hf].
+  exact Hf.
+Qed.
+
 
 (** Lemma: val_rel implies closed expressions *)
 Lemma val_rel_closed : forall Σ T v1 v2,
@@ -4429,8 +4486,8 @@ Proof.
   rewrite <- (subst_rho_single e x v2).
   (* Apply logical_relation *)
   apply (logical_relation ((x, T_in) :: nil) nil e T_out EffectPure
+                          Hty nil (store_ty_extends_refl nil)
                           (rho_single x v1) (rho_single x v2)).
-  - exact Hty.
   - apply env_rel_single. exact Hval.
   - (* rho_no_free_all for v1 *)
     apply rho_no_free_all_single.
