@@ -1776,7 +1776,7 @@ docker run --rm riina check myfile.rii`}
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Portable Installer</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`curl -sSf https://riina.my/install.sh | bash
+{`curl -sSf https://ib823.github.io/riina/install.sh | bash
 # or: bash scripts/install.sh`}
               </pre>
             </div>
@@ -2493,7 +2493,7 @@ $ Print Assumptions access_control_enforced.
         <div style={{ ...codeBlockStyle, marginBottom: '48px' }}>
           <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
 {`# Install RIINA
-curl -fsSL https://riina.my/install.sh | bash
+curl -fsSL https://ib823.github.io/riina/install.sh | bash
 
 # Or with Nix
 nix run github:ib823/riina`}

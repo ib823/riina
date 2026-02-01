@@ -222,7 +222,7 @@ $RELEASE_BODY
 
 **Install:**
 \`\`\`bash
-curl -fsSL https://riina.my/install.sh | bash
+curl -fsSL https://ib823.github.io/riina/install.sh | bash
 \`\`\`
 EOF
 )" \
@@ -231,6 +231,17 @@ EOF
         || echo -e "${YELLOW}    GitHub Release creation failed (may need auth)${NC}"
 else
     echo -e "${YELLOW}    gh CLI not found, skipping GitHub Release${NC}"
+fi
+
+# ── Step 10: Deploy website ────────────────────────────────────────────────────
+
+echo ""
+if [ -f "$REPO_ROOT/scripts/deploy-website.sh" ]; then
+    bash "$REPO_ROOT/scripts/deploy-website.sh" \
+        && echo -e "${GREEN}[✓] Website deployed${NC}" \
+        || echo -e "${YELLOW}    Website deployment failed (non-blocking)${NC}"
+else
+    echo -e "${YELLOW}    deploy-website.sh not found, skipping${NC}"
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
@@ -242,5 +253,7 @@ echo "================================================================"
 echo ""
 echo "  Tag:     $TAG"
 echo "  Tarball: $TARBALL"
+echo "  Website: https://ib823.github.io/riina/"
+echo "  Release: https://github.com/ib823/riina/releases/tag/$TAG"
 echo "  Next:    Update [Unreleased] in CHANGELOG.md as you work"
 echo ""
