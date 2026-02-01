@@ -1,0 +1,128 @@
+// ============================================================================
+// bisik.rii — Penyulitan mesej selamat menggunakan ECDH + AES-256-GCM
+// ============================================================================
+//
+// "Bisik" bermaksud "whisper" — mesej yang hanya penerima boleh baca.
+//
+// Protokol:
+//   1. Jana pasangan kunci sementara (ephemeral ECDH P-256)
+//   2. Persetujuan kunci ECDH dengan kunci awam penerima
+//   3. Terbit kunci AES-256 melalui HKDF-SHA256
+//   4. Sulit mesej dengan AES-256-GCM
+//
+// Pengkompil membuktikan:
+//   - Rahsia<T> tidak pernah bocor ke saluran awam
+//   - Kunci sementara dipadamkan selepas penyulitan
+//   - Tiada kesan sampingan kecuali Kripto
+// ============================================================================
+
+modul bisik
+
+guna teras::kripto::{ECDH, HKDF, AES_GCM, KunciAwam, KunciPersendirian, Bait}
+guna teras::keselamatan::Rahsia
+guna teras::pengekodan::base64
+
+// --- Jenis Data ---
+
+bentuk PesananSulit {
+    versi: Int,
+    kunci_awam_sementara: Senarai<Bait>,   // kunci awam ephemeral (raw, 65 bait)
+    nonce: Senarai<Bait>,                    // 12 bait rawak
+    teks_sulit: Senarai<Bait>,              // ciphertext AES-256-GCM
+}
+
+bentuk MesejAsal {
+    nama: Pilihan<Teks>,
+    emel: Pilihan<Teks>,
+    mesej: Teks,
+    cap_masa: Teks,
+}
+
+// --- Fungsi Utama ---
+
+/// Hantar bisik — sulit mesej untuk penerima tertentu.
+///
+/// Pengkompil menjamin: Rahsia<KunciPersendirian> tidak bocor.
+/// Bukti: NonInterference_v2.v, Theorem secret_no_leak. (5,308 Qed)
+fungsi hantar_bisik(
+    mesej: MesejAsal,
+    kunci_penerima: KunciAwam,
+) -> PesananSulit kesan Kripto {
+    // 1. Jana pasangan kunci sementara
+    biar (kunci_awam_s, kunci_peribadi_s) = ECDH::jana_pasangan("P-256")
+    // kunci_peribadi_s: Rahsia<KunciPersendirian> — tidak boleh dikembalikan
+
+    // 2. Persetujuan kunci ECDH
+    biar rahsia_dikongsi: Rahsia<Senarai<Bait>> =
+        ECDH::terbit_bit(kunci_penerima, kunci_peribadi_s)
+    // -> 256 bit rahsia bersama
+
+    // 3. HKDF — terbitkan kunci AES-256
+    biar garam = Senarai::ulang(0u8, 32)       // salt = zeros
+    biar info = "bisik-v1".sebagai_bait()
+    biar kunci_aes: Rahsia<Senarai<Bait>> =
+        HKDF::terbit_sha256(rahsia_dikongsi, garam, info, 32)
+
+    // 4. AES-256-GCM — sulit mesej
+    biar nonce = Kripto::rawak_bait(12)
+    biar teks_asal = mesej.ke_json().sebagai_bait()
+    biar teks_sulit = AES_GCM::sulit(kunci_aes, nonce, teks_asal)
+
+    // 5. Eksport kunci awam sementara (format raw)
+    biar kunci_awam_mentah = ECDH::eksport_mentah(kunci_awam_s)
+
+    // Pulangkan pakej yang disulitkan
+    PesananSulit {
+        versi: 1,
+        kunci_awam_sementara: kunci_awam_mentah,
+        nonce: nonce,
+        teks_sulit: teks_sulit,
+    }
+    // kunci_peribadi_s dipadamkan secara automatik di sini
+    // Pengkompil membuktikan: tiada laluan di mana Rahsia<T> bocor
+}
+
+/// Buka bisik — nyahsulit mesej (penerima sahaja).
+fungsi buka_bisik(
+    pesanan: PesananSulit,
+    kunci_peribadi: Rahsia<KunciPersendirian>,
+) -> MesejAsal kesan Kripto {
+    // Import kunci awam sementara pengirim
+    biar kunci_pengirim = ECDH::import_mentah("P-256", pesanan.kunci_awam_sementara)
+
+    // ECDH — terbit rahsia bersama (sama seperti pengirim)
+    biar rahsia_dikongsi = ECDH::terbit_bit(kunci_pengirim, kunci_peribadi)
+
+    // HKDF — terbit kunci AES-256 yang sama
+    biar garam = Senarai::ulang(0u8, 32)
+    biar info = "bisik-v1".sebagai_bait()
+    biar kunci_aes = HKDF::terbit_sha256(rahsia_dikongsi, garam, info, 32)
+
+    // AES-256-GCM nyahsulit
+    biar teks_asal = AES_GCM::nyahsulit(kunci_aes, pesanan.nonce, pesanan.teks_sulit)
+
+    MesejAsal::dari_json(teks_asal)
+}
+
+// --- Contoh Penggunaan ---
+
+fungsi utama() kesan Kripto, IO {
+    // Kunci awam penerima (biasanya dimuatkan dari konfigurasi)
+    biar kunci_penerima = KunciAwam::dari_base64(
+        "c9IFJxmxFbCoTs+cCbo8RzM3Ola5QSDA8mvrVSB7pTA="
+    )
+
+    biar mesej = MesejAsal {
+        nama: Sebahagian("Ali"),
+        emel: Sebahagian("ali@contoh.my"),
+        mesej: "Saya ingin menyumbang kepada RIINA.",
+        cap_masa: "2026-02-01T12:00:00Z",
+    }
+
+    biar pesanan_sulit = hantar_bisik(mesej, kunci_penerima)
+
+    cetak("Bisik dihantar!")
+    cetak("Versi: {}", pesanan_sulit.versi)
+    cetak("Nonce: {}", base64::kod(pesanan_sulit.nonce))
+    cetak("Saiz teks sulit: {} bait", pesanan_sulit.teks_sulit.panjang())
+}
