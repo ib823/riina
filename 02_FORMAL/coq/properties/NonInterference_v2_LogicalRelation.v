@@ -3329,27 +3329,28 @@ Proof.
           - intros y Hfree. apply (Hcl2 y). simpl. left. exact Hfree.
           - exact (proj1 (pair_typing_pure_inv _ _ _ a1 b1 T1 T2 HtyPP1)).
           - exact (proj1 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyPP2)).
-          - destruct (first_order_type T1) eqn:Hfo1.
-            + destruct (first_order_type T2) eqn:Hfo2.
-              * assert (HfoProd : first_order_type (TProd T1 T2) = true)
-                  by (simpl; rewrite Hfo1, Hfo2; reflexivity).
-                rewrite HfoProd in Hrat. simpl in Hrat.
-                destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
-                inversion Heq1'; subst. inversion Heq2'; subst. exact Hr1.
-              * assert (HfoProd : first_order_type (TProd T1 T2) = false)
-                  by (simpl; rewrite Hfo1, Hfo2; reflexivity).
-                assert (Hval_recon : val_rel_n 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
-                { rewrite val_rel_n_0_unfold. repeat split; try assumption.
-                  rewrite HfoProd. exact I. }
-                assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
-                                (store_rel_n 0) (store_vals_rel 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
-                { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
-                simpl in Hvat.
-                destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
-                inversion Heq1'; subst. inversion Heq2'; subst.
-                apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) _ _ Hfo1).
+          - destruct (first_order_type (TProd T1 T2)) eqn:HfoProd.
+            + (* FO product: extract first component *)
+              simpl in Hrat.
+              destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
+              inversion Heq1'; subst. inversion Heq2'; subst.
+              simpl first_order_type in HfoProd.
+              destruct (first_order_type T1) eqn:Hfo1; [| discriminate].
+              rewrite Hfo1. exact Hr1.
+            + (* HO product: use fundamental_theorem_step_0 *)
+              assert (Hval_recon : val_rel_n 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+              { rewrite val_rel_n_0_unfold. repeat split; try assumption.
+                rewrite HfoProd. exact I. }
+              assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
+                              (store_rel_n 0) (store_vals_rel 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+              { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
+              simpl in Hvat.
+              destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [Hr1 _]]]]]]].
+              inversion Heq1'; subst. inversion Heq2'; subst.
+              destruct (first_order_type T1) eqn:Hfo1.
+              * apply (val_rel_at_type_fo_equiv T1 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) _ _ Hfo1).
                 exact Hr1.
-            + exact I. }
+              * exact I. }
         split. { exact Hstore'. }
         split. { exact Hwf1'. }
         split. { exact Hwf2'. }
@@ -3439,27 +3440,29 @@ Proof.
           - intros y Hfree. apply (Hcl2 y). simpl. right. exact Hfree.
           - exact (proj2 (pair_typing_pure_inv _ _ _ a1 b1 T1 T2 HtyPP1)).
           - exact (proj2 (pair_typing_pure_inv _ _ _ a2 b2 T1 T2 HtyPP2)).
-          - destruct (first_order_type T2) eqn:Hfo2.
-            + destruct (first_order_type T1) eqn:Hfo1.
-              * assert (HfoProd : first_order_type (TProd T1 T2) = true)
-                  by (simpl; rewrite Hfo1, Hfo2; reflexivity).
-                rewrite HfoProd in Hrat. simpl in Hrat.
-                destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
-                inversion Heq1'; subst. inversion Heq2'; subst. exact Hr2.
-              * assert (HfoProd : first_order_type (TProd T1 T2) = false)
-                  by (simpl; rewrite Hfo1, Hfo2; simpl; reflexivity).
-                assert (Hval_recon : val_rel_n 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
-                { rewrite val_rel_n_0_unfold. repeat split; try assumption.
-                  rewrite HfoProd. exact I. }
-                assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
-                                (store_rel_n 0) (store_vals_rel 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
-                { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
-                simpl in Hvat.
-                destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
-                inversion Heq1'; subst. inversion Heq2'; subst.
-                apply (val_rel_at_type_fo_equiv T2 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) _ _ Hfo2).
+          - destruct (first_order_type (TProd T1 T2)) eqn:HfoProd.
+            + (* FO product: extract second component *)
+              simpl in Hrat.
+              destruct Hrat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
+              inversion Heq1'; subst. inversion Heq2'; subst.
+              simpl first_order_type in HfoProd.
+              destruct (first_order_type T1) eqn:Hfo1; [| discriminate].
+              destruct (first_order_type T2) eqn:Hfo2; [| discriminate].
+              rewrite Hfo2. exact Hr2.
+            + (* HO product: use fundamental_theorem_step_0 *)
+              assert (Hval_recon : val_rel_n 0 Σ' (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+              { rewrite val_rel_n_0_unfold. repeat split; try assumption.
+                rewrite HfoProd. exact I. }
+              assert (Hvat : val_rel_at_type Σ' (store_rel_n 0) (val_rel_n 0)
+                              (store_rel_n 0) (store_vals_rel 0) (TProd T1 T2) (EPair a1 b1) (EPair a2 b2)).
+              { apply fundamental_theorem_step_0; [exact HfoProd | exact Hval_recon | exact HtyPP1 | exact HtyPP2]. }
+              simpl in Hvat.
+              destruct Hvat as [x1 [y1 [x2 [y2 [Heq1' [Heq2' [_ Hr2]]]]]]].
+              inversion Heq1'; subst. inversion Heq2'; subst.
+              destruct (first_order_type T2) eqn:Hfo2.
+              * apply (val_rel_at_type_fo_equiv T2 Σ' (store_rel_n 0) (val_rel_n 0) (store_rel_n 0) (store_vals_rel 0) _ _ Hfo2).
                 exact Hr2.
-            + exact I. }
+              * exact I. }
         split. { exact Hstore'. }
         split. { exact Hwf1'. }
         split. { exact Hwf2'. }
