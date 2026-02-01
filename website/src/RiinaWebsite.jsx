@@ -7,6 +7,23 @@ import React, { useState, useEffect } from 'react';
 const RiinaWebsite = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bisikBukaBlob, setBisikBukaBlob] = useState('');
+
+  // Hash-based routing for bisik-buka deep links
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#bisik-buka')) {
+        const params = new URLSearchParams(hash.split('?')[1] || '');
+        const blob = params.get('blob');
+        if (blob) setBisikBukaBlob(decodeURIComponent(blob));
+        setCurrentPage('bisik-buka');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Scroll to top on page change
   useEffect(() => {
@@ -36,19 +53,19 @@ const RiinaWebsite = () => {
   // Footer link mapping
   const footerNav = (label) => {
     const map = {
-      'Syntax': 'syntax',
-      'Security Types': 'securityTypes',
-      'Effect System': 'effectSystem',
-      'Examples': 'examples',
+      'Home': 'home',
       'Why Proof': 'whyProof',
+      'Language': 'language',
+      'How It Works': 'how',
+      'Demos': 'demos',
+      'Enterprise': 'enterprise',
+      'Releases': 'releases',
+      'Research': 'research',
       'Documentation': 'docs',
-      'Quick Start': 'quickStart',
-      'Standard Library': 'stdlib',
-      'Contributing': 'contributing',
+      'Bisik': 'bisik',
       'MPL-2.0 License': 'license',
       'Privacy': 'privacy',
       'Terms': 'terms',
-      'Bisik': 'bisik',
     };
     return map[label] || null;
   };
@@ -3148,7 +3165,8 @@ nix run github:ib823/riina`}
         const blob = JSON.stringify({ v: 1, eph: toB64(ephRaw), nonce: toB64(nonce), ct: toB64(ct) });
         setEncBlob(blob);
         const title = encodeURIComponent('[Bisik] Encrypted message');
-        const body = encodeURIComponent('```json\n' + blob + '\n```\n\n_Encrypted with Bisik v1 \u2014 ECDH P-256 + AES-256-GCM_');
+        const decryptUrl = 'https://ib823.github.io/riina/#bisik-buka?blob=' + encodeURIComponent(blob);
+        const body = encodeURIComponent('```json\n' + blob + '\n```\n\n[\u{1F512} Decrypt this message](' + decryptUrl + ')\n\n_Encrypted with Bisik v1 \u2014 ECDH P-256 + AES-256-GCM_');
         const url = `https://github.com/ib823/riina/issues/new?title=${title}&body=${body}&labels=bisik`;
         if (url.length <= 8000) setGhUrl(url);
         setBStatus('done');
@@ -3295,13 +3313,114 @@ fungsi hantar_bisik(
   };
 
   // ============================================================================
+  // BUKA BISIK PAGE — Decrypt
+  // ============================================================================
+  const BukaBisikPage = () => {
+    const [privD, setPrivD] = useState('');
+    const [blobInput, setBlobInput] = useState(bisikBukaBlob);
+    const [result, setResult] = useState(null);
+    const [decError, setDecError] = useState('');
+    const [decStatus, setDecStatus] = useState('idle');
+
+    useEffect(() => { if (bisikBukaBlob) setBlobInput(bisikBukaBlob); }, [bisikBukaBlob]);
+
+    const fromB64 = (s) => { const bin = atob(s); const buf = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i); return buf; };
+
+    const doDecrypt = async () => {
+      if (!blobInput.trim() || !privD.trim()) return;
+      setDecStatus('decrypting');
+      setDecError('');
+      setResult(null);
+      try {
+        const blob = JSON.parse(blobInput.trim());
+        if (blob.v !== 1) throw new Error('Unsupported version');
+        const cs = window.crypto.subtle;
+        const privKey = await cs.importKey('jwk', {
+          kty: 'EC', crv: 'P-256',
+          x: 'c9IFJxmxFbCoTs-cCbo8RzM3Ola5QSDA8mvrVSB7pTA',
+          y: 'HAmH4UvZn3I8IsKsdg-kB8Qgb56GW0-H1oDTy3M0uKk',
+          d: privD.trim(),
+          key_ops: ['deriveBits'],
+        }, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+        const ephPub = await cs.importKey('raw', fromB64(blob.eph), { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+        const shared = await cs.deriveBits({ name: 'ECDH', public: ephPub }, privKey, 256);
+        const hk = await cs.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+        const aesKey = await cs.deriveKey(
+          { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: new TextEncoder().encode('bisik-v1') },
+          hk, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+        );
+        const pt = await cs.decrypt({ name: 'AES-GCM', iv: fromB64(blob.nonce) }, aesKey, fromB64(blob.ct));
+        const msg = JSON.parse(new TextDecoder().decode(pt));
+        setResult(msg);
+        setDecStatus('done');
+      } catch (e) {
+        console.error('Bisik decrypt error:', e);
+        setDecError('Decryption failed. Check your private key and the encrypted blob.');
+        setDecStatus('error');
+      }
+    };
+
+    const inputStyle = { width: '100%', padding: '12px', border: '1px solid #ddd', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' };
+    const labelStyle = { display: 'block', fontSize: '12px', letterSpacing: '0.1em', color: '#999', marginBottom: '6px' };
+
+    return (
+      <div style={pageTopStyle}>
+        <PageHeader title="Buka Bisik" subtitle="Decrypt an encrypted message. Everything happens in your browser — your private key never leaves this device." />
+
+        <section style={{ ...sectionStyle, maxWidth: '640px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={labelStyle}>ENCRYPTED BLOB</label>
+              <textarea
+                value={blobInput} onChange={(e) => setBlobInput(e.target.value)}
+                placeholder='Paste {"v":1,"eph":"...","nonce":"...","ct":"..."} here'
+                rows={5}
+                style={{ ...inputStyle, fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace', fontSize: '12px' }}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>YOUR PRIVATE KEY (d)</label>
+              <input
+                type="password" value={privD} onChange={(e) => setPrivD(e.target.value)}
+                placeholder="ke5IfFRBlm..."
+                style={inputStyle}
+              />
+              <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>Never stored, never transmitted. Decryption runs entirely in your browser.</p>
+            </div>
+            <button onClick={doDecrypt} disabled={!blobInput.trim() || !privD.trim() || decStatus === 'decrypting'} style={{
+              padding: '14px 32px', backgroundColor: decStatus === 'decrypting' ? '#999' : '#000', color: '#fff',
+              border: 'none', fontSize: '14px', letterSpacing: '0.05em',
+              cursor: !blobInput.trim() || !privD.trim() ? 'default' : 'pointer',
+              opacity: !blobInput.trim() || !privD.trim() ? 0.4 : 1,
+            }}>
+              {decStatus === 'decrypting' ? 'Menyahsulit...' : 'Buka Bisik'}
+            </button>
+
+            {decError && <p style={{ color: '#c00', fontSize: '14px' }}>{decError}</p>}
+
+            {result && (
+              <div style={{ padding: '24px', border: '1px solid #ddd', backgroundColor: '#fafafa' }}>
+                <p style={{ fontSize: '12px', letterSpacing: '0.1em', color: '#999', marginBottom: '16px' }}>DECRYPTED MESSAGE</p>
+                {result.name && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', color: '#999' }}>From:</span> <span style={{ fontSize: '14px', fontWeight: 600 }}>{result.name}</span></div>}
+                {result.email && <div style={{ marginBottom: '8px' }}><span style={{ fontSize: '12px', color: '#999' }}>Email:</span> <span style={{ fontSize: '14px' }}>{result.email}</span></div>}
+                {result.timestamp && <div style={{ marginBottom: '16px' }}><span style={{ fontSize: '12px', color: '#999' }}>Time:</span> <span style={{ fontSize: '13px', color: '#666' }}>{new Date(result.timestamp).toLocaleString()}</span></div>}
+                <div style={{ padding: '16px', backgroundColor: '#fff', border: '1px solid #eee', fontSize: '15px', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{result.message}</div>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  };
+
+  // ============================================================================
   // FOOTER
   // ============================================================================
   const Footer = () => {
     const footerSections = [
-      { title: 'Language', links: ['Why Proof', 'Syntax', 'Security Types', 'Effect System', 'Examples'] },
-      { title: 'Developers', links: ['Documentation', 'Quick Start', 'Standard Library', 'GitHub'] },
-      { title: 'Community', links: ['Contributing', 'Bisik', 'Issues', 'Discussions'] },
+      { title: 'Product', links: ['Home', 'Why Proof', 'Language', 'How It Works', 'Demos'] },
+      { title: 'Resources', links: ['Documentation', 'Enterprise', 'Research', 'Releases', 'GitHub'] },
+      { title: 'Community', links: ['Bisik', 'Issues', 'Discussions'] },
       { title: 'Legal', links: ['MPL-2.0 License', 'Privacy', 'Terms'] }
     ];
 
@@ -3428,6 +3547,7 @@ fungsi hantar_bisik(
       case 'privacy': return <PrivacyPage />;
       case 'terms': return <TermsPage />;
       case 'bisik': return <BisikPage />;
+      case 'bisik-buka': return <BukaBisikPage />;
       default: return <HomePage />;
     }
   };
