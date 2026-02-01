@@ -14,7 +14,7 @@ const RiinaWebsite = () => {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
-  // Navigation
+  // Navigation — all pages (used by mobile menu, footer, routing)
   const pages = [
     { id: 'home', label: 'Home' },
     { id: 'whyProof', label: 'Why Proof' },
@@ -28,6 +28,26 @@ const RiinaWebsite = () => {
     { id: 'bisik', label: 'Bisik' },
     { id: 'playground', label: 'Playground' },
   ];
+
+  // Header nav: direct links + dropdown groups (keeps header tidy)
+  const headerNav = [
+    { id: 'language', label: 'Language' },
+    { id: 'playground', label: 'Playground' },
+    { label: 'Learn', children: [
+      { id: 'whyProof', label: 'Why Proof' },
+      { id: 'how', label: 'How It Works' },
+      { id: 'demos', label: 'Demos' },
+      { id: 'research', label: 'Research' },
+    ]},
+    { id: 'enterprise', label: 'Enterprise' },
+    { label: 'Docs', children: [
+      { id: 'docs', label: 'Documentation' },
+      { id: 'releases', label: 'Releases' },
+      { id: 'bisik', label: 'Bisik' },
+    ]},
+  ];
+
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
@@ -177,21 +197,88 @@ const RiinaWebsite = () => {
           </svg>
         </button>
 
-        <nav className="site-nav" style={{ display: 'flex', gap: '32px' }}>
-          {pages.slice(1).map(page => (
+        <nav className="site-nav" style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
+          {headerNav.map((item, i) => item.children ? (
+            <div
+              key={item.label}
+              style={{ position: 'relative' }}
+              onMouseEnter={() => setOpenDropdown(item.label)}
+              onMouseLeave={() => setOpenDropdown(null)}
+            >
+              <button
+                onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: item.children.some(c => c.id === currentPage) ? '#000' : '#666',
+                  fontWeight: item.children.some(c => c.id === currentPage) ? 500 : 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                {item.label}
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <polyline points="1,1 5,5 9,1"/>
+                </svg>
+              </button>
+              {openDropdown === item.label && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  paddingTop: '8px',
+                  zIndex: 200,
+                }}>
+                  <div style={{
+                    background: '#fff',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                    padding: '8px 0',
+                    minWidth: '160px',
+                  }}>
+                    {item.children.map(child => (
+                      <button
+                        key={child.id}
+                        onClick={() => { setCurrentPage(child.id); setOpenDropdown(null); }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          background: currentPage === child.id ? '#f5f5f5' : 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          padding: '10px 20px',
+                          color: currentPage === child.id ? '#000' : '#555',
+                          fontWeight: currentPage === child.id ? 500 : 400,
+                        }}
+                      >
+                        {child.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
-              key={page.id}
-              onClick={() => setCurrentPage(page.id)}
+              key={item.id}
+              onClick={() => setCurrentPage(item.id)}
               style={{
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: '14px',
-                color: currentPage === page.id ? '#000' : '#666',
-                fontWeight: currentPage === page.id ? 500 : 400
+                color: currentPage === item.id ? '#000' : '#666',
+                fontWeight: currentPage === item.id ? 500 : 400
               }}
             >
-              {page.label}
+              {item.label}
             </button>
           ))}
         </nav>
