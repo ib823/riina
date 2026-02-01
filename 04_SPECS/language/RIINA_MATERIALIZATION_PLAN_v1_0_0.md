@@ -1443,7 +1443,7 @@ This phase addresses ALL gaps identified by the exhaustive 4-agent audit (2026-0
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Completed proofs (Qed) | 4,514 | 4,007 active build + 507 deprecated archive |
+| Completed proofs (Qed) | 5,371 | 4,830 active build + 541 deprecated archive |
 | Incomplete proofs (admit.) | 0 | ALL ELIMINATED |
 | Incomplete proofs (Admitted.) | 0 | ALL ELIMINATED (LinearTypes.v fixed Session 58) |
 | Axioms (active build) | 5 | See 7.2 for elimination plan |

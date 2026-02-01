@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VS Code extension (`riina-vscode`)
 - Package manager (`riina-pkg`)
 - 112 example `.rii` files across 9 categories
-- Formal verification: 4,514 Qed proofs in Coq (0 admits, 4 justified axioms)
+- Formal verification: 4,830 Qed proofs in Coq active build (0 admits, 4 justified axioms)
 - Compliance system: 15 industry profiles with audit report generation
 - C FFI support via `luaran "C" { ... }`
 - REPL with `:jenis` (type) and `:kesan` (effect) commands

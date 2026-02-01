@@ -58,7 +58,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (4,514 Qed theorems) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (4,830 Qed theorems) | No | No | Partial |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
 ---
@@ -189,8 +189,8 @@ This is not a whitepaper. This is working software.
 
 | Metric | Value |
 |--------|-------|
-| Proof files (.v) | 282 (249 in active build) |
-| Proven theorems (Qed) | 4,514 |
+| Proof files (.v) | 282 (248 in active build) |
+| Proven theorems (Qed) | 4,830 (active build) |
 | Unfinished proofs (admit/Admitted) | 0 (entire active build) |
 | Axioms | 4 (all justified, documented) |
 | Lines of proof | 125,186 |
@@ -363,7 +363,7 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 4,514 Qed proofs, 4 justified axioms, 0 admits | Stable |
+| 3. Formal Verification | 4,830 Qed proofs, 4 justified axioms, 0 admits | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 112 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
 | 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 14-page website (Why Proof, 15 industries, Releases) | Done |

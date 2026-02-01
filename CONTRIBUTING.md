@@ -31,7 +31,7 @@ cd 03_PROTO && cargo test --all && cd ..
 
 | Directory | What | Language |
 |-----------|------|---------|
-| `02_FORMAL/coq/` | Formal proofs (4,514 theorems) | Coq |
+| `02_FORMAL/coq/` | Formal proofs (4,830 theorems) | Coq |
 | `03_PROTO/crates/` | Compiler (15 crates) | Rust |
 | `04_SPECS/` | Language specifications | Markdown |
 | `05_TOOLING/` | Crypto primitives, build tools | Rust |
