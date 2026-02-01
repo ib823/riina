@@ -444,7 +444,7 @@ No. The proofs run at compile time automatically. You write normal code; the com
 Trust. Every line of RIINA — compiler, crypto, standard library — is auditable from source. No supply chain attacks. No dependency confusion. No left-pad incidents.
 
 **Why Bahasa Melayu?**
-RIINA was created in Malaysia. Programming languages have been English-only for 70 years. RIINA proves that formal verification and native-language syntax are not mutually exclusive. If a language can be proven correct, it can be proven correct in any language.
+RIINA developed by Malaysians for the world. Programming languages have been English-only for 70 years. RIINA proves that formal verification and native-language syntax are not mutually exclusive. If a language can be proven correct, it can be proven correct in any language.
 
 **How does RIINA compare to SPARK/Ada?**
 SPARK proves absence of runtime errors (overflow, division by zero) for a subset of Ada. RIINA proves information flow security (non-interference), effect safety, declassification correctness, and more — for the entire language. Both are formally verified; RIINA's scope is broader.
