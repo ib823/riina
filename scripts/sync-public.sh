@@ -193,10 +193,17 @@ EOF
 
 echo -e "${GREEN}[✓] Committed on public${NC}"
 
-# Step 10: Push public
+# Step 10: Push public to origin (ib823/proof) and riina (ib823/riina)
 echo "Pushing public..."
 git push origin public
-echo -e "${GREEN}[✓] Public branch pushed${NC}"
+echo -e "${GREEN}[✓] Public branch pushed to origin (ib823/proof)${NC}"
+
+# Also push to riina remote (public → main) if configured
+if git remote | grep -q "^riina$"; then
+    echo "Pushing to riina remote (public → main)..."
+    git push riina public:main
+    echo -e "${GREEN}[✓] Public branch pushed to riina (ib823/riina)${NC}"
+fi
 
 # Step 11: Switch back to main (clean any conflict artifacts first)
 git reset --hard HEAD --quiet 2>/dev/null || true
