@@ -1,0 +1,10 @@
+[package]
+name = "riina-compliance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA compliance profile validation"
+
+[dependencies]
+riina-types.workspace = true

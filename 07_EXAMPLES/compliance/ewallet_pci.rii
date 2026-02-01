@@ -1,0 +1,10 @@
+// E-Wallet example — PCI-DSS + PDPA compliant
+// Usage: riinac check --compliance pci-dss,pdpa ewallet_pci.rii
+
+// Card data MUST be classified (Secret<_>) per PCI-DSS-6.5
+biar card_number = rahsia("4111111111111111");
+
+// Declassify only with a Prove guard per PCI-DSS-3.4
+biar masked = dedah(card_number, buktikan(betul));
+
+masked

@@ -16,6 +16,7 @@ members = [
     "crates/riina-symbols",
     "crates/riina-typechecker",
     "crates/riina-types",
+    "crates/riina-compliance",
     "crates/riina-pkg",
     "crates/riinac",
 ]
@@ -38,6 +39,7 @@ riina-lexer = { path = "crates/riina-lexer" }
 riina-parser = { path = "crates/riina-parser" }
 riina-types = { path = "crates/riina-types" }
 riina-codegen = { path = "crates/riina-codegen" }
+riina-compliance = { path = "crates/riina-compliance" }
 riina-doc = { path = "crates/riina-doc" }
 riina-fmt = { path = "crates/riina-fmt" }
 riina-lsp = { path = "crates/riina-lsp" }
