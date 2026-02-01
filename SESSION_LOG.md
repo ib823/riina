@@ -16,6 +16,12 @@
 | Website footer | Shows `RIINA v0.1.0 · MPL-2.0` | Done |
 | releases array marker | `// RELEASES_MARKER` in JSX for auto-injection by release.sh | Done |
 | Doc sync | PROGRESS.md, CLAUDE.md, README.md, COORDINATION_LOG.md, SESSION_LOG.md updated | Done |
+| GitHub Pages | Website deployed to `ib823.github.io/riina/` via `deploy-website.sh` | Done |
+| /proof redirect | Old `/proof` GitHub Pages replaced with redirect to `/riina` | Done |
+| deploy-website.sh | Builds website, copies install.sh, pushes to gh-pages on ib823/riina | Done |
+| vite base path | `/proof/` → `/riina/` | Done |
+| Install URLs | `riina.my/install.sh` → `ib823.github.io/riina/install.sh` | Done |
+| release.sh | Website deploy step added; runs deploy-website.sh automatically | Done |
 
 ### Release Workflow
 

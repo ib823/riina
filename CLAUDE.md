@@ -652,6 +652,7 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 | Public branch | `public` branch (GitHub default), `scripts/sync-public.sh` | ✅ Done (Session 64) |
 | Website demos | 5 pre-recorded terminal demos on website | ✅ Done (Session 64) |
 | Release system | VERSION, CHANGELOG.md, bump-version.sh, release.sh, Releases page | ✅ Done (Session 65) |
+| Website deployment | deploy-website.sh → gh-pages on ib823/riina; /proof redirects to /riina | ✅ Done (Session 65) |
 
 **Total: 588 Rust tests, 13 crates, 111 example files. Phase 6 COMPLETE.**
 

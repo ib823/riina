@@ -64,7 +64,7 @@
 | Materialization plan document | ✅ COMPLETE | `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` |
 | Syntax improvement spec | ✅ ESTABLISHED | `04_SPECS/language/SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` |
 | Authoritative doc updates | ✅ COMPLETE | CLAUDE.md, PROGRESS.md, SESSION_LOG.md, DECISIONS.md |
-| Execution start | ✅ **PHASE 6 DONE** | Phase 1-6 done; 588 tests; public branch live; release system (VERSION, CHANGELOG, release.sh) |
+| Execution start | ✅ **PHASE 6 DONE** | Phase 1-6 done; 588 tests; public branch live; release system; website at ib823.github.io/riina/ |
 | Gap remediation | ✅ ACTIVE | 13-item plan in materialization doc Section 7 |
 | ATTACK_PROOF_MAP.md | ✅ COMPLETE | `06_COORDINATION/ATTACK_PROOF_MAP.md` (490 lines) |
 

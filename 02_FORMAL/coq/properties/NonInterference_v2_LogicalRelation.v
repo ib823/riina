@@ -3231,15 +3231,14 @@ Proof.
     + (* n = S n' *)
       simpl. intros Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur.
       (* Step 1: Evaluate e1 using IH with current store typing Σ_cur *)
-      assert (Hext1_input : store_ty_extends Σ Σ_cur) by exact Hext_cur.
-      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext1_input Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
+      specialize (He1_rel (S n') Σ_cur st1 st2 ctx Hext_cur Hstore Hwf1_cur Hwf2_cur Hagree_cur Hsvr_cur) as
         [v1 [v1' [st1' [st2' [ctx' [Σ' [Hext1 [Hstep1 [Hstep1' [Hvalv1 [Hvalv1' [Hval1 [Hstore1 [Hwf1' [Hwf2' [Hagree' Hsvr']]]]]]]]]]]]]]]]]].
       (* After e1: Σ_cur → Σ' and stores related at Σ' *)
 
       (* Step 2: Evaluate e2 using IH with Σ' as current store typing *)
       (* First show Σ ⊆ Σ' for the IH *)
-      assert (Hext2_input : store_ty_extends Σ Σ').
-      { apply (store_ty_extends_trans_early Σ Σ_cur Σ' Hext_cur Hext1). }
+      assert (Hext2_input : store_ty_extends Σ_base Σ').
+      { apply (store_ty_extends_trans_early Σ_base Σ_cur Σ' Hext_cur Hext1). }
       specialize (He2_rel (S n') Σ' st1' st2' ctx' Hext2_input Hstore1 Hwf1' Hwf2' Hagree' Hsvr') as
         [v2 [v2' [st1'' [st2'' [ctx'' [Σ'' [Hext2 [Hstep2 [Hstep2' [Hvalv2 [Hvalv2' [Hval2 [Hstore2 [Hwf1'' [Hwf2'' [Hagree'' Hsvr'']]]]]]]]]]]]]]]]]].
       (* After e2: Σ' → Σ'' and stores related at Σ'' *)

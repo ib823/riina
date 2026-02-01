@@ -46,6 +46,8 @@
 5. **Website Releases page** — New page with release cards, download links, install instructions; `releases` array auto-updated by release.sh via `// RELEASES_MARKER`
 6. **Website footer** — Now shows `RIINA v0.1.0 · MPL-2.0`
 7. **Branch strategy documented** — main (dev), public (staging for riina/main), feat/<name>, fix/<name>; tags mark releases
+8. **GitHub Pages** — Website deployed to `ib823.github.io/riina/` via `scripts/deploy-website.sh`; `/proof` pages redirect to `/riina`
+9. **deploy-website.sh** — Builds website, copies install.sh, pushes to `gh-pages` on ib823/riina; integrated into release.sh
 
 **SESSION 64 KEY ACTIONS (Phase 6 Completion — Showcase, Community, Enterprise, Public Branch):**
 1. **Public branch** — Created `public` branch (GitHub default) with internal files stripped; `scripts/sync-public.sh` automates cherry-pick from validated main
@@ -988,7 +990,9 @@ Session 65 Accomplishments:
 3. scripts/bump-version.sh (updates 6 locations)
 4. scripts/release.sh (one-command release workflow)
 5. Website Releases page + releases data array + footer version
-6. Documentation sync across all tracking files
+6. GitHub Pages: website at ib823.github.io/riina/, /proof redirects to /riina
+7. scripts/deploy-website.sh (build + push to gh-pages on ib823/riina)
+8. Documentation sync across all tracking files
 
 Release workflow:
   bash scripts/release.sh 0.2.0
