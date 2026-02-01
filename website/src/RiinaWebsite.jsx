@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import PlaygroundPage from './playground/Playground.jsx';
 
 // ============================================================================
-// RIINA WEBSITE - COMPLETE IMPLEMENTATION (14 PAGES)
+// RIINA WEBSITE - COMPLETE IMPLEMENTATION (15 PAGES)
 // ============================================================================
 
 const RiinaWebsite = () => {
@@ -25,6 +26,7 @@ const RiinaWebsite = () => {
     { id: 'research', label: 'Research' },
     { id: 'docs', label: 'Documentation' },
     { id: 'bisik', label: 'Bisik' },
+    { id: 'playground', label: 'Playground' },
   ];
 
   // Release data (auto-updated by scripts/release.sh)
@@ -3352,6 +3354,7 @@ nix run github:ib823/riina`}
       case 'privacy': return <PrivacyPage />;
       case 'terms': return <TermsPage />;
       case 'bisik': return <BisikPage />;
+      case 'playground': return <PlaygroundPage onNavigate={setCurrentPage} />;
       default: return <HomePage />;
     }
   };

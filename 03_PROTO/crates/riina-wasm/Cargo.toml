@@ -1,0 +1,28 @@
+[package]
+name = "riina-wasm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RIINA WASM playground library — in-browser compiler"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+riina-parser.workspace = true
+riina-typechecker.workspace = true
+riina-codegen.workspace = true
+riina-types.workspace = true
+
+# No external dependencies (Law 8)
+
+[lints.rust]
+unsafe_code = "allow"  # Required for WASM FFI exports
+
+[lints.clippy]
+all = "warn"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+module_name_repetitions = "allow"

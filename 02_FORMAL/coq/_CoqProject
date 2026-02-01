@@ -323,3 +323,10 @@ domains/uiux/MotorAccessibility.v
 domains/uiux/ScrollPhysics.v
 domains/uiux/Transitions.v
 domains/uiux/VisualAccessibility.v
+
+# Phase 15: Platform Backend Verification (M7.6)
+# Zero admits, zero axioms — standalone domain proofs
+domains/WasmBackendVerification.v
+domains/MobileBridgeVerification.v
+domains/PlatformStdlibVerification.v
+domains/BackendTraitVerification.v

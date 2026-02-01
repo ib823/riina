@@ -90,6 +90,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "riina-wasm"
+version = "0.2.0"
+dependencies = [
+ "riina-codegen",
+ "riina-parser",
+ "riina-typechecker",
+ "riina-types",
+]
+
+[[package]]
 name = "riinac"
 version = "0.2.0"
 dependencies = [
