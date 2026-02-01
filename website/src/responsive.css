@@ -1,0 +1,188 @@
+/* RIINA Website — Responsive Overrides
+ * Uses !important to override inline styles (necessary since inline styles have highest specificity).
+ * Breakpoints: 768px (tablet), 480px (phone)
+ */
+
+/* Hamburger button — hidden on desktop */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 200;
+}
+
+/* Mobile menu overlay — hidden by default */
+.mobile-menu-overlay {
+  display: none;
+}
+
+/* ===== TABLET: ≤768px ===== */
+@media (max-width: 768px) {
+  /* Header */
+  .site-nav {
+    display: none !important;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .header-github {
+    display: none !important;
+  }
+
+  .header-inner {
+    padding: 12px 20px !important;
+  }
+
+  /* Mobile menu overlay */
+  .mobile-menu-overlay.open {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 150;
+    background-color: rgba(255, 255, 255, 0.98);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .mobile-menu-overlay button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    padding: 12px 24px;
+    cursor: pointer;
+    color: #333;
+    min-height: 44px;
+  }
+
+  .mobile-menu-overlay button:hover {
+    color: #000;
+  }
+
+  .mobile-menu-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 8px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: auto !important;
+    padding: 100px 20px 60px !important;
+  }
+
+  .hero-title {
+    font-size: 36px !important;
+  }
+
+  .hero-stats {
+    flex-direction: column !important;
+    gap: 24px !important;
+  }
+
+  /* Sections */
+  .section {
+    padding: 48px 20px !important;
+  }
+
+  /* Grids */
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .grid-footer {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    gap: 8px !important;
+    text-align: center;
+  }
+
+  /* Code blocks */
+  .code-block {
+    padding: 16px !important;
+    font-size: 12px !important;
+  }
+
+  /* Page titles */
+  .page-title {
+    font-size: 32px !important;
+  }
+
+  /* Touch targets — nav links and buttons */
+  .site-nav button,
+  .site-footer a,
+  .site-footer button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Dark sections (core insight, etc.) */
+  .section-dark {
+    padding: 80px 20px !important;
+  }
+
+  .section-dark h2 {
+    font-size: 28px !important;
+  }
+}
+
+/* ===== PHONE: ≤480px ===== */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 28px !important;
+  }
+
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-footer {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-title {
+    font-size: 26px !important;
+  }
+
+  .hero-stats div {
+    font-size: 36px !important;
+  }
+
+  .section {
+    padding: 32px 16px !important;
+  }
+
+  .code-block {
+    padding: 12px !important;
+    font-size: 11px !important;
+  }
+}
