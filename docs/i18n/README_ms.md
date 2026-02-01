@@ -26,8 +26,8 @@ RIINA ialah bahasa pengaturcaraan di mana **setiap jaminan keselamatan mempunyai
 ### Pasang
 
 ```bash
-git clone https://github.com/ib823/proof.git
-cd proof/03_PROTO
+git clone https://github.com/ib823/riina.git
+cd riina/03_PROTO
 cargo build --release
 ```
 

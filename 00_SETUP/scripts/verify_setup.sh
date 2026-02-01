@@ -63,7 +63,7 @@ done
 echo ""
 echo "Checking key files..."
 FILES=(
-    "/workspaces/proof/CLAUDE.md"
+    "/workspaces/proof/CONTRIBUTING.md"
     "/workspaces/proof/02_FORMAL/coq/_CoqProject"
     "/workspaces/proof/05_TOOLING/Cargo.toml"
 )

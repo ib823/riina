@@ -41,9 +41,9 @@ const RiinaWebsite = () => {
   };
 
   const externalLinks = {
-    'GitHub': 'https://github.com/ib823/proof',
-    'Issues': 'https://github.com/ib823/proof/issues',
-    'Discussions': 'https://github.com/ib823/proof/discussions',
+    'GitHub': 'https://github.com/ib823/riina',
+    'Issues': 'https://github.com/ib823/riina/issues',
+    'Discussions': 'https://github.com/ib823/riina/discussions',
   };
 
   // Shared styles
@@ -170,7 +170,7 @@ const RiinaWebsite = () => {
         </nav>
 
         <a
-          href="https://github.com/ib823/proof"
+          href="https://github.com/ib823/riina"
           style={{
             backgroundColor: '#000',
             color: '#fff',
@@ -248,7 +248,7 @@ const RiinaWebsite = () => {
             Get Started
           </button>
           <a
-            href="https://github.com/ib823/proof"
+            href="https://github.com/ib823/riina"
             style={{
               backgroundColor: 'transparent',
               color: '#000',
@@ -550,7 +550,7 @@ fungsi hash_kata_laluan(
             Get Started
           </button>
           <a
-            href="https://github.com/ib823/proof"
+            href="https://github.com/ib823/riina"
             style={{
               backgroundColor: 'transparent',
               color: '#fff',
@@ -1230,7 +1230,7 @@ awam fungsi sulit(
 
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
             <a
-              href="https://github.com/ib823/proof/tree/main/07_EXAMPLES"
+              href="https://github.com/ib823/riina/tree/main/07_EXAMPLES"
               style={{
                 display: 'inline-block',
                 padding: '14px 28px',
@@ -1522,7 +1522,7 @@ Every security claim has a machine-checked proof behind it.`
           MPL-2.0 licensed. Explore the proofs yourself.
         </p>
         <a
-          href="https://github.com/ib823/proof"
+          href="https://github.com/ib823/riina"
           style={{
             display: 'inline-block',
             padding: '16px 32px',
@@ -1532,7 +1532,7 @@ Every security claim has a machine-checked proof behind it.`
             fontSize: '14px'
           }}
         >
-          github.com/ib823/proof
+          github.com/ib823/riina
         </a>
       </section>
     </div>
@@ -1621,8 +1621,8 @@ Every security claim has a machine-checked proof behind it.`
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>From Source</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`git clone https://github.com/ib823/proof.git
-cd proof/03_PROTO
+{`git clone https://github.com/ib823/riina.git
+cd riina/03_PROTO
 cargo build --release`}
               </pre>
             </div>
@@ -1636,7 +1636,7 @@ docker run --rm riina check myfile.rii`}
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Nix Flake</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`nix run github:ib823/proof`}
+{`nix run github:ib823/riina`}
               </pre>
             </div>
             <div style={cardStyle}>
@@ -1792,8 +1792,8 @@ riinac build hello.rii    # Compile to native binary via C`}
           <h2 style={sectionLabel}>SETUP</h2>
           <pre style={{ ...codeBlockStyle, marginBottom: '48px' }}>
 {`# Clone the repository
-git clone https://github.com/ib823/proof.git
-cd proof
+git clone https://github.com/ib823/riina.git
+cd riina
 
 # Install dependencies
 cd 00_SETUP/scripts
@@ -1927,7 +1927,7 @@ grep -r "Admitted" *.v  # Must be empty`}
           </div>
 
           <a
-            href="https://github.com/ib823/proof/blob/main/LICENSE"
+            href="https://github.com/ib823/riina/blob/main/LICENSE"
             style={{
               display: 'inline-block',
               padding: '14px 28px',

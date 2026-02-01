@@ -677,10 +677,10 @@ See Appendix A for the complete 460-track enumeration.
 ║  └── 06_COORDINATION/                                                                                ║
 ║      └── SCOPE/                              ← OR: Add scope documents here                         ║
 ║                                                                                                      ║
-║  STEP 2: Update CLAUDE.md to Reference New Documents                                                ║
-║  ═══════════════════════════════════════════════════                                                ║
+║  STEP 2: Update Project Docs to Reference New Documents                                             ║
+║  ═══════════════════════════════════════════════════════                                                ║
 ║                                                                                                      ║
-║  Add to CLAUDE.md:                                                                                   ║
+║  Add to project documentation:                                                                       ║
 ║  ```                                                                                                 ║
 ║  ## Scope Documents (AUTHORITATIVE)                                                                  ║
 ║                                                                                                      ║

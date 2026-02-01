@@ -84,7 +84,7 @@ This document is the **single, complete, self-contained plan** to take RIINA fro
 
 | Document | Relationship |
 |----------|-------------|
-| `CLAUDE.md` (repo root) | Master instructions for working in this repository. **Read it first.** |
+| `CONTRIBUTING.md` (repo root) | Contribution guidelines for the repository. **Read it first.** |
 | `SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md` (same directory) | Predecessor. Fully incorporated into this document (sections 5.2, 5.3, Appendix A-C). |
 | `PROGRESS.md` (repo root) | Live progress tracker. Update it after completing work. |
 | `SESSION_LOG.md` (repo root) | Session continuity log. Update it during work. |
@@ -199,7 +199,7 @@ Compiled Binary
 ```
 /workspaces/proof/
 |
-+-- CLAUDE.md                          Master instructions (READ FIRST)
++-- CONTRIBUTING.md                     Contribution guidelines (READ FIRST)
 +-- PROGRESS.md                        Progress tracker
 +-- SESSION_LOG.md                     Session continuity log
 |
@@ -2079,7 +2079,7 @@ Concatenation of the best 50 example files into a single file that an AI agent c
 
 **Extends section 8.1.** The LSP server is not just for VS Code — it is the universal interface for AI coding tools.
 
-All major AI coding tools (GitHub Copilot, Cursor, Claude Code, Codeium, Windsurf) use LSP for:
+All major AI coding tools (GitHub Copilot, Cursor, Codeium, Windsurf) use LSP for:
 - Real-time diagnostics (the AI sees type errors as it writes)
 - Hover information (the AI queries types/effects/security levels)
 - Completion (the AI gets valid completion candidates)
@@ -2911,7 +2911,7 @@ These were proposed in `SYNTAX_IMPROVEMENT_SPEC_v1_0_0` and rejected. They are l
 | Add `EffConstantTime` / `EffSpecSafe` to `effect` enum | Category error: constant-time and speculation-safety are verification properties, not computational effects. Would break all 17 effect matches across 25+ Coq files. Correct approach: separate analysis pass (section 4.2 of syntax spec). |
 | Change `TFn` to take `effect_row` (list effect) | Would break every `TFn` match in all 222 .v Coq files. The current `effect_join` lattice approach is already sound. |
 | Add `EFor` / `EWhile` / `ELoop` to core `expr` | `ELoop` (infinite loop) directly contradicts `well_typed_SN` (strong normalization theorem). Loops must be bounded or effectful. Parser desugaring is the correct approach. |
-| Add 6 new `expr` constructors + admit downstream | Violates CLAUDE.md: "NO `admit.` — No tactical admits allowed." Every new constructor requires updating `subst`, `free_in`, `step`, `has_type`, `value` across 25+ files. |
+| Add 6 new `expr` constructors + admit downstream | Violates project policy: "NO `admit.` — No tactical admits allowed." Every new constructor requires updating `subst`, `free_in`, `step`, `has_type`, `value` across 25+ files. |
 | Add `TFloat` / `TChar` to Coq `ty` | Would break all `ty` matches across 222 files for no proof benefit. Defer until Phase 2+. |
 | Sync SecurityLevel Rust 2→6 | Already done — Rust already has 6 levels. |
 | Sync Effect Rust 6→17 | Already done — Rust already has 17 effects. |

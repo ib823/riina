@@ -11,8 +11,8 @@ Thank you for your interest in RIINA. This guide covers how to contribute effect
 ## Getting Started
 
 ```bash
-git clone https://github.com/ib823/proof.git
-cd proof
+git clone https://github.com/ib823/riina.git
+cd riina
 
 # Verify environment
 bash 00_SETUP/scripts/verify_setup.sh
@@ -43,7 +43,7 @@ cd 03_PROTO && cargo test --all && cd ..
 
 ### Bug Reports
 
-Use the [Bug Report template](https://github.com/ib823/proof/issues/new?template=bug_report.md). Include:
+Use the [Bug Report template](https://github.com/ib823/riina/issues/new?template=bug_report.md). Include:
 - Steps to reproduce
 - Expected vs actual behavior
 - `riinac` version (`riinac --version`)
@@ -51,7 +51,7 @@ Use the [Bug Report template](https://github.com/ib823/proof/issues/new?template
 
 ### Feature Requests
 
-Use the [Feature Request template](https://github.com/ib823/proof/issues/new?template=feature_request.md). Describe:
+Use the [Feature Request template](https://github.com/ib823/riina/issues/new?template=feature_request.md). Describe:
 - The problem you're solving
 - Your proposed solution
 - How it fits with RIINA's security model
@@ -115,8 +115,8 @@ Before submitting a PR, run the verification gate:
 
 ## Communication
 
-- **Issues** — [github.com/ib823/proof/issues](https://github.com/ib823/proof/issues)
-- **Discussions** — [github.com/ib823/proof/discussions](https://github.com/ib823/proof/discussions)
+- **Issues** — [github.com/ib823/riina/issues](https://github.com/ib823/riina/issues)
+- **Discussions** — [github.com/ib823/riina/discussions](https://github.com/ib823/riina/discussions)
 
 ## License
 

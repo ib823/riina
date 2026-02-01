@@ -26,7 +26,7 @@
             cargoLock.lockFile = ./03_PROTO/Cargo.lock;
             meta = with pkgs.lib; {
               description = "RIINA compiler — formally verified, zero-trust programming language";
-              homepage = "https://github.com/ib823/proof";
+              homepage = "https://github.com/ib823/riina";
               license = licenses.mpl20;
               mainProgram = "riinac";
             };

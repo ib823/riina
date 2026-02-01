@@ -68,8 +68,8 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 ### Install
 
 ```bash
-git clone https://github.com/ib823/proof.git
-cd proof/03_PROTO
+git clone https://github.com/ib823/riina.git
+cd riina/03_PROTO
 cargo build --release
 ```
 
@@ -83,7 +83,7 @@ docker pull riina
 docker run --rm riina check myfile.rii
 
 # Nix
-nix run github:ib823/proof
+nix run github:ib823/riina
 
 # Portable installer (builds from source)
 bash scripts/install.sh
@@ -241,7 +241,7 @@ This is not a whitepaper. This is working software.
 - **Package manager** — `riinac pkg init/add/remove/lock/build/publish/list/tree/clean`
 - **Verification gate** — `riinac verify --fast` (zero-trust: runs tests, clippy, Coq audit)
 - **Docker image** — Multi-stage build, ~85MB runtime image
-- **Nix flake** — `nix run github:ib823/proof` or `nix develop` for full dev shell
+- **Nix flake** — `nix run github:ib823/riina` or `nix develop` for full dev shell
 - **Release scripts** — `scripts/build-release.sh` (tarball + SHA256SUMS), `scripts/install.sh` (portable installer)
 - **REPL** — Interactive mode for experimentation
 
@@ -392,8 +392,8 @@ RIINA is open source under the [Mozilla Public License 2.0](LICENSE).
 
 ```bash
 # Clone and set up
-git clone https://github.com/ib823/proof.git
-cd proof
+git clone https://github.com/ib823/riina.git
+cd riina
 
 # Verify environment
 bash 00_SETUP/scripts/verify_setup.sh

@@ -294,7 +294,7 @@ Repository: github.com/ib823/proof
 This repository contains EVERYTHING that IS RIINA:
 
 /workspaces/proof/
-├── CLAUDE.md                    ← Master instructions
+├── CONTRIBUTING.md              ← Contribution guidelines
 ├── PROGRESS.md                  ← Current status tracker
 ├── SESSION_LOG.md               ← Session continuity
 │

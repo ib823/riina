@@ -63,10 +63,10 @@ Anyone can verify a RIINA certificate independently:
 
 ```bash
 # 1. Clone the RIINA repository
-git clone https://github.com/ib823/proof.git
+git clone https://github.com/ib823/riina.git
 
 # 2. Build the Coq proofs from source
-cd proof/02_FORMAL/coq && make
+cd riina/02_FORMAL/coq && make
 
 # 3. Check that no proofs use admits
 grep -r "Admitted\|admit" *.v
