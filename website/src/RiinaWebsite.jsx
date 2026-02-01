@@ -25,7 +25,7 @@ const RiinaWebsite = () => {
     { id: 'releases', label: 'Releases' },
     { id: 'research', label: 'Research' },
     { id: 'docs', label: 'Documentation' },
-    { id: 'bisik', label: 'Bisik' },
+    { id: 'bisik', label: 'Reach Us' },
     { id: 'playground', label: 'Playground' },
   ];
 
@@ -43,7 +43,7 @@ const RiinaWebsite = () => {
     { label: 'Docs', children: [
       { id: 'docs', label: 'Documentation' },
       { id: 'releases', label: 'Releases' },
-      { id: 'bisik', label: 'Bisik' },
+      { id: 'bisik', label: 'Reach Us' },
     ]},
   ];
 
@@ -67,7 +67,7 @@ const RiinaWebsite = () => {
       'Releases': 'releases',
       'Research': 'research',
       'Documentation': 'docs',
-      'Bisik': 'bisik',
+      'Reach Us': 'bisik',
       'MPL-2.0 License': 'license',
       'Privacy': 'privacy',
       'Terms': 'terms',
@@ -672,9 +672,9 @@ fungsi hash_kata_laluan(
           <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
             {[
               { name: 'Native', desc: 'C backend — any platform with a C compiler', status: 'Done' },
-              { name: 'WebAssembly', desc: 'Direct IR → WASM binary emission', status: 'Phase 7' },
-              { name: 'Android', desc: 'NDK cross-compilation + JNI bridges', status: 'Phase 7' },
-              { name: 'iOS', desc: 'Xcode toolchain + Swift bridges', status: 'Phase 7' },
+              { name: 'WebAssembly', desc: 'Direct IR → WASM binary emission', status: 'Done' },
+              { name: 'Android', desc: 'NDK cross-compilation + JNI bridges', status: 'Done' },
+              { name: 'iOS', desc: 'Xcode toolchain + Swift bridges', status: 'Done' },
             ].map((t, i) => (
               <div key={i} style={{ padding: '24px', border: '1px solid #ddd', backgroundColor: '#fff' }}>
                 <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>{t.name}</div>
@@ -3271,7 +3271,7 @@ nix run github:ib823/riina`}
 
     return (
       <div style={pageTopStyle}>
-        <PageHeader title="Bisik" subtitle="Send a message directly. It goes straight to Telegram." />
+        <PageHeader title="Reach Us" subtitle="Send a message directly. It goes straight to Telegram." />
 
         <section style={{ ...sectionStyle, maxWidth: '560px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -3314,7 +3314,7 @@ nix run github:ib823/riina`}
     const footerSections = [
       { title: 'Product', links: ['Home', 'Why Proof', 'Language', 'How It Works', 'Demos'] },
       { title: 'Resources', links: ['Documentation', 'Enterprise', 'Research', 'Releases', 'GitHub'] },
-      { title: 'Community', links: ['Bisik', 'Issues', 'Discussions'] },
+      { title: 'Community', links: ['Reach Us', 'Issues', 'Discussions'] },
       { title: 'Legal', links: ['MPL-2.0 License', 'Privacy', 'Terms'] }
     ];
 
