@@ -178,7 +178,10 @@ git add -A
 for pattern in "${INTERNAL_PATHS[@]}"; do
     git rm -rf --quiet "$pattern" 2>/dev/null || true
 done
-git commit -m "$(cat <<EOF
+# Use --no-verify because main was already fully verified by pre-push hook.
+# Without this, the pre-commit hook regenerates VERIFICATION_MANIFEST.md
+# during the commit, re-introducing an internal file to public.
+git commit --no-verify -m "$(cat <<EOF
 $ORIGINAL_MSG
 
 Cherry-picked from main ($(echo $COMMIT_ARG | cut -c1-7)).
