@@ -2243,17 +2243,18 @@ Network = false  # This package cannot use network
 **Deployment:** `scripts/deploy-website.sh` → builds Vite/React app, pushes to `gh-pages` branch on `ib823/riina`
 **Old URL:** `ib823.github.io/proof/` redirects to `/riina/` (redirect page on proof gh-pages)
 
-**Pages implemented (13):**
-1. Home — hero, key differentiators, code examples
-2. Language — Bahasa Melayu syntax, type system, effects
-3. How It Works — compilation pipeline, verification gate
-4. Demos — 5 pre-recorded terminal demos
-5. Enterprise — compliance packaging, certification
-6. Releases — version cards, download links, install instructions
-7. Research — track overview, proof statistics
-8. Documentation — quick start, stdlib, contributing
-9. Syntax, Security Types, Effect System, Examples — deep-dive pages
-10. Legal — license, privacy, terms
+**Pages implemented (14):**
+1. Home — hero, 8 industry capability cards, key differentiators, code examples
+2. **Why Proof** — executive-facing page for C-suite (CEO/CIO/CRO/CISO/CFO/Board): IBM breach cost data ($4.88M), assurance hierarchy (EAL1-EAL7), lock vs theorem analogy, quantum/AI immunity, real-world proof points (DARPA seL4, Paris Metro 25yr, AWS s2n/Zelkova, Microsoft HACL*, CompCert 6 CPU-yr, ProvenRun EAL7), Dijkstra quote, Kahneman loss aversion framing, 14 cited sources
+3. Language — Bahasa Melayu syntax, type system, effects
+4. How It Works — compilation pipeline, verification gate
+5. Demos — 5 pre-recorded terminal demos, 3 showcase apps
+6. **Enterprise** — 15 industry verticals (Defence, Healthcare, Financial, Aerospace, Energy, Telecom, Government, Transportation, Manufacturing/ERP, Retail, Media, Education, Agriculture, Real Estate, Legal), 15 regulatory frameworks, research depth banner (218 tracks, 1,231+ threats), 6 enterprise use cases
+7. Releases — version cards, download links, install instructions
+8. **Research** — 26 research domains (A-Z) with descriptions, 15 industry-specific links, proof statistics
+9. Documentation — quick start, stdlib, contributing
+10. Syntax, Security Types, Effect System, Examples — deep-dive pages
+11. Legal — license, privacy, terms
 
 **Deployment flow:**
 - `bash scripts/deploy-website.sh` — standalone deploy
