@@ -14,7 +14,7 @@ This is not a test report. This is a mathematical proof that your program satisf
 ├──────────────────────────────────────────────────────┤
 │ Program     : myapp.rii                              │
 │ Compiled    : 2026-01-31T14:30:00Z                   │
-│ Compiler    : riinac 0.1.0                           │
+│ Compiler    : riinac 0.2.0                           │
 │ Prover      : Rocq 9.1 (Coq 8.21)                   │
 │ Certificate : SHA-256 of proof objects                │
 ├──────────────────────────────────────────────────────┤
@@ -37,13 +37,13 @@ This is not a test report. This is a mathematical proof that your program satisf
 │   Secrets only released through authorized policy     │
 │   Coq: properties/Declassification.v                 │
 │                                                      │
-│ AXIOMS (5, all justified)                            │
+│ AXIOMS (4, all justified)                            │
 │   See: 02_FORMAL/coq/AXIOM_JUSTIFICATION.md          │
 │                                                      │
 │ VERIFICATION                                         │
 │   To independently verify:                           │
 │   $ cd 02_FORMAL/coq && make                         │
-│   Expected: 244 files, 0 errors, 0 admits            │
+│   Expected: 245 files, 0 errors, 0 admits            │
 │                                                      │
 └──────────────────────────────────────────────────────┘
 ```
@@ -74,7 +74,7 @@ grep -r "Admitted\|admit" *.v
 
 # 4. Check axiom count
 grep -r "^Axiom " *.v | wc -l
-# Expected: 5 (all justified)
+# Expected: 4 (all justified)
 
 # 5. Verify specific theorem
 coqc -Q . RIINA properties/NonInterference_v2.v
