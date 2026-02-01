@@ -19,7 +19,7 @@ Every RIINA program gets these guarantees **without any flags**:
 | Effect safety | Functions cannot perform undeclared side effects | `effects/EffectSafety.v` |
 | Declassification correctness | Secrets only released through authorized policy | `properties/Declassification.v` |
 
-These are proven theorems in Coq (4,830 Qed proofs in active build, 0 admits, 4 justified axioms). The compiler IS the security tool. The `--compliance` flag adds **industry-specific** rules on top of these universal guarantees.
+These are proven theorems in Coq (4,825 Qed proofs in active build, 0 admits, 4 justified axioms). The compiler IS the security tool. The `--compliance` flag adds **industry-specific** rules on top of these universal guarantees.
 
 ---
 
