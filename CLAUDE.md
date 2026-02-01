@@ -342,6 +342,7 @@ The script:
 - `WORKER_B_SPEC_STORE_REL_REWRITE.md`, `VERIFICATION_MANIFEST.md`
 - All `CLAUDE_*.md`, `DELEGATION_TASKS.md`, `TASK_PROMPTS.md` in `02_FORMAL/coq/`
 - `02_FORMAL/coq/properties/_archive_deprecated/`
+- `04_SPECS/business/` (confidential business model — NEVER publish)
 
 ### 3.4 At Session End
 

@@ -55,6 +55,7 @@ INTERNAL_PATHS=(
     "02_FORMAL/coq/AXIOM_ELIMINATION_STRATEGY.md"
     "02_FORMAL/coq/_CoqProject.backup"
     "02_FORMAL/coq/properties/_archive_deprecated/"
+    "04_SPECS/business/"
 )
 
 echo ""
