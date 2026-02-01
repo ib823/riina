@@ -93,7 +93,7 @@ RIINA is the world's **first formally verified programming language** with:
 | Phase 2: Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
 | Phase 3: Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | Phase 4: Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code ext, 101 examples |
-| Phase 5: Ecosystem | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 |
+| Phase 5: Ecosystem | ✅ Done | CI/CD, pkg mgr, Docker, Nix, VERSION, CHANGELOG, release.sh, installer, MPL-2.0 |
 | Phase 6: Adoption | ✅ Done | C FFI, 5 demos, 3 showcase, community, enterprise, public branch |
 | Phase 7: Long-term Vision | ⬜ | Self-hosting, HW verification |
 
@@ -115,6 +115,8 @@ are mathematically guaranteed at compile time.
 ├── README.md                    ← Public repository README
 ├── PROGRESS.md                  ← Current progress tracker
 ├── SESSION_LOG.md               ← Session continuity log
+├── VERSION                      ← Semver source of truth (0.1.0)
+├── CHANGELOG.md                 ← Public changelog (Keep a Changelog format)
 │
 ├── 00_SETUP/                    ← Setup scripts and initialization
 │   ├── SETUP_COMPLETE.marker    ← Created after successful setup
@@ -649,6 +651,7 @@ Corresponds to **Materialization Plan Phase 3** (Formal Verification & Semantic 
 | Enterprise path | Compliance packaging (15 regulations), certification docs | ✅ Done (Session 64) |
 | Public branch | `public` branch (GitHub default), `scripts/sync-public.sh` | ✅ Done (Session 64) |
 | Website demos | 5 pre-recorded terminal demos on website | ✅ Done (Session 64) |
+| Release system | VERSION, CHANGELOG.md, bump-version.sh, release.sh, Releases page | ✅ Done (Session 65) |
 
 **Total: 588 Rust tests, 13 crates, 111 example files. Phase 6 COMPLETE.**
 
@@ -750,7 +753,7 @@ When encountering old references, update them to the new naming.
 
 *"Q.E.D. Aeternum."*
 
-*Last updated: 2026-01-31 (Session 64: Phase 6 complete, public branch, 0 admits, 5 justified axioms, 588 Rust tests, 13 crates, 111 examples, 278 Coq files, 5,304 Qed proofs)*
+*Last updated: 2026-02-01 (Session 65: Release system, VERSION, CHANGELOG, release.sh, Releases page, 0 admits, 5 justified axioms, 588 Rust tests, 13 crates, 111 examples, 278 Coq files, 5,304 Qed proofs)*
 
 ---
 

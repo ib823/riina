@@ -1,5 +1,49 @@
 # Session Log
 
+## 2026-02-01 (Session 65): Release System — VERSION, CHANGELOG, release.sh, Releases Page
+
+**Goal:** Implement complete release workflow: versioning, changelog, bump script, release script, website Releases page.
+
+### Accomplishments
+
+| Task | Description | Status |
+|------|-------------|--------|
+| VERSION file | Single-line semver source of truth (0.1.0) | Done |
+| CHANGELOG.md | Keep a Changelog format, initial 0.1.0 entry | Done |
+| bump-version.sh | Updates 6 locations (VERSION, 2 Cargo.toml, flake.nix, package.json, JSX footer) | Done |
+| release.sh | One-command release: validate → bump → changelog → commit + tag → push → tarball + SHA256SUMS → sync public → GitHub Release → website update | Done |
+| Website Releases page | New page with release cards, download links, install instructions | Done |
+| Website footer | Shows `RIINA v0.1.0 · MPL-2.0` | Done |
+| releases array marker | `// RELEASES_MARKER` in JSX for auto-injection by release.sh | Done |
+| Doc sync | PROGRESS.md, CLAUDE.md, README.md, COORDINATION_LOG.md, SESSION_LOG.md updated | Done |
+
+### Release Workflow
+
+```
+bash scripts/release.sh 0.2.0
+→ validate (clean main, tests pass)
+→ bump version in 6 files
+→ finalize CHANGELOG.md ([Unreleased] → [0.2.0])
+→ commit "[RELEASE] v0.2.0" + annotated tag
+→ push main + tag to origin
+→ build tarball + SHA256SUMS
+→ sync to public branch
+→ push public + tag to riina remote
+→ create GitHub Release on ib823/riina
+→ update website releases array
+```
+
+### Branch Strategy
+
+| Branch | Purpose | Lifetime |
+|--------|---------|----------|
+| `main` | All development | Permanent |
+| `public` | Local staging for riina/main | Permanent |
+| `feat/<name>` | Experimental/multi-session | Short-lived |
+| `fix/<name>` | Bug fixes | Short-lived |
+
+---
+
 ## 2026-01-31 (Session 64): Phase 6 Completion — Showcase, Community, Enterprise, Public Branch
 
 **Goal:** Complete all Phase 6 remaining items. Establish dual-branch strategy (main/public). Full doc sync.

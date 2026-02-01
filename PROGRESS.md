@@ -16,8 +16,8 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**Report Date:** 2026-01-31 (Session 64)
-**Session:** 64 (Phase 6 Completion — Showcase, Community, Enterprise, Public Branch)
+**Report Date:** 2026-02-01 (Session 65)
+**Session:** 65 (Release System — VERSION, CHANGELOG, bump-version.sh, release.sh, Releases page)
 **Overall Grade:** A (BUILD PASSING, 0 admits, 0 Admitted, 5 justified axioms)
 
 ---
@@ -37,6 +37,15 @@
 | Rust Crates | **13** | - | ✅ (+riina-pkg) |
 | Example .rii Files | **111** | 100+ | ✅ (+5 demos, +3 showcase) |
 | Prover | **Rocq 9.1 (Coq 8.21)** | - | ✅ Migrated from 8.18 |
+
+**SESSION 65 KEY ACTIONS (Release System — Versioning, CHANGELOG, Release Script, Releases Page):**
+1. **`VERSION` file** — Single-line semver source of truth (`0.1.0`)
+2. **`CHANGELOG.md`** — Keep a Changelog format, public-facing (flows through to riina public repo)
+3. **`scripts/bump-version.sh`** — Updates version in 6 locations: VERSION, 03_PROTO/Cargo.toml, 05_TOOLING/Cargo.toml, flake.nix, website/package.json, website footer
+4. **`scripts/release.sh`** — One-command release: validate → bump → finalize changelog → commit + tag → push → tarball + SHA256SUMS → sync public → GitHub Release → update website releases array
+5. **Website Releases page** — New page with release cards, download links, install instructions; `releases` array auto-updated by release.sh via `// RELEASES_MARKER`
+6. **Website footer** — Now shows `RIINA v0.1.0 · MPL-2.0`
+7. **Branch strategy documented** — main (dev), public (staging for riina/main), feat/<name>, fix/<name>; tags mark releases
 
 **SESSION 64 KEY ACTIONS (Phase 6 Completion — Showcase, Community, Enterprise, Public Branch):**
 1. **Public branch** — Created `public` branch (GitHub default) with internal files stripped; `scripts/sync-public.sh` automates cherry-pick from validated main
@@ -945,9 +954,9 @@ The following remain and are NOT covered by delegation output:
 | riina-pkg | Package manager | 39 | ✅ |
 | riinac | Compiler driver | 11 | ✅ |
 
-**Total Tests:** 576 | **All Passing** ✅
+**Total Tests:** 588 | **All Passing** ✅
 
-**Materialization Plan:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` — 7-phase plan from prototype to production language. Phase 1 ~90% complete; gap remediation active in parallel with Track A.
+**Materialization Plan:** `04_SPECS/language/RIINA_MATERIALIZATION_PLAN_v1_0_0.md` — 7-phase plan from prototype to production language. Phases 1-6 complete; Phase 7 (long-term vision) pending.
 
 ### Track B Enhancement Status (Session 51)
 
@@ -964,26 +973,26 @@ The following remain and are NOT covered by delegation output:
 ## 6. SESSION CHECKPOINT
 
 ```
-Session      : 59 (Repository Protection + Documentation Sync)
-Last Action  : Deployed REPO_PROTECTION_GUIDE.md v2.0.0 + pre-push hook + doc sync
-Build Status : ✅ PASSING (244 Coq files + 576 Rust tests)
+Session      : 65 (Release System)
+Last Action  : VERSION, CHANGELOG.md, bump-version.sh, release.sh, website Releases page
+Build Status : ✅ PASSING (244 Coq files + 588 Rust tests)
+Version      : 0.1.0 (VERSION file is source of truth)
 Axioms       : 5 (active build: 4 in NI_v2_LR + 1 in NI_v2)
 Admits       : 0 admit. + 0 Admitted. = 0 total
-Rust Tests   : 576 (all passing)
+Rust Tests   : 588 (all passing)
 Rust Crates  : 13
 
-Session 59 Accomplishments:
-1. REPO_PROTECTION_GUIDE.md v2.0.0 — 10-part guide + 3 appendices, 100% codebase-aligned
-2. Pre-push hook (riinac verify --full + GPG + secrets + Trojan source)
-3. Hook installer updated (installs both pre-commit and pre-push)
-4. Documentation sync across all tracking files
+Session 65 Accomplishments:
+1. VERSION file (source of truth for semver)
+2. CHANGELOG.md (Keep a Changelog format, flows to public)
+3. scripts/bump-version.sh (updates 6 locations)
+4. scripts/release.sh (one-command release workflow)
+5. Website Releases page + releases data array + footer version
+6. Documentation sync across all tracking files
 
-Verification Infrastructure (deployed):
-- Pre-commit: riinac verify --fast (automatic on every commit)
-- Pre-push: riinac verify --full + GPG + secret scan + Trojan source scan
-- Manual: 05_TOOLING/scripts/verify.sh [0-6] (7-level deep verification)
-- Integrity: 05_TOOLING/tools/verify_integrity.sh (repo hash + signatures)
-- Artifacts: hash-chain, build-manifest, artifact-sign tools
+Release workflow:
+  bash scripts/release.sh 0.2.0
+  → validate → bump → changelog → commit → tag → push → tarball → sync public → GitHub Release → website update
 
 Track A — Remaining Axioms (5):
 - NI_v2_LR: logical_relation_ref, logical_relation_deref, logical_relation_assign,
@@ -991,8 +1000,8 @@ Track A — Remaining Axioms (5):
 - NI_v2: fundamental_theorem_step_0
 - Worker B on store_rel_n rewrite to eliminate 3 (ref/deref/assign)
 
-Track B — Phase 5: ✅ DONE
-- CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0
+Track B — Phases 1-6: ✅ ALL DONE
+- Phase 7 (self-hosting, HW verification) is long-term vision
 
 Both tracks proceeding in parallel. Track B work does NOT affect Track A.
 ```
@@ -1011,8 +1020,8 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 | 2 | Standard Library | ✅ Done | 88 builtins, 9 modules, 509 tests |
 | 3 | Formal Verification | 🟢 Stable | 0 admits, 5 justified axioms, 4,763+ Qed, 244 files |
 | 4 | Developer Experience | ✅ Done | riina-fmt, riina-lsp, riina-doc, VS Code, 100 examples |
-| 5 | Ecosystem & Distribution | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0 |
-| 6 | Adoption & Community | ⬜ | FFI, demos |
+| 5 | Ecosystem & Distribution | ✅ Done | CI/CD, pkg mgr, Dockerfile, Nix flake, release scripts, installer, MPL-2.0, VERSION, CHANGELOG, release.sh |
+| 6 | Adoption & Community | ✅ Done | C FFI, 8 demos, community, enterprise, public branch, website Releases page |
 | 7 | Long-term Vision | ⬜ | Self-hosting, HW verification |
 
 ### Phase 1 (Compiler Completion) — Detailed Status
@@ -1047,10 +1056,9 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 
 | Priority | Track | Task |
 |----------|-------|------|
-| P0 | B | **Phase 6: FFI** — C FFI via `luar "C"` syntax (~200 lines) |
-| P2 | A | **Axiom elimination** — Worker B store_rel_n rewrite (parallel) |
-| P3 | B | **Phase 6: Demo apps** — secure web server, PQ messenger, HIPAA records |
-| P4 | B | **Phase 7: Self-hosting** — RIINA compiler in RIINA |
+| P1 | A | **Axiom elimination** — Worker B store_rel_n rewrite (parallel) |
+| P2 | B | **Phase 7: Self-hosting** — RIINA compiler in RIINA |
+| P3 | - | **Releases** — Tag v0.1.0, create first GitHub Release |
 
 ---
 
@@ -1070,11 +1078,13 @@ All execution planning follows the 7-phase materialization plan. The older 6-pha
 | **RIINA_MATERIALIZATION_PLAN_v1_0_0.md** | **7-phase materialization plan (+ 13-item gap remediation)** | `04_SPECS/language/` |
 | **SYNTAX_IMPROVEMENT_SPEC_v2_0_0.md** | **Syntax improvement tiers** | `04_SPECS/language/` |
 | **ATTACK_PROOF_MAP.md** | **350+ threats → Coq theorem traceability** | `06_COORDINATION/` |
+| **VERSION** | **Semver source of truth** | `/workspaces/proof/` |
+| **CHANGELOG.md** | **Public-facing changelog (Keep a Changelog)** | `/workspaces/proof/` |
 
 ---
 
 *RIINA: Rigorous Immutable Invariant, No Assumptions*
 *"Every line of code backed by mathematical proof."*
 
-*Report Generated: 2026-01-31 (Session 59)*
-*"0 admits. 5 justified axioms. 244 Coq files. 576 Rust tests. 13 crates. Q.E.D. Aeternum."*
+*Report Generated: 2026-02-01 (Session 65)*
+*"v0.1.0. 0 admits. 5 justified axioms. 244 Coq files. 588 Rust tests. 13 crates. Q.E.D. Aeternum."*

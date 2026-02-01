@@ -20,8 +20,15 @@ const RiinaWebsite = () => {
     { id: 'how', label: 'How It Works' },
     { id: 'demos', label: 'Demos' },
     { id: 'enterprise', label: 'Enterprise' },
+    { id: 'releases', label: 'Releases' },
     { id: 'research', label: 'Research' },
     { id: 'docs', label: 'Documentation' },
+  ];
+
+  // Release data (auto-updated by scripts/release.sh)
+  const releases = [
+    // RELEASES_MARKER
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 5,304 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
   ];
 
   // Footer link mapping
@@ -43,9 +50,9 @@ const RiinaWebsite = () => {
   };
 
   const externalLinks = {
-    'GitHub': 'https://github.com/ib823/riina',
-    'Issues': 'https://github.com/ib823/riina/issues',
-    'Discussions': 'https://github.com/ib823/riina/discussions',
+    'GitHub': 'https://github.com/ib823/proof',
+    'Issues': 'https://github.com/ib823/proof/issues',
+    'Discussions': 'https://github.com/ib823/proof/discussions',
   };
 
   // Shared styles
@@ -172,7 +179,7 @@ const RiinaWebsite = () => {
         </nav>
 
         <a
-          href="https://github.com/ib823/riina"
+          href="https://github.com/ib823/proof"
           style={{
             backgroundColor: '#000',
             color: '#fff',
@@ -249,7 +256,7 @@ const RiinaWebsite = () => {
             Get Started
           </button>
           <a
-            href="https://github.com/ib823/riina"
+            href="https://github.com/ib823/proof"
             style={{
               backgroundColor: 'transparent',
               color: '#000',
@@ -551,7 +558,7 @@ fungsi hash_kata_laluan(
             Get Started
           </button>
           <a
-            href="https://github.com/ib823/riina"
+            href="https://github.com/ib823/proof"
             style={{
               backgroundColor: 'transparent',
               color: '#fff',
@@ -1357,7 +1364,7 @@ fungsi akses_rekod(
 
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
             <a
-              href="https://github.com/ib823/riina/tree/main/07_EXAMPLES"
+              href="https://github.com/ib823/proof/tree/main/07_EXAMPLES"
               style={{
                 display: 'inline-block',
                 padding: '14px 28px',
@@ -1649,7 +1656,7 @@ Every security claim has a machine-checked proof behind it.`
           MPL-2.0 licensed. Explore the proofs yourself.
         </p>
         <a
-          href="https://github.com/ib823/riina"
+          href="https://github.com/ib823/proof"
           style={{
             display: 'inline-block',
             padding: '16px 32px',
@@ -1659,7 +1666,7 @@ Every security claim has a machine-checked proof behind it.`
             fontSize: '14px'
           }}
         >
-          github.com/ib823/riina
+          github.com/ib823/proof
         </a>
       </section>
     </div>
@@ -1748,8 +1755,8 @@ Every security claim has a machine-checked proof behind it.`
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>From Source</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`git clone https://github.com/ib823/riina.git
-cd riina/03_PROTO
+{`git clone https://github.com/ib823/proof.git
+cd proof/03_PROTO
 cargo build --release`}
               </pre>
             </div>
@@ -1763,7 +1770,7 @@ docker run --rm riina check myfile.rii`}
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Nix Flake</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
-{`nix run github:ib823/riina`}
+{`nix run github:ib823/proof`}
               </pre>
             </div>
             <div style={cardStyle}>
@@ -1919,8 +1926,8 @@ riinac build hello.rii    # Compile to native binary via C`}
           <h2 style={sectionLabel}>SETUP</h2>
           <pre style={{ ...codeBlockStyle, marginBottom: '48px' }}>
 {`# Clone the repository
-git clone https://github.com/ib823/riina.git
-cd riina
+git clone https://github.com/ib823/proof.git
+cd proof
 
 # Install dependencies
 cd 00_SETUP/scripts
@@ -2054,7 +2061,7 @@ grep -r "Admitted" *.v  # Must be empty`}
           </div>
 
           <a
-            href="https://github.com/ib823/riina/blob/main/LICENSE"
+            href="https://github.com/ib823/proof/blob/main/LICENSE"
             style={{
               display: 'inline-block',
               padding: '14px 28px',
@@ -2449,6 +2456,80 @@ $ Print Assumptions access_control_enforced.
   );
 
   // ============================================================================
+  // RELEASES PAGE
+  // ============================================================================
+  const ReleasesPage = () => (
+    <div style={pageTopStyle}>
+      <PageHeader
+        title="Releases"
+        subtitle="Download RIINA releases and track changes across versions."
+      />
+      <section style={sectionStyle}>
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{
+            display: 'inline-block',
+            padding: '8px 16px',
+            backgroundColor: '#000',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 600,
+            marginBottom: '24px'
+          }}>
+            Latest: v{releases[0]?.version}
+          </div>
+          <p style={{ color: '#666', fontSize: '14px' }}>
+            <a href={`https://github.com/ib823/riina/releases/tag/v${releases[0]?.version}`}
+               style={{ color: '#000', textDecoration: 'underline' }}>
+              Download from GitHub
+            </a>
+            {' · '}
+            <a href="https://github.com/ib823/riina/blob/main/CHANGELOG.md"
+               style={{ color: '#000', textDecoration: 'underline' }}>
+              Full Changelog
+            </a>
+          </p>
+        </div>
+
+        <div style={{ ...codeBlockStyle, marginBottom: '48px' }}>
+          <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+{`# Install RIINA
+curl -fsSL https://riina.my/install.sh | bash
+
+# Or with Nix
+nix run github:ib823/riina`}
+          </pre>
+        </div>
+
+        <h2 style={{ ...sectionLabel }}>ALL RELEASES</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {releases.map((rel, i) => (
+            <div key={i} style={{
+              ...cardStyle,
+              borderLeft: i === 0 ? '3px solid #000' : '1px solid #eee'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>v{rel.version}</h3>
+                <span style={{ color: '#999', fontSize: '14px' }}>{rel.date}</span>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                {rel.highlights.map((h, j) => (
+                  <li key={j} style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>{h}</li>
+                ))}
+              </ul>
+              <div style={{ marginTop: '16px' }}>
+                <a href={`https://github.com/ib823/riina/releases/tag/v${rel.version}`}
+                   style={{ color: '#000', fontSize: '13px', textDecoration: 'underline' }}>
+                  Release notes &amp; downloads
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+
+  // ============================================================================
   // FOOTER
   // ============================================================================
   const Footer = () => {
@@ -2551,7 +2632,7 @@ $ Print Assumptions access_control_enforced.
             © 2026 RIINA. All rights reserved.
           </p>
           <p style={{ color: '#999', fontSize: '12px' }}>
-            MPL-2.0 Licensed
+            RIINA v0.1.0 · MPL-2.0
           </p>
         </div>
       </footer>
@@ -2567,6 +2648,7 @@ $ Print Assumptions access_control_enforced.
       case 'how': return <HowPage />;
       case 'demos': return <DemosPage />;
       case 'enterprise': return <EnterprisePage />;
+      case 'releases': return <ReleasesPage />;
       case 'docs': return <DocsPage />;
       case 'research': return <ResearchPage />;
       case 'syntax': return <SyntaxPage />;

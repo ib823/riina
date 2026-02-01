@@ -68,8 +68,8 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 ### Install
 
 ```bash
-git clone https://github.com/ib823/riina.git
-cd riina/03_PROTO
+git clone https://github.com/ib823/proof.git
+cd proof/03_PROTO
 cargo build --release
 ```
 
@@ -83,7 +83,7 @@ docker pull riina
 docker run --rm riina check myfile.rii
 
 # Nix
-nix run github:ib823/riina
+nix run github:ib823/proof
 
 # Portable installer (builds from source)
 bash scripts/install.sh
@@ -241,8 +241,8 @@ This is not a whitepaper. This is working software.
 - **Package manager** — `riinac pkg init/add/remove/lock/build/publish/list/tree/clean`
 - **Verification gate** — `riinac verify --fast` (zero-trust: runs tests, clippy, Coq audit)
 - **Docker image** — Multi-stage build, ~85MB runtime image
-- **Nix flake** — `nix run github:ib823/riina` or `nix develop` for full dev shell
-- **Release scripts** — `scripts/build-release.sh` (tarball + SHA256SUMS), `scripts/install.sh` (portable installer)
+- **Nix flake** — `nix run github:ib823/proof` or `nix develop` for full dev shell
+- **Release scripts** — `scripts/release.sh` (one-command release: bump, tag, tarball, GitHub Release), `scripts/bump-version.sh`, `scripts/install.sh`
 - **REPL** — Interactive mode for experimentation
 
 ### Example Programs
@@ -306,7 +306,9 @@ proof/
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
 ├── 07_EXAMPLES/            111 example .rii files
 ├── docs/                   Enterprise docs, multilingual READMEs
-├── scripts/                Build, install, sync scripts
+├── VERSION                 Semver source of truth (0.1.0)
+├── CHANGELOG.md            Public-facing changelog
+├── scripts/                Build, install, release, sync scripts
 └── riina-vscode/           VS Code extension
 ```
 
@@ -354,8 +356,8 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 2. Standard Library | 88 builtins across 9 modules | Done |
 | 3. Formal Verification | 5,304 Qed proofs, 5 justified axioms, 0 admits | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 111 examples | Done |
-| 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release scripts, installer | Done |
-| 6. Adoption | C FFI, 8 demos, community setup, enterprise docs, public branch | Done |
+| 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
+| 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, website Releases page | Done |
 | 7. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
 ### What's next
@@ -392,8 +394,8 @@ RIINA is open source under the [Mozilla Public License 2.0](LICENSE).
 
 ```bash
 # Clone and set up
-git clone https://github.com/ib823/riina.git
-cd riina
+git clone https://github.com/ib823/proof.git
+cd proof
 
 # Verify environment
 bash 00_SETUP/scripts/verify_setup.sh
