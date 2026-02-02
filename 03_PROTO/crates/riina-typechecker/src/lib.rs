@@ -134,6 +134,115 @@ pub fn register_builtin_types(ctx: &Context) -> Context {
     c = c.extend("assert_ne".to_string(), Ty::Fn(
         Box::new(Ty::Prod(Box::new(Ty::Any), Box::new(Ty::Any))),
         Box::new(Ty::Unit), Effect::Pure));
+
+    // ── String builtins (teks) ──
+    for (bm, en) in &[
+        ("teks_belah", "str_split"), ("teks_cantum", "str_join"),
+        ("teks_potong", "str_trim"), ("teks_mengandungi", "str_contains"),
+        ("teks_ganti", "str_replace"), ("teks_mula_dengan", "str_starts_with"),
+        ("teks_akhir_dengan", "str_ends_with"), ("teks_huruf_besar", "str_to_upper"),
+        ("teks_huruf_kecil", "str_to_lower"), ("teks_aksara_di", "str_char_at"),
+        ("teks_sub", "str_substring"), ("teks_indeks", "str_index_of"),
+        ("teks_ulang", "str_repeat"), ("teks_pad_kiri", "str_pad_left"),
+        ("teks_pad_kanan", "str_pad_right"), ("teks_baris", "str_lines"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::Pure);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── List builtins (senarai) ──
+    for (bm, en) in &[
+        ("senarai_baru", "list_new"), ("senarai_tolak", "list_push"),
+        ("senarai_dapat", "list_get"), ("senarai_panjang", "list_len"),
+        ("senarai_peta", "list_map"), ("senarai_tapis", "list_filter"),
+        ("senarai_lipat", "list_fold"), ("senarai_balik", "list_reverse"),
+        ("senarai_susun", "list_sort"), ("senarai_mengandungi", "list_contains"),
+        ("senarai_sambung", "list_concat"), ("senarai_kepala", "list_head"),
+        ("senarai_ekor", "list_tail"), ("senarai_zip", "list_zip"),
+        ("senarai_nombor", "list_enumerate"), ("senarai_rata", "list_flatten"),
+        ("senarai_unik", "list_unique"), ("senarai_potong", "list_slice"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::Pure);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── Map builtins (peta) ──
+    for (bm, en) in &[
+        ("peta_baru", "map_new"), ("peta_letak", "map_insert"),
+        ("peta_dapat", "map_get"), ("peta_buang", "map_remove"),
+        ("peta_kunci", "map_keys"), ("peta_nilai", "map_values"),
+        ("peta_mengandungi", "map_contains"), ("peta_panjang", "map_len"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::Pure);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── Set builtins ──
+    for (bm, en) in &[
+        ("set_baru", "set_new"), ("set_letak", "set_insert"),
+        ("set_buang", "set_remove"), ("set_mengandungi", "set_contains"),
+        ("set_kesatuan", "set_union"), ("set_persilangan", "set_intersect"),
+        ("set_panjang", "set_len"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::Pure);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── File I/O builtins (fail) — Effect::FileSystem ──
+    for (bm, en) in &[
+        ("fail_baca", "file_read"), ("fail_tulis", "file_write"),
+        ("fail_tambah", "file_append"), ("fail_ada", "file_exists"),
+        ("fail_buang", "file_delete"), ("fail_panjang", "file_size"),
+        ("fail_senarai", "file_list_dir"), ("fail_baca_baris", "file_read_lines"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::FileSystem);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── Time builtins (masa) — Effect::Time ──
+    for (bm, en) in &[
+        ("masa_sekarang", "time_now"), ("masa_sekarang_ms", "time_now_ms"),
+        ("masa_format", "time_format"), ("masa_urai", "time_parse"),
+        ("masa_tidur", "time_sleep"), ("masa_jam", "time_clock"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::Time);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── JSON builtins ──
+    for (bm, en) in &[
+        ("json_urai", "json_parse"), ("json_ke_teks", "json_stringify"),
+        ("json_dapat", "json_get"), ("json_letak", "json_set"),
+        ("json_ada", "json_has"),
+    ] {
+        let ty = Ty::Fn(Box::new(Ty::Any), Box::new(Ty::Any), Effect::Pure);
+        c = c.extend(bm.to_string(), ty.clone());
+        c = c.extend(en.to_string(), ty);
+    }
+
+    // ── Extra math builtins ──
+    for (bm, en) in &[
+        ("baki", "rem"), ("log2", "log2"),
+    ] {
+        c = c.extend(bm.to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure));
+        c = c.extend(en.to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Pure));
+    }
+    // Random — Effect::Random
+    c = c.extend("rawak".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Random));
+    c = c.extend("random".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Int), Effect::Random));
+
+    // ── Extra conversion builtins ──
+    c = c.extend("bool_ke_nombor".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("bool_to_int".to_string(), Ty::Fn(Box::new(Ty::Bool), Box::new(Ty::Int), Effect::Pure));
+    c = c.extend("nombor_ke_teks".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::String), Effect::Pure));
+    c = c.extend("int_to_string".to_string(), Ty::Fn(Box::new(Ty::Int), Box::new(Ty::String), Effect::Pure));
+
     c
 }
 
@@ -378,7 +487,16 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
             let (t2, eff2) = type_check(ctx, e2)?;
             let eff = eff1.join(eff2);
             match op {
-                BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
+                BinOp::Add => {
+                    if t1 == Ty::String && t2 == Ty::String {
+                        Ok((Ty::String, eff))
+                    } else if t1 == Ty::Int && t2 == Ty::Int {
+                        Ok((Ty::Int, eff))
+                    } else {
+                        return Err(TypeError::TypeMismatch { expected: t1, found: t2 });
+                    }
+                }
+                BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
                     if t1 != Ty::Int {
                         return Err(TypeError::TypeMismatch { expected: Ty::Int, found: t1 });
                     }

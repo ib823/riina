@@ -484,26 +484,10 @@ impl Program {
             let lam = params.iter().rev().fold(*body, |acc, (p, ty)| {
                 Expr::Lam(p.clone(), ty.clone(), Box::new(acc))
             });
-            // Build the function type for the LetRec annotation
-            let fn_ty = params.iter().rev().fold(
-                Ty::Fn(
-                    Box::new(params.last().map(|(_, t)| t.clone()).unwrap_or(Ty::Unit)),
-                    Box::new(return_ty.clone()),
-                    effect,
-                ),
-                |acc_ty, (_, param_ty)| {
-                    // Only wrap if we have more than one param (curried)
-                    if acc_ty != Ty::Fn(
-                        Box::new(param_ty.clone()),
-                        Box::new(return_ty.clone()),
-                        effect,
-                    ) {
-                        Ty::Fn(Box::new(param_ty.clone()), Box::new(acc_ty), effect)
-                    } else {
-                        acc_ty
-                    }
-                },
-            );
+            // Build the curried function type for the LetRec annotation
+            let fn_ty = params.iter().rev().fold(return_ty.clone(), |ret, (_, param_ty)| {
+                Ty::Fn(Box::new(param_ty.clone()), Box::new(ret), effect)
+            });
             Expr::LetRec(name, fn_ty, Box::new(lam), continuation)
         }
 

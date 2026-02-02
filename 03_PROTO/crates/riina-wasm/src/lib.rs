@@ -120,7 +120,7 @@ fn do_parse(source: &str) -> Result<riina_types::Expr, String> {
 }
 
 fn do_typecheck(expr: &riina_types::Expr) -> Result<String, String> {
-    let ctx = riina_typechecker::Context::new();
+    let ctx = riina_typechecker::register_builtin_types(&riina_typechecker::Context::new());
     match riina_typechecker::type_check(&ctx, expr) {
         Ok((ty, eff)) => Ok(format!("Type: {ty:?}, Effect: {eff:?}")),
         Err(e) => Err(format!("Type error: {e:?}")),
