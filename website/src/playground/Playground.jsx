@@ -10,48 +10,48 @@ const EXAMPLES = [
     name: 'Hello Dunia',
     code: `// Hello World in RIINA (Bahasa Melayu)
 biar nama = "Dunia";
-cetak("Hello, " + nama + "!");`
+biar mesej = "Selamat datang, " + nama + "!";
+mesej`
   },
   {
-    name: 'Fibonacci',
-    code: `// Fibonacci sequence
-fungsi fibonacci(n: Nombor) -> Nombor {
-  kalau n <= 1 {
-    pulang n;
-  }
-  pulang fibonacci(n - 1) + fibonacci(n - 2);
+    name: 'Arithmetic',
+    code: `// Arithmetic with variables
+biar x = 5;
+biar y = 10;
+biar hasil = x + y * 2;
+hasil`
+  },
+  {
+    name: 'Functions',
+    code: `// Function declaration and application
+fungsi ganda(x: Nombor) -> Nombor {
+  x * 2
 }
-biar hasil = fibonacci(10);`
-  },
-  {
-    name: 'Secret Type',
-    code: `// Secret type demonstration
-biar kunci: Rahsia<Teks> = rahsia("kata-laluan-123");
-// This would be rejected by the type checker:
-// cetak(kunci);  // ERROR: cannot declassify without policy
-biar selamat = dedah(kunci, dasar: "audit_log");`
-  },
-  {
-    name: 'Effect Gate',
-    code: `// Effect-gated I/O
-fungsi baca_fail(nama: Teks) -> Teks kesan IO {
-  biar isi = baca(nama);
-  pulang isi;
+fungsi tambah_satu(x: Nombor) -> Nombor {
+  x + 1
 }
-// Pure functions cannot call effectful ones
-fungsi kira(x: Nombor) -> Nombor bersih {
-  pulang x * 2;
+biar h = ganda 21;
+tambah_satu h`
+  },
+  {
+    name: 'Conditionals',
+    code: `// Conditional expressions (kalau / lain)
+biar umur = 20;
+kalau umur >= 18 {
+  "Dewasa"
+} lain {
+  "Kanak-kanak"
 }`
   },
   {
     name: 'Pattern Match',
-    code: `// Pattern matching
-biar bentuk = Bulatan(5.0);
-biar luas = padan bentuk {
-  Bulatan(r) => 3.14159 * r * r,
-  SegiEmpat(w, h) => w * h,
-  Segitiga(b, h) => 0.5 * b * h,
-};`
+    code: `// Pattern matching (padan)
+biar kod = 1;
+padan kod {
+  0 => "sifar",
+  1 => "satu",
+  _ => "lain-lain",
+}`
   }
 ];
 
@@ -90,15 +90,24 @@ const PlaygroundPage = ({ onNavigate }) => {
           }
           if (result) {
             if (result.ok) {
-              if (result.diagnostics !== undefined) setDiagnostics(result.diagnostics);
-              if (result.output !== undefined) {
-                // Determine which tab requested this
-                if (id && id.startsWith('c_')) setCOutput(result.output);
-                else if (id && id.startsWith('ir_')) setIrOutput(result.output);
-                else setDiagnostics(result.diagnostics || 'OK');
+              if (id && id.startsWith('chk_')) {
+                setDiagnostics(result.diagnostics || 'OK');
+              } else if (id && id.startsWith('c_')) {
+                setCOutput(result.output || '');
+              } else if (id && id.startsWith('ir_')) {
+                setIrOutput(result.output || '');
               }
             } else {
-              setDiagnostics(result.error || 'Unknown error');
+              const errMsg = result.error || 'Unknown error';
+              if (id && id.startsWith('chk_')) {
+                setDiagnostics(errMsg);
+              } else if (id && id.startsWith('c_')) {
+                setCOutput(errMsg);
+              } else if (id && id.startsWith('ir_')) {
+                setIrOutput(errMsg);
+              } else {
+                setDiagnostics(errMsg);
+              }
             }
           }
         }

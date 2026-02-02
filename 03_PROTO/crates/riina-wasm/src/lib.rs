@@ -115,7 +115,8 @@ fn json_err(msg: &str) -> String {
 
 fn do_parse(source: &str) -> Result<riina_types::Expr, String> {
     let mut parser = riina_parser::Parser::new(source);
-    parser.parse_expr().map_err(|e| format!("Parse error: {e:?}"))
+    let program = parser.parse_program().map_err(|e| format!("Parse error: {e:?}"))?;
+    Ok(program.desugar())
 }
 
 fn do_typecheck(expr: &riina_types::Expr) -> Result<String, String> {
