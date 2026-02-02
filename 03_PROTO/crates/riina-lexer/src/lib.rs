@@ -1517,6 +1517,21 @@ mod tests {
     }
 
     #[test]
+    fn test_bahasa_melayu_pure_keyword() {
+        // Input: "bersih" (pure) in Bahasa Melayu
+        // Expected: KwPure
+        // Rationale: Pure effect annotation in native language
+        let input = "bersih pure";
+        let mut lexer = Lexer::new(input);
+
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwPure,
+            "'bersih' (pure) must tokenize to TokenKind::KwPure");
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwPure,
+            "'pure' must tokenize to TokenKind::KwPure");
+        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
+    }
+
+    #[test]
     fn test_require_grant_keywords() {
         let input = "require grant perlukan beri";
         let mut lexer = Lexer::new(input);

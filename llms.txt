@@ -1,0 +1,51 @@
+# RIINA
+
+> RIINA (Rigorous Immutable Invariant, No Assumptions) is a formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system where all security properties are mathematically proven in Coq.
+
+## Quick Facts
+
+- File extension: `.rii`
+- License: MPL-2.0
+- Repository: https://github.com/ib823/proof
+- Full reference: 04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md
+
+## Key Keywords
+
+| Bahasa Melayu | English | Purpose |
+|---|---|---|
+| `fungsi` | fn | Function declaration |
+| `biar` | let | Variable binding |
+| `kalau` | if | Conditional |
+| `lain` | else | Else branch |
+| `pulang` | return | Return value |
+| `padan` | match | Pattern matching |
+| `untuk` | for | For loop |
+| `kesan` | effect | Effect annotation |
+| `rahsia` | secret | Secret type |
+| `dedah` | declassify | Declassify data |
+
+## Types
+
+Primitives: `Nombor` (Int), `Teks` (String), `Benar` (Bool), `Kosong` (Unit)
+Security: `Rahsia<T>` (Secret), `Bukti<T>` (Proof)
+Effects: `Bersih` (Pure), `Tulis` (Write), `Baca` (Read), `Rangkaian` (Network), `Kripto` (Crypto)
+
+## Minimal Example
+
+```riina
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    x + y
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil = tambah(3, 4);
+    cetak(hasil);
+    pulang 0;
+}
+```
+
+## Docs
+
+- Full AI reference: /04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md
+- Bahasa Melayu syntax spec: /01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md
+- Examples: /07_EXAMPLES/

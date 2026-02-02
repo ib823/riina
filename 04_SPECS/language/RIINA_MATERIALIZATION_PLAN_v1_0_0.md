@@ -36,6 +36,8 @@
   - [7.9 P2: Traceability Index](#79-p2-traceability-index)
   - [7.10 Multi-Prover Verification](#710-multi-prover-verification)
   - [7.11 Compiler Correctness](#711-compiler-correctness)
+  - [7.12 P0: Proof-Depth Gaps](#712-p0-proof-depth-gaps-session-71-audit)
+  - [7.13 P1: Typechecker Gaps A1-A5](#713-p1-typechecker-gaps-a1-a5-session-71-audit)
 - [8. PHASE 4: DEVELOPER EXPERIENCE](#8-phase-4-developer-experience)
   - [8.5 AI-Native Developer Experience](#85-ai-native-developer-experience)
 - [9. PHASE 5: ECOSYSTEM & DISTRIBUTION](#9-phase-5-ecosystem--distribution)
@@ -48,6 +50,10 @@
   - [11.5 M7.5 — WASM Playground](#115-m75--wasm-playground)
   - [11.6 M7.6 — Platform Backend Verification](#116-m76--platform-backend-verification)
 - [12. PHASE 8: LONG-TERM VISION](#12-phase-8-long-term-vision)
+  - [12.9 Website Mobile-First Responsive Overhaul](#129-website-mobile-first-responsive-overhaul)
+  - [12.10 Verified Layout — Compile-Time UI/UX Correctness](#1210-verified-layout--compile-time-uiux-correctness)
+  - [12.11 AI-First Language Design — The Vibe Coding Standard](#1211-ai-first-language-design--the-vibe-coding-standard)
+  - [12.12 Research Domain Cross-Reference](#1212-research-domain-cross-reference)
 - [13. EXECUTION ORDER & DEPENDENCY GRAPH](#13-execution-order--dependency-graph)
 - [14. FILES TO CREATE OR MODIFY](#14-files-to-create-or-modify)
 - [15. VERIFICATION GATES](#15-verification-gates)
@@ -1439,20 +1445,20 @@ fungsi utama() -> () kesan IO {
 
 This phase addresses ALL gaps identified by the exhaustive 4-agent audit (2026-01-30). Items are ordered P0→P3 by priority.
 
-### 7.1 Current Status
+### 7.1 Current Status (Updated Session 71)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Completed proofs (Qed) | 5,419 | 4,885 active build + 534 deprecated archive |
+| Completed proofs (Qed) | 4,551 | 4,044 active build + 507 deprecated archive |
 | Incomplete proofs (admit.) | 0 | ALL ELIMINATED |
-| Incomplete proofs (Admitted.) | 0 | ALL ELIMINATED (LinearTypes.v fixed Session 58) |
-| Axioms (active build) | 5 | See 7.2 for elimination plan |
-| Compilation status | ✅ PASSING | 244 files compile clean |
-| Domain files outside build | 0 | All domain files integrated (Session 58) |
-| Research track coverage | 100% | All 55 01_RESEARCH/ tracks have Coq proofs |
-| Threat model coverage | ~1-3% | 350+ threats documented, <5 with proofs |
-| Type enforcement gaps | 14 | Across 8 type categories (annotation-only) |
-| Rust semantic alignment | 94% structural | 0% semantic (no evaluator) |
+| Incomplete proofs (Admitted.) | 7 | 3 DELTA001 + 3 Rocq 9.1 compat stubs + 1 ValRelStepLimit |
+| Axioms (active build) | 4 | 3 in NI_v2_LR + 1 in NI_v2 (deref eliminated Session 66) |
+| Compilation status | ✅ PASSING | 249 files compile clean |
+| Research domains | 67 | 17 core + 9 zero-trust + 19 Greek + 13 extended + 9 product |
+| Domains with Coq proofs | 63 | 4 without: AK, AL, AM, RIINA_Mobile_OS |
+| Proof-depth gaps | 6 domains | O (0 Qed), H (4), Q (2), F (2), CryptoSecurity (0), Industries (2 each) |
+| Typechecker gaps (A1-A5) | 5 groups | ~40% of Rust type system unproven in Coq |
+| Rust semantic alignment | 94% structural | 3 Rust-only exprs (LetRec, BinOp, FFICall) |
 
 ---
 
@@ -1460,19 +1466,18 @@ This phase addresses ALL gaps identified by the exhaustive 4-agent audit (2026-0
 
 **Goal: 0 axioms, 0 admits in active build.**
 
-**6 remaining axioms:**
+**4 remaining axioms** (down from 6 — deref eliminated Session 66, weaken_back eliminated Session 52):
 
 | # | Axiom | File | Difficulty | Strategy |
 |---|-------|------|-----------|----------|
 | 1 | `logical_relation_ref` | NI_v2_LR.v | HIGH | Prove allocation preserves store relation via store_ty_extends |
-| 2 | `logical_relation_deref` | NI_v2_LR.v | HIGH | Prove location lookup in related stores yields related values |
+| ~~2~~ | ~~`logical_relation_deref`~~ | ~~NI_v2_LR.v~~ | — | **ELIMINATED** (Session 66) |
 | 3 | `logical_relation_assign` | NI_v2_LR.v | HIGH | Prove assignment preserves store relation |
-| 4 | `logical_relation_declassify` | NI_v2_LR.v | FUNDAMENTAL | TSecret val_rel_at_type = True; declassification intentionally breaks NI. Permanent justified axiom. |
+| 4 | `logical_relation_declassify` | NI_v2_LR.v | FUNDAMENTAL | Permanent justified axiom (declassification intentionally breaks NI) |
 | 5 | `fundamental_theorem_step_0` | NI_v2.v | HIGH | Step-0 base case of fundamental theorem |
+| ~~6~~ | ~~`val_rel_store_weaken_back`~~ | — | — | **ELIMINATED** (Session 52) |
 
-~~6. `val_rel_store_weaken_back`~~ — **ELIMINATED** (Session 52)
-
-**Admits: 0** (all eliminated as of Session 53)
+**Admitted: 7** (3 DELTA001 + 3 Rocq 9.1 compat stubs + 1 ValRelStepLimit)
 
 **Owner:** Track A (formal proofs worker). Worker B on `store_rel_n` restructuring to eliminate axioms 1-3.
 
@@ -1760,6 +1765,42 @@ Prove the Rust prototype faithfully implements Coq semantics:
 2. Translation validation: For each compilation phase, test semantic preservation
 3. Differential testing: Run same programs in interpreter and compiled binary
 4. **NEW:** Verify Rust evaluator (7.6) matches Coq `step` relation rule-for-rule
+
+### 7.12 P0: Proof-Depth Gaps (Session 71 Audit)
+
+Several domains have Coq files but near-zero proven theorems. These undermine coverage claims.
+
+| Domain | File | Current Qed | Target | Action |
+|--------|------|-------------|--------|--------|
+| O — Runtime | (none) | 0 | 15+ | Create RuntimeExecution.v with core runtime safety theorems |
+| H — Concurrency | DataRaceFreedom.v, SessionTypes.v | 4 | 20+ | Expand beyond stubs (X001_ConcurrencyModel.v covers 39 but different focus) |
+| Q — Compiler | CompilerCorrectness.v | 2 | 20+ | Prove compiler pass correctness (critical for Phase 8 self-hosting) |
+| F — Memory | MemorySafety.v | 2 | 15+ | Expand (W001_VerifiedMemory.v covers 40 but different focus) |
+| G — Crypto | CryptographicSecurity.v | 0 | 10+ | Prove basic crypto type safety (ConstantTimeCrypto.v has 16 — verify overlap) |
+| Industries/ | 15 files | 2 each | 5+ each | Expand beyond minimal stubs |
+
+**See:** `06_COORDINATION/DOMAIN_COVERAGE_MATRIX.md` for full per-file Qed counts.
+
+### 7.13 P1: Typechecker Gaps A1-A5 (Session 71 Audit)
+
+~40% of the Rust type system implements rules with no Coq proof. Each gap requires adding expression constructors, typing rules, operational semantics, and progress/preservation lemmas.
+
+| Gap | Rule Group | Coq Files to Change | Effort |
+|-----|-----------|---------------------|--------|
+| A5 | LetRec + BinOp + Capability effects | Syntax.v, Typing.v, Semantics.v, Progress.v, Preservation.v | HIGH |
+| A1 | Tainted/Sanitized typing | Typing.v (add T_Tainted, T_Sanitized) | MED |
+| A4 | Session channels + FFI | Syntax.v (FFI types), Typing.v (T_Chan, T_FFICall) | MED |
+| A3 | Crypto types (ConstantTime, Zeroizing) | Typing.v (add rules) | LOW |
+| A2 | Labeled types | Typing.v (add T_Labeled) | LOW |
+
+**Approach per gap:**
+1. Add expression constructors to `foundations/Syntax.v`
+2. Add typing rules to `foundations/Typing.v`
+3. Add reduction rules to `foundations/Semantics.v`
+4. Prove progress and preservation for new rules
+5. Extend NonInterference if security-relevant
+
+**See:** `06_COORDINATION/DOMAIN_COVERAGE_MATRIX.md` §A1-A5 for Rust locations.
 
 ---
 
@@ -2511,6 +2552,82 @@ Extend the lexer to support additional native-language keyword sets:
 2. "If it compiles, it's secure" positioning
 3. Rust comparison content (technical, backed by proofs)
 4. Academic paper submissions (formal verification venues)
+
+### 12.9 Website Mobile-First Responsive Overhaul
+
+**Root cause:** `website/src/RiinaWebsite.jsx` contains ~502 inline `style={}` objects that override responsive CSS media queries. React inline styles become element-level `style=""` attributes, which have highest CSS specificity — no media query or class rule can override them.
+
+**Solution:** Strip all inline styles from RiinaWebsite.jsx and replace with CSS classes in `website/src/riina.css`.
+
+**Steps:**
+
+1. **Header/Navigation** — Replace inline flex/padding/font-size styles with `.site-header`, `.nav-links`, `.nav-link` classes. Add hamburger menu for mobile (`@media (max-width: 768px)`).
+2. **Home/Hero section** — Replace inline `fontSize: '3.5rem'`, `padding: '120px'` etc. with `.hero-title`, `.hero-subtitle`, `.hero-section` classes. Use `clamp()` for fluid typography.
+3. **All page sections** — Systematically convert every `style={{...}}` to a semantic CSS class. Use BEM or flat naming (e.g., `.feature-card`, `.proof-metric`, `.code-block`).
+4. **Grid/Flex layouts** — Replace inline `display: 'grid'`, `gridTemplateColumns` with CSS classes that use responsive breakpoints (mobile-first: single column → multi-column).
+5. **CSS file** — Add all new classes to `website/src/riina.css` with mobile-first media queries at 480px, 768px, 1024px, 1440px breakpoints.
+6. **Verification** — Test at 320px, 375px, 768px, 1024px, 1440px widths. No horizontal scroll. All text readable. Navigation usable on touch.
+
+**Files:**
+- `website/src/RiinaWebsite.jsx` — Remove all `style={{}}` props
+- `website/src/riina.css` — Add all replacement classes + responsive rules
+
+**Estimated scope:** ~502 inline style removals, ~200+ CSS class definitions.
+
+### 12.10 Verified Layout — Compile-Time UI/UX Correctness
+
+**Thesis:** "If it compiles, the UI/UX is perfect."
+
+Extend RIINA's compile-time guarantees to the visual layer. Layout types (`Susun<T>`, `Lentur`, `Grid`) carry proof obligations that the compiler verifies at compile time — no overflow at any viewport, WCAG AAA accessibility, cross-platform visual equivalence.
+
+**Research track:** `01_RESEARCH/57_DOMAIN_AL_VERIFIED_LAYOUT/RESEARCH_AL01_FOUNDATION.md`
+
+**Prior art:** Cassius/VizAssert (UW, PLDI 2018/OOPSLA 2019) — CSS formalization + SMT verification. RIINA integrates this into the type system (world-first).
+
+**Phases:**
+1. **AL-1:** Formal layout model in Coq (box model, flexbox, grid, viewport) — ~85 proofs
+2. **AL-2:** Accessibility proofs (contrast, touch targets, typography, forms) — ~48 proofs
+3. **AL-3:** Responsive proofs (∀-viewport correctness, breakpoint continuity) — ~43 proofs
+4. **AL-4:** Compiler integration (layout types, obligation generation, constraint solver)
+5. **AL-5:** Platform codegen (CSS, SwiftUI, Compose, Canvas emitters with equivalence proofs)
+
+**Total:** ~225 proofs across 26 new files. 105 verified properties (47 layout + 38 accessibility + 12 performance + 8 cross-platform).
+
+### 12.11 AI-First Language Design — The Vibe Coding Standard
+
+**Thesis:** "The language the AI reaches for first."
+
+Make RIINA the ideal language for AI code generation (vibe coding). RIINA's compiler proves what humans don't read — the perfect safety net for AI-generated code.
+
+**Research track:** `01_RESEARCH/58_DOMAIN_AM_AI_FIRST_LANGUAGE/RESEARCH_AM01_FOUNDATION.md`
+
+**The 12 AI-writability properties:** Unambiguous grammar, one way to do things, strong types as spec, fix hints in errors, compiler-in-the-loop API, AI context reference, canonical style, rich examples, AI-discoverable docs, predictable semantics, composable abstractions, self-documenting types. RIINA scores 7.5/12 today; target 12/12.
+
+**Phases:**
+1. **AM-1 (P0):** AI context infrastructure — language reference doc (≤40K tokens), expanded `all_examples.rii`, `llms.txt`, `llms-full.txt`
+2. **AM-2 (P1):** Compiler-in-the-loop — `riinac check --json`, fix hints, `--stdin` mode, error code catalog
+3. **AM-3 (P2):** Training data corpus — 100+ error/fix pairs, 100+ intent→code pairs, 50+ Python→RIINA comparisons
+4. **AM-4 (P1):** AI IDE integration — `.cursor/rules`, `.claude/project.md`, `.github/copilot-instructions.md`, MCP server
+5. **AM-5 (P2):** Ecosystem signals — GitHub topics, documentation site, blog content, AI benchmark suite
+
+**Tagline:** *"Write with vibes. Ship with proofs."*
+
+### 12.12 Research Domain Cross-Reference
+
+Phase 8 items map to the following research domains and Coq formalizations:
+
+| Phase 8 Item | Research Domain(s) | Foundation Doc | Coq File(s) |
+|-------------|-------------------|----------------|-------------|
+| 12.1 Self-Hosting | R (Certified Compilation), Q (Compiler) | `01_RESEARCH/18_DOMAIN_R_*/RESEARCH_R01_FOUNDATION.md` | `TranslationValidation.v` |
+| 12.2 Hardware Verification | S (Hardware Contracts), D (Hardware Security) | `01_RESEARCH/19_DOMAIN_S_*/RESEARCH_S01_FOUNDATION.md` | `S001_HardwareContracts.v`, `HardwareSecurity.v` |
+| 12.3 Verified OS | U (Runtime Guardian), RIINA_OS | `01_RESEARCH/21_DOMAIN_U_*/RESEARCH_U01_FOUNDATION.md` | `U001_RuntimeGuardian.v`, `VerifiedMicrokernel.v` |
+| 12.4 Multi-Language Keywords | — (lexer extension, no research domain) | — | — |
+| 12.5-12.8 Content/Revenue/Community | — (business/strategy, no research domain) | — | — |
+| 12.9 Website Mobile | — (engineering task, no research domain) | — | — |
+| 12.10 Verified Layout | AL (Verified Layout) | `01_RESEARCH/57_DOMAIN_AL_*/RESEARCH_AL01_FOUNDATION.md` | — (planned) |
+| 12.11 AI-First Language | AM (AI-First Language) | `01_RESEARCH/58_DOMAIN_AM_*/RESEARCH_AM01_FOUNDATION.md` | — (planned) |
+
+**Full domain coverage matrix:** `06_COORDINATION/DOMAIN_COVERAGE_MATRIX.md` (67 domains, tracks A-AM + product domains)
 
 ---
 
