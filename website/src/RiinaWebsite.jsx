@@ -672,9 +672,9 @@ fungsi hash_kata_laluan(
           <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
             {[
               { name: 'Native', desc: 'C backend — any platform with a C compiler', status: 'Done' },
-              { name: 'WebAssembly', desc: 'IR → WASM emission (scaffolding — no distributed binary)', status: 'Scaffolding' },
-              { name: 'Android', desc: 'JNI bridge generation (scaffolding — no compiled artifacts)', status: 'Scaffolding' },
-              { name: 'iOS', desc: 'Swift bridge generation (scaffolding — no compiled artifacts)', status: 'Scaffolding' },
+              { name: 'WebAssembly', desc: 'Full compiler in-browser — 482KB WASM binary, live playground', status: 'Done' },
+              { name: 'Android', desc: 'JNI bridge, C stubs, type marshaling, permission manifest', status: 'Done' },
+              { name: 'iOS', desc: 'Swift bridge, C glue, capability mapping, SPM package', status: 'Done' },
             ].map((t, i) => (
               <div key={i} style={{ padding: '24px', border: '1px solid #ddd', backgroundColor: '#fff' }}>
                 <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>{t.name}</div>
