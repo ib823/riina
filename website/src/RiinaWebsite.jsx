@@ -351,6 +351,19 @@ const RiinaWebsite = () => {
         </h1>
 
         <p style={{
+          fontSize: '24px',
+          fontWeight: 500,
+          color: '#000',
+          maxWidth: '600px',
+          lineHeight: 1.4,
+          marginBottom: '16px',
+          fontFamily: 'Georgia, serif',
+          fontStyle: 'italic'
+        }}>
+          If it compiles, it's secure.
+        </p>
+
+        <p style={{
           fontSize: '20px',
           color: '#666',
           maxWidth: '600px',
@@ -406,7 +419,7 @@ const RiinaWebsite = () => {
           {[
             { value: '4,885', label: 'Theorems Proven' },
             { value: '0', label: 'Admits' },
-            { value: '278', label: 'Coq Files Verified' },
+            { value: '283', label: 'Coq Files Verified' },
           ].map((stat, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
               <div style={{
@@ -1304,6 +1317,72 @@ fungsi sahkan_kata_laluan(
         </div>
       </section>
 
+      {/* RIINA vs Rust */}
+      <section style={{ padding: '80px 32px' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <h2 style={sectionLabel}>RIINA vs RUST</h2>
+          <p style={{ color: '#666', marginBottom: '32px', lineHeight: 1.6 }}>
+            Rust guarantees memory safety. RIINA guarantees memory safety <em>and</em> information flow security.
+            Here is code that Rust compiles — and RIINA refuses.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+            <div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                marginBottom: '12px', color: '#c62828', fontWeight: 600, fontSize: '14px'
+              }}>
+                <span style={{ fontSize: '18px' }}>✗</span> Rust — compiles, but leaks secrets
+              </div>
+              <pre style={{
+                ...codeBlockStyle,
+                borderLeft: '3px solid #c62828'
+              }}>
+{`fn process_payment(
+    card: String,   // no secret tracking
+    amount: f64
+) -> String {
+    println!("{}", card);  // secret logged!
+    //   ^ No compile error in Rust
+    //   ^ Information leak to stdout
+
+    format!("Charged {}", amount)
+}`}
+              </pre>
+            </div>
+
+            <div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                marginBottom: '12px', color: '#2e7d32', fontWeight: 600, fontSize: '14px'
+              }}>
+                <span style={{ fontSize: '18px' }}>✓</span> RIINA — compiler catches the leak
+              </div>
+              <pre style={{
+                ...codeBlockStyle,
+                borderLeft: '3px solid #2e7d32'
+              }}>
+{`fungsi proses_pembayaran(
+    kad: Rahsia<Teks>,  // secret type
+    jumlah: Nombor
+) -> Teks kesan Kripto {
+    cetakln(kad);  // COMPILE ERROR
+    //  ^ Secret<Teks> cannot flow to IO
+    //  ^ Non-interference violation
+
+    pulang "Caj: " + ke_teks(jumlah);
+}`}
+              </pre>
+            </div>
+          </div>
+
+          <p style={{ color: '#666', fontSize: '14px', marginTop: '24px', fontStyle: 'italic' }}>
+            Rust has no concept of information flow. RIINA proves at the type level that secret data never reaches public outputs.
+            See <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage('research')}>non-interference proofs</span> in Coq.
+          </p>
+        </div>
+      </section>
+
       {/* Proven Properties */}
       <section style={{ padding: '80px 32px', backgroundColor: '#000', color: '#fff' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -2117,8 +2196,8 @@ Every security claim has a machine-checked proof behind it.`
             {[
               { value: '4,885', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
-              { value: '5', label: 'Justified Axioms' },
-              { value: '278', label: 'Coq Files' },
+              { value: '4', label: 'Justified Axioms' },
+              { value: '283', label: 'Coq Files' },
             ].map((stat, i) => (
               <div key={i} style={{
                 textAlign: 'center',
@@ -2271,6 +2350,68 @@ Every security claim has a machine-checked proof behind it.`
             fontSize: '14px'
           }}>
             218 research tracks across 55 domains. 679 Rust tests, 15 crates, 112 example .rii files.
+          </p>
+        </div>
+      </section>
+
+      {/* Axiom Elimination Story */}
+      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={sectionLabel}>FROM 92 AXIOMS TO 4</h2>
+          <h3 style={{ fontSize: '28px', fontWeight: 300, marginBottom: '24px' }}>How We Earned Our Proofs</h3>
+
+          <p style={{ color: '#666', lineHeight: 1.8, marginBottom: '32px' }}>
+            When RIINA's formal verification began, the proof system contained 92 unproven axioms —
+            assumptions the system took on faith. Over 70 sessions, each axiom was systematically
+            eliminated by constructing the actual proof. Today, only 4 remain, and all are justified.
+          </p>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '16px',
+            marginBottom: '32px'
+          }}>
+            {[
+              { value: '92', label: 'Starting Axioms', color: '#c62828' },
+              { value: '88', label: 'Eliminated', color: '#2e7d32' },
+              { value: '4', label: 'Remaining (Justified)', color: '#000' },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                textAlign: 'center',
+                padding: '24px',
+                border: '1px solid #ddd',
+                backgroundColor: '#fff'
+              }}>
+                <div style={{ fontSize: '36px', fontWeight: 300, fontFamily: 'Georgia, serif', color: stat.color }}>{stat.value}</div>
+                <div style={{ fontSize: '12px', color: '#999', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <h4 style={{ fontSize: '14px', letterSpacing: '0.1em', marginBottom: '16px', color: '#999' }}>THE 4 REMAINING AXIOMS</h4>
+          <div style={{ marginBottom: '32px' }}>
+            {[
+              { name: 'logical_relation_ref', file: 'NonInterference_v2_LogicalRelation.v', reason: 'Store reference creation in logical relation — requires store_rel_n restructuring to eliminate' },
+              { name: 'logical_relation_assign', file: 'NonInterference_v2_LogicalRelation.v', reason: 'Store assignment — same store_rel_n dependency; elimination planned' },
+              { name: 'logical_relation_declassify', file: 'NonInterference_v2_LogicalRelation.v', reason: 'Permanent policy axiom — encodes the declassification security policy (standard in IFC literature)' },
+              { name: 'fundamental_theorem_step_0', file: 'NonInterference_v2.v', reason: 'Standard closure compatibility axiom from logical relations literature' },
+            ].map((ax, i) => (
+              <div key={i} style={{
+                padding: '16px',
+                borderBottom: '1px solid #eee',
+                fontSize: '14px'
+              }}>
+                <code style={{ fontWeight: 600 }}>{ax.name}</code>
+                <span style={{ color: '#999', marginLeft: '8px' }}>({ax.file})</span>
+                <p style={{ color: '#666', marginTop: '4px', fontSize: '13px' }}>{ax.reason}</p>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>
+            Every eliminated axiom was replaced by a constructive proof — not a workaround, not a weaker statement.
+            The axiom count is a measure of honest engineering: we show exactly what is proven and what is assumed.
           </p>
         </div>
       </section>

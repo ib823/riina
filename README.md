@@ -2,7 +2,11 @@
 
 **Formally verified programming language.**
 
+***If it compiles, it's secure.***
+
 Security properties are not tested, not assumed — they are *mathematically proven* at compile time.
+
+**[Try the Playground](https://ib823.github.io/riina/#playground)** | **[RIINA vs Rust](07_EXAMPLES/showcase/riina_vs_rust/)** | **[Website](https://ib823.github.io/riina/)**
 
 ```
   ██████╗ ██╗██╗███╗   ██╗ █████╗

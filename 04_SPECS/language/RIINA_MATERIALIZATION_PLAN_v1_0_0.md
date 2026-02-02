@@ -2477,6 +2477,41 @@ Build a verified microkernel using RIINA (Track U):
 2. Verified secure boot chain
 3. Runs on commodity ARM/RISC-V hardware
 
+### 12.4 Multi-Language Keywords (Mandarin, Hindi, Arabic, Tamil)
+
+Extend the lexer to support additional native-language keyword sets:
+1. Define keyword mappings per language
+2. Lexer language selection via `#bahasa mandarin` pragma or CLI flag
+3. Maintain Bahasa Melayu as default and reference syntax
+
+### 12.5 Video & Content Strategy
+
+1. 90-second "RIINA catches what Rust misses" demo video (terminal recording)
+2. Axiom elimination blog post / video — from 92 to 4
+3. Conference talk materials: POPL, ICFP, Black Hat, RustConf
+4. Technical blog series on formal verification in practice
+
+### 12.6 Revenue Model
+
+1. Enterprise support contracts (SLA-backed)
+2. Compliance certification service (auditor-ready proof packages)
+3. Training: "RIINA for Security Engineers" course
+4. Hosted verification service (CI/CD integration for teams)
+
+### 12.7 Audience-Segmented Website
+
+1. Developer landing: Playground → Docs → GitHub
+2. CTO/Enterprise landing: Compliance matrix → Case studies → Pricing
+3. Academic landing: Papers → Coq source → Formal specs
+4. Security Researcher landing: Proof browser → Axiom list → Audit trail
+
+### 12.8 Community Launch Strategy
+
+1. Hacker News, r/programming, r/rust, lobste.rs announcements
+2. "If it compiles, it's secure" positioning
+3. Rust comparison content (technical, backed by proofs)
+4. Academic paper submissions (formal verification venues)
+
 ---
 
 ## 13. EXECUTION ORDER & DEPENDENCY GRAPH

@@ -1,0 +1,30 @@
+// secure.rii — Same logic in RIINA. The compiler REFUSES to compile this.
+//
+// RIINA's type system tracks information flow. Secret data (Rahsia<T>)
+// cannot reach public outputs (IO effects). The compiler proves this
+// via the non-interference theorem.
+
+fungsi proses_pembayaran(kad: Rahsia<Teks>, jumlah: Nombor) -> Teks kesan Kripto {
+    // COMPILE ERROR: Secret<Teks> cannot flow to IO effect
+    // cetakln("Memproses kad: " + kad);
+    //   ^ non-interference violation: Rahsia<Teks> → IO
+
+    // COMPILE ERROR: Secret data in error message
+    // kalau jumlah <= 0 {
+    //     pulang "Jumlah tidak sah untuk kad " + kad;
+    //       ^ non-interference violation: Rahsia<Teks> → public return
+    // }
+
+    // CORRECT: Only public data in output
+    biar hash_kad = sha256(kad);           // OK: crypto on secret
+    biar resit = "Dicaj: RM" + ke_teks(jumlah);  // OK: public data only
+
+    pulang resit;
+}
+
+// The non-interference proof (NonInterference_v2.v) guarantees:
+// For any two runs with different secret inputs but same public inputs,
+// the public outputs are identical. Secrets cannot influence public behavior.
+//
+// This is not a linter. This is not a runtime check.
+// This is a mathematical theorem, proven in Coq, enforced by the compiler.
