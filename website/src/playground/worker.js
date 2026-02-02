@@ -8,7 +8,9 @@ let wasmMemory = null;
 async function initWasm() {
   if (wasmInstance) return;
   try {
-    const response = await fetch('/riina_wasm.wasm');
+    // Derive base path from worker URL (handles /riina/ on GitHub Pages)
+    const base = self.location.href.replace(/\/assets\/.*$/, '/');
+    const response = await fetch(base + 'riina_wasm.wasm');
     const bytes = await response.arrayBuffer();
     const { instance } = await WebAssembly.instantiate(bytes, {
       env: { memory: new WebAssembly.Memory({ initial: 256 }) }
