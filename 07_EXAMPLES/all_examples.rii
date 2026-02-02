@@ -1,0 +1,527 @@
+/// ============================================================================
+/// ALL_EXAMPLES.RII — Comprehensive RIINA Language Examples
+/// Contoh lengkap bahasa pengaturcaraan RIINA
+/// 30+ annotated examples covering every major language feature
+/// ============================================================================
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 1: Hello World
+/// The simplest RIINA program. Entry point is fungsi utama().
+/// kesan Tulis declares this function performs output.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi hello_dunia() -> Nombor kesan Tulis {
+    cetak("Selamat pagi, dunia!");
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 2: Variables and Let Bindings
+/// biar creates immutable bindings. Semicolons separate statements.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_pembolehubah() -> Nombor kesan Tulis {
+    biar nama = "Ahmad";
+    biar umur = 25;
+    biar aktif = betul;
+    cetak(nama);
+    cetak(umur);
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 3: Arithmetic and Binary Operators
+/// Supports +, -, *, /, % and comparison operators.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_aritmetik() -> Nombor kesan Bersih {
+    biar a = 10;
+    biar b = 3;
+    biar tambah = a + b;
+    biar tolak = a - b;
+    biar darab = a * b;
+    biar bahagi = a / b;
+    biar baki = a % b;
+    biar sama = a == b;
+    biar besar = a > b;
+    tambah
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 4: Pure Function with Effect Annotation
+/// kesan Bersih means no side effects. Compiler enforces this.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    x + y
+}
+
+fungsi gandakan(x: Nombor) -> Nombor kesan Bersih {
+    x * 2
+}
+
+fungsi kuadrat(x: Nombor) -> Nombor kesan Bersih {
+    x * x
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 5: Conditionals (kalau/lain)
+/// Both branches are required. If-else is an expression.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi max(a: Nombor, b: Nombor) -> Nombor kesan Bersih {
+    kalau a > b { a } lain { b }
+}
+
+fungsi suhu_deskripsi(suhu: Nombor) -> Teks kesan Bersih {
+    kalau suhu > 30 {
+        "Panas"
+    } lain {
+        kalau suhu > 20 {
+            "Sederhana"
+        } lain {
+            "Sejuk"
+        }
+    }
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 6: Recursion
+/// Recursive functions call themselves. Base case prevents infinite recursion.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi faktorial(n: Nombor) -> Nombor kesan Bersih {
+    kalau n == 0 {
+        1
+    } lain {
+        n * faktorial(n - 1)
+    }
+}
+
+fungsi fibonacci(n: Nombor) -> Nombor kesan Bersih {
+    kalau n <= 1 {
+        n
+    } lain {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 7: Pattern Matching (padan)
+/// Match on literal values. _ is wildcard. Arms use => (fat arrow).
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi periksa_nombor(x: Nombor) -> Teks kesan Bersih {
+    padan x {
+        0 => "kosong",
+        1 => "satu",
+        2 => "dua",
+        _ => "lain",
+    }
+}
+
+fungsi hari_dalam_minggu(d: Nombor) -> Teks kesan Bersih {
+    padan d {
+        1 => "Isnin",
+        2 => "Selasa",
+        3 => "Rabu",
+        4 => "Khamis",
+        5 => "Jumaat",
+        6 => "Sabtu",
+        7 => "Ahad",
+        _ => "Tidak sah",
+    }
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 8: Pairs and Tuples
+/// (e1, e2) creates a pair. fst/snd extract components.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_pasangan() -> Nombor kesan Bersih {
+    biar pasangan = (42, "jawapan");
+    biar pertama = fst pasangan;
+    pertama
+}
+
+fungsi tukar(p: (Nombor, Nombor)) -> (Nombor, Nombor) kesan Bersih {
+    (snd p, fst p)
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 9: Higher-Order Functions
+/// Functions can take and return other functions.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi guna_fungsi(f: Fn(Nombor, Nombor), x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    f(x, y)
+}
+
+fungsi buat_penambah(n: Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    fungsi(x: Nombor) -> Nombor { x + n }
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 10: Pipe Operator (|>)
+/// Left-to-right function composition. a |> f is f(a).
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_paip() -> Nombor kesan Bersih {
+    biar hasil = 5
+        |> gandakan
+        |> gandakan
+        |> tambah(1);
+    hasil
+}
+
+fungsi paip_dengan_lambda() -> Nombor kesan Bersih {
+    10
+        |> fungsi(x: Nombor) -> Nombor { x + 5 }
+        |> fungsi(x: Nombor) -> Nombor { x * 2 }
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 11: Closures
+/// Inner functions capture variables from enclosing scope.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi buat_pengganda(faktor: Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    fungsi darab(x: Nombor) -> Nombor {
+        x * faktor
+    }
+    pulang darab;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 12: String Operations
+/// Teks is the string type. Builtin string functions available.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_teks() -> Nombor kesan Tulis {
+    biar nama = "Ahmad";
+    biar salam = gabung_teks("Selamat pagi, ", nama);
+    biar pjg = panjang(salam);
+    cetak(salam);
+    cetak(pjg);
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 13: For Loop (untuk ... dalam)
+/// Iterates over a collection. Desugars to map internally.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_untuk() -> Nombor kesan Tulis {
+    untuk i dalam [1, 2, 3, 4, 5] {
+        cetak(i);
+    }
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 14: While Loop (selagi)
+/// Loops while condition is true.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_selagi() -> Nombor kesan Tulis {
+    biar ubah kiraan = 0;
+    selagi kiraan < 5 {
+        cetak(kiraan);
+        kiraan = kiraan + 1;
+    }
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 15: Infinite Loop (ulang)
+/// Loop forever until keluar (break).
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_ulang() -> Nombor kesan Tulis {
+    biar ubah kiraan = 0;
+    ulang {
+        cetak(kiraan);
+        kiraan = kiraan + 1;
+        kalau kiraan >= 5 {
+            keluar;
+        } lain {
+            ()
+        }
+    }
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 16: Guard Clause (pastikan)
+/// Early return pattern. pastikan cond lain { error }; continuation
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi bahagi_selamat(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    pastikan y != 0 lain { 0 };
+    x / y
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 17: Secret Types (Rahsia)
+/// Rahsia<T> wraps confidential data. Cannot be printed or leaked.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_rahsia() -> Nombor kesan Tulis {
+    biar katalaluan = sulit "kata_rahsia";
+    /// cetak(katalaluan);  -- COMPILE ERROR: cannot output Rahsia<Teks>
+    cetak("Kata laluan disimpan dengan selamat");
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 18: Declassification (dedah)
+/// Controlled release of secret data with proof justification.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi dedah_contoh(rahsia_data: Rahsia<Teks>) -> Teks kesan Bersih {
+    dedah rahsia_data dengan bukti "audit_sah"
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 19: Classify Data (sulit)
+/// sulit makes public data secret.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi sulit_contoh() -> Rahsia<Teks> kesan Bersih {
+    biar data_awam = "maklumat_sensitif";
+    sulit data_awam
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 20: References (ruj)
+/// Mutable references at a security level. ruj e @Level creates, !e dereferences.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_ruj() -> Nombor kesan Bersih {
+    biar r = ruj 42 @Awam;
+    biar nilai = !r;
+    r := 100;
+    biar baru = !r;
+    baru
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 21: Effect Annotation — Multiple Effects
+/// Functions can declare multiple effects with (Effect1, Effect2).
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi baca_dan_tulis() -> Nombor kesan (Baca, Tulis) {
+    biar data = fail_baca("input.txt");
+    cetak(data);
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 22: Perform Effect (laku)
+/// Explicitly perform an effect operation.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi laku_contoh() -> Nombor kesan Sistem {
+    laku Sistem cetak("Operasi sistem");
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 23: Handle Effect (kendali)
+/// Intercept and handle effects from a computation.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi kendali_contoh() -> Nombor kesan Bersih {
+    kendali laku Tulis "log" dengan x => 0
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 24: Require and Grant Capabilities
+/// perlu Effect requires a capability. beri Effect grants it.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi perlu_rangkaian() -> Nombor kesan Rangkaian {
+    perlu Rangkaian cetak("Akses rangkaian");
+    pulang 0;
+}
+
+fungsi beri_rangkaian() -> Nombor kesan Bersih {
+    beri Rangkaian perlu_rangkaian()
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 25: FFI — Calling C Functions
+/// luaran "C" declares external C functions. Uses C types: *CChar, CInt, CVoid.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+luaran "C" {
+    fungsi puts(s: *CChar) -> CInt;
+    fungsi strlen(s: *CChar) -> CInt;
+}
+
+fungsi ffi_contoh() -> CInt kesan Sistem {
+    puts("Selamat datang ke RIINA FFI!")
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 26: Sum Types (inl/inr)
+/// Sum<T1, T2> with injection and case analysis.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_sum() -> Teks kesan Bersih {
+    biar nilai = inl 42 : Sum<Nombor, Teks>;
+    padan nilai {
+        inl n => ke_teks(n),
+        inr t => t,
+    }
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 27: Assertions
+/// tegaskan checks a boolean condition. Panics on failure.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_tegaskan() -> Nombor kesan Bersih {
+    tegaskan(betul);
+    tegaskan_sama(2 + 2, 4);
+    tegaskan_beza(1, 2);
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 28: Math Builtins
+/// Built-in mathematical functions with Bahasa Melayu names.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_matematik() -> Nombor kesan Bersih {
+    biar a = mutlak(-5);
+    biar b = minimum(3, 7);
+    biar c = maksimum(3, 7);
+    biar d = kuasa(2, 10);
+    biar e = punca(144);
+    a + b + c + d + e
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 29: Conversion Builtins
+/// Convert between types.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_tukar() -> Teks kesan Bersih {
+    biar n = 42;
+    biar t = ke_teks(n);
+    biar kembali = ke_nombor("100");
+    t
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 30: Boolean Logic
+/// betul (true), salah (false), && (and), || (or).
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_logik() -> Benar kesan Bersih {
+    biar a = betul;
+    biar b = salah;
+    biar dan_hasil = a && b;
+    biar atau_hasil = a || b;
+    atau_hasil
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 31: Labeled Types
+/// Berlabel<T, Level> attaches a security label to data.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_berlabel(data: Berlabel<Teks, Awam>) -> Teks kesan Bersih {
+    "Data berlabel"
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 32: Tainted and Sanitized Data
+/// Tercemar<T, Source> marks untrusted data. Disanitasi<T, San> marks sanitized.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_tercemar(input: Tercemar<Teks, UserInput>) -> Disanitasi<Teks, HtmlEscape> kesan Bersih {
+    /// In real code, apply sanitization logic here
+    "sanitized_output"
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 33: Nested Let Bindings
+/// Let bindings chain with semicolons. Last expression is the result.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi rantai_biar() -> Nombor kesan Bersih {
+    biar a = 1;
+    biar b = a + 2;
+    biar c = b * 3;
+    biar d = c - 1;
+    d
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 34: Unit Type
+/// Kosong / () is the unit type. Used for functions with no meaningful return.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi tiada_pulangan() -> () kesan Tulis {
+    cetak("Tiada nilai pulangan");
+    ()
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 35: Complex Program — Calculator
+/// Combining multiple features: functions, pattern matching, I/O.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi kira(op: Teks, a: Nombor, b: Nombor) -> Nombor kesan Bersih {
+    padan op {
+        "tambah" => a + b,
+        "tolak" => a - b,
+        "darab" => a * b,
+        "bahagi" => kalau b != 0 { a / b } lain { 0 },
+        _ => 0,
+    }
+}
+
+fungsi kalkulator() -> Nombor kesan Tulis {
+    biar h1 = kira("tambah", 10, 5);
+    biar h2 = kira("darab", h1, 3);
+    biar h3 = kira("bahagi", h2, 5);
+    cetak("Hasil akhir: ");
+    cetak(h3);
+    pulang 0;
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// EXAMPLE 36: Prove Expression (bukti)
+/// Create proof terms for security obligations.
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi contoh_bukti() -> Bukti<Benar> kesan Bersih {
+    bukti betul
+}
+
+/// ──────────────────────────────────────────────────────────────────────────────
+/// ENTRY POINT
+/// ──────────────────────────────────────────────────────────────────────────────
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("=== Contoh Lengkap RIINA ===");
+
+    /// Call several examples
+    biar h1 = hello_dunia();
+    biar h2 = contoh_pembolehubah();
+    biar h3 = contoh_aritmetik();
+    biar h4 = faktorial(10);
+    biar h5 = periksa_nombor(2);
+    biar h6 = contoh_pasangan();
+    biar h7 = contoh_matematik();
+    biar h8 = contoh_logik();
+    biar h9 = rantai_biar();
+
+    cetak("Faktorial 10: ");
+    cetak(h4);
+    cetak("Selesai.");
+    pulang 0;
+}
