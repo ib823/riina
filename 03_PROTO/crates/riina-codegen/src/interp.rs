@@ -610,6 +610,7 @@ impl Interpreter {
                 let r = self.eval_with_env(env, rhs)?;
                 match (op, &l, &r) {
                     (BinOp::Add, Value::Int(a), Value::Int(b)) => Ok(Value::Int(a.wrapping_add(*b))),
+                    (BinOp::Add, Value::String(a), Value::String(b)) => Ok(Value::String(format!("{a}{b}"))),
                     (BinOp::Sub, Value::Int(a), Value::Int(b)) => Ok(Value::Int(a.wrapping_sub(*b))),
                     (BinOp::Mul, Value::Int(a), Value::Int(b)) => Ok(Value::Int(a.wrapping_mul(*b))),
                     (BinOp::Div, Value::Int(a), Value::Int(b)) => {

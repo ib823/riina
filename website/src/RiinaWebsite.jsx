@@ -808,7 +808,7 @@ fungsi hash_kata_laluan(
             ))}
           </div>
           <p style={{ fontSize: '18px', color: '#888', lineHeight: 1.8, maxWidth: '800px' }}>
-            The global cybersecurity market will spend <strong style={{ color: '#fff' }}>$212 billion in 2025</strong> (Gartner) —
+            The global cybersecurity market will spend <strong style={{ color: '#fff' }}>$244 billion in 2026</strong> (Gartner) —
             mostly on tools that find bugs <em>after</em> they exist. What if the bugs never existed in the first place?
           </p>
         </div>

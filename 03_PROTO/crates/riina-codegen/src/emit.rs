@@ -632,8 +632,17 @@ impl CEmitter {
 
         // Binary operations
         self.writeln("static riina_value_t* riina_binop_add(riina_value_t* a, riina_value_t* b) {");
+        self.writeln("    if (a->tag == RIINA_TAG_STRING && b->tag == RIINA_TAG_STRING) {");
+        self.writeln("        size_t la = strlen(a->data.str_val);");
+        self.writeln("        size_t lb = strlen(b->data.str_val);");
+        self.writeln("        char* buf = (char*)malloc(la + lb + 1);");
+        self.writeln("        memcpy(buf, a->data.str_val, la);");
+        self.writeln("        memcpy(buf + la, b->data.str_val, lb);");
+        self.writeln("        buf[la + lb] = '\\0';");
+        self.writeln("        return riina_string(buf);");
+        self.writeln("    }");
         self.writeln("    if (a->tag != RIINA_TAG_INT || b->tag != RIINA_TAG_INT) {");
-        self.writeln("        fprintf(stderr, \"RIINA: add on non-int\\n\");");
+        self.writeln("        fprintf(stderr, \"RIINA: add on incompatible types\\n\");");
         self.writeln("        abort();");
         self.writeln("    }");
         self.writeln("    return riina_int(a->data.int_val + b->data.int_val);");

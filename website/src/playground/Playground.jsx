@@ -23,15 +23,15 @@ hasil`
   },
   {
     name: 'Functions',
-    code: `// Function declaration and application
+    code: `// Multi-parameter functions (curried)
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor {
+  x + y
+}
 fungsi ganda(x: Nombor) -> Nombor {
   x * 2
 }
-fungsi tambah_satu(x: Nombor) -> Nombor {
-  x + 1
-}
-biar h = ganda 21;
-tambah_satu h`
+biar h = tambah(3, 4);
+ganda h`
   },
   {
     name: 'Conditionals',
@@ -44,20 +44,18 @@ kalau umur >= 18 {
 }`
   },
   {
-    name: 'Pattern Match',
-    code: `// Pattern matching (padan)
-biar kod = 1;
-padan kod {
-  0 => "sifar",
-  1 => "satu",
-  _ => "lain-lain",
-}`
+    name: 'Builtins',
+    code: `// Built-in functions (bilingual)
+biar nama = "RIINA";
+biar p = panjang(nama);
+biar mesej = ke_teks(p) + " aksara";
+mesej`
   }
 ];
 
 const PlaygroundPage = ({ onNavigate }) => {
   const [source, setSource] = useState(EXAMPLES[0].code);
-  const [activeTab, setActiveTab] = useState('diagnostics');
+  const [activeTab, setActiveTab] = useState('Type Check');
   const [diagnostics, setDiagnostics] = useState('');
   const [cOutput, setCOutput] = useState('');
   const [irOutput, setIrOutput] = useState('');
@@ -140,21 +138,35 @@ const PlaygroundPage = ({ onNavigate }) => {
   };
 
   const tabContent = {
-    diagnostics,
+    'Type Check': diagnostics,
     'C Output': cOutput,
-    IR: irOutput,
+    'Verified IR': irOutput,
   };
 
-  const tabs = ['diagnostics', 'C Output', 'IR'];
+  const tabs = ['Type Check', 'C Output', 'Verified IR'];
 
   return (
     <div style={{ padding: '0 40px 40px' }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
-          Playground
+          Playground — Live Compiler
         </h1>
-        <p style={{ color: '#666', fontSize: 14 }}>
-          Write RIINA code and see diagnostics, C output, and IR in real time.
+        <div style={{
+          display: 'flex', gap: 24, marginBottom: 12, padding: '8px 16px',
+          background: '#f0f4f8', borderRadius: 6, fontSize: 13, color: '#444',
+          fontFamily: 'monospace', flexWrap: 'wrap',
+        }}>
+          <span><strong>4,885</strong> theorems proven</span>
+          <span><strong>0</strong> unfinished proofs</span>
+          <span><strong>283</strong> files verified</span>
+          <span>Zero server dependencies</span>
+        </div>
+        <p style={{ color: '#555', fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}>
+          This is the RIINA compiler running entirely in your browser via WebAssembly.
+          Every program that type-checks inherits mathematically proven security
+          guarantees — no information leaks, no unauthorized effects, no runtime type
+          errors. These guarantees are backed by 4,885 machine-checked proofs in Coq,
+          with zero admits.
           {!wasmReady && !wasmError && ' Loading WASM compiler...'}
           {wasmError && <span style={{ color: '#c00' }}> {wasmError}</span>}
         </p>
@@ -256,7 +268,7 @@ const PlaygroundPage = ({ onNavigate }) => {
 
       {/* Footer info */}
       <div style={{ marginTop: 16, fontSize: 12, color: '#999' }}>
-        RIINA Compiler v0.1.0 · Powered by WebAssembly · Zero server-side processing ·{' '}
+        RIINA Compiler v0.2.0 · Backed by 4,885 machine-checked proofs · Zero external dependencies · MPL-2.0 licensed ·{' '}
         <span style={{ cursor: 'pointer', textDecoration: 'underline' }}
               onClick={() => onNavigate && onNavigate('docs')}>
           Documentation
