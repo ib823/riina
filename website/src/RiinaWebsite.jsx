@@ -52,7 +52,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 4,825 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 4,885 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
   ];
 
   // Footer link mapping
@@ -404,7 +404,7 @@ const RiinaWebsite = () => {
           borderTop: '1px solid #eee'
         }}>
           {[
-            { value: '4,825', label: 'Theorems Proven' },
+            { value: '4,885', label: 'Theorems Proven' },
             { value: '0', label: 'Admits' },
             { value: '278', label: 'Coq Files Verified' },
           ].map((stat, i) => (
@@ -832,7 +832,7 @@ fungsi hash_kata_laluan(
                 "hacked" it. It never will. <strong>RIINA applies this same principle to your software.</strong>
               </p>
               <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#e8f5e9', fontSize: '13px', color: '#2e7d32' }}>
-                4,825 machine-checked proofs guarantee security properties <em>before</em> the code runs.
+                4,885 machine-checked proofs guarantee security properties <em>before</em> the code runs.
               </div>
             </div>
           </div>
@@ -2020,7 +2020,7 @@ allowed — no network, no logging. Enforced at compile time.`
 • Timing-sensitive code in masa_tetap executes in constant time
 • Secrets are zeroed before memory is freed
 
-4,825 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
+4,885 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
             },
             {
               step: '04',
@@ -2028,7 +2028,7 @@ allowed — no network, no logging. Enforced at compile time.`
               content: `RIINA's compiler itself is verified with riinac verify [--fast|--full].
 No external CI/CD — verification lives inside the compiler.
 
-The formal proofs (282 Coq files) ship with the compiler. You can audit them.
+The formal proofs (283 Coq files) ship with the compiler. You can audit them.
 4 justified axioms — all documented, none hidden.
 Every security claim has a machine-checked proof behind it.`
             }
@@ -2102,7 +2102,7 @@ Every security claim has a machine-checked proof behind it.`
     <div style={pageTopStyle}>
       <PageHeader
         title="Research"
-        subtitle="RIINA is built on formal verification in Coq, with 4,825 machine-checked theorems across 248 files. Every security property has a proof."
+        subtitle="RIINA is built on formal verification in Coq, with 4,885 machine-checked theorems across 249 files. Every security property has a proof."
       />
 
       {/* Stats */}
@@ -2115,7 +2115,7 @@ Every security claim has a machine-checked proof behind it.`
             marginBottom: '64px'
           }}>
             {[
-              { value: '4,825', label: 'Qed Proofs' },
+              { value: '4,885', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
               { value: '5', label: 'Justified Axioms' },
               { value: '278', label: 'Coq Files' },
@@ -2201,7 +2201,7 @@ Every security claim has a machine-checked proof behind it.`
           }}>
             {[
               { id: 'A', name: 'Core Type Theory & Proofs', desc: 'Type safety, non-interference, logical relations — the mathematical foundation' },
-              { id: 'B', name: 'Compiler & Prototype', desc: '13 Rust crates, 612 tests, Bahasa Melayu lexer through C code emission' },
+              { id: 'B', name: 'Compiler & Prototype', desc: '15 Rust crates, 679 tests, Bahasa Melayu lexer through C code emission' },
               { id: 'C', name: 'Language Specifications', desc: 'Grammar, AST, type system spec, effect system spec, Bahasa Melayu syntax' },
               { id: 'D–Q', name: 'Attack Surface Research', desc: '14 domains covering networking, UI/UX, data storage, performance, and more — 1,231+ threats enumerated' },
               { id: 'R', name: 'Certified Compilation', desc: 'Translation validation ensuring compiled binary matches source semantics' },
@@ -2270,7 +2270,7 @@ Every security claim has a machine-checked proof behind it.`
             color: '#666',
             fontSize: '14px'
           }}>
-            218 research tracks across 55 domains. 612 Rust tests, 15 crates, 112 example .rii files.
+            218 research tracks across 55 domains. 679 Rust tests, 15 crates, 112 example .rii files.
           </p>
         </div>
       </section>
@@ -2318,7 +2318,7 @@ Every security claim has a machine-checked proof behind it.`
         links: [{ text: 'Keyword Table (60+)', page: 'syntax' }, { text: 'Security Keywords', page: 'securityTypes' }, { text: 'Effect Keywords', page: 'effectSystem' }] },
       { title: 'Standard Library', desc: '88 builtins across 9 modules', page: 'stdlib',
         links: [{ text: 'Module Reference', page: 'stdlib' }, { text: 'std::kripto', page: 'stdlib' }, { text: 'std::io', page: 'stdlib' }] },
-      { title: 'Formal Proofs', desc: '282 Coq files, 4,825 theorems', page: 'research',
+      { title: 'Formal Proofs', desc: '283 Coq files, 4,885 theorems', page: 'research',
         links: [{ text: 'Proof Architecture', page: 'research' }, { text: 'Axiom Justifications', page: 'research' }, { text: 'Building Proofs', page: 'research' }] },
       { title: 'Examples', desc: '112 example .rii files in 9 categories', page: 'examples',
         links: [{ text: 'pengesahan.rii', page: 'examples' }, { text: 'kripto.rii', page: 'examples' }, { text: 'hello_dunia.rii', page: 'examples' }] },
@@ -2576,7 +2576,7 @@ cd ../../02_FORMAL/coq && make
 cd ../../03_PROTO && cargo build --all
 
 # Run all tests
-cargo test --all        # 612 tests, all must pass`}
+cargo test --all        # 679 tests, all must pass`}
           </pre>
 
           <h2 style={sectionLabel}>COMMIT FORMAT</h2>

@@ -20,7 +20,7 @@ bash 00_SETUP/scripts/verify_setup.sh
 # Build the compiler
 cd 03_PROTO && cargo build --release -p riinac && cd ..
 
-# Run all tests (should show 651 passing)
+# Run all tests (should show 679 passing)
 cd 03_PROTO && cargo test --all && cd ..
 
 # Try it out
@@ -31,7 +31,7 @@ cd 03_PROTO && cargo test --all && cd ..
 
 | Directory | What | Language |
 |-----------|------|---------|
-| `02_FORMAL/coq/` | Formal proofs (4,825 theorems) | Coq |
+| `02_FORMAL/coq/` | Formal proofs (4,885 theorems) | Coq |
 | `03_PROTO/crates/` | Compiler (15 crates) | Rust |
 | `04_SPECS/` | Language specifications | Markdown |
 | `05_TOOLING/` | Crypto primitives, build tools | Rust |

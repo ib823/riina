@@ -26,7 +26,7 @@ RUN apt-get update && \
 COPY --from=builder /riinac /usr/local/bin/riinac
 
 LABEL maintainer="RIINA Team <security@riina.my>"
-LABEL version="0.1.0"
+LABEL version="0.2.0"
 LABEL description="RIINA compiler — formally verified, zero-trust"
 LABEL license="MPL-2.0"
 
