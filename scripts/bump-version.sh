@@ -69,5 +69,10 @@ sed -i "s/RIINA v[0-9]*\.[0-9]*\.[0-9]*/RIINA v$NEW_VERSION/" \
     "$REPO_ROOT/website/src/RiinaWebsite.jsx"
 echo -e "${GREEN}[✓] website/src/RiinaWebsite.jsx (footer)${NC}"
 
+# 7. Dockerfile
+sed -i "s/LABEL version=\"[0-9]*\.[0-9]*\.[0-9]*\"/LABEL version=\"$NEW_VERSION\"/" \
+    "$REPO_ROOT/Dockerfile"
+echo -e "${GREEN}[✓] Dockerfile${NC}"
+
 echo ""
 echo -e "${GREEN}All files updated to v$NEW_VERSION${NC}"

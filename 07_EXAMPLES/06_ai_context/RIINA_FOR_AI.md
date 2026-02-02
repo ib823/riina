@@ -133,7 +133,7 @@ RIINA's security properties are proven in Coq:
 - **Capability safety** (capabilities cannot be forged)
 - **Taint tracking correctness** (tainted data properly tracked)
 
-The proofs are in `02_FORMAL/coq/` with 4,825 Qed proofs (active build) and 0 admits.
+The proofs are in `02_FORMAL/coq/` with 4,885 Qed proofs (active build) and 0 admits.
 
 ## Compiler
 

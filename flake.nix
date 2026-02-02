@@ -39,7 +39,7 @@
           default = pkgs.mkShell {
             buildInputs = with pkgs; [
               (rust-bin.stable."1.84.0".default)
-              coq_8_18
+              coq
               gcc
             ];
             shellHook = ''
