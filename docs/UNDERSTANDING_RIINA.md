@@ -41,6 +41,7 @@ Every country needs a constitution — the foundational law that all other laws 
 - **Declassification Correctness** — When secrets do need to be revealed (e.g., showing the last 4 digits of a credit card), this can only happen through an explicit, auditable process with a proof that the policy is followed.
 
 **Current state:** 4,885 completed proofs (Qed), 0 incomplete proofs (admits), 4 justified axioms (foundational assumptions that are documented and mathematically sound), 249 active proof files.
+**Audit update:** 2026-02-04 (Codex audit sync).
 
 The 4 axioms are analogous to a constitution's self-evident truths — statements so fundamental they serve as starting points for everything else, each with written justification for why they are sound.
 

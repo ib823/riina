@@ -1,5 +1,7 @@
 # RIINA Compliance System — User Guide
 
+**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+
 ## Overview
 
 RIINA's compliance system is **compiler-integrated** — not an external CI pipeline, not a third-party scanner. When you run `riinac check --compliance`, the compiler itself validates your code against industry-specific security rules backed by formal proofs.

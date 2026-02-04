@@ -1,5 +1,7 @@
 # RIINA Certification Output
 
+**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+
 ## What RIINA Certifies
 
 When you build a RIINA program, the compiler can produce a **proof certificate** — a machine-readable document that maps your program's security properties to independently verifiable Coq theorems.
