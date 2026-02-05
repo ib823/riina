@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "bash ../scripts/generate-metrics.sh && (bash ../scripts/build-wasm.sh || true)",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "bash ../scripts/deploy-website.sh"

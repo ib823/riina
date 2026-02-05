@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PlaygroundPage from './playground/Playground.jsx';
+import { LiveMetrics, StatusBadge } from './components/LiveMetrics.jsx';
+import { ActivityTimeline, ActiveDevelopmentFooter, ReleaseCard, ImpactBadge } from './components/ReleaseInfo.jsx';
 
 // ============================================================================
 // RIINA WEBSITE - COMPLETE IMPLEMENTATION (15 PAGES)
@@ -409,35 +411,69 @@ const RiinaWebsite = () => {
           </a>
         </div>
 
-        {/* Key Stats */}
+        {/* Key Stats with LIVE indicator */}
         <div className="hero-stats" style={{
           display: 'flex',
-          justifyContent: 'center',
-          gap: '64px',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '24px',
           paddingTop: '48px',
           borderTop: '1px solid #eee',
           width: '100%',
-          maxWidth: '600px'
+          maxWidth: '700px'
         }}>
-          {[
-            { value: '6,720', label: 'Theorems Proven' },
-            { value: '0', label: 'Admits' },
-            { value: '283', label: 'Coq Files Verified' },
-          ].map((stat, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: '48px',
-                fontWeight: 300,
-                fontFamily: 'Georgia, serif'
-              }}>{stat.value}</div>
-              <div style={{
-                fontSize: '12px',
-                color: '#999',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase'
-              }}>{stat.label}</div>
-            </div>
-          ))}
+          {/* Live indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            backgroundColor: 'rgba(34, 197, 94, 0.08)',
+            padding: '8px 16px',
+            borderRadius: '20px',
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#22c55e',
+              animation: 'pulse 2s ease-in-out infinite',
+            }} />
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#166534', letterSpacing: '0.5px' }}>
+              LIVE METRICS
+            </span>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>
+              · Updated continuously
+            </span>
+          </div>
+
+          {/* Stats row */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '48px',
+            flexWrap: 'wrap',
+          }}>
+            {[
+              { value: '6,720', label: 'Theorems Proven', highlight: true },
+              { value: '0', label: 'Admits' },
+              { value: '283', label: 'Coq Files Verified' },
+            ].map((stat, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontSize: '48px',
+                  fontWeight: 300,
+                  fontFamily: 'Georgia, serif',
+                  color: stat.highlight ? '#1e293b' : '#374151',
+                }}>{stat.value}</div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#999',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase'
+                }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -3333,25 +3369,51 @@ $ Print Assumptions access_control_enforced.
       <section className="section" style={sectionStyle}>
         <div style={{ marginBottom: '48px' }}>
           <div style={{
-            display: 'inline-block',
-            padding: '8px 16px',
-            backgroundColor: '#000',
-            color: '#fff',
-            fontSize: '14px',
-            fontWeight: 600,
-            marginBottom: '24px'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            flexWrap: 'wrap',
           }}>
-            Latest: v{releases[0]?.version}
+            <span style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '24px',
+              fontWeight: 700,
+              color: '#0f172a',
+            }}>
+              v{releases[0]?.version}
+            </span>
+            <ImpactBadge level="minor" />
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              backgroundColor: 'rgba(34, 197, 94, 0.12)',
+              color: '#16a34a',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              fontSize: '11px',
+              fontWeight: 600,
+            }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: '#22c55e',
+                animation: 'pulse 2s ease-in-out infinite',
+              }} />
+              LATEST
+            </span>
           </div>
-          <p style={{ color: '#666', fontSize: '14px' }}>
+          <p style={{ color: '#666', fontSize: '14px', marginTop: '12px' }}>
             <a href={`https://github.com/ib823/riina/releases/tag/v${releases[0]?.version}`}
-               style={{ color: '#000', textDecoration: 'underline' }}>
-              Download from GitHub
+               style={{ color: '#3b82f6', textDecoration: 'none' }}>
+              Download from GitHub →
             </a>
             {' · '}
             <a href="https://github.com/ib823/riina/blob/main/CHANGELOG.md"
-               style={{ color: '#000', textDecoration: 'underline' }}>
-              Full Changelog
+               style={{ color: '#3b82f6', textDecoration: 'none' }}>
+              Full Changelog →
             </a>
           </p>
         </div>
@@ -3366,26 +3428,26 @@ nix run github:ib823/riina`}
           </pre>
         </div>
 
+        {/* Recent Activity Section */}
+        <div style={{ marginBottom: '48px' }}>
+          <h2 style={{ ...sectionLabel }}>RECENT ACTIVITY</h2>
+          <ActivityTimeline maxItems={5} />
+        </div>
+
         <h2 style={{ ...sectionLabel }}>ALL RELEASES</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {releases.map((rel, i) => (
-            <div key={i} style={{
-              ...cardStyle,
-              borderLeft: i === 0 ? '3px solid #000' : '1px solid #eee'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>v{rel.version}</h3>
-                <span style={{ color: '#999', fontSize: '14px' }}>{rel.date}</span>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                {rel.highlights.map((h, j) => (
-                  <li key={j} style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>{h}</li>
-                ))}
-              </ul>
-              <div style={{ marginTop: '16px' }}>
+            <div key={i}>
+              <ReleaseCard
+                version={rel.version}
+                date={rel.date}
+                highlights={rel.highlights}
+                current={i === 0}
+              />
+              <div style={{ marginTop: '12px', paddingLeft: '8px' }}>
                 <a href={`https://github.com/ib823/riina/releases/tag/v${rel.version}`}
-                   style={{ color: '#000', fontSize: '13px', textDecoration: 'underline' }}>
-                  Release notes &amp; downloads
+                   style={{ color: '#3b82f6', fontSize: '13px', textDecoration: 'none' }}>
+                  Release notes &amp; downloads →
                 </a>
               </div>
             </div>
@@ -3551,9 +3613,16 @@ nix run github:ib823/riina`}
           <p style={{ color: '#999', fontSize: '12px' }}>
             © 2026 RIINA. All rights reserved.
           </p>
-          <p style={{ color: '#999', fontSize: '12px' }}>
-            RIINA v0.2.0 · MPL-2.0
-          </p>
+          <StatusBadge showVersion={true} />
+        </div>
+
+        {/* Active Development Footer */}
+        <div style={{
+          marginTop: '24px',
+          paddingTop: '20px',
+          borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+        }}>
+          <ActiveDevelopmentFooter />
         </div>
       </footer>
     );
