@@ -1547,77 +1547,364 @@
 }
 
 /* ============================================================================
-   BREAKPOINTS — Scaling UP from mobile
+   INLINE STYLE OVERRIDES
+   These rules use !important to override inline styles from JSX components.
+   This is necessary because inline styles have highest specificity.
    ============================================================================ */
 
-/* ----- 640px: Large phone ----- */
+/* ----- Core Layout Centering ----- */
+/* Ensure all sections are properly centered */
+.app main > section,
+.app main > div[style] {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Section containers - proper centering */
+section[style*="maxWidth"],
+div[style*="maxWidth"] {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Hero section centering */
+.app main section:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* ============================================================================
+   BREAKPOINTS — Mobile-First Scaling
+   ============================================================================ */
+
+/* ----- BASE: Mobile (< 640px) ----- */
+/* These are the DEFAULT styles for mobile, overriding inline styles */
+
+/* Header mobile adjustments */
+.site-header .header-inner {
+  padding: 12px 16px !important;
+}
+
+/* Hide desktop nav on mobile */
+.site-nav {
+  display: none !important;
+}
+
+/* Show hamburger on mobile */
+.hamburger {
+  display: block !important;
+}
+
+/* Hide GitHub button on mobile */
+.header-github {
+  display: none !important;
+}
+
+/* Hero mobile sizing */
+.app main section:first-child {
+  min-height: auto !important;
+  padding: 100px 16px 48px !important;
+}
+
+/* Hero title sizing */
+.app main section:first-child h1 {
+  font-size: 28px !important;
+  text-align: center !important;
+}
+
+/* Hero stats stacking */
+.hero-stats,
+div[style*="display: flex"][style*="gap: 64px"],
+div[style*="borderTop"][style*="display: flex"] {
+  flex-direction: column !important;
+  gap: 24px !important;
+  align-items: center !important;
+}
+
+/* Section mobile padding */
+.section,
+section[style*="padding: '80px"] {
+  padding: 48px 16px !important;
+}
+
+/* Page header mobile */
+.page-header,
+section[style*="maxWidth: '800px'"] {
+  padding: 48px 16px !important;
+}
+
+/* Page title mobile */
+.page-title,
+h1[style*="fontSize: '48px'"],
+h1[style*="fontSize: 48px"] {
+  font-size: 28px !important;
+  line-height: 1.2 !important;
+}
+
+/* Grids - single column on mobile */
+div[style*="gridTemplateColumns: 'repeat(4"],
+div[style*="gridTemplateColumns: 'repeat(3"],
+div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr'"],
+div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
+div[style*="gridTemplateColumns: '1fr 1fr'"],
+.grid-2, .grid-3, .grid-4 {
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+}
+
+/* Footer grid mobile */
+.grid-footer,
+footer div[style*="gridTemplateColumns"] {
+  grid-template-columns: 1fr !important;
+  gap: 32px !important;
+  text-align: center !important;
+}
+
+/* Footer bottom mobile */
+.footer-bottom {
+  flex-direction: column !important;
+  gap: 8px !important;
+  text-align: center !important;
+}
+
+/* Code blocks mobile */
+pre[style*="backgroundColor: '#1a1a1a'"],
+.code-block {
+  padding: 12px !important;
+  font-size: 11px !important;
+  overflow-x: auto !important;
+}
+
+/* Dark sections mobile */
+section[style*="backgroundColor: '#000'"],
+div[style*="backgroundColor: '#000'"] {
+  padding: 48px 16px !important;
+}
+
+/* Heading sizes mobile */
+h2[style*="fontSize: '42px'"],
+h2[style*="fontSize: 42px"] {
+  font-size: 24px !important;
+}
+
+h2[style*="fontSize: '32px'"],
+h2[style*="fontSize: 32px"] {
+  font-size: 22px !important;
+}
+
+/* CTA buttons stacking */
+div[style*="display: flex"][style*="gap: '16px'"] {
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+}
+
+/* Mobile menu overlay */
+.mobile-menu-overlay {
+  display: none;
+}
+
+.mobile-menu-overlay.open {
+  display: flex !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 150 !important;
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.mobile-menu-overlay button {
+  background: none !important;
+  border: none !important;
+  font-size: 20px !important;
+  padding: 12px 24px !important;
+  cursor: pointer !important;
+  color: #333 !important;
+  min-height: 44px !important;
+}
+
+.mobile-menu-close {
+  position: absolute !important;
+  top: 16px !important;
+  right: 20px !important;
+  font-size: 28px !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+/* ----- 480px: Large phone ----- */
+@media (min-width: 480px) {
+  .app main section:first-child h1 {
+    font-size: 32px !important;
+  }
+
+  .page-title,
+  h1[style*="fontSize: '48px'"],
+  h1[style*="fontSize: 48px"] {
+    font-size: 32px !important;
+  }
+
+  pre[style*="backgroundColor: '#1a1a1a'"],
+  .code-block {
+    padding: 16px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* ----- 640px: Tablet portrait ----- */
 @media (min-width: 640px) {
   :root {
     --gutter: 24px;
   }
 
-  .hero {
-    padding: 120px var(--gutter) 80px;
+  .site-header .header-inner {
+    padding: 14px 24px !important;
   }
 
-  .hero-stats {
-    flex-direction: row;
-    gap: var(--space-2xl);
+  .app main section:first-child {
+    padding: 120px 24px 64px !important;
   }
 
-  .grid-2 { grid-template-columns: 1fr 1fr; }
-  .grid-3 { grid-template-columns: 1fr 1fr; }
-  .grid-4 { grid-template-columns: 1fr 1fr; }
-  .grid-footer { grid-template-columns: 1fr 1fr; }
+  .app main section:first-child h1 {
+    font-size: 40px !important;
+  }
+
+  .section,
+  section[style*="padding: '80px"] {
+    padding: 64px 24px !important;
+  }
+
+  .page-title,
+  h1[style*="fontSize: '48px'"],
+  h1[style*="fontSize: 48px"] {
+    font-size: 40px !important;
+  }
+
+  /* 2-column grids at 640px */
+  div[style*="gridTemplateColumns: 'repeat(4"],
+  div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr'"],
+  .grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+
+  div[style*="gridTemplateColumns: 'repeat(3"],
+  div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
+  .grid-3 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+
+  div[style*="gridTemplateColumns: '1fr 1fr'"],
+  .grid-2 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+  }
+
+  .hero-stats,
+  div[style*="display: flex"][style*="gap: 64px"],
+  div[style*="borderTop"][style*="display: flex"] {
+    flex-direction: row !important;
+    gap: 48px !important;
+  }
+
+  .grid-footer,
+  footer div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr 1fr !important;
+    text-align: left !important;
+  }
+
+  pre[style*="backgroundColor: '#1a1a1a'"],
+  .code-block {
+    padding: 24px !important;
+    font-size: 13px !important;
+  }
 
   .comparison-split { grid-template-columns: 1fr 1fr; }
-
   .exec-row { grid-template-columns: 180px 1fr; }
-
   .how-step { grid-template-columns: 60px 1fr; gap: var(--space-2xl); }
-
-  .code-block {
-    padding: var(--space-xl);
-    font-size: 14px;
-  }
-
-  .code-block--terminal {
-    padding: 20px 24px;
-    font-size: 13px;
-  }
-
   .pyramid-item { grid-template-columns: 60px 1fr; }
 }
 
-/* ----- 768px: Tablet — show desktop nav ----- */
+/* ----- 768px: Tablet landscape — show desktop nav ----- */
 @media (min-width: 768px) {
   :root {
     --gutter: 32px;
   }
 
-  .header-inner {
-    padding: 16px var(--gutter);
+  .site-header .header-inner {
+    padding: 16px 32px !important;
   }
 
+  /* Show desktop nav */
   .site-nav {
-    display: flex;
+    display: flex !important;
+    gap: 28px !important;
+    align-items: center !important;
   }
 
+  /* Show GitHub button */
   .header-github {
-    display: inline-block;
+    display: inline-block !important;
   }
 
+  /* Hide hamburger */
   .hamburger {
-    display: none;
+    display: none !important;
   }
 
-  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-  .grid-footer { grid-template-columns: 2fr 1fr 1fr 1fr 1fr; }
+  .app main section:first-child {
+    padding: 140px 32px 80px !important;
+  }
+
+  .app main section:first-child h1 {
+    font-size: 48px !important;
+  }
+
+  .section,
+  section[style*="padding: '80px"] {
+    padding: 80px 32px !important;
+  }
+
+  .page-title,
+  h1[style*="fontSize: '48px'"],
+  h1[style*="fontSize: 48px"] {
+    font-size: 48px !important;
+  }
+
+  /* 3-column grids at 768px */
+  div[style*="gridTemplateColumns: 'repeat(3"],
+  div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
+  .grid-3 {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+
+  .grid-footer,
+  footer div[style*="gridTemplateColumns"] {
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr !important;
+  }
 
   .footer-bottom {
-    flex-direction: row;
-    justify-content: space-between;
-    text-align: left;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    text-align: left !important;
+  }
+
+  pre[style*="backgroundColor: '#1a1a1a'"],
+  .code-block {
+    padding: 32px !important;
+    font-size: 14px !important;
+  }
+
+  h2[style*="fontSize: '42px'"],
+  h2[style*="fontSize: 42px"] {
+    font-size: 36px !important;
   }
 
   /* Touch targets for nav */
@@ -1631,11 +1918,34 @@
 
 /* ----- 1024px: Desktop ----- */
 @media (min-width: 1024px) {
-  .hero-stats {
-    gap: var(--space-3xl);
+  .app main section:first-child h1 {
+    font-size: 56px !important;
   }
 
-  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .hero-stats,
+  div[style*="display: flex"][style*="gap: 64px"],
+  div[style*="borderTop"][style*="display: flex"] {
+    gap: 64px !important;
+  }
+
+  /* 4-column grids at 1024px */
+  div[style*="gridTemplateColumns: 'repeat(4"],
+  div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr'"],
+  .grid-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  h2[style*="fontSize: '42px'"],
+  h2[style*="fontSize: 42px"] {
+    font-size: 42px !important;
+  }
 
   .exec-row { grid-template-columns: 200px 1fr; }
+}
+
+/* ----- 1280px: Large desktop ----- */
+@media (min-width: 1280px) {
+  .app main section:first-child h1 {
+    font-size: 64px !important;
+  }
 }

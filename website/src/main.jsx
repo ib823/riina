@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './responsive.css';
+import './riina.css';
 import RiinaWebsite from './RiinaWebsite.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
