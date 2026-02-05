@@ -1,6 +1,6 @@
 # Changelog
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-05 (Coq 8.20.1 compatibility) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,890 Qed (active), 283 total .v. Historical counts in this document remain historical.
 
 All notable changes to RIINA will be documented in this file.
 
@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+- Coq 8.20.1 compatibility: migrated from Rocq 9.1, fixed all import paths (`Stdlib.*` → `Coq.*`), fixed API changes (`filter_length` → `filter_length_le`), fixed recursive definitions, updated proofs for new semantics
+- Eliminated all 7 previously-tracked Admitted proofs (DELTA001, Platform/WASM/Mobile stubs, ValRelStepLimit)
+- Active build now at 4,890 Qed proofs (up from 4,044)
 
 ### Added
 - Phase 7: Platform Universality — modular backend trait architecture (`Backend` trait, `Target` enum)
@@ -43,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VS Code extension (`riina-vscode`)
 - Package manager (`riina-pkg`)
 - 112 example `.rii` files across 9 categories
-- Formal verification: 4,885 Qed proofs in Coq active build (0 admits, 4 justified axioms)
+- Formal verification: 4,890 Qed proofs in Coq active build (0 admits, 4 justified axioms)
 - Compliance system: 15 industry profiles with audit report generation
 - C FFI support via `luaran "C" { ... }`
 - REPL with `:jenis` (type) and `:kesan` (effect) commands
