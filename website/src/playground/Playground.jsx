@@ -156,7 +156,7 @@ const PlaygroundPage = ({ onNavigate }) => {
           background: '#f0f4f8', borderRadius: 6, fontSize: 13, color: '#444',
           fontFamily: 'monospace', flexWrap: 'wrap',
         }}>
-          <span><strong>4,890</strong> theorems proven</span>
+          <span><strong>6,720</strong> theorems proven</span>
           <span><strong>0</strong> unfinished proofs</span>
           <span><strong>283</strong> files verified</span>
           <span>Zero server dependencies</span>
@@ -165,7 +165,7 @@ const PlaygroundPage = ({ onNavigate }) => {
           This is the RIINA compiler running entirely in your browser via WebAssembly.
           Every program that type-checks inherits mathematically proven security
           guarantees — no information leaks, no unauthorized effects, no runtime type
-          errors. These guarantees are backed by 4,890 machine-checked proofs in Coq,
+          errors. These guarantees are backed by 6,720 machine-checked proofs in Coq,
           with zero admits.
           {!wasmReady && !wasmError && ' Loading WASM compiler...'}
           {wasmError && <span style={{ color: '#c00' }}> {wasmError}</span>}
@@ -268,7 +268,7 @@ const PlaygroundPage = ({ onNavigate }) => {
 
       {/* Footer info */}
       <div style={{ marginTop: 16, fontSize: 12, color: '#999' }}>
-        RIINA Compiler v0.2.0 · Backed by 4,890 machine-checked proofs · Zero external dependencies · MPL-2.0 licensed ·{' '}
+        RIINA Compiler v0.2.0 · Backed by 6,720 machine-checked proofs · Zero external dependencies · MPL-2.0 licensed ·{' '}
         <span style={{ cursor: 'pointer', textDecoration: 'underline' }}
               onClick={() => onNavigate && onNavigate('docs')}>
           Documentation
