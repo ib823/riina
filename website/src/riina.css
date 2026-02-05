@@ -221,22 +221,22 @@ html, body {
 
 /* Mobile menu overlay */
 .mobile-menu-overlay {
-  display: none;
-}
-
-.mobile-menu-overlay.open {
-  display: flex;
+  display: none !important;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 150;
-  background-color: rgba(255, 255, 255, 0.98);
+  z-index: 9999;
+  background-color: #fff;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.mobile-menu-overlay.open {
+  display: flex !important;
 }
 
 .mobile-menu-overlay button {
@@ -264,6 +264,7 @@ html, body {
   padding: 8px;
   min-height: 44px;
   min-width: 44px;
+  z-index: 10000;
 }
 
 .mobile-menu-github {
@@ -1659,44 +1660,6 @@ main, section, div {
   overflow-x: auto !important;
 }
 
-/* Mobile menu overlay */
-.mobile-menu-overlay {
-  display: none;
-}
-
-.mobile-menu-overlay.open {
-  display: flex !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 150 !important;
-  background-color: rgba(255, 255, 255, 0.98) !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-}
-
-.mobile-menu-overlay button {
-  background: none !important;
-  border: none !important;
-  font-size: 20px !important;
-  padding: 12px 24px !important;
-  cursor: pointer !important;
-  color: #333 !important;
-  min-height: 44px !important;
-}
-
-.mobile-menu-close {
-  position: absolute !important;
-  top: 16px !important;
-  right: 20px !important;
-  font-size: 28px !important;
-  min-height: 44px !important;
-  min-width: 44px !important;
-}
 
 /* ----- 480px: Large phone ----- */
 @media (min-width: 480px) {
