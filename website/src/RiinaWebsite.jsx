@@ -52,7 +52,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 4,885 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 4,890 Qed proofs in Coq', 'Standard library: 88 builtins across 9 modules'] },
   ];
 
   // Footer link mapping
@@ -417,7 +417,7 @@ const RiinaWebsite = () => {
           borderTop: '1px solid #eee'
         }}>
           {[
-            { value: '4,885', label: 'Theorems Proven' },
+            { value: '4,890', label: 'Theorems Proven' },
             { value: '0', label: 'Admits' },
             { value: '283', label: 'Coq Files Verified' },
           ].map((stat, i) => (
@@ -845,7 +845,7 @@ fungsi hash_kata_laluan(
                 "hacked" it. It never will. <strong>RIINA applies this same principle to your software.</strong>
               </p>
               <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#e8f5e9', fontSize: '13px', color: '#2e7d32' }}>
-                4,885 machine-checked proofs guarantee security properties <em>before</em> the code runs.
+                4,890 machine-checked proofs guarantee security properties <em>before</em> the code runs.
               </div>
             </div>
           </div>
@@ -2099,7 +2099,7 @@ allowed — no network, no logging. Enforced at compile time.`
 • Timing-sensitive code in masa_tetap executes in constant time
 • Secrets are zeroed before memory is freed
 
-4,885 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
+4,890 theorems verified in Coq. 0 admits. If the proof fails, compilation fails.`
             },
             {
               step: '04',
@@ -2181,7 +2181,7 @@ Every security claim has a machine-checked proof behind it.`
     <div style={pageTopStyle}>
       <PageHeader
         title="Research"
-        subtitle="RIINA is built on formal verification in Coq, with 4,885 machine-checked theorems across 249 files. Every security property has a proof."
+        subtitle="RIINA is built on formal verification in Coq, with 4,890 machine-checked theorems across 249 files. Every security property has a proof."
       />
 
       {/* Stats */}
@@ -2194,7 +2194,7 @@ Every security claim has a machine-checked proof behind it.`
             marginBottom: '64px'
           }}>
             {[
-              { value: '4,885', label: 'Qed Proofs' },
+              { value: '4,890', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
               { value: '4', label: 'Justified Axioms' },
               { value: '283', label: 'Coq Files' },
@@ -2459,7 +2459,7 @@ Every security claim has a machine-checked proof behind it.`
         links: [{ text: 'Keyword Table (60+)', page: 'syntax' }, { text: 'Security Keywords', page: 'securityTypes' }, { text: 'Effect Keywords', page: 'effectSystem' }] },
       { title: 'Standard Library', desc: '88 builtins across 9 modules', page: 'stdlib',
         links: [{ text: 'Module Reference', page: 'stdlib' }, { text: 'std::kripto', page: 'stdlib' }, { text: 'std::io', page: 'stdlib' }] },
-      { title: 'Formal Proofs', desc: '283 Coq files, 4,885 theorems', page: 'research',
+      { title: 'Formal Proofs', desc: '283 Coq files, 4,890 theorems', page: 'research',
         links: [{ text: 'Proof Architecture', page: 'research' }, { text: 'Axiom Justifications', page: 'research' }, { text: 'Building Proofs', page: 'research' }] },
       { title: 'Examples', desc: '112 example .rii files in 9 categories', page: 'examples',
         links: [{ text: 'pengesahan.rii', page: 'examples' }, { text: 'kripto.rii', page: 'examples' }, { text: 'hello_dunia.rii', page: 'examples' }] },
@@ -2707,7 +2707,7 @@ cd proof
 cd 00_SETUP/scripts
 chmod +x install_coq.sh install_rust.sh verify_setup.sh
 ./install_rust.sh       # Rust toolchain
-./install_coq.sh        # Rocq 9.1 (Coq 8.21)
+./install_coq.sh        # Coq 8.20.1
 ./verify_setup.sh       # Verify everything works
 
 # Build Coq proofs
@@ -3250,7 +3250,7 @@ RIINA COMPLIANCE CERTIFICATE
 ============================
 Program: myapp.rii
 Compiler: riinac 0.1.0
-Prover: Rocq 9.1
+Prover: Coq 8.20.1
 
 HIPAA §164.312(a) — Access Control
   PROVEN: All PHI access gated by role-based authorization
