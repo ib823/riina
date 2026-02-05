@@ -149,18 +149,14 @@ const PlaygroundPage = ({ onNavigate }) => {
     <div style={{ padding: '0 40px 40px' }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
-          Playground — Live Compiler
+          Playground
         </h1>
-        <div style={{
-          display: 'flex', gap: 24, marginBottom: 12, padding: '8px 16px',
-          background: '#f0f4f8', borderRadius: 6, fontSize: 13, color: '#444',
-          fontFamily: 'monospace', flexWrap: 'wrap',
+        <p style={{
+          fontSize: 13, color: '#666', marginBottom: 12,
+          fontFamily: 'monospace',
         }}>
-          <span><strong>6,720</strong> theorems proven</span>
-          <span><strong>0</strong> unfinished proofs</span>
-          <span><strong>283</strong> files verified</span>
-          <span>Zero server dependencies</span>
-        </div>
+          6,720 theorems · 0 admits · 283 verified files · Browser-only
+        </p>
         <p style={{ color: '#555', fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}>
           This is the RIINA compiler running entirely in your browser via WebAssembly.
           Every program that type-checks inherits mathematically proven security

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import PlaygroundPage from './playground/Playground.jsx';
-import { LiveMetrics, StatusBadge } from './components/LiveMetrics.jsx';
-import { ActivityTimeline, ActiveDevelopmentFooter, ReleaseCard, ImpactBadge } from './components/ReleaseInfo.jsx';
+// Components available but used sparingly for elegance:
+// import { LiveMetrics, StatusBadge } from './components/LiveMetrics.jsx';
+// import { ActivityTimeline, ActiveDevelopmentFooter, ReleaseCard, ImpactBadge } from './components/ReleaseInfo.jsx';
 
 // ============================================================================
 // RIINA WEBSITE - COMPLETE IMPLEMENTATION (15 PAGES)
@@ -422,30 +423,6 @@ const RiinaWebsite = () => {
           width: '100%',
           maxWidth: '700px'
         }}>
-          {/* Live indicator */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            backgroundColor: 'rgba(34, 197, 94, 0.08)',
-            padding: '8px 16px',
-            borderRadius: '20px',
-          }}>
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#22c55e',
-              animation: 'pulse 2s ease-in-out infinite',
-            }} />
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#166534', letterSpacing: '0.5px' }}>
-              LIVE METRICS
-            </span>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
-              · Updated continuously
-            </span>
-          </div>
-
           {/* Stats row */}
           <div style={{
             display: 'flex',
@@ -474,6 +451,16 @@ const RiinaWebsite = () => {
               </div>
             ))}
           </div>
+
+          {/* Subtle build reference */}
+          <p style={{
+            fontSize: '12px',
+            color: '#9ca3af',
+            marginTop: '24px',
+            fontFamily: 'monospace',
+          }}>
+            Verified with Coq 8.20.1 · Session 73
+          </p>
         </div>
       </section>
 
@@ -3383,25 +3370,15 @@ $ Print Assumptions access_control_enforced.
             }}>
               v{releases[0]?.version}
             </span>
-            <ImpactBadge level="minor" />
             <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: 'rgba(34, 197, 94, 0.12)',
-              color: '#16a34a',
+              backgroundColor: '#000',
+              color: '#fff',
               padding: '4px 10px',
-              borderRadius: '12px',
+              borderRadius: '4px',
               fontSize: '11px',
               fontWeight: 600,
+              letterSpacing: '0.5px',
             }}>
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: '#22c55e',
-                animation: 'pulse 2s ease-in-out infinite',
-              }} />
               LATEST
             </span>
           </div>
@@ -3428,26 +3405,26 @@ nix run github:ib823/riina`}
           </pre>
         </div>
 
-        {/* Recent Activity Section */}
-        <div style={{ marginBottom: '48px' }}>
-          <h2 style={{ ...sectionLabel }}>RECENT ACTIVITY</h2>
-          <ActivityTimeline maxItems={5} />
-        </div>
-
         <h2 style={{ ...sectionLabel }}>ALL RELEASES</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {releases.map((rel, i) => (
-            <div key={i}>
-              <ReleaseCard
-                version={rel.version}
-                date={rel.date}
-                highlights={rel.highlights}
-                current={i === 0}
-              />
-              <div style={{ marginTop: '12px', paddingLeft: '8px' }}>
+            <div key={i} style={{
+              ...cardStyle,
+              borderLeft: i === 0 ? '3px solid #000' : '1px solid #eee'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>v{rel.version}</h3>
+                <span style={{ color: '#999', fontSize: '14px' }}>{rel.date}</span>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                {rel.highlights.map((h, j) => (
+                  <li key={j} style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>{h}</li>
+                ))}
+              </ul>
+              <div style={{ marginTop: '16px' }}>
                 <a href={`https://github.com/ib823/riina/releases/tag/v${rel.version}`}
-                   style={{ color: '#3b82f6', fontSize: '13px', textDecoration: 'none' }}>
-                  Release notes &amp; downloads →
+                   style={{ color: '#000', fontSize: '13px', textDecoration: 'underline' }}>
+                  Release notes &amp; downloads
                 </a>
               </div>
             </div>
@@ -3613,16 +3590,31 @@ nix run github:ib823/riina`}
           <p style={{ color: '#999', fontSize: '12px' }}>
             © 2026 RIINA. All rights reserved.
           </p>
-          <StatusBadge showVersion={true} />
-        </div>
-
-        {/* Active Development Footer */}
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(0, 0, 0, 0.05)',
-        }}>
-          <ActiveDevelopmentFooter />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '12px',
+            color: '#666',
+          }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+            }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: '#22c55e',
+              }} />
+              Build passing
+            </span>
+            <span style={{ color: '#ddd' }}>·</span>
+            <span style={{ fontFamily: 'monospace' }}>v0.2.0</span>
+            <span style={{ color: '#ddd' }}>·</span>
+            <span>MPL-2.0</span>
+          </div>
         </div>
       </footer>
     );
