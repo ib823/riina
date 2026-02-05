@@ -412,9 +412,12 @@ const RiinaWebsite = () => {
         {/* Key Stats */}
         <div className="hero-stats" style={{
           display: 'flex',
+          justifyContent: 'center',
           gap: '64px',
           paddingTop: '48px',
-          borderTop: '1px solid #eee'
+          borderTop: '1px solid #eee',
+          width: '100%',
+          maxWidth: '600px'
         }}>
           {[
             { value: '4,890', label: 'Theorems Proven' },

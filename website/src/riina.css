@@ -1549,29 +1549,19 @@
 /* ============================================================================
    INLINE STYLE OVERRIDES
    These rules use !important to override inline styles from JSX components.
-   This is necessary because inline styles have highest specificity.
+   Uses class selectors (more reliable than attribute selectors).
    ============================================================================ */
 
-/* ----- Core Layout Centering ----- */
-/* Ensure all sections are properly centered */
-.app main > section,
-.app main > div[style] {
-  margin-left: auto !important;
-  margin-right: auto !important;
+/* ----- Hero Stats Centering (Critical Fix) ----- */
+.hero-stats {
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 600px !important;
 }
 
-/* Section containers - proper centering */
-section[style*="maxWidth"],
-div[style*="maxWidth"] {
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-/* Hero section centering */
-.app main section:first-child {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
+/* ----- Grids Centering ----- */
+.grid-2, .grid-3, .grid-4, .grid-footer {
+  width: 100%;
 }
 
 /* ============================================================================
@@ -1579,7 +1569,6 @@ div[style*="maxWidth"] {
    ============================================================================ */
 
 /* ----- BASE: Mobile (< 640px) ----- */
-/* These are the DEFAULT styles for mobile, overriding inline styles */
 
 /* Header mobile adjustments */
 .site-header .header-inner {
@@ -1601,61 +1590,26 @@ div[style*="maxWidth"] {
   display: none !important;
 }
 
-/* Hero mobile sizing */
-.app main section:first-child {
-  min-height: auto !important;
-  padding: 100px 16px 48px !important;
-}
-
-/* Hero title sizing */
-.app main section:first-child h1 {
-  font-size: 28px !important;
-  text-align: center !important;
-}
-
-/* Hero stats stacking */
-.hero-stats,
-div[style*="display: flex"][style*="gap: 64px"],
-div[style*="borderTop"][style*="display: flex"] {
+/* Hero stats stacking on mobile */
+.hero-stats {
   flex-direction: column !important;
   gap: 24px !important;
   align-items: center !important;
 }
 
-/* Section mobile padding */
-.section,
-section[style*="padding: '80px"] {
-  padding: 48px 16px !important;
-}
-
-/* Page header mobile */
-.page-header,
-section[style*="maxWidth: '800px'"] {
-  padding: 48px 16px !important;
-}
-
 /* Page title mobile */
-.page-title,
-h1[style*="fontSize: '48px'"],
-h1[style*="fontSize: 48px"] {
+.page-title {
   font-size: 28px !important;
   line-height: 1.2 !important;
 }
 
 /* Grids - single column on mobile */
-div[style*="gridTemplateColumns: 'repeat(4"],
-div[style*="gridTemplateColumns: 'repeat(3"],
-div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr'"],
-div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
-div[style*="gridTemplateColumns: '1fr 1fr'"],
 .grid-2, .grid-3, .grid-4 {
   grid-template-columns: 1fr !important;
   gap: 16px !important;
 }
 
-/* Footer grid mobile */
-.grid-footer,
-footer div[style*="gridTemplateColumns"] {
+.grid-footer {
   grid-template-columns: 1fr !important;
   gap: 32px !important;
   text-align: center !important;
@@ -1669,34 +1623,10 @@ footer div[style*="gridTemplateColumns"] {
 }
 
 /* Code blocks mobile */
-pre[style*="backgroundColor: '#1a1a1a'"],
 .code-block {
   padding: 12px !important;
   font-size: 11px !important;
   overflow-x: auto !important;
-}
-
-/* Dark sections mobile */
-section[style*="backgroundColor: '#000'"],
-div[style*="backgroundColor: '#000'"] {
-  padding: 48px 16px !important;
-}
-
-/* Heading sizes mobile */
-h2[style*="fontSize: '42px'"],
-h2[style*="fontSize: 42px"] {
-  font-size: 24px !important;
-}
-
-h2[style*="fontSize: '32px'"],
-h2[style*="fontSize: 32px"] {
-  font-size: 22px !important;
-}
-
-/* CTA buttons stacking */
-div[style*="display: flex"][style*="gap: '16px'"] {
-  flex-wrap: wrap !important;
-  justify-content: center !important;
 }
 
 /* Mobile menu overlay */
@@ -1767,60 +1697,27 @@ div[style*="display: flex"][style*="gap: '16px'"] {
     padding: 14px 24px !important;
   }
 
-  .app main section:first-child {
-    padding: 120px 24px 64px !important;
-  }
-
-  .app main section:first-child h1 {
+  .page-title {
     font-size: 40px !important;
   }
 
-  .section,
-  section[style*="padding: '80px"] {
-    padding: 64px 24px !important;
-  }
-
-  .page-title,
-  h1[style*="fontSize: '48px'"],
-  h1[style*="fontSize: 48px"] {
-    font-size: 40px !important;
-  }
-
-  /* 2-column grids at 640px */
-  div[style*="gridTemplateColumns: 'repeat(4"],
-  div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr'"],
-  .grid-4 {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 20px !important;
-  }
-
-  div[style*="gridTemplateColumns: 'repeat(3"],
-  div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
-  .grid-3 {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 20px !important;
-  }
-
-  div[style*="gridTemplateColumns: '1fr 1fr'"],
-  .grid-2 {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 24px !important;
-  }
-
-  .hero-stats,
-  div[style*="display: flex"][style*="gap: 64px"],
-  div[style*="borderTop"][style*="display: flex"] {
+  /* Hero stats row at 640px */
+  .hero-stats {
     flex-direction: row !important;
     gap: 48px !important;
   }
 
-  .grid-footer,
-  footer div[style*="gridTemplateColumns"] {
+  /* 2-column grids at 640px */
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+  }
+
+  .grid-footer {
     grid-template-columns: 1fr 1fr !important;
     text-align: left !important;
   }
 
-  pre[style*="backgroundColor: '#1a1a1a'"],
   .code-block {
     padding: 24px !important;
     font-size: 13px !important;
@@ -1859,34 +1756,16 @@ div[style*="display: flex"][style*="gap: '16px'"] {
     display: none !important;
   }
 
-  .app main section:first-child {
-    padding: 140px 32px 80px !important;
-  }
-
-  .app main section:first-child h1 {
-    font-size: 48px !important;
-  }
-
-  .section,
-  section[style*="padding: '80px"] {
-    padding: 80px 32px !important;
-  }
-
-  .page-title,
-  h1[style*="fontSize: '48px'"],
-  h1[style*="fontSize: 48px"] {
+  .page-title {
     font-size: 48px !important;
   }
 
   /* 3-column grids at 768px */
-  div[style*="gridTemplateColumns: 'repeat(3"],
-  div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
   .grid-3 {
     grid-template-columns: 1fr 1fr 1fr !important;
   }
 
-  .grid-footer,
-  footer div[style*="gridTemplateColumns"] {
+  .grid-footer {
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr !important;
   }
 
@@ -1896,15 +1775,9 @@ div[style*="display: flex"][style*="gap: '16px'"] {
     text-align: left !important;
   }
 
-  pre[style*="backgroundColor: '#1a1a1a'"],
   .code-block {
     padding: 32px !important;
     font-size: 14px !important;
-  }
-
-  h2[style*="fontSize: '42px'"],
-  h2[style*="fontSize: 42px"] {
-    font-size: 36px !important;
   }
 
   /* Touch targets for nav */
@@ -1918,34 +1791,14 @@ div[style*="display: flex"][style*="gap: '16px'"] {
 
 /* ----- 1024px: Desktop ----- */
 @media (min-width: 1024px) {
-  .app main section:first-child h1 {
-    font-size: 56px !important;
-  }
-
-  .hero-stats,
-  div[style*="display: flex"][style*="gap: 64px"],
-  div[style*="borderTop"][style*="display: flex"] {
+  .hero-stats {
     gap: 64px !important;
   }
 
   /* 4-column grids at 1024px */
-  div[style*="gridTemplateColumns: 'repeat(4"],
-  div[style*="gridTemplateColumns: '1fr 1fr 1fr 1fr'"],
   .grid-4 {
     grid-template-columns: repeat(4, 1fr) !important;
   }
 
-  h2[style*="fontSize: '42px'"],
-  h2[style*="fontSize: 42px"] {
-    font-size: 42px !important;
-  }
-
   .exec-row { grid-template-columns: 200px 1fr; }
-}
-
-/* ----- 1280px: Large desktop ----- */
-@media (min-width: 1280px) {
-  .app main section:first-child h1 {
-    font-size: 64px !important;
-  }
 }
