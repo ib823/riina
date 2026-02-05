@@ -197,7 +197,7 @@ const RiinaWebsite = () => {
           </svg>
         </button>
 
-        <nav className="site-nav" style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
+        <nav className="site-nav">
           {headerNav.map((item, i) => item.children ? (
             <div
               key={item.label}
@@ -512,7 +512,7 @@ const RiinaWebsite = () => {
           </h2>
         </div>
 
-        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px' }}>
+        <div className="grid-2" style={{ display: 'grid', gap: '64px' }}>
           <div>
             <h3 style={{
               fontSize: '12px',
@@ -685,7 +685,7 @@ fungsi hash_kata_laluan(
           <h2 style={{ fontSize: '36px', fontWeight: 300, marginBottom: '48px' }}>
             One language. <span style={{ fontWeight: 600 }}>Every platform.</span>
           </h2>
-          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+          <div className="grid-4" style={{ display: 'grid', gap: '24px' }}>
             {[
               { name: 'Native', desc: 'C backend — any platform with a C compiler', status: 'Done' },
               { name: 'WebAssembly', desc: 'Full compiler in-browser — 482KB WASM binary, live playground', status: 'Done' },
@@ -797,7 +797,7 @@ fungsi hash_kata_laluan(
           <p style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '32px' }}>
             THE BUSINESS CASE
           </p>
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '48px', marginBottom: '48px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '48px', marginBottom: '48px' }}>
             {[
               { value: '$4.88M', label: 'Average cost of a data breach', source: 'IBM Cost of Data Breach Report, 2024' },
               { value: '$9.77M', label: 'Average breach cost in healthcare', source: 'Highest industry cost for 14 consecutive years' },
@@ -826,7 +826,7 @@ fungsi hash_kata_laluan(
             RIINA security is a <strong>mathematical theorem</strong>.
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', marginBottom: '64px' }}>
+          <div style={{ display: 'grid', gap: '48px', marginBottom: '64px' }}>
             <div style={{ padding: '32px', border: '1px solid #eee' }}>
               <h3 style={{ fontSize: '12px', letterSpacing: '0.2em', color: '#999', marginBottom: '24px' }}>A LOCK (TRADITIONAL SECURITY)</h3>
               <p style={{ color: '#666', lineHeight: 1.8, fontSize: '15px' }}>
@@ -936,7 +936,7 @@ fungsi hash_kata_laluan(
             Quantum computers and AI <span style={{ fontWeight: 600 }}>cannot break mathematical logic</span>
           </h2>
 
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px', marginBottom: '48px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '32px', marginBottom: '48px' }}>
             <div style={{ padding: '32px', border: '1px solid #eee' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Quantum Computing</h3>
               <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.7 }}>
@@ -963,7 +963,7 @@ fungsi hash_kata_laluan(
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', backgroundColor: '#eee' }}>
+          <div style={{ display: 'grid', gap: '2px', backgroundColor: '#eee' }}>
             <div style={{ padding: '24px', backgroundColor: '#fff' }}>
               <h4 style={{ fontSize: '12px', letterSpacing: '0.1em', color: '#c62828', marginBottom: '12px' }}>ENCRYPTION (BREAKABLE)</h4>
               <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
@@ -992,7 +992,7 @@ fungsi hash_kata_laluan(
             Organizations that bet on mathematical proof — and won
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          <div style={{ display: 'grid', gap: '24px' }}>
             {[
               {
                 org: 'DARPA',
@@ -1154,7 +1154,7 @@ fungsi hash_kata_laluan(
       <section style={{ padding: '60px 32px' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <p style={{ ...sectionLabel, marginBottom: '24px' }}>SOURCES &amp; REFERENCES</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gap: '12px' }}>
             {[
               'IBM Cost of a Data Breach Report, 2024 — $4.88M average, $9.77M healthcare',
               'Gartner, August 2024 — $212B global security spending forecast for 2025',
@@ -1202,7 +1202,7 @@ fungsi hash_kata_laluan(
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>BAHASA MELAYU SYNTAX</h2>
 
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '16px' }}>
             {[
               { bm: 'fungsi', en: 'fn', ex: 'fungsi tambah(x: Nombor)' },
               { bm: 'biar', en: 'let', ex: 'biar nama = "Ahmad";' },
@@ -1248,7 +1248,7 @@ fungsi hash_kata_laluan(
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>SECURITY TYPES</h2>
 
-          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px' }}>
+          <div className="grid-2" style={{ display: 'grid', gap: '64px' }}>
             {[
               {
                 title: 'Rahsia<T> — Secret data',
@@ -1329,7 +1329,7 @@ fungsi sahkan_kata_laluan(
             Here is code that Rust compiles — and RIINA refuses.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+          <div style={{ display: 'grid', gap: '32px' }}>
             <div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
@@ -1396,7 +1396,7 @@ fungsi sahkan_kata_laluan(
             marginBottom: '48px'
           }}>PROVEN AT COMPILE TIME</h2>
 
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '32px' }}>
             {[
               'Type safety (Progress + Preservation)',
               'Non-interference',
@@ -1553,7 +1553,7 @@ fungsi sahkan_kata_laluan(
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>SECURITY WRAPPER TYPES</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '64px' }}>
+          <div style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
             {[
               { name: 'Rahsia<T>', en: 'Secret', desc: 'Wraps sensitive values. Cannot be logged, printed, serialized, or sent over the network. Must be explicitly declassified with dedah() and a policy proof. Information flow is tracked at compile time.' },
               { name: 'Terbuka<T>', en: 'Public', desc: 'Marks data as public. Can flow anywhere freely. Default for unannoted types. Explicit annotation documents intent.' },
@@ -1664,7 +1664,7 @@ fungsi banding_rahsia(
       <section style={{ padding: '0 32px 80px' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>EFFECT KEYWORDS</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '64px' }}>
+          <div style={{ display: 'grid', gap: '16px', marginBottom: '64px' }}>
             {[
               { kw: 'kesan', en: 'effect', desc: 'Declare effects in function signatures' },
               { kw: 'laku', en: 'perform', desc: 'Perform an effect operation' },
@@ -1681,7 +1681,7 @@ fungsi banding_rahsia(
           </div>
 
           <h2 style={sectionLabel}>BUILT-IN EFFECTS</h2>
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '64px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '16px', marginBottom: '64px' }}>
             {[
               { name: 'Bersih', en: 'Pure', desc: 'No side effects. Default. Provably terminating.' },
               { name: 'Baca', en: 'Read', desc: 'File system read access.' },
@@ -1778,7 +1778,7 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
       <section style={{ padding: '0 32px 80px' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>EXAMPLE CATEGORIES</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '64px' }}>
+          <div style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
             {[
               { name: '00_basics/', count: 20, desc: 'Hello world, variables, loops, pattern matching, closures, recursion' },
               { name: '01_security/', count: 18, desc: 'Secret types, declassification, constant-time, capabilities, taint tracking, zeroizing' },
@@ -2151,7 +2151,7 @@ Every security claim has a machine-checked proof behind it.`
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ fontSize: '32px', marginBottom: '48px' }}>The Type System</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+          <div style={{ display: 'grid', gap: '32px' }}>
             <div style={{ padding: '24px', backgroundColor: '#fff', border: '1px solid #eee' }}>
               <h4 style={{ fontSize: '14px', letterSpacing: '0.1em', color: '#999', marginBottom: '16px' }}>SECURITY TYPES</h4>
               <code style={{ fontSize: '14px', lineHeight: 2, display: 'block' }}>
@@ -2190,9 +2190,8 @@ Every security claim has a machine-checked proof behind it.`
       {/* Stats */}
       <section style={{ padding: '0 32px 80px' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <div style={{
+          <div className="grid-4" style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr 1fr',
             gap: '24px',
             marginBottom: '64px'
           }}>
@@ -2475,7 +2474,7 @@ Every security claim has a machine-checked proof behind it.`
             Documentation
           </h1>
 
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '32px' }}>
             {docCards.map((section, i) => (
               <div key={i} style={{
                 padding: '32px',
@@ -2528,7 +2527,7 @@ Every security claim has a machine-checked proof behind it.`
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>INSTALLATION</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '64px' }}>
+          <div style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>From Source</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
@@ -2579,7 +2578,7 @@ riinac build hello.rii    # Compile to native binary via C`}
           </pre>
 
           <h2 style={sectionLabel}>RIINAC CLI COMMANDS</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gap: '12px' }}>
             {[
               { cmd: 'riinac check', desc: 'Type-check and verify security properties' },
               { cmd: 'riinac run', desc: 'Execute .rii file directly' },
@@ -2737,7 +2736,7 @@ Examples:
           </pre>
 
           <h2 style={sectionLabel}>VERIFICATION GATES</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '48px' }}>
+          <div style={{ display: 'grid', gap: '24px', marginBottom: '48px' }}>
             <div style={cardStyle}>
               <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Pre-Commit (Fast)</h3>
               <pre style={{ ...codeBlockStyle, padding: '16px' }}>
@@ -2790,7 +2789,7 @@ grep -r "Admitted" *.v  # Must be empty`}
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={sectionLabel}>SUMMARY</h2>
 
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px', marginBottom: '64px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
             <div style={cardStyle}>
               <h3 style={{ fontSize: '14px', color: '#2e7d32', marginBottom: '12px' }}>PERMISSIONS</h3>
               <ul style={{ listStyle: 'none', padding: 0, fontSize: '14px', color: '#666' }}>
@@ -3132,7 +3131,7 @@ fungsi akses_rekod(
             with formal axioms, domain-specific types, and compiler-proven properties tailored to your exact regulatory landscape.
           </p>
 
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '64px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '20px', marginBottom: '64px' }}>
             {[
               { icon: '⊢', industry: 'Defence & Military', regs: 'CMMC, ITAR, NIST 800-171',
                 desc: 'Classified data handling with proven compartmentalization. CUI isolation enforced at the type level. Cross-domain guard verification. Side-channel resistance for signals intelligence. Formal evidence for DISA STIG compliance.' },
@@ -3181,7 +3180,7 @@ fungsi akses_rekod(
 
           {/* Regulatory frameworks */}
           <h2 style={sectionLabel}>15 REGULATORY FRAMEWORKS — MACHINE-CHECKABLE COMPLIANCE</h2>
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '48px' }}>
+          <div className="grid-3" style={{ display: 'grid', gap: '16px', marginBottom: '48px' }}>
             {[
               { reg: 'HIPAA', jurisdiction: 'United States', coverage: 'PHI access control, audit trails, encryption' },
               { reg: 'PCI-DSS', jurisdiction: 'Global', coverage: 'Cardholder data isolation, key management' },
@@ -3219,7 +3218,7 @@ fungsi akses_rekod(
             <h2 style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '24px' }}>
               RESEARCH DEPTH
             </h2>
-            <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px', marginBottom: '32px' }}>
+            <div className="grid-4" style={{ display: 'grid', gap: '32px', marginBottom: '32px' }}>
               {[
                 { value: '218', label: 'Research Tracks' },
                 { value: '1,231+', label: 'Threats Modeled' },
@@ -3287,7 +3286,7 @@ $ Print Assumptions access_control_enforced.
           </pre>
 
           <h2 style={{ ...sectionLabel, marginTop: '48px' }}>PROOF METRICS</h2>
-          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '48px' }}>
+          <div className="grid-4" style={{ display: 'grid', gap: '24px', marginBottom: '48px' }}>
             {[
               { value: '150', label: 'Compliance Theorems' },
               { value: '15', label: 'Regulations Covered' },
@@ -3302,7 +3301,7 @@ $ Print Assumptions access_control_enforced.
           </div>
 
           <h2 style={{ ...sectionLabel, marginTop: '48px' }}>WHY ENTERPRISE TEAMS CHOOSE RIINA</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          <div style={{ display: 'grid', gap: '24px' }}>
             {[
               { title: 'Security Auditors', desc: 'RIINA certificates supplement or replace manual code review. The certificate shows which controls are covered, the Coq proof, and all assumptions. Audit cycles go from weeks to minutes.' },
               { title: 'Compliance Officers', desc: 'Include RIINA certificates in compliance packages. Demonstrates that security properties are mathematically guaranteed, not merely tested. Regulators get machine-verifiable evidence.' },
@@ -3472,7 +3471,6 @@ nix run github:ib823/riina`}
           maxWidth: '1200px',
           margin: '0 auto',
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
           gap: '48px'
         }}>
           <div>

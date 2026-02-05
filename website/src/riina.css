@@ -64,6 +64,12 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 /* ---------- App Container ---------- */
 .app {
   font-family: var(--font-sans);
@@ -1559,9 +1565,26 @@
   max-width: 600px !important;
 }
 
-/* ----- Grids Centering ----- */
+/* ----- Grids — CSS controls columns ----- */
 .grid-2, .grid-3, .grid-4, .grid-footer {
   width: 100%;
+  grid-template-columns: 1fr !important;
+}
+
+/* Desktop grid columns (768px+) */
+@media (min-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .grid-3 {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+  .grid-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .grid-footer {
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr !important;
+  }
 }
 
 /* ============================================================================
@@ -1578,6 +1601,8 @@
 /* Hide desktop nav on mobile */
 .site-nav {
   display: none !important;
+  gap: 28px;
+  align-items: center;
 }
 
 /* Show hamburger on mobile */
@@ -1588,6 +1613,11 @@
 /* Hide GitHub button on mobile */
 .header-github {
   display: none !important;
+}
+
+/* Prevent any element from causing horizontal overflow */
+main, section, div {
+  max-width: 100%;
 }
 
 /* Hero stats stacking on mobile */
