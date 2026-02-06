@@ -33,6 +33,7 @@ import RIINA.Foundations.Syntax
 import RIINA.Foundations.Semantics
 import RIINA.TypeSystem.Typing
 import RIINA.TypeSystem.Progress
+import RIINA.TypeSystem.Preservation
 import RIINA.TypeSystem.TypeSafety
 import RIINA.Effects.EffectAlgebra
 import RIINA.Effects.EffectSystem

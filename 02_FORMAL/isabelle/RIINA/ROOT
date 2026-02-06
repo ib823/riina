@@ -22,6 +22,7 @@ session RIINA = HOL +
     Semantics
     Typing
     Progress
+    Preservation
     TypeSafety
     EffectAlgebra
     EffectSystem
