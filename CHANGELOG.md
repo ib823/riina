@@ -1,6 +1,6 @@
 # Changelog
 
-**Audit Update:** 2026-02-06 (Comprehensive repository audit) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 6,194 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-06 (Session 77: Triple-Prover Complete) — 7,682 Coq Qed + 91 Lean theorems + 102 Isabelle lemmas = 7,875 total proofs. 0 Admitted/sorry. 1 axiom (policy). 284 .v files, 12 .lean files, 10 .thy files. 839 Rust tests.
 
 All notable changes to RIINA will be documented in this file.
 
@@ -9,18 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Triple-prover verification complete: 86 theorems independently proved in Coq, Lean 4, and Isabelle/HOL
+- Lean 4 proofs: 91 theorems across 12 files (Syntax, Semantics, Typing, Progress, Preservation, TypeSafety, EffectAlgebra, EffectSystem, EffectGate, NonInterference)
+- Isabelle/HOL proofs: 102 lemmas across 10 theory files (same coverage as Lean)
+- 0 sorry remaining across all secondary/tertiary provers
+- Website: Triple-prover verification section on homepage and How page
+
 ### Fixed
 - Coq 8.20.1 compatibility: migrated from Rocq 9.1, fixed all import paths (`Stdlib.*` → `Coq.*`), fixed API changes (`filter_length` → `filter_length_le`), fixed recursive definitions, updated proofs for new semantics
 - Eliminated all 7 previously-tracked Admitted proofs (DELTA001, Platform/WASM/Mobile stubs, ValRelStepLimit)
-- Active build now at 4,890 Qed proofs (up from 4,044)
+- Eliminated 3 of 4 axioms (logical_relation_ref, logical_relation_assign, fundamental_theorem_step_0) — 1 policy axiom remains
+- Active Coq build now at 7,682 Qed proofs
 
-### Added
+### Added (Phase 7)
 - Phase 7: Platform Universality — modular backend trait architecture (`Backend` trait, `Target` enum)
 - WebAssembly backend (`--target=wasm32`) with direct IR-to-WASM binary emission
 - Platform-conditional standard library (`platform.rs`) for cross-platform compilation
 - Mobile backend scaffolding: Android JNI bridge generation, iOS Swift bridge generation
 - `--target` flag for `riinac build` and `riinac emit` commands
-- Roadmap updated across all documentation (11 files)
+- `riina-wasm` crate: in-browser compiler via WASM (cdylib with `extern "C"` exports)
+- WASM Playground page on website (split-pane editor, 5 examples, Web Worker compilation)
+- 4 backend verification Coq proofs: WASM correctness, JNI/Swift bridge, platform stdlib, backend trait (63 Qed)
+- Phase 7 complete (all M7.1–M7.6 milestones done)
+- WASM backend production: bump allocator, string constants, pair/sum types, closures (table + call_indirect), refs, builtin imports
+- WASM bug fixes: Mod (I32RemS), And/Or (I32And/I32Or), Call (function index resolution)
+- Android JNI production: full C implementation (JNI_OnLoad, type marshaling, callback routing, permissions from effects)
+- iOS Swift production: extended type conversion, C bridge routing, Info.plist generation, SPM Package.swift
+- Playground build pipeline: build-wasm.sh, Vite WASM integration, deploy pipeline
+- Backend composition Coq proofs: NI preservation through compiled backends (BackendComposition.v, 11 Qed)
+- Extended WASM verification (+23 Qed: strings, closures, pairs, allocator, completeness)
+- Extended mobile bridge verification (+17 Qed: JNI string roundtrip, Swift type safety, callback safety)
 
 ## [0.2.0] - 2026-02-01
 
