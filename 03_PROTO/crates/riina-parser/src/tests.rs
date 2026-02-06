@@ -1842,3 +1842,61 @@ fn test_parse_c_types() {
         _ => panic!("Expected ExternBlock"),
     }
 }
+
+// =============================================================================
+// EFFECT::MUT AND EFFECT::ALLOC TESTS (P5 Self-Hosting)
+// =============================================================================
+
+#[test]
+fn test_parse_effect_mut_english() {
+    let mut p = Parser::new("fungsi mutate() -> Int kesan Mut { 42 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Mut),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_effect_mut_bm() {
+    let mut p = Parser::new("fungsi ubah_nilai() -> Int kesan Ubah { 42 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Mut),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_effect_alloc_english() {
+    let mut p = Parser::new("fungsi allocate() -> Int kesan Alloc { 0 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Alloc),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_effect_alloc_bm() {
+    let mut p = Parser::new("fungsi peruntuk() -> Int kesan Peruntuk { 0 }");
+    let prog = p.parse_program().unwrap();
+    match &prog.decls[0] {
+        TopLevelDecl::Function { effect, .. } => assert_eq!(*effect, Effect::Alloc),
+        other => panic!("Expected Function, got {:?}", other),
+    }
+}
+
+#[test]
+fn test_parse_fn_type_with_effect_mut() {
+    let mut p = Parser::new("Fn(Int, Bool, Mut)");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Mut));
+}
+
+#[test]
+fn test_parse_fn_type_with_effect_alloc() {
+    let mut p = Parser::new("Fn(Int, Bool, Alloc)");
+    let ty = p.parse_ty().unwrap();
+    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Alloc));
+}

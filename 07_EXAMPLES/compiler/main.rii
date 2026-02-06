@@ -1,0 +1,95 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RIINA Compiler Driver (Self-Hosting Scaffolding)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This file provides the scaffolding for the self-hosted riinac compiler.
+// Once complete, this will replace the Rust-based riinac.
+//
+// Usage: riinac [COMMAND] [OPTIONS] <FILE>
+//
+// Commands:
+//   build    Compile .rii file to executable
+//   check    Type-check without generating code
+//   emit-c   Emit C source code
+//   run      Compile and run
+//
+// RIINA = Rigorous Immutable Invariant, No Assumptions
+
+// ── Version Info ──
+
+struktur Versi {
+    utama: Nombor,
+    kecil: Nombor,
+    tampalan: Nombor,
+}
+
+fungsi versi_semasa() -> Versi kesan Bersih {
+    pulang Versi { utama: 0, kecil: 1, tampalan: 0 };
+}
+
+// ── Command Line Arguments ──
+
+enum Arahan {
+    Bina,       // build
+    Semak,      // check
+    PancarC,    // emit-c
+    Jalankan,   // run
+    Bantuan,    // help
+    VersiInfo,  // version
+}
+
+struktur Pilihan {
+    arahan: Arahan,
+    fail_masukan: Teks,
+    fail_keluaran: Teks,
+    sasaran: Teks,
+    debug: Bool,
+}
+
+// ── Compiler Pipeline ──
+//
+// 1. Parse source file (lexer.rii + parser.rii)
+// 2. Type check AST (typechecker.rii)
+// 3. Lower to IR (codegen.rii)
+// 4. Emit target code (C, WASM, etc.)
+
+// fungsi kompil(fail: Teks) -> Hasil<Teks, Ralat> kesan SistemFail {
+//     // Read source file
+//     biar sumber = fail_baca(fail)?;
+//
+//     // Tokenize
+//     biar token = tokenize(sumber);
+//
+//     // Parse
+//     biar ast = parse(token)?;
+//
+//     // Type check
+//     biar ast_taip = semak_jenis(ast)?;
+//
+//     // Generate code
+//     biar kod = jana_kod(ast_taip)?;
+//
+//     pulang Ok(kod);
+// }
+
+// ── Entry Point ──
+
+fungsi utama() -> Nombor kesan Sistem {
+    // Print version
+    biar v = versi_semasa();
+    cetak("riinac (self-hosted) v");
+    cetak(ke_teks(v.utama));
+    cetak(".");
+    cetak(ke_teks(v.kecil));
+    cetak(".");
+    cetakln(ke_teks(v.tampalan));
+
+    // Placeholder message
+    cetakln("Self-hosted compiler scaffolding");
+    cetakln("Full implementation pending Phase 8 completion");
+
+    pulang 0;
+}

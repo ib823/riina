@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RIINA Lexer (Self-Hosting Scaffolding)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This file provides the scaffolding for porting riina-lexer/src/lib.rs
+// to RIINA itself. Once complete, this will be part of the self-hosted
+// compiler.
+//
+// Reference: 01_RESEARCH/specs/bahasa/RIINA-LANG-LEXER-SPEC_v1_0_0.md
+//
+// RIINA = Rigorous Immutable Invariant, No Assumptions
+
+// ── Token Types ──
+
+struktur Span {
+    mula: Nombor,
+    akhir: Nombor,
+}
+
+enum TokenJenis {
+    // Literals
+    NomborLiteral,    // 42, 0x2A
+    TeksLiteral,      // "hello"
+    BoolLiteral,      // betul, salah
+
+    // Identifiers
+    Pengenal,         // variable names
+
+    // Keywords - Bahasa Melayu
+    Fungsi,           // fungsi
+    Biar,             // biar
+    Ubah,             // ubah
+    Tetap,            // tetap
+    Kalau,            // kalau
+    Lain,             // lain
+    Untuk,            // untuk
+    Selagi,           // selagi
+    Ulang,            // ulang
+    Pulang,           // pulang
+    Padan,            // padan
+    Betul,            // betul
+    Salah,            // salah
+    Rahsia,           // rahsia
+    Dedah,            // dedah
+    Kesan,            // kesan
+    Bersih,           // bersih
+
+    // Operators
+    Tambah,           // +
+    Tolak,            // -
+    Darab,            // *
+    Bahagi,           // /
+    Baki,             // %
+    SamaDengan,       // ==
+    TakSama,          // !=
+    KurangDari,       // <
+    LebihDari,        // >
+    KurangSama,       // <=
+    LebihSama,        // >=
+    Dan,              // &&
+    Atau,             // ||
+    Bukan,            // !
+    Anak,             // ->
+    AnakTebal,        // =>
+
+    // Delimiters
+    KurunBuka,        // (
+    KurunTutup,       // )
+    KurawalBuka,      // {
+    KurawalTutup,     // }
+    SegiempatBuka,    // [
+    SegiempatTutup,   // ]
+    Koma,             // ,
+    NoktahKoma,       // ;
+    Titik,            // .
+    TitikDua,         // :
+    Sama,             // =
+
+    // Special
+    AkhirFail,        // EOF
+    Salahan,          // Error token
+}
+
+struktur Token {
+    jenis: TokenJenis,
+    span: Span,
+    teks: Teks,
+}
+
+// ── Lexer State ──
+
+struktur Lexer {
+    sumber: Teks,
+    pos: Nombor,
+    panjang: Nombor,
+}
+
+// ── Core Functions ──
+
+// TODO: Implement when language supports mutable state properly
+//
+// fungsi Lexer::baru(sumber: Teks) -> Lexer {
+//     biar panjang = panjang(sumber);
+//     pulang Lexer { sumber: sumber, pos: 0, panjang: panjang };
+// }
+//
+// fungsi Lexer::tokenize(&ubah ini) -> Vec<Token> kesan Ubah {
+//     biar ubah tokens = Vec::baru();
+//     selagi ini.pos < ini.panjang {
+//         biar tok = ini.token_seterusnya();
+//         tokens.tambah(tok);
+//     }
+//     pulang tokens;
+// }
+
+// ── Placeholder Implementation ──
+
+// For now, provide a simple tokenizer function
+fungsi tokenize_mudah(sumber: Teks) -> Nombor kesan Bersih {
+    // Return count of potential tokens (simplified)
+    pulang panjang(sumber);
+}
+
+// Entry point for testing
+fungsi utama() -> Nombor kesan Sistem {
+    biar contoh = "fungsi utama() { pulang 0; }";
+    biar kiraan = tokenize_mudah(contoh);
+    cetakln("Tokenize selesai");
+    pulang 0;
+}

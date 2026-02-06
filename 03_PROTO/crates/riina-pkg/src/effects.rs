@@ -39,8 +39,8 @@ impl EffectCategory {
     pub fn from_effect(eff: riina_types::Effect) -> Option<Self> {
         use riina_types::Effect;
         match eff {
-            Effect::Pure => None,
-            Effect::Read | Effect::Write | Effect::FileSystem => Some(Self::IO),
+            Effect::Pure | Effect::Mut => None, // Local effects don't need permissions
+            Effect::Read | Effect::Write | Effect::Alloc | Effect::FileSystem => Some(Self::IO),
             Effect::Network | Effect::NetworkSecure => Some(Self::Network),
             Effect::Crypto | Effect::Random => Some(Self::Crypto),
             Effect::System | Effect::Process | Effect::Time => Some(Self::System),

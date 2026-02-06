@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RIINA Types (Self-Hosting Scaffolding)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This file provides the scaffolding for porting riina-types/src/lib.rs
+// to RIINA itself. Contains AST definitions for the self-hosted compiler.
+//
+// Reference: 01_RESEARCH/specs/bahasa/RIINA-LANG-AST_v1_0_0.md
+//
+// RIINA = Rigorous Immutable Invariant, No Assumptions
+
+// ── Security Levels ──
+
+enum TahapKeselamatan {
+    Awam,       // Public
+    Dalaman,    // Internal
+    Sesi,       // Session
+    Pengguna,   // User
+    Sistem,     // System
+    Rahsia,     // Secret
+}
+
+// ── Effects ──
+
+enum Kesan {
+    Bersih,          // Pure
+    Ubah,            // Mut (local mutation)
+    Baca,            // Read
+    Peruntuk,        // Alloc
+    Tulis,           // Write
+    SistemFail,      // FileSystem
+    Rangkaian,       // Network
+    RangkaianSelamat,// NetworkSecure
+    Kripto,          // Crypto
+    Rawak,           // Random
+    SistemKesan,     // System
+    Masa,            // Time
+    Proses,          // Process
+}
+
+// ── Types ──
+
+enum Jenis {
+    Unit,
+    Bool,
+    Nombor,
+    Teks,
+    Bait,
+
+    // Function types: T1 -[ε]-> T2
+    Fungsi {
+        masukan: Jenis,
+        keluaran: Jenis,
+        kesan: Kesan,
+    },
+
+    // Compound types
+    Pasangan { kiri: Jenis, kanan: Jenis },
+    Jumlah { kiri: Jenis, kanan: Jenis },
+    Senarai { elemen: Jenis },
+    Pilihan { elemen: Jenis },
+
+    // Reference types
+    Rujukan { dalam: Jenis, tahap: TahapKeselamatan },
+
+    // Security types
+    Rahsia { dalam: Jenis },
+    Berlabel { dalam: Jenis, tahap: TahapKeselamatan },
+    Bukti { dalam: Jenis },
+}
+
+// ── Expressions ──
+
+enum Ungkapan {
+    // Values
+    Unit,
+    Bool { nilai: Bool },
+    Nombor { nilai: Nombor },
+    Teks { nilai: Teks },
+    Pembolehubah { nama: Teks },
+
+    // Functions
+    Lambda { param: Teks, jenis: Jenis, badan: Ungkapan },
+    Aplikasi { fungsi: Ungkapan, hujah: Ungkapan },
+
+    // Pairs
+    Pasangan { kiri: Ungkapan, kanan: Ungkapan },
+    Pertama { pasangan: Ungkapan },
+    Kedua { pasangan: Ungkapan },
+
+    // Control
+    Kalau { syarat: Ungkapan, benar: Ungkapan, salah: Ungkapan },
+    Biar { nama: Teks, nilai: Ungkapan, badan: Ungkapan },
+    BiarRek { nama: Teks, jenis: Jenis, nilai: Ungkapan, badan: Ungkapan },
+
+    // References
+    Rujukan { nilai: Ungkapan, tahap: TahapKeselamatan },
+    Baca { rujukan: Ungkapan },
+    Tulis { rujukan: Ungkapan, nilai: Ungkapan },
+
+    // Security
+    Rahsiakan { nilai: Ungkapan },
+    Dedahkan { rahsia: Ungkapan, bukti: Ungkapan },
+    Buktikan { nilai: Ungkapan },
+
+    // Effects
+    Laksanakan { kesan: Kesan, nilai: Ungkapan },
+    Tangani { badan: Ungkapan, pengenal: Teks, pengendali: Ungkapan },
+
+    // Binary operations
+    OpBinari { op: OpBinari, kiri: Ungkapan, kanan: Ungkapan },
+}
+
+// ── Binary Operators ──
+
+enum OpBinari {
+    Tambah,    // +
+    Tolak,     // -
+    Darab,     // *
+    Bahagi,    // /
+    Baki,      // %
+    SamaDengan,// ==
+    TakSama,   // !=
+    KurangDari,// <
+    LebihDari, // >
+    KurangSama,// <=
+    LebihSama, // >=
+    Dan,       // &&
+    Atau,      // ||
+}
+
+// ── Top-Level Declarations ──
+
+enum Pengisytiharan {
+    Fungsi {
+        nama: Teks,
+        param: Teks,
+        jenis_param: Jenis,
+        jenis_pulang: Jenis,
+        kesan: Kesan,
+        badan: Ungkapan,
+    },
+    Pengikatan {
+        nama: Teks,
+        nilai: Ungkapan,
+    },
+    Ungkapan {
+        nilai: Ungkapan,
+    },
+}
+
+// ── Program ──
+
+struktur Program {
+    pengisytiharan: Senarai<Pengisytiharan>,
+}
+
+// ── Entry Point ──
+
+fungsi utama() -> Nombor kesan Sistem {
+    cetakln("RIINA Types module loaded");
+    pulang 0;
+}

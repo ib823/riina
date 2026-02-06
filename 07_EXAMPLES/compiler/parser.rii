@@ -1,0 +1,120 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+// =============================================================================
+// RIINA Parser (Self-Hosting Scaffolding)
+// =============================================================================
+//
+// This file provides the scaffolding for porting riina-parser/src/lib.rs
+// to RIINA itself. Once complete, this will be part of the self-hosted
+// compiler.
+//
+// Reference: 01_RESEARCH/specs/bahasa/RIINA-LANG-GRAMMAR-*.md
+//
+// RIINA = Rigorous Immutable Invariant, No Assumptions
+
+// Import types from lexer and types modules
+// guna compiler::lexer::{Token, TokenJenis, Span};
+// guna compiler::types::{Ungkapan, Jenis, Pengisytiharan, Program};
+
+// -- Parse Errors --
+
+enum RalatParse {
+    TokenTakDijangka { jenis: Teks },
+    AkhirInputTakDijangka,
+    JangkaPengenal,
+    JangkaJenis,
+    JangkaUngkapan,
+    TahapKeselamatanTakSah,
+    KesanTakSah,
+}
+
+struktur HasilRalat {
+    ralat: RalatParse,
+    span: Span,
+}
+
+// -- Parser State --
+
+struktur Parser {
+    tokens: Senarai<Token>,
+    pos: Nombor,
+    panjang: Nombor,
+    span_semasa: Span,
+}
+
+// -- Parser Core Functions --
+
+// TODO: Implement when language supports proper indexing and mutable refs
+//
+// fungsi Parser::baru(tokens: Senarai<Token>) -> Parser kesan Bersih {
+//     biar panjang = tokens.panjang();
+//     pulang Parser {
+//         tokens: tokens,
+//         pos: 0,
+//         panjang: panjang,
+//         span_semasa: Span { mula: 0, akhir: 0 },
+//     };
+// }
+//
+// fungsi Parser::peek(&ini) -> Mungkin<Token> kesan Bersih {
+//     kalau ini.pos < ini.panjang {
+//         pulang Mungkin::Ada(ini.tokens[ini.pos]);
+//     } lain {
+//         pulang Mungkin::Tiada;
+//     }
+// }
+//
+// fungsi Parser::next(&ubah ini) -> Mungkin<Token> kesan Ubah {
+//     kalau ini.pos < ini.panjang {
+//         biar token = ini.tokens[ini.pos];
+//         ini.pos = ini.pos + 1;
+//         ini.span_semasa = token.span;
+//         pulang Mungkin::Ada(token);
+//     } lain {
+//         pulang Mungkin::Tiada;
+//     }
+// }
+
+// -- Expression Parsing --
+
+// parse_expr: Entry point for expression parsing
+// parse_stmt_sequence: Parses statement sequences with let bindings
+// parse_control_flow: Parses if/fn/match/handle
+// parse_pipe: Parses pipe operator (|>)
+// parse_or/parse_and: Parses logical operators
+// parse_equality/parse_comparison: Parses comparison operators
+// parse_additive/parse_multiplicative: Parses arithmetic operators
+// parse_app: Parses function application
+// parse_unary: Parses unary operators (!, ref, perform, classify, etc.)
+// parse_atom: Parses literals, identifiers, parenthesized expressions
+
+// TODO: Implement each parse function following the Rust implementation
+
+// -- Type Parsing --
+
+// parse_ty: Parses type annotations
+// parse_security_level: Parses security levels (Awam, Dalaman, Sesi, etc.)
+// parse_effect: Parses effect annotations (Bersih, Ubah, Baca, Tulis, etc.)
+
+// -- Top-Level Parsing --
+
+// parse_program: Parses complete .rii file
+// parse_top_level_decl: Parses function declarations, bindings
+// parse_function_decl: Parses fungsi declarations
+// parse_extern_block: Parses luaran "C" blocks
+
+// -- Placeholder Implementation --
+
+fungsi parse_contoh(sumber: Teks) -> Nombor kesan Bersih {
+    // Placeholder: count characters as proxy for complexity
+    pulang panjang(sumber);
+}
+
+// Entry point for testing
+fungsi utama() -> Nombor kesan Sistem {
+    biar contoh = "fungsi utama() { pulang 0; }";
+    biar hasil = parse_contoh(contoh);
+    cetakln("Parser selesai");
+    pulang 0;
+}

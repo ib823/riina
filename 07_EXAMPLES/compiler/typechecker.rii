@@ -1,0 +1,159 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+// =============================================================================
+// RIINA Typechecker (Self-Hosting Scaffolding)
+// =============================================================================
+//
+// This file provides the scaffolding for porting riina-typechecker/src/lib.rs
+// to RIINA itself. Once complete, this will be part of the self-hosted
+// compiler.
+//
+// Implements the typing rules from 02_FORMAL/coq/type_system/Typing.v
+//
+// RIINA = Rigorous Immutable Invariant, No Assumptions
+
+// Import types
+// guna compiler::types::{Jenis, Ungkapan, Kesan, TahapKeselamatan};
+
+// -- Type Errors --
+
+enum RalatJenis {
+    JenisTidakPadan { dijangka: Jenis, ditemui: Jenis },
+    PembolehubahTakWujud { nama: Teks },
+    BukanFungsi { jenis: Jenis },
+    BukanRujukan { jenis: Jenis },
+    BukanRahsia { jenis: Jenis },
+    PelanggaranKeselamatan { tahap: TahapKeselamatan, konteks: TahapKeselamatan },
+    DedahTakSah,
+    LokasiTakWujud { lokasi: Nombor },
+}
+
+// -- Typing Contexts (Coq: Γ, Σ, Δ) --
+
+// Γ: Type environment (variable → type mapping)
+struktur TypeEnv {
+    pengikatan: Senarai<(Teks, Jenis)>,
+}
+
+// Σ: Store typing (location → (type, security level))
+struktur StoreTy {
+    pengikatan: Senarai<(Nombor, Jenis, TahapKeselamatan)>,
+    lokasi_seterusnya: Nombor,
+}
+
+// Full typing context: (Γ, Σ, Δ)
+struktur TypingContext {
+    gamma: TypeEnv,      // Type environment
+    sigma: StoreTy,      // Store typing
+    delta: TahapKeselamatan,  // Security context
+}
+
+// -- Security Level Lattice --
+
+// Security levels form a lattice: Public ⊑ Internal ⊑ Session ⊑ User ⊑ System ⊑ Secret
+// Coq: sec_level_leq
+
+fungsi tahap_kurang_sama(a: TahapKeselamatan, b: TahapKeselamatan) -> Bool kesan Bersih {
+    // All levels flow to themselves
+    // Lower levels flow to higher levels
+    padan (a, b) {
+        (Awam, _) => betul,
+        (Dalaman, Awam) => salah,
+        (Dalaman, _) => betul,
+        (Sesi, Awam) => salah,
+        (Sesi, Dalaman) => salah,
+        (Sesi, _) => betul,
+        (Pengguna, Awam) => salah,
+        (Pengguna, Dalaman) => salah,
+        (Pengguna, Sesi) => salah,
+        (Pengguna, _) => betul,
+        (Sistem, Rahsia) => betul,
+        (Sistem, Sistem) => betul,
+        (Sistem, _) => salah,
+        (Rahsia, Rahsia) => betul,
+        (Rahsia, _) => salah,
+    }
+}
+
+// -- Declassification Predicate --
+// Coq: declass_ok
+// e1 must be Classify(v), e2 must be Prove(Classify(v'))
+// and v must equal v' for declassification to be valid
+
+// fungsi declass_ok(e1: Ungkapan, e2: Ungkapan) -> Bool kesan Bersih {
+//     padan (e1, e2) {
+//         (Rahsiakan { nilai: v1 }, Buktikan { nilai: v2 }) =>
+//             padan v2 {
+//                 Rahsiakan { nilai: v2_inner } => v1 == v2_inner,
+//                 _ => salah,
+//             },
+//         _ => salah,
+//     }
+// }
+
+// -- Core Typing Rules --
+// Implements rules from Typing.v
+
+// T_Unit: () : Unit
+// T_Bool: true/false : Bool
+// T_Int: n : Int
+// T_String: "s" : String
+// T_Var: Γ(x) = τ ⟹ x : τ
+
+// T_Lam: Γ, x:τ₁ ⊢ e : τ₂ ⟹ λx:τ₁. e : τ₁ → τ₂
+// T_App: Γ ⊢ e₁ : τ₁ → τ₂, Γ ⊢ e₂ : τ₁ ⟹ e₁ e₂ : τ₂
+
+// T_Let: Γ ⊢ e₁ : τ₁, Γ, x:τ₁ ⊢ e₂ : τ₂ ⟹ let x = e₁ in e₂ : τ₂
+// T_LetRec: Γ, f:(τ₁→τ₂) ⊢ e₁ : τ₁→τ₂, Γ, f:(τ₁→τ₂) ⊢ e₂ : τ ⟹ let rec f = e₁ in e₂ : τ
+
+// T_If: Γ ⊢ e₁ : Bool, Γ ⊢ e₂ : τ, Γ ⊢ e₃ : τ ⟹ if e₁ then e₂ else e₃ : τ
+
+// T_Ref: Γ,Σ,Δ ⊢ e : τ ⟹ ref@sl e : Ref<τ>@sl  [with eff ⊔ Alloc]
+// T_Deref: Γ,Σ,Δ ⊢ e : Ref<τ>@sl, sl ⊑ Δ ⟹ !e : τ  [security check!]
+// T_Assign: Γ,Σ,Δ ⊢ e₁ : Ref<τ>@sl, Γ,Σ,Δ ⊢ e₂ : τ, sl ⊑ Δ ⟹ e₁ := e₂ : Unit
+
+// T_Classify: Γ,Σ,Δ ⊢ e : τ ⟹ classify e : Secret<τ>
+// T_Declassify: Γ,Σ,Δ ⊢ e₁ : Secret<τ>, declass_ok(e₁, e₂) ⟹ declassify e₁ with e₂ : τ
+// T_Prove: Γ,Σ,Δ ⊢ e : τ ⟹ prove e : Proof<τ>
+
+// T_Perform: Γ,Σ,Δ ⊢ e : τ ⟹ perform eff e : τ  [with eff added]
+// T_Handle: Γ,Σ,Δ ⊢ e₁ : τ, Γ, x:eff ⊢ e₂ : τ ⟹ handle e₁ with x => e₂ : τ
+
+// -- Main Type Check Function --
+// Coq: has_type Γ Σ Δ e τ eff
+
+// fungsi type_check(
+//     ctx: &ubah TypingContext,
+//     expr: &Ungkapan
+// ) -> Hasil<(Jenis, Kesan), RalatJenis> kesan Ubah {
+//     padan expr {
+//         Ungkapan::Unit => Ok((Jenis::Unit, Kesan::Bersih)),
+//         Ungkapan::Bool { nilai } => Ok((Jenis::Bool, Kesan::Bersih)),
+//         Ungkapan::Nombor { nilai } => Ok((Jenis::Nombor, Kesan::Bersih)),
+//         Ungkapan::Teks { nilai } => Ok((Jenis::Teks, Kesan::Bersih)),
+//
+//         Ungkapan::Pembolehubah { nama } =>
+//             padan ctx.gamma.cari(nama) {
+//                 Mungkin::Ada(jenis) => Ok((jenis, Kesan::Bersih)),
+//                 Mungkin::Tiada => Err(RalatJenis::PembolehubahTakWujud { nama: nama }),
+//             },
+//
+//         // ... more cases
+//     }
+// }
+
+// -- Placeholder Implementation --
+
+fungsi semak_contoh(sumber: Teks) -> Nombor kesan Bersih {
+    // Placeholder: return source length as proxy
+    pulang panjang(sumber);
+}
+
+// Entry point for testing
+fungsi utama() -> Nombor kesan Sistem {
+    biar contoh = "biar x = 42; x";
+    biar hasil = semak_contoh(contoh);
+    cetakln("Typechecker selesai");
+    pulang 0;
+}

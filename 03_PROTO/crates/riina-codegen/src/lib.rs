@@ -82,6 +82,9 @@ pub mod platform;
 pub mod mobile;
 pub mod jni;
 pub mod swift_bridge;
+pub mod toolchain;
+pub mod android_build;
+pub mod ios_build;
 
 // Re-export primary interface
 pub use ir::{Instruction, BasicBlock, Function, Program};

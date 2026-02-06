@@ -1,0 +1,154 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+// =============================================================================
+// RIINA Code Generator (Self-Hosting Scaffolding)
+// =============================================================================
+//
+// This file provides the scaffolding for porting riina-codegen/src/lib.rs
+// to RIINA itself. Once complete, this will be part of the self-hosted
+// compiler.
+//
+// Reference: 03_PROTO/crates/riina-codegen/
+//
+// RIINA = Rigorous Immutable Invariant, No Assumptions
+
+// Import types
+// guna compiler::types::{Jenis, Ungkapan, Kesan, Program};
+
+// -- Target Platforms --
+
+enum Sasaran {
+    C,           // Emit C code (default)
+    Wasm32,      // WebAssembly 32-bit
+    AndroidArm64,// Android ARM64
+    IosArm64,    // iOS ARM64
+}
+
+// -- IR (Intermediate Representation) --
+
+// Low-level IR before emission
+enum IR {
+    // Values
+    Malar { jenis: Jenis, nilai: Teks },
+    Muatan { nama: Teks },
+
+    // Operations
+    OpBinari { op: Teks, kiri: IR, kanan: IR },
+    OpUnari { op: Teks, operand: IR },
+
+    // Control flow
+    Kalau { syarat: IR, benar: IR, salah: IR },
+    Ulang { badan: IR },
+
+    // Functions
+    Panggil { fungsi: Teks, hujah: Senarai<IR> },
+    Pulang { nilai: IR },
+
+    // Memory
+    Peruntuk { saiz: Nombor },
+    Muat { alamat: IR },
+    Simpan { alamat: IR, nilai: IR },
+
+    // Effects
+    Laksana { kesan: Kesan, badan: IR },
+}
+
+// -- C Code Emitter --
+
+struktur CEmitter {
+    keluaran: Teks,
+    aras_inden: Nombor,
+    pembolehubah_seterusnya: Nombor,
+}
+
+// C runtime includes
+// #include <stdint.h>
+// #include <stdbool.h>
+// #include <string.h>
+// #include <stdio.h>
+// #include "riina_runtime.h"
+
+// Type mappings:
+// Nombor → int64_t
+// Bool → bool
+// Teks → riina_string_t
+// Bait → riina_bytes_t
+// Ref<T>@sl → riina_ref_t
+// Secret<T> → riina_secret_t
+
+// Effect mappings:
+// Bersih → no marker
+// Ubah → RIINA_EFFECT_MUT
+// Peruntuk → RIINA_EFFECT_ALLOC
+// Baca → RIINA_EFFECT_READ
+// Tulis → RIINA_EFFECT_WRITE
+// SistemFail → RIINA_EFFECT_FS
+// Rangkaian → RIINA_EFFECT_NET
+// Kripto → RIINA_EFFECT_CRYPTO
+// Sistem → RIINA_EFFECT_SYSTEM
+
+// -- Code Generation Functions --
+
+// TODO: Implement when language supports string building
+//
+// fungsi CEmitter::baru() -> CEmitter kesan Bersih {
+//     pulang CEmitter {
+//         keluaran: "",
+//         aras_inden: 0,
+//         pembolehubah_seterusnya: 0,
+//     };
+// }
+//
+// fungsi CEmitter::emit_program(&ubah ini, program: &Program) -> Teks kesan Ubah {
+//     // Emit includes
+//     ini.tulis("#include <stdint.h>\n");
+//     ini.tulis("#include <stdbool.h>\n");
+//     ini.tulis("#include \"riina_runtime.h\"\n\n");
+//
+//     // Emit each declaration
+//     untuk decl dalam program.pengisytiharan {
+//         ini.emit_decl(decl);
+//     }
+//
+//     pulang ini.keluaran;
+// }
+//
+// fungsi CEmitter::emit_expr(&ubah ini, expr: &Ungkapan) -> Teks kesan Ubah {
+//     padan expr {
+//         Ungkapan::Unit => "(void)0",
+//         Ungkapan::Bool { nilai } => kalau nilai { "true" } lain { "false" },
+//         Ungkapan::Nombor { nilai } => ke_teks(nilai),
+//         Ungkapan::Teks { nilai } => format("riina_string_from(\"{}\")", nilai),
+//         // ... more cases
+//     }
+// }
+
+// -- WASM Backend (Scaffolding) --
+
+// WASM section structure:
+// 0x00 custom, 0x01 type, 0x02 import, 0x03 function
+// 0x04 table, 0x05 memory, 0x06 global, 0x07 export
+// 0x08 start, 0x09 element, 0x0a code, 0x0b data
+
+// -- Mobile Backends (Scaffolding) --
+
+// Android: JNI bridge generation
+// iOS: Swift bridge generation
+
+// See riina-codegen/src/jni.rs and swift_bridge.rs
+
+// -- Placeholder Implementation --
+
+fungsi jana_c_contoh(sumber: Teks) -> Teks kesan Bersih {
+    // Placeholder: wrap in main function
+    pulang "int main(void) { return 0; }";
+}
+
+// Entry point for testing
+fungsi utama() -> Nombor kesan Sistem {
+    biar hasil = jana_c_contoh("contoh");
+    cetakln("Codegen selesai");
+    cetakln(hasil);
+    pulang 0;
+}

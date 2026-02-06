@@ -746,3 +746,249 @@ mod tests {
         assert_eq!(eff, Effect::Pure);
     }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// FORMALIZED TYPECHECKER TESTS (Coq-matching)
+// Tests for type_check_full with TypingContext, StoreTy, and security levels
+// ════════════════════════════════════════════════════════════════════════════
+
+#[cfg(test)]
+mod formalized_tests {
+    use crate::{TypingContext, type_check_full, TypeError};
+    use riina_types::{Expr, Ty, Effect, SecurityLevel, StoreTy, Location};
+
+    // ── Basic value typing with new context ──
+
+    #[test]
+    fn test_full_literals() {
+        let mut ctx = TypingContext::new();
+        assert_eq!(type_check_full(&mut ctx, &Expr::Int(42)).unwrap(), (Ty::Int, Effect::Pure));
+        assert_eq!(type_check_full(&mut ctx, &Expr::Bool(true)).unwrap(), (Ty::Bool, Effect::Pure));
+        assert_eq!(type_check_full(&mut ctx, &Expr::Unit).unwrap(), (Ty::Unit, Effect::Pure));
+    }
+
+    #[test]
+    fn test_full_var() {
+        let mut ctx = TypingContext::new();
+        ctx = ctx.extend_gamma("x".into(), Ty::Int);
+        assert_eq!(type_check_full(&mut ctx, &Expr::Var("x".into())).unwrap(), (Ty::Int, Effect::Pure));
+    }
+
+    // ── Store Typing (Σ) tests ──
+
+    #[test]
+    fn test_store_ty_operations() {
+        let mut sigma = StoreTy::new();
+        assert!(sigma.is_empty());
+
+        let loc1 = sigma.extend(Ty::Int, SecurityLevel::Public);
+        assert_eq!(loc1, Location::new(0));
+        assert_eq!(sigma.lookup(&loc1), Some(&(Ty::Int, SecurityLevel::Public)));
+
+        let loc2 = sigma.extend(Ty::Bool, SecurityLevel::Secret);
+        assert_eq!(loc2, Location::new(1));
+        assert_eq!(sigma.len(), 2);
+
+        assert!(sigma.contains(&loc1));
+        assert!(!sigma.contains(&Location::new(99)));
+    }
+
+    #[test]
+    fn test_ref_allocates_in_sigma() {
+        let mut ctx = TypingContext::new();
+        assert!(ctx.sigma.is_empty());
+
+        let r = Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public);
+        let (ty, eff) = type_check_full(&mut ctx, &r).unwrap();
+
+        assert_eq!(ty, Ty::Ref(Box::new(Ty::Int), SecurityLevel::Public));
+        assert_eq!(eff, Effect::Write);
+        assert_eq!(ctx.sigma.len(), 1);
+    }
+
+    // ── Security Level Violations (Δ checks) ──
+
+    #[test]
+    fn test_deref_public_in_public_context_ok() {
+        let mut ctx = TypingContext::with_level(SecurityLevel::Public);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Public);
+        let deref = Expr::Deref(Box::new(r));
+        let (ty, _eff) = type_check_full(&mut ctx, &deref).unwrap();
+        assert_eq!(ty, Ty::Int);
+    }
+
+    #[test]
+    fn test_deref_secret_in_secret_context_ok() {
+        let mut ctx = TypingContext::with_level(SecurityLevel::Secret);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Secret);
+        let deref = Expr::Deref(Box::new(r));
+        let (ty, _eff) = type_check_full(&mut ctx, &deref).unwrap();
+        assert_eq!(ty, Ty::Int);
+    }
+
+    #[test]
+    fn test_deref_secret_in_public_context_fails() {
+        let mut ctx = TypingContext::with_level(SecurityLevel::Public);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Secret);
+        let deref = Expr::Deref(Box::new(r));
+        match type_check_full(&mut ctx, &deref) {
+            Err(TypeError::SecurityViolation { found, expected, context }) => {
+                assert_eq!(found, SecurityLevel::Secret);
+                assert_eq!(expected, SecurityLevel::Public);
+                assert_eq!(context, "dereference");
+            }
+            other => panic!("Expected SecurityViolation, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_assign_secret_in_public_context_fails() {
+        let mut ctx = TypingContext::with_level(SecurityLevel::Public);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Secret);
+        let assign = Expr::Assign(Box::new(r), Box::new(Expr::Int(2)));
+        match type_check_full(&mut ctx, &assign) {
+            Err(TypeError::SecurityViolation { found, expected, context }) => {
+                assert_eq!(found, SecurityLevel::Secret);
+                assert_eq!(expected, SecurityLevel::Public);
+                assert_eq!(context, "assignment");
+            }
+            other => panic!("Expected SecurityViolation, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_security_level_lattice() {
+        // Test the flow relation: Public ⊑ Internal ⊑ Session ⊑ User ⊑ System ⊑ Secret
+        assert!(SecurityLevel::Public.leq(SecurityLevel::Internal));
+        assert!(SecurityLevel::Internal.leq(SecurityLevel::Session));
+        assert!(SecurityLevel::Session.leq(SecurityLevel::User));
+        assert!(SecurityLevel::User.leq(SecurityLevel::System));
+        assert!(SecurityLevel::System.leq(SecurityLevel::Secret));
+
+        // Higher to lower does not flow
+        assert!(!SecurityLevel::Secret.leq(SecurityLevel::Public));
+        assert!(!SecurityLevel::System.leq(SecurityLevel::User));
+    }
+
+    #[test]
+    fn test_deref_in_higher_context_ok() {
+        // Dereferencing a lower-security ref in a higher-security context is OK
+        let mut ctx = TypingContext::with_level(SecurityLevel::Secret);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Public);
+        let deref = Expr::Deref(Box::new(r));
+        let (ty, _eff) = type_check_full(&mut ctx, &deref).unwrap();
+        assert_eq!(ty, Ty::Int);
+    }
+
+    // ── Location typing with Σ ──
+
+    #[test]
+    fn test_loc_with_sigma() {
+        let mut ctx = TypingContext::new();
+        // Pre-populate sigma with a location
+        let loc = ctx.sigma.extend(Ty::Int, SecurityLevel::Public);
+
+        let loc_expr = Expr::Loc(loc.index() as u64);
+        let (ty, eff) = type_check_full(&mut ctx, &loc_expr).unwrap();
+        assert_eq!(ty, Ty::Ref(Box::new(Ty::Int), SecurityLevel::Public));
+        assert_eq!(eff, Effect::Pure);
+    }
+
+    #[test]
+    fn test_loc_not_in_sigma_fails() {
+        let mut ctx = TypingContext::new();
+        // Sigma is empty, location 0 doesn't exist
+        let loc_expr = Expr::Loc(0);
+        match type_check_full(&mut ctx, &loc_expr) {
+            Err(TypeError::LocationNotFound(loc)) => {
+                assert_eq!(loc, Location::new(0));
+            }
+            other => panic!("Expected LocationNotFound, got {:?}", other),
+        }
+    }
+
+    // ── Declassification with declass_ok predicate ──
+
+    #[test]
+    fn test_proper_declassification() {
+        let mut ctx = TypingContext::new();
+        // Proper declassification: declassify (classify v) (prove (classify v))
+        let v = Expr::Int(42);
+        let classified = Expr::Classify(Box::new(v.clone()));
+        let proof = Expr::Prove(Box::new(Expr::Classify(Box::new(v))));
+        let declassify = Expr::Declassify(Box::new(classified), Box::new(proof));
+
+        let (ty, eff) = type_check_full(&mut ctx, &declassify).unwrap();
+        assert_eq!(ty, Ty::Int);
+        assert_eq!(eff, Effect::Pure);
+    }
+
+    #[test]
+    fn test_declassify_wrong_proof_structure() {
+        let mut ctx = TypingContext::new();
+        // Wrong: proof is not Prove(Classify(...))
+        let classified = Expr::Classify(Box::new(Expr::Int(42)));
+        let wrong_proof = Expr::Prove(Box::new(Expr::Int(42))); // Should be Prove(Classify(42))
+
+        let declassify = Expr::Declassify(Box::new(classified), Box::new(wrong_proof));
+
+        // This should fail the declass_ok check
+        match type_check_full(&mut ctx, &declassify) {
+            Err(TypeError::InvalidDeclassification { .. }) => {}
+            Err(TypeError::TypeMismatch { .. }) => {} // Type mismatch is also acceptable
+            other => panic!("Expected InvalidDeclassification or TypeMismatch, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_declassify_non_secret_lenient() {
+        let mut ctx = TypingContext::new();
+        // Declassifying non-secret is identity in lenient mode
+        let declassify = Expr::Declassify(Box::new(Expr::Int(42)), Box::new(Expr::Unit));
+        let (ty, eff) = type_check_full(&mut ctx, &declassify).unwrap();
+        assert_eq!(ty, Ty::Int);
+        assert_eq!(eff, Effect::Pure);
+    }
+
+    // ── Effect accumulation ──
+
+    #[test]
+    fn test_full_effect_accumulation() {
+        let mut ctx = TypingContext::new();
+        let left = Expr::Perform(Effect::Read, Box::new(Expr::Int(1)));
+        let right = Expr::Ref(Box::new(Expr::Int(2)), SecurityLevel::Public);
+        let pair = Expr::Pair(Box::new(left), Box::new(right));
+        let (_ty, eff) = type_check_full(&mut ctx, &pair).unwrap();
+        // Write > Read
+        assert_eq!(eff, Effect::Write);
+    }
+
+    // ── Multi-level security scenarios ──
+
+    #[test]
+    fn test_intermediate_security_levels() {
+        // Test with intermediate levels: User context reading Session ref
+        let mut ctx = TypingContext::with_level(SecurityLevel::User);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Session);
+        let deref = Expr::Deref(Box::new(r));
+        // Session ⊑ User, so this should succeed
+        let (ty, _eff) = type_check_full(&mut ctx, &deref).unwrap();
+        assert_eq!(ty, Ty::Int);
+    }
+
+    #[test]
+    fn test_internal_cannot_read_system() {
+        // Internal context cannot read System ref
+        let mut ctx = TypingContext::with_level(SecurityLevel::Internal);
+        let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::System);
+        let deref = Expr::Deref(Box::new(r));
+        match type_check_full(&mut ctx, &deref) {
+            Err(TypeError::SecurityViolation { found, expected, context }) => {
+                assert_eq!(found, SecurityLevel::System);
+                assert_eq!(expected, SecurityLevel::Internal);
+                assert_eq!(context, "dereference");
+            }
+            other => panic!("Expected SecurityViolation, got {:?}", other),
+        }
+    }
+}

@@ -1000,6 +1000,8 @@ impl<'a> Parser<'a> {
          let ident = self.parse_ident()?;
          match ident.as_str() {
              "Pure" | "Bersih" => Ok(Effect::Pure),
+             "Mut" | "Ubah" => Ok(Effect::Mut),
+             "Alloc" | "Peruntuk" => Ok(Effect::Alloc),
              "Read" | "Baca" => Ok(Effect::Read),
              "Write" | "Tulis" => Ok(Effect::Write),
              "FileSystem" | "SistemFail" => Ok(Effect::FileSystem),

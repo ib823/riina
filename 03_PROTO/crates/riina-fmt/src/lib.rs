@@ -564,7 +564,9 @@ fn fmt_binop(out: &mut String, op: &BinOp) {
 fn fmt_effect(out: &mut String, eff: &Effect) {
     out.push_str(match eff {
         Effect::Pure => "Bersih",
+        Effect::Mut => "Ubah",
         Effect::Read => "Baca",
+        Effect::Alloc => "Peruntuk",
         Effect::Write => "Tulis",
         Effect::FileSystem => "SistemFail",
         Effect::Network => "Rangkaian",

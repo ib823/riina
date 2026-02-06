@@ -3085,7 +3085,9 @@ impl CEmitter {
     fn effect_str(&self, effect: &Effect) -> &'static str {
         match effect {
             Effect::Pure => "RIINA_EFFECT_PURE",
+            Effect::Mut => "RIINA_EFFECT_MUT",
             Effect::Read => "RIINA_EFFECT_READ",
+            Effect::Alloc => "RIINA_EFFECT_ALLOC",
             Effect::Write => "RIINA_EFFECT_WRITE",
             Effect::FileSystem => "RIINA_EFFECT_FILESYSTEM",
             Effect::Network => "RIINA_EFFECT_NETWORK",

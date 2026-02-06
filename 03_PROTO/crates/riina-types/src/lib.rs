@@ -89,6 +89,27 @@ pub enum Effect {
     Read,
     /// Memory/state write
     Write,
+    /// Local mutable state (for self-hosting)
+    ///
+    /// This effect allows local mutable variables within a function scope.
+    /// Unlike Write, Mut does not escape the function boundary and is
+    /// safe for self-hosting the compiler.
+    ///
+    /// In Bahasa Melayu: `kesan Ubah`
+    ///
+    /// # Example
+    /// ```ignore
+    /// fungsi parse_expr(tokens: &[Token]) -> (Expr, &[Token]) kesan Ubah {
+    ///     biar ubah idx = 0;  // Mutable local
+    ///     // ... parsing logic
+    /// }
+    /// ```
+    Mut,
+    /// Memory allocation (heap)
+    ///
+    /// This effect tracks heap allocation operations. Used when creating
+    /// new references or growing data structures.
+    Alloc,
     /// File system access
     FileSystem,
     // Network effects
@@ -141,22 +162,24 @@ impl Effect {
     pub const fn level(self) -> u8 {
         match self {
             Self::Pure => 0,
-            Self::Read => 1,
-            Self::Write => 2,
-            Self::FileSystem => 3,
-            Self::Network => 4,
-            Self::NetworkSecure => 5,
-            Self::Crypto => 6,
-            Self::Random => 7,
-            Self::System => 8,
-            Self::Time => 9,
-            Self::Process => 10,
-            Self::Panel => 11,
-            Self::Zirah => 12,
-            Self::Benteng => 13,
-            Self::Sandi => 14,
-            Self::Menara => 15,
-            Self::Gapura => 16,
+            Self::Mut => 1,       // Local mutation (below Read)
+            Self::Read => 2,
+            Self::Alloc => 3,     // Heap allocation
+            Self::Write => 4,
+            Self::FileSystem => 5,
+            Self::Network => 6,
+            Self::NetworkSecure => 7,
+            Self::Crypto => 8,
+            Self::Random => 9,
+            Self::System => 10,
+            Self::Time => 11,
+            Self::Process => 12,
+            Self::Panel => 13,
+            Self::Zirah => 14,
+            Self::Benteng => 15,
+            Self::Sandi => 16,
+            Self::Menara => 17,
+            Self::Gapura => 18,
         }
     }
 
@@ -164,8 +187,8 @@ impl Effect {
     #[must_use]
     pub const fn category(self) -> EffectCategory {
         match self {
-            Self::Pure => EffectCategory::Pure,
-            Self::Read | Self::Write | Self::FileSystem => EffectCategory::IO,
+            Self::Pure | Self::Mut => EffectCategory::Pure, // Mut is pure from caller perspective
+            Self::Read | Self::Write | Self::Alloc | Self::FileSystem => EffectCategory::IO,
             Self::Network | Self::NetworkSecure => EffectCategory::Network,
             Self::Crypto | Self::Random => EffectCategory::Crypto,
             Self::System | Self::Time | Self::Process => EffectCategory::System,
@@ -184,13 +207,19 @@ impl Effect {
         }
     }
 
+    /// Check if this effect is "local" (doesn't escape function scope)
+    #[must_use]
+    pub const fn is_local(self) -> bool {
+        matches!(self, Self::Pure | Self::Mut)
+    }
+
     /// Map effect to a default capability kind.
     /// Matches Coq `TCapabilityOld` backward-compat mapping.
     #[must_use]
     pub const fn to_capability_kind(self) -> CapabilityKind {
         match self {
             Self::Read => CapabilityKind::FileRead,
-            Self::Write | Self::FileSystem => CapabilityKind::FileWrite,
+            Self::Write | Self::Alloc | Self::FileSystem => CapabilityKind::FileWrite,
             Self::Network | Self::NetworkSecure => CapabilityKind::NetConnect,
             Self::System | Self::Time => CapabilityKind::SysTime,
             Self::Random => CapabilityKind::SysRandom,
@@ -287,6 +316,133 @@ pub enum Capability {
     TimeBound(Box<Capability>, u64),
     Delegated(Box<Capability>, Ident),
 }
+
+// ============================================================================
+// Store Typing (Σ)
+// ============================================================================
+
+/// Memory location identifier.
+///
+/// Matches Coq `loc := nat` in `foundations/Typing.v`.
+/// Locations are created during reference allocation and are unique identifiers
+/// for memory cells in the store.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Location(pub usize);
+
+impl Location {
+    /// Create a new location with the given index.
+    #[must_use]
+    pub const fn new(index: usize) -> Self {
+        Self(index)
+    }
+
+    /// Get the raw index of this location.
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self.0
+    }
+}
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "loc_{}", self.0)
+    }
+}
+
+/// Store typing context (Σ in the Coq type judgment).
+///
+/// Matches Coq `store_ty := list (loc * ty * security_level)` in `foundations/Typing.v`.
+///
+/// The store typing maps memory locations to their types and security levels.
+/// This is used during typechecking to ensure that:
+/// 1. Dereferencing a location returns the correct type
+/// 2. Assignments respect type compatibility
+/// 3. Security levels are preserved across memory operations
+///
+/// # Example
+/// ```ignore
+/// let mut sigma = StoreTy::new();
+/// let loc = sigma.extend(Ty::Int, SecurityLevel::Public);
+/// assert_eq!(sigma.lookup(&loc), Some(&(Ty::Int, SecurityLevel::Public)));
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct StoreTy {
+    /// Bindings from locations to (type, security_level) pairs.
+    bindings: std::collections::HashMap<Location, (Ty, SecurityLevel)>,
+    /// Counter for generating fresh locations.
+    next_loc: usize,
+}
+
+impl StoreTy {
+    /// Create an empty store typing context.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Look up a location in the store typing.
+    ///
+    /// Matches Coq `store_ty_lookup l Σ : option (ty * security_level)`.
+    #[must_use]
+    pub fn lookup(&self, loc: &Location) -> Option<&(Ty, SecurityLevel)> {
+        self.bindings.get(loc)
+    }
+
+    /// Allocate a new location with the given type and security level.
+    ///
+    /// Returns the freshly allocated location. This corresponds to the
+    /// typing rule T_Ref which creates new entries in Σ.
+    pub fn extend(&mut self, ty: Ty, sl: SecurityLevel) -> Location {
+        let loc = Location::new(self.next_loc);
+        self.next_loc += 1;
+        self.bindings.insert(loc, (ty, sl));
+        loc
+    }
+
+    /// Update the type and security level at an existing location.
+    ///
+    /// This is used for strong updates where the type of a location changes.
+    /// Returns `true` if the location existed and was updated.
+    pub fn update(&mut self, loc: Location, ty: Ty, sl: SecurityLevel) -> bool {
+        if self.bindings.contains_key(&loc) {
+            self.bindings.insert(loc, (ty, sl));
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Check if a location exists in the store typing.
+    #[must_use]
+    pub fn contains(&self, loc: &Location) -> bool {
+        self.bindings.contains_key(loc)
+    }
+
+    /// Get the number of locations in the store typing.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.bindings.len()
+    }
+
+    /// Check if the store typing is empty.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.bindings.is_empty()
+    }
+
+    /// Iterate over all (location, type, security_level) triples.
+    pub fn iter(&self) -> impl Iterator<Item = (&Location, &Ty, &SecurityLevel)> {
+        self.bindings.iter().map(|(l, (t, s))| (l, t, s))
+    }
+}
+
+impl PartialEq for StoreTy {
+    fn eq(&self, other: &Self) -> bool {
+        self.bindings == other.bindings
+    }
+}
+
+impl Eq for StoreTy {}
 
 /// Session types for binary communication protocols.
 /// Matches Coq `session_type` in `foundations/Syntax.v`.
