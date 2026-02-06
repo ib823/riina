@@ -62,7 +62,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (6,194 Qed theorems in active build) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (6,720 Qed theorems) | No | No | Partial |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
 ---
@@ -86,8 +86,8 @@ The compiler binary is `riinac`. Zero external dependencies — everything is bu
 **Alternative install methods:**
 
 ```bash
-# Docker (build from source)
-docker build -t riina .
+# Docker
+docker pull riina
 docker run --rm riina check myfile.rii
 
 # Nix
@@ -194,10 +194,10 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Proof files (.v) | 283 (249 in active build) |
-| Proven theorems (Qed) | 6,194 (active build) |
+| Proven theorems (Qed) | 4,890 (active build) |
 | Unfinished proofs (admit/Admitted) | 0 (entire active build) |
 | Axioms | 4 (all justified, documented) |
-| Lines of proof | 122,431 (active build) |
+| Lines of proof | 125,186 |
 | Build status | Passing |
 
 **What's proven:**
@@ -217,9 +217,9 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Rust crates | 15 |
-| Test count | 744 (all passing) |
+| Test count | 679 (all passing) |
 | External dependencies | **0** |
-| Lines of Rust | 31,043 |
+| Lines of Rust | 24,614 |
 | Standard library builtins | 88 across 9 modules |
 
 **Crates:**
@@ -253,12 +253,12 @@ This is not a whitepaper. This is working software.
 - **Docker image** — Multi-stage build, ~85MB runtime image
 - **Nix flake** — `nix run github:ib823/riina` or `nix develop` for full dev shell
 - **Release scripts** — `scripts/release.sh` (one-command release: bump, tag, tarball, GitHub Release, deploy website), `scripts/bump-version.sh`, `scripts/install.sh`
-- **Website** — 15-page site at [ib823.github.io/riina](https://ib823.github.io/riina/) — includes "Why Proof" executive page, 15 industry verticals, Releases page; deployed via `scripts/deploy-website.sh`
+- **Website** — 14-page site at [ib823.github.io/riina](https://ib823.github.io/riina/) — includes "Why Proof" executive page, 15 industry verticals, Releases page; deployed via `scripts/deploy-website.sh`
 - **REPL** — Interactive mode for experimentation
 
 ### Example Programs
 
-114 example `.rii` files across 9 categories:
+112 example `.rii` files across 9 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -287,7 +287,7 @@ The `05_TOOLING/` workspace contains 35,000+ lines of hand-written cryptographic
 
 ```
 riina/
-├── 02_FORMAL/coq/         283 Coq proof files (147K lines total, 122K active)
+├── 02_FORMAL/coq/         283 Coq proof files (125K+ lines)
 │   ├── foundations/        Core language semantics
 │   ├── type_system/        Progress, Preservation, Type Safety
 │   ├── properties/         Non-Interference, Declassification, Composition
@@ -316,7 +316,7 @@ riina/
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            114 example .rii files
+├── 07_EXAMPLES/            112 example .rii files
 ├── docs/                   Enterprise docs, multilingual READMEs
 ├── VERSION                 Semver source of truth (0.2.0)
 ├── CHANGELOG.md            Public-facing changelog
@@ -362,16 +362,16 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 ## Current Status
 
 **Build: Passing. Grade: A.**
-**Audit Update:** 2026-02-06 (Comprehensive repository audit)
+**Audit Update:** 2026-02-04 (Codex audit sync)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 6,194 Qed proofs (active build), 4 justified axioms, 0 admits | Stable |
-| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 114 examples | Done |
+| 3. Formal Verification | 5,544 Qed proofs, 4 justified axioms, 0 admits | Stable |
+| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 112 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
-| 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 15-page website (Why Proof, 15 industries, Releases) | Done |
+| 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 14-page website (Why Proof, 15 industries, Releases) | Done |
 | 7. Platform Universality | Multi-backend (WASM, Android, iOS), platform-conditional stdlib, WASM playground, backend verification | Done |
 | 8. Long-term | Self-hosting compiler, hardware verification, verified OS | Planned |
 
