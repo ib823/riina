@@ -26,5 +26,6 @@ session RIINA = HOL +
     EffectAlgebra
     EffectSystem
     EffectGate
+    NonInterference
   document_files
     "root.tex"

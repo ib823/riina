@@ -37,3 +37,4 @@ import RIINA.TypeSystem.TypeSafety
 import RIINA.Effects.EffectAlgebra
 import RIINA.Effects.EffectSystem
 import RIINA.Effects.EffectGate
+import RIINA.Properties.NonInterference
