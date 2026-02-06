@@ -11,6 +11,7 @@ Require Import Coq.Arith.Arith.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Vectors.Vector.
 Require Import Coq.Vectors.Fin.
+Require Import Coq.micromega.Lia.
 Import ListNotations.
 Import VectorNotations.
 
@@ -382,11 +383,170 @@ Qed.
 (* Helper: vectorized execution produces same result as scalar *)
 Theorem PERF_003_12_simd_semantic_preservation :
   forall (a b : SIMDVec),
-    Vector.to_list (simd_add a b) = 
+    Vector.to_list (simd_add a b) =
     scalar_exec_add (Vector.to_list a) (Vector.to_list b).
 Proof.
   intros a b.
   unfold simd_add, scalar_add, scalar_exec_add.
   rewrite to_list_map2.
   reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_13: SIMD multiplication lane independence                  *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_003_13_simd_mul_lane_independence :
+  forall (a b : SIMDVec) (i : Fin.t VWidth),
+    Vector.nth (simd_mul a b) i =
+    scalar_mul (Vector.nth a i) (Vector.nth b i).
+Proof.
+  intros a b i.
+  unfold simd_mul.
+  erewrite Vector.nth_map2.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_14: SIMD comparison lane independence                      *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_003_14_simd_cmp_lane_independence :
+  forall (a b : SIMDVec) (i : Fin.t VWidth),
+    Vector.nth (simd_cmp a b) i =
+    scalar_cmp (Vector.nth a i) (Vector.nth b i).
+Proof.
+  intros a b i.
+  unfold simd_cmp.
+  erewrite Vector.nth_map2.
+  - reflexivity.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_15: Broadcast add equivalence                              *)
+(* Adding broadcast scalar is same as adding scalar to each lane               *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_003_15_broadcast_add_equiv :
+  forall (v : SIMDVec) (x : nat) (i : Fin.t VWidth),
+    Vector.nth (simd_add v (simd_broadcast x)) i =
+    scalar_add (Vector.nth v i) x.
+Proof.
+  intros v x i.
+  unfold simd_add.
+  erewrite Vector.nth_map2.
+  2: reflexivity.
+  2: reflexivity.
+  unfold simd_broadcast.
+  rewrite Vector.const_nth.
+  reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_16: Identity shuffle preserves vector                      *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_003_16_identity_shuffle :
+  forall (v : SIMDVec) (perm : Vector.t (Fin.t VWidth) VWidth),
+    (forall i : Fin.t VWidth, Vector.nth perm i = i) ->
+    simd_shuffle v perm = v.
+Proof.
+  intros v perm Hid.
+  unfold simd_shuffle.
+  apply Vector.eq_nth_iff.
+  intros p1 p2 Heq.
+  subst p2.
+  erewrite Vector.nth_map.
+  2: reflexivity.
+  rewrite Hid.
+  reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_17: SIMD add commutativity                                *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_003_17_simd_add_commutative :
+  forall (a b : SIMDVec) (i : Fin.t VWidth),
+    Vector.nth (simd_add a b) i = Vector.nth (simd_add b a) i.
+Proof.
+  intros a b i.
+  unfold simd_add, scalar_add.
+  erewrite (Vector.nth_map2 _ a b).
+  2: reflexivity.
+  2: reflexivity.
+  erewrite (Vector.nth_map2 _ b a).
+  2: reflexivity.
+  2: reflexivity.
+  lia.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_18: Masked select with all-true mask returns new value     *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Definition all_true_mask : SIMDMask :=
+  Vector.const true VWidth.
+
+Theorem PERF_003_18_all_true_mask_selects_new :
+  forall (old new_val : SIMDVec) (i : Fin.t VWidth),
+    Vector.nth (simd_select all_true_mask old new_val) i =
+    Vector.nth new_val i.
+Proof.
+  intros old new_val i.
+  unfold simd_select, all_true_mask.
+  erewrite Vector.nth_map2.
+  2: reflexivity.
+  2: reflexivity.
+  erewrite Vector.nth_map2.
+  2: reflexivity.
+  2: reflexivity.
+  rewrite Vector.const_nth.
+  simpl.
+  reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_19: Masked select with all-false mask preserves old value  *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Definition all_false_mask : SIMDMask :=
+  Vector.const false VWidth.
+
+Theorem PERF_003_19_all_false_mask_preserves_old :
+  forall (old new_val : SIMDVec) (i : Fin.t VWidth),
+    Vector.nth (simd_select all_false_mask old new_val) i =
+    Vector.nth old i.
+Proof.
+  intros old new_val i.
+  unfold simd_select, all_false_mask.
+  erewrite Vector.nth_map2.
+  2: reflexivity.
+  2: reflexivity.
+  erewrite Vector.nth_map2.
+  2: reflexivity.
+  2: reflexivity.
+  rewrite Vector.const_nth.
+  simpl.
+  reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_003_20: Alignment zero always aligned                          *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_003_20_zero_aligned :
+  forall alignment : nat,
+    alignment > 0 ->
+    is_aligned 0 alignment = true.
+Proof.
+  intros alignment Hpos.
+  unfold is_aligned.
+  rewrite Nat.mod_0_l.
+  - simpl. reflexivity.
+  - lia.
 Qed.

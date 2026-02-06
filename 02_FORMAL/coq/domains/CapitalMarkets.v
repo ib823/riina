@@ -282,3 +282,88 @@ Theorem ordered_ticks_head_smallest :
 Proof.
   intros t1 t2 rest H. simpl in H. destruct H as [H _]. exact H.
 Qed.
+
+(** ═══════════════════════════════════════════════════════════════════════════
+    ADDITIONAL THEOREMS: TRADE INTEGRITY
+    ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem trade_consideration_comm :
+  forall t, trade_consideration t = trade_qty t * trade_price t.
+Proof.
+  intro t. unfold trade_consideration. lia.
+Qed.
+
+Theorem trade_consideration_zero_qty :
+  forall t, trade_qty t = 0 -> trade_consideration t = 0.
+Proof.
+  intros t Hq. unfold trade_consideration. rewrite Hq. lia.
+Qed.
+
+Theorem trade_consideration_zero_price :
+  forall t, trade_price t = 0 -> trade_consideration t = 0.
+Proof.
+  intros t Hp. unfold trade_consideration. rewrite Hp. lia.
+Qed.
+
+Theorem settlement_complete_implies_final :
+  forall s, settlement_complete s -> settle_final s = true.
+Proof.
+  intros s [_ [_ Hf]]. exact Hf.
+Qed.
+
+Theorem settlement_complete_implies_assets :
+  forall s, settlement_complete s -> assets_delivered s > 0.
+Proof.
+  intros s [_ [Ha _]]. exact Ha.
+Qed.
+
+Theorem orders_can_match_same_price :
+  forall buy sell,
+    order_price buy = order_price sell ->
+    orders_can_match buy sell = true.
+Proof.
+  intros buy sell Heq. unfold orders_can_match.
+  rewrite Heq. apply Nat.leb_refl.
+Qed.
+
+Theorem match_qty_comm :
+  forall buy sell,
+    match_qty buy sell = match_qty sell buy.
+Proof.
+  intros. unfold match_qty. apply Nat.min_comm.
+Qed.
+
+Theorem match_qty_positive :
+  forall buy sell,
+    order_qty buy > 0 ->
+    order_qty sell > 0 ->
+    match_qty buy sell > 0.
+Proof.
+  intros buy sell Hb Hs. unfold match_qty. lia.
+Qed.
+
+Theorem execute_match_preserves_ids :
+  forall tid buy sell t,
+    execute_match tid buy sell = Some t ->
+    trade_buy_id t = order_id buy /\ trade_sell_id t = order_id sell.
+Proof.
+  intros tid buy sell t H. unfold execute_match in H.
+  destruct (orders_can_match buy sell); [|discriminate].
+  injection H as <-. simpl. split; reflexivity.
+Qed.
+
+Theorem execute_match_preserves_tid :
+  forall tid buy sell t,
+    execute_match tid buy sell = Some t ->
+    trade_id t = tid.
+Proof.
+  intros tid buy sell t H. unfold execute_match in H.
+  destruct (orders_can_match buy sell); [|discriminate].
+  injection H as <-. simpl. reflexivity.
+Qed.
+
+Theorem side_eqb_refl :
+  forall s, side_eqb s s = true.
+Proof.
+  intro s. destruct s; reflexivity.
+Qed.

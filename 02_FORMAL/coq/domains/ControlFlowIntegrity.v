@@ -415,7 +415,71 @@ Proof.
 Qed.
 
 (* ═══════════════════════════════════════════════════════════════════════ *)
-(* SECTION E: VERIFICATION                                                  *)
+(* SECTION E: ADDITIONAL PROPERTIES                                          *)
+(* ═══════════════════════════════════════════════════════════════════════ *)
+
+(* CTL-016: Shadow stack push-pop identity *)
+Theorem ctl_016_shadow_push_pop_identity :
+  forall (ss : ShadowStack) (ret : InstrAddr) (caller : FuncId),
+    shadow_pop (shadow_push ss ret caller) = Some (mkShadowEntry ret caller, ss).
+Proof.
+  intros ss ret caller.
+  unfold shadow_push, shadow_pop.
+  reflexivity.
+Qed.
+
+(* CTL-017: Valid return after push matches pushed address *)
+Theorem ctl_017_valid_return_after_push :
+  forall (ss : ShadowStack) (ret : InstrAddr) (caller : FuncId),
+    valid_return (shadow_push ss ret caller) ret.
+Proof.
+  intros ss ret caller.
+  unfold shadow_push, valid_return.
+  simpl. reflexivity.
+Qed.
+
+(* CTL-018: W^X prevents code injection for empty permissions *)
+Theorem ctl_018_wxor_x_empty :
+  w_xor_x nil.
+Proof.
+  unfold w_xor_x, has_perm.
+  intros [Hw He].
+  simpl in Hw. exact Hw.
+Qed.
+
+(* CTL-019: GOT relocation states are decidable *)
+Theorem ctl_019_reloc_state_decidable :
+  forall (rs : RelocState),
+    got_writable rs \/ got_protected rs.
+Proof.
+  intros rs. destruct rs.
+  - left. unfold got_writable. reflexivity.
+  - right. unfold got_protected. reflexivity.
+Qed.
+
+(* CTL-020: Shadow stack length increases on push *)
+Theorem ctl_020_shadow_push_length :
+  forall (ss : ShadowStack) (ret : InstrAddr) (caller : FuncId),
+    length (shadow_push ss ret caller) = S (length ss).
+Proof.
+  intros ss ret caller.
+  unfold shadow_push. simpl. reflexivity.
+Qed.
+
+(* CTL-021: Valid trace prefix remains valid *)
+Theorem ctl_021_valid_trace_prefix :
+  forall (cfg : ValidCFG) (b : BasicBlock) (rest : Trace),
+    valid_trace cfg (b :: rest) ->
+    valid_trace cfg rest.
+Proof.
+  intros cfg b rest H.
+  inversion H; subst.
+  - constructor.
+  - exact H4.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════ *)
+(* SECTION F: VERIFICATION                                                  *)
 (* ═══════════════════════════════════════════════════════════════════════ *)
 
 (* All 15 theorems proved without Admitted *)

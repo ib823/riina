@@ -213,3 +213,103 @@ Proof.
   intros. inversion H; subst.
   exists b'0. auto.
 Qed.
+
+(** * Theorem 9: level_leq is reflexive *)
+Theorem level_leq_refl : forall l, level_leq l l = true.
+Proof.
+  destruct l; simpl; reflexivity.
+Qed.
+
+(** * Theorem 10: level_leq is transitive *)
+Theorem level_leq_trans : forall l1 l2 l3,
+  level_leq l1 l2 = true ->
+  level_leq l2 l3 = true ->
+  level_leq l1 l3 = true.
+Proof.
+  destruct l1, l2, l3; simpl; intros; auto; try discriminate.
+Qed.
+
+(** * Theorem 11: level_join is commutative *)
+Theorem level_join_comm : forall l1 l2,
+  level_join l1 l2 = level_join l2 l1.
+Proof.
+  destruct l1, l2; simpl; reflexivity.
+Qed.
+
+(** * Theorem 12: level_join is associative *)
+Theorem level_join_assoc : forall l1 l2 l3,
+  level_join (level_join l1 l2) l3 = level_join l1 (level_join l2 l3).
+Proof.
+  destruct l1, l2, l3; simpl; reflexivity.
+Qed.
+
+(** * Theorem 13: level_join is idempotent *)
+Theorem level_join_idem : forall l, level_join l l = l.
+Proof.
+  destruct l; simpl; reflexivity.
+Qed.
+
+(** * Theorem 14: Low is the bottom element *)
+Theorem low_bottom : forall l, level_leq Low l = true.
+Proof.
+  destruct l; simpl; reflexivity.
+Qed.
+
+(** * Theorem 15: Join is an upper bound (left) *)
+Theorem level_join_leq_l : forall l1 l2,
+  level_leq l1 (level_join l1 l2) = true.
+Proof.
+  destruct l1, l2; simpl; reflexivity.
+Qed.
+
+(** * Theorem 16: Join is an upper bound (right) *)
+Theorem level_join_leq_r : forall l1 l2,
+  level_leq l2 (level_join l1 l2) = true.
+Proof.
+  destruct l1, l2; simpl; reflexivity.
+Qed.
+
+(** * Theorem 17: Constants evaluate with unchanged budget *)
+Theorem const_budget_unchanged : forall e n b v b',
+  eval e (EConst n) b v b' -> b' = b.
+Proof.
+  intros. inversion H; subst. reflexivity.
+Qed.
+
+(** * Theorem 18: Variables evaluate with unchanged budget *)
+Theorem var_budget_unchanged : forall e i b v b',
+  eval e (EVar i) b v b' -> b' = b.
+Proof.
+  intros. inversion H; subst. reflexivity.
+Qed.
+
+(** * Theorem 19: Plus evaluates to sum of subexpressions *)
+Theorem plus_eval_sum : forall e e1 e2 b v b',
+  eval e (EPlus e1 e2) b v b' ->
+  exists v1 v2 b1, eval e e1 b v1 b1 /\ eval e e2 b1 v2 b' /\ v = v1 + v2.
+Proof.
+  intros. inversion H; subst.
+  exists v1, v2, b1. auto.
+Qed.
+
+(** * Theorem 20: Double declassification consumes at least c1+c2 budget *)
+Theorem double_declass_cost : forall e ex b v b' c1 c2,
+  eval e (EDeclass (EDeclass ex c1) c2) b v b' ->
+  b' <= b.
+Proof.
+  intros. eapply budget_monotone. eassumption.
+Qed.
+
+(** * Theorem 21: No-declass expression is closed under plus *)
+Theorem no_declass_plus : forall e1 e2,
+  no_declass e1 -> no_declass e2 -> no_declass (EPlus e1 e2).
+Proof.
+  intros. constructor; assumption.
+Qed.
+
+(** * Theorem 22: Budget consumption is bounded by initial budget *)
+Theorem budget_consumption_bounded : forall e ex b v b',
+  eval e ex b v b' -> b - b' <= b.
+Proof.
+  intros. lia.
+Qed.

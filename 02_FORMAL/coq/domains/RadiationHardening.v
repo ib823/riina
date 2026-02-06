@@ -463,6 +463,44 @@ Proof.
 Qed.
 
 (* ═══════════════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM DOMAIN_001_16: Majority vote boolean correctness                            *)
+(* ═══════════════════════════════════════════════════════════════════════════════════ *)
+
+Theorem DOMAIN_001_16 : forall (b : bool),
+  majority_vote b b b = b.
+Proof.
+  intros b.
+  unfold majority_vote.
+  destruct b; simpl; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM DOMAIN_001_17: Consistent critical data is recoverable                      *)
+(* ═══════════════════════════════════════════════════════════════════════════════════ *)
+
+Theorem DOMAIN_001_17 : forall (v : nat) (chk : nat),
+  cd_consistent (mkCD v v v chk) = true.
+Proof.
+  intros v chk.
+  unfold cd_consistent. simpl.
+  destruct (Nat.eqb v v) eqn:E.
+  - reflexivity.
+  - apply Nat.eqb_neq in E. exfalso. apply E. reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM DOMAIN_001_18: Bit flip is self-inverse                                     *)
+(* ═══════════════════════════════════════════════════════════════════════════════════ *)
+
+Theorem DOMAIN_001_18 : forall (b : Bit),
+  flip_bit (flip_bit b) = b.
+Proof.
+  intros b.
+  unfold flip_bit.
+  destruct b; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════════════ *)
 (* END OF RADIATION HARDENING PROOFS                                                   *)
-(* All 15 theorems complete with no Admitted, no admit, no new Axioms                  *)
+(* All 18 theorems complete with no Admitted, no admit, no new Axioms                  *)
 (* ═══════════════════════════════════════════════════════════════════════════════════ *)

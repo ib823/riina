@@ -175,6 +175,113 @@ Proof.
   intros l. reflexivity.
 Qed.
 
+(** * Theorem 7: Empty heap is disjoint with any heap *)
+Theorem fdisjoint_empty_l : forall h, fdisjoint fempty h.
+Proof.
+  intros h l. left. unfold fempty. reflexivity.
+Qed.
+
+Theorem fdisjoint_empty_r : forall h, fdisjoint h fempty.
+Proof.
+  intros h l. right. unfold fempty. reflexivity.
+Qed.
+
+(** * Theorem 9: Union with empty is identity *)
+Theorem funion_empty_l : forall h l, funion fempty h l = h l.
+Proof.
+  intros h l. unfold funion, fempty. reflexivity.
+Qed.
+
+Theorem funion_empty_r : forall h l, funion h fempty l = h l.
+Proof.
+  intros h l. unfold funion, fempty.
+  destruct (h l); reflexivity.
+Qed.
+
+(** * Theorem 11: Disjointness is symmetric *)
+Theorem fdisjoint_sym : forall h1 h2, fdisjoint h1 h2 -> fdisjoint h2 h1.
+Proof.
+  intros h1 h2 Hd l. specialize (Hd l). tauto.
+Qed.
+
+(** * Theorem 12: Pure proposition extraction *)
+Theorem pure_extract : forall (P : Prop) h,
+  fsat h (FPure P) -> P.
+Proof.
+  intros P h H. simpl in H. destruct H as [HP _]. exact HP.
+Qed.
+
+(** * Theorem 13: Pure proposition implies empty heap *)
+Theorem pure_empty_heap : forall (P : Prop) h,
+  fsat h (FPure P) -> forall l, h l = None.
+Proof.
+  intros P h H. simpl in H. destruct H as [_ Hnil]. exact Hnil.
+Qed.
+
+(** * Theorem 14: Points-to determines heap value *)
+Theorem points_to_read : forall l v h,
+  fsat h (FPointsTo l v) -> h l = Some v.
+Proof.
+  intros l v h H. simpl in H. destruct H as [Hpt _]. exact Hpt.
+Qed.
+
+(** * Theorem 15: Points-to is exclusive for other locations *)
+Theorem points_to_other_none : forall l v h l',
+  fsat h (FPointsTo l v) -> l' <> l -> h l' = None.
+Proof.
+  intros l v h l' H Hneq. simpl in H.
+  destruct H as [_ Hex]. apply Hex. exact Hneq.
+Qed.
+
+(** * Theorem 16: Empty heap satisfies emp *)
+Theorem fempty_sat_empty : fsat fempty FEmpty.
+Proof.
+  simpl. intros l. unfold fempty. reflexivity.
+Qed.
+
+(** * Theorem 17: Singleton heap satisfies points-to *)
+Theorem fsingleton_sat : forall l v,
+  fsat (fsingleton l v) (FPointsTo l v).
+Proof.
+  intros l v. simpl. split.
+  - unfold fsingleton. rewrite Nat.eqb_refl. reflexivity.
+  - intros l' Hneq. unfold fsingleton.
+    destruct (l' =? l) eqn:E.
+    + apply Nat.eqb_eq in E. contradiction.
+    + reflexivity.
+Qed.
+
+(** * Theorem 18: Singleton lookup *)
+Theorem fsingleton_lookup_neq : forall l l' v,
+  l' <> l -> fsingleton l v l' = None.
+Proof.
+  intros l l' v Hneq. unfold fsingleton.
+  destruct (l' =? l) eqn:E.
+  - apply Nat.eqb_eq in E. contradiction.
+  - reflexivity.
+Qed.
+
+(** * Theorem 19: Disjoint singletons for different locations *)
+Theorem fdisjoint_singletons : forall l1 l2 v1 v2,
+  l1 <> l2 -> fdisjoint (fsingleton l1 v1) (fsingleton l2 v2).
+Proof.
+  intros l1 l2 v1 v2 Hneq l.
+  unfold fsingleton.
+  destruct (l =? l1) eqn:E1; destruct (l =? l2) eqn:E2.
+  - apply Nat.eqb_eq in E1. apply Nat.eqb_eq in E2. subst. contradiction.
+  - right. reflexivity.
+  - left. reflexivity.
+  - left. reflexivity.
+Qed.
+
+(** * Theorem 20: Empty satisfies pure True *)
+Theorem fempty_pure_true : fsat fempty (FPure True).
+Proof.
+  simpl. split.
+  - exact I.
+  - intros l. unfold fempty. reflexivity.
+Qed.
+
 End FuncHeap.
 
 (** Re-export main theorems *)

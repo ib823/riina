@@ -217,7 +217,160 @@ Proof.
 Qed.
 
 (** ============================================================================
+    SECTION 5: ADDITIONAL DEFENSE PROPERTIES
+    ============================================================================ *)
+
+(** MELTDOWN_016: RW Protection Required *)
+Theorem MELTDOWN_016_rw_required :
+  forall c : MeltdownDefenseConfig,
+    all_meltdown_protected c = true ->
+    mdc_rw_protected c = true.
+Proof.
+  intros c H. unfold all_meltdown_protected in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H].
+  exact H.
+Qed.
+
+(** MELTDOWN_017: PK Protection Required *)
+Theorem MELTDOWN_017_pk_required :
+  forall c : MeltdownDefenseConfig,
+    all_meltdown_protected c = true ->
+    mdc_pk_protected c = true.
+Proof.
+  intros c H. unfold all_meltdown_protected in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H].
+  exact H.
+Qed.
+
+(** MELTDOWN_018: BR Protection Required *)
+Theorem MELTDOWN_018_br_required :
+  forall c : MeltdownDefenseConfig,
+    all_meltdown_protected c = true ->
+    mdc_br_protected c = true.
+Proof.
+  intros c H. unfold all_meltdown_protected in H.
+  apply andb_true_iff in H. destruct H as [_ H].
+  exact H.
+Qed.
+
+(** MELTDOWN_019: Full Implies L1TF Mitigated *)
+Theorem MELTDOWN_019_full_implies_l1tf :
+  forall c : MeltdownDefenseConfig,
+    meltdown_fully_protected c = true ->
+    mdc_l1tf_mitigated c = true.
+Proof.
+  intros c H.
+  apply MELTDOWN_009_full_implies_mitigations in H.
+  apply MELTDOWN_007_l1tf_required in H.
+  exact H.
+Qed.
+
+(** MELTDOWN_020: Full Implies Foreshadow Protected *)
+Theorem MELTDOWN_020_full_implies_p :
+  forall c : MeltdownDefenseConfig,
+    meltdown_fully_protected c = true ->
+    mdc_p_protected c = true.
+Proof.
+  intros c H.
+  apply MELTDOWN_008_full_implies_variants in H.
+  apply MELTDOWN_005_p_required in H.
+  exact H.
+Qed.
+
+(** MELTDOWN_021: Full Implies RW Protected *)
+Theorem MELTDOWN_021_full_implies_rw :
+  forall c : MeltdownDefenseConfig,
+    meltdown_fully_protected c = true ->
+    mdc_rw_protected c = true.
+Proof.
+  intros c H.
+  apply MELTDOWN_008_full_implies_variants in H.
+  apply MELTDOWN_016_rw_required in H.
+  exact H.
+Qed.
+
+(** MELTDOWN_022: Full Implies PK Protected *)
+Theorem MELTDOWN_022_full_implies_pk :
+  forall c : MeltdownDefenseConfig,
+    meltdown_fully_protected c = true ->
+    mdc_pk_protected c = true.
+Proof.
+  intros c H.
+  apply MELTDOWN_008_full_implies_variants in H.
+  apply MELTDOWN_017_pk_required in H.
+  exact H.
+Qed.
+
+(** MELTDOWN_023: Full Implies BR Protected *)
+Theorem MELTDOWN_023_full_implies_br :
+  forall c : MeltdownDefenseConfig,
+    meltdown_fully_protected c = true ->
+    mdc_br_protected c = true.
+Proof.
+  intros c H.
+  apply MELTDOWN_008_full_implies_variants in H.
+  apply MELTDOWN_018_br_required in H.
+  exact H.
+Qed.
+
+(** MELTDOWN_024: RIINA P Protected *)
+Theorem MELTDOWN_024_riina_p :
+  mdc_p_protected riina_meltdown_config = true.
+Proof. reflexivity. Qed.
+
+(** MELTDOWN_025: RIINA RW Protected *)
+Theorem MELTDOWN_025_riina_rw :
+  mdc_rw_protected riina_meltdown_config = true.
+Proof. reflexivity. Qed.
+
+(** MELTDOWN_026: RIINA PK Protected *)
+Theorem MELTDOWN_026_riina_pk :
+  mdc_pk_protected riina_meltdown_config = true.
+Proof. reflexivity. Qed.
+
+(** MELTDOWN_027: RIINA BR Protected *)
+Theorem MELTDOWN_027_riina_br :
+  mdc_br_protected riina_meltdown_config = true.
+Proof. reflexivity. Qed.
+
+(** MELTDOWN_028: Variant and Mitigation Composition *)
+Theorem MELTDOWN_028_variant_mitigation_composition :
+  forall c : MeltdownDefenseConfig,
+    all_meltdown_protected c = true ->
+    meltdown_mitigations_enabled c = true ->
+    meltdown_fully_protected c = true.
+Proof.
+  intros c Hvars Hmit. unfold meltdown_fully_protected.
+  rewrite Hvars, Hmit. reflexivity.
+Qed.
+
+(** MELTDOWN_029: Complete Decomposition *)
+Theorem MELTDOWN_029_complete_decomposition :
+  forall c : MeltdownDefenseConfig,
+    meltdown_fully_protected c = true ->
+    mdc_us_protected c = true /\
+    mdc_p_protected c = true /\
+    mdc_rw_protected c = true /\
+    mdc_pk_protected c = true /\
+    mdc_br_protected c = true /\
+    mdc_kpti_enabled c = true /\
+    mdc_l1tf_mitigated c = true.
+Proof.
+  intros c H.
+  split. apply MELTDOWN_013_full_implies_us. exact H.
+  split. apply MELTDOWN_020_full_implies_p. exact H.
+  split. apply MELTDOWN_021_full_implies_rw. exact H.
+  split. apply MELTDOWN_022_full_implies_pk. exact H.
+  split. apply MELTDOWN_023_full_implies_br. exact H.
+  split. apply MELTDOWN_012_full_implies_kpti. exact H.
+  apply MELTDOWN_019_full_implies_l1tf. exact H.
+Qed.
+
+(** ============================================================================
     VERIFICATION COMPLETE
-    Total Theorems: 15
+    Total Theorems: 29 (+ 1 helper lemma)
     Admits: 0, Axioms: 0
     ============================================================================ *)

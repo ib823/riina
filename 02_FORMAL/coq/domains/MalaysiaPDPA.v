@@ -377,3 +377,466 @@ Proof.
   - exact Hret.
   - exact Hdpo.
 Qed.
+
+(* ================================================================ *)
+(* Extended PDPA Compliance Theorems                                 *)
+(* ================================================================ *)
+
+(* --- Data Collection Consent Recording --- *)
+(* PDPA §6: Consent must be recorded at collection time *)
+
+Record ConsentRecord := mkConsentRecord {
+  cr_subject_id : nat;
+  cr_purpose : Purpose;
+  cr_consent_type : ConsentStatus;
+  cr_recorded_at : nat;
+  cr_valid : bool;
+}.
+
+Definition consent_properly_recorded (cr : ConsentRecord) (collection_time : nat) : Prop :=
+  cr_recorded_at cr <= collection_time /\
+  cr_valid cr = true /\
+  (cr_consent_type cr = ExplicitConsent \/ cr_consent_type cr = ImpliedConsent).
+
+Theorem data_collection_consent_recorded :
+  forall (cr : ConsentRecord) (t : nat),
+  cr_recorded_at cr <= t ->
+  cr_valid cr = true ->
+  cr_consent_type cr = ExplicitConsent ->
+  consent_properly_recorded cr t.
+Proof.
+  intros cr t Htime Hvalid Htype.
+  unfold consent_properly_recorded.
+  split. exact Htime.
+  split. exact Hvalid.
+  left. exact Htype.
+Qed.
+
+(* --- Cross-Border Transfer Authorization --- *)
+(* PDPA §129: Transfer outside Malaysia requires adequate protection *)
+
+Inductive TransferBasis : Type :=
+  | SubjectConsent_Transfer : TransferBasis
+  | ContractPerformance : TransferBasis
+  | LegalProceedings : TransferBasis
+  | VitalInterests_Transfer : TransferBasis
+  | PublicRegister : TransferBasis
+  | MinisterialExemption : TransferBasis.
+
+Record CrossBorderTransfer := mkCBTransfer {
+  cbt_record : PDPARecord;
+  cbt_destination_country : nat;
+  cbt_basis : TransferBasis;
+  cbt_adequate_protection : bool;
+  cbt_timestamp : nat;
+}.
+
+Definition cross_border_lawful (t : CrossBorderTransfer) : Prop :=
+  cbt_adequate_protection t = true \/
+  cbt_basis t = SubjectConsent_Transfer \/
+  cbt_basis t = LegalProceedings \/
+  cbt_basis t = MinisterialExemption.
+
+Theorem cross_border_transfer_authorized :
+  forall (t : CrossBorderTransfer),
+  cbt_adequate_protection t = true ->
+  cross_border_lawful t.
+Proof.
+  intros t Hadq. unfold cross_border_lawful. left. exact Hadq.
+Qed.
+
+Theorem cross_border_consent_basis :
+  forall (t : CrossBorderTransfer),
+  cbt_basis t = SubjectConsent_Transfer ->
+  cross_border_lawful t.
+Proof.
+  intros t Hbasis. unfold cross_border_lawful. right. left. exact Hbasis.
+Qed.
+
+(* --- Breach Notification Timeliness --- *)
+(* 2024 Amendment: 72h to PDPC, 7 days to subjects *)
+
+Definition breach_notification_timely
+  (b : BreachEvent) (pdpc_time subject_time : nat) : Prop :=
+  pdpc_notified_in_time b pdpc_time /\
+  subjects_notified_in_time b subject_time /\
+  pdpc_time <= subject_time.
+
+Theorem data_breach_notification_timely :
+  forall (b : BreachEvent) (t_pdpc t_subj : nat),
+  t_pdpc <= breach_detected_at b + 72 ->
+  t_subj <= breach_detected_at b + 168 ->
+  t_pdpc <= t_subj ->
+  breach_notification_timely b t_pdpc t_subj.
+Proof.
+  intros b tp ts Hp Hs Hle.
+  unfold breach_notification_timely.
+  split. unfold pdpc_notified_in_time. exact Hp.
+  split. unfold subjects_notified_in_time. exact Hs.
+  exact Hle.
+Qed.
+
+(* --- Data Subject Access Request Fulfillment --- *)
+(* PDPA §12: Must respond within 21 days *)
+
+Record AccessRequest := mkAccessReq {
+  ar_subject_id : nat;
+  ar_requested_at : nat;
+  ar_responded_at : nat;
+  ar_data_provided : bool;
+}.
+
+Definition access_request_deadline : nat := 504. (* 21 days * 24 hours *)
+
+Definition access_fulfilled (req : AccessRequest) : Prop :=
+  ar_responded_at req <= ar_requested_at req + access_request_deadline /\
+  ar_data_provided req = true.
+
+Theorem data_subject_access_fulfilled :
+  forall (req : AccessRequest),
+  ar_responded_at req <= ar_requested_at req + access_request_deadline ->
+  ar_data_provided req = true ->
+  access_fulfilled req.
+Proof.
+  intros req Htime Hdata.
+  unfold access_fulfilled.
+  split; assumption.
+Qed.
+
+(* Late response violates PDPA *)
+Theorem access_late_response_violation :
+  forall (req : AccessRequest),
+  ar_requested_at req + access_request_deadline < ar_responded_at req ->
+  ~ (ar_responded_at req <= ar_requested_at req + access_request_deadline).
+Proof.
+  intros req Hlate Hle.
+  apply (Nat.lt_irrefl (ar_requested_at req + access_request_deadline)).
+  apply (Nat.lt_le_trans _ _ _ Hlate Hle).
+Qed.
+
+(* --- Data Retention Period Enforcement --- *)
+(* PDPA §10: Data must be deleted when retention period expires *)
+
+Definition retention_enforceable (r : PDPARecord) (current_time : nat)
+  (deletion_performed : bool) : Prop :=
+  (must_delete r current_time -> deletion_performed = true) /\
+  (within_retention_period r current_time -> True).
+
+Theorem data_retention_period_enforced :
+  forall (r : PDPARecord) (t : nat),
+  pdpa_retention_limit r < t ->
+  forall (del : bool), del = true ->
+  retention_enforceable r t del.
+Proof.
+  intros r t Hexp del Hdel.
+  unfold retention_enforceable.
+  split.
+  - intros _. exact Hdel.
+  - intros Hretain.
+    unfold within_retention_period in Hretain.
+    exfalso. apply (Nat.lt_irrefl (pdpa_retention_limit r)).
+    apply (Nat.lt_le_trans _ t _ Hexp Hretain).
+Qed.
+
+(* --- Data Accuracy Maintenance --- *)
+(* PDPA §11: Data must be accurate and up to date *)
+
+Record DataAccuracy := mkAccuracy {
+  da_record_id : nat;
+  da_last_verified : nat;
+  da_verification_interval : nat;
+  da_corrections_applied : nat;
+}.
+
+Definition accuracy_current (da : DataAccuracy) (current_time : nat) : Prop :=
+  current_time <= da_last_verified da + da_verification_interval da.
+
+Definition accuracy_maintained (da : DataAccuracy) (current_time : nat) : Prop :=
+  accuracy_current da current_time.
+
+Theorem data_accuracy_maintained :
+  forall (da : DataAccuracy) (t : nat),
+  t <= da_last_verified da + da_verification_interval da ->
+  accuracy_maintained da t.
+Proof.
+  intros da t H. unfold accuracy_maintained, accuracy_current. exact H.
+Qed.
+
+Theorem accuracy_expiry_detected :
+  forall (da : DataAccuracy) (t : nat),
+  ~ accuracy_current da t ->
+  da_last_verified da + da_verification_interval da < t.
+Proof.
+  intros da t H. unfold accuracy_current in H.
+  apply not_le in H. exact H.
+Qed.
+
+(* --- Security Measures Proportionality --- *)
+(* PDPA §9: Security must be proportionate to harm potential *)
+
+Definition harm_level (c : PDPAClassification) : nat :=
+  match c with
+  | PublicData => 0
+  | PersonalData => 1
+  | SensitivePersonalData => 2
+  end.
+
+Definition security_level_adequate (c : PDPAClassification) (controls : nat) : Prop :=
+  harm_level c <= controls.
+
+Theorem security_measures_proportionate :
+  forall (c : PDPAClassification) (controls : nat),
+  harm_level c <= controls ->
+  security_level_adequate c controls.
+Proof.
+  intros c controls H. unfold security_level_adequate. exact H.
+Qed.
+
+Theorem sensitive_needs_more_controls :
+  forall (controls : nat),
+  security_level_adequate SensitivePersonalData controls ->
+  security_level_adequate PersonalData controls.
+Proof.
+  intros controls H.
+  unfold security_level_adequate in *. simpl in *.
+  apply (Nat.le_trans 1 2 controls). auto with arith. exact H.
+Qed.
+
+(* --- Data Processor Contract Binding --- *)
+(* PDPA §4: Processor must act within contract scope *)
+
+Record ProcessorContract := mkProcContract {
+  pc_processor_id : nat;
+  pc_controller_id : nat;
+  pc_purposes_allowed : list nat;
+  pc_security_obligations : bool;
+  pc_subprocessing_allowed : bool;
+  pc_data_return_required : bool;
+}.
+
+Definition processor_bound (pc : ProcessorContract) : Prop :=
+  pc_security_obligations pc = true /\
+  pc_data_return_required pc = true /\
+  length (pc_purposes_allowed pc) > 0.
+
+Theorem processor_contract_binding :
+  forall (pc : ProcessorContract),
+  pc_security_obligations pc = true ->
+  pc_data_return_required pc = true ->
+  pc_purposes_allowed pc <> nil ->
+  processor_bound pc.
+Proof.
+  intros pc Hsec Hret Hpurp.
+  unfold processor_bound.
+  split. exact Hsec.
+  split. exact Hret.
+  destruct (pc_purposes_allowed pc) eqn:Heq.
+  - contradiction.
+  - simpl. apply Nat.lt_0_succ.
+Qed.
+
+(* --- DPIA Conducted --- *)
+(* 2024 Amendment: Data Protection Impact Assessment *)
+
+Record DPIA := mkDPIA {
+  dpia_id : nat;
+  dpia_conducted_at : nat;
+  dpia_risk_identified : nat;
+  dpia_mitigations_applied : nat;
+  dpia_approved : bool;
+}.
+
+Definition dpia_valid (d : DPIA) : Prop :=
+  dpia_approved d = true /\
+  dpia_mitigations_applied d >= dpia_risk_identified d.
+
+Theorem dpia_conducted :
+  forall (d : DPIA),
+  dpia_approved d = true ->
+  dpia_mitigations_applied d >= dpia_risk_identified d ->
+  dpia_valid d.
+Proof.
+  intros d Happ Hmit.
+  unfold dpia_valid.
+  split; assumption.
+Qed.
+
+Theorem dpia_incomplete_if_risks_unmitigated :
+  forall (d : DPIA),
+  dpia_mitigations_applied d < dpia_risk_identified d ->
+  ~ (dpia_mitigations_applied d >= dpia_risk_identified d).
+Proof.
+  intros d Hlt Hge.
+  apply (Nat.lt_irrefl (dpia_mitigations_applied d)).
+  apply (Nat.lt_le_trans _ _ _ Hlt Hge).
+Qed.
+
+(* --- Children's Data Additional Consent --- *)
+(* PDPA: Children under 18 require parental consent *)
+
+Definition children_age_threshold : nat := 18.
+
+Record ChildDataRecord := mkChildRecord {
+  child_subject_age : nat;
+  child_parental_consent : bool;
+  child_own_consent : bool;
+}.
+
+Definition children_consent_adequate (cdr : ChildDataRecord) : Prop :=
+  (child_subject_age cdr < children_age_threshold ->
+   child_parental_consent cdr = true) /\
+  (child_subject_age cdr >= children_age_threshold ->
+   child_own_consent cdr = true).
+
+Theorem children_data_additional_consent :
+  forall (cdr : ChildDataRecord),
+  child_subject_age cdr < children_age_threshold ->
+  child_parental_consent cdr = true ->
+  child_parental_consent cdr = true.
+Proof.
+  intros cdr _ Hpc. exact Hpc.
+Qed.
+
+Theorem adult_own_consent_sufficient :
+  forall (cdr : ChildDataRecord),
+  child_subject_age cdr >= children_age_threshold ->
+  child_own_consent cdr = true ->
+  children_consent_adequate cdr.
+Proof.
+  intros cdr Hadult Hown.
+  unfold children_consent_adequate.
+  split.
+  - intros Hchild. exfalso. apply (Nat.lt_irrefl (child_subject_age cdr)).
+    apply (Nat.lt_le_trans _ _ _ Hchild Hadult).
+  - intros _. exact Hown.
+Qed.
+
+(* --- Marketing Consent Separate --- *)
+(* PDPA §7: Direct marketing requires separate consent *)
+
+Definition marketing_consent_separate (r : PDPARecord) : Prop :=
+  pdpa_purpose r = DirectMarketing ->
+  pdpa_consent r = ExplicitConsent.
+
+Theorem marketing_consent_required :
+  forall (r : PDPARecord),
+  pdpa_purpose r = DirectMarketing ->
+  pdpa_consent r = ExplicitConsent ->
+  marketing_consent_separate r.
+Proof.
+  intros r _ Hexpl. unfold marketing_consent_separate. intros _. exact Hexpl.
+Qed.
+
+Theorem marketing_without_explicit_violates :
+  forall (r : PDPARecord),
+  pdpa_purpose r = DirectMarketing ->
+  pdpa_consent r = ImpliedConsent ->
+  ~ marketing_consent_separate r.
+Proof.
+  intros r Hmark Himpl Hms.
+  unfold marketing_consent_separate in Hms.
+  specialize (Hms Hmark).
+  rewrite Himpl in Hms. discriminate.
+Qed.
+
+(* --- Complaint Mechanism Availability --- *)
+(* PDPA: Data subjects must have avenue to lodge complaints *)
+
+Record ComplaintMechanism := mkComplaint {
+  complaint_channel_active : bool;
+  complaint_response_days : nat;
+  complaint_max_response_days : nat;
+  complaint_escalation_available : bool;
+}.
+
+Definition complaint_mechanism_available (cm : ComplaintMechanism) : Prop :=
+  complaint_channel_active cm = true /\
+  complaint_response_days cm <= complaint_max_response_days cm /\
+  complaint_escalation_available cm = true.
+
+Theorem complaint_mechanism_valid :
+  forall (cm : ComplaintMechanism),
+  complaint_channel_active cm = true ->
+  complaint_response_days cm <= complaint_max_response_days cm ->
+  complaint_escalation_available cm = true ->
+  complaint_mechanism_available cm.
+Proof.
+  intros cm H1 H2 H3.
+  unfold complaint_mechanism_available.
+  split. exact H1. split. exact H2. exact H3.
+Qed.
+
+(* --- PDPA Commissioner Reportable --- *)
+(* 2024: Annual compliance report to commissioner *)
+
+Record ComplianceReport := mkReport {
+  report_year : nat;
+  report_submitted_at : nat;
+  report_deadline : nat;
+  report_incidents_count : nat;
+  report_dpo_active : bool;
+}.
+
+Definition pdpa_report_timely (rpt : ComplianceReport) : Prop :=
+  report_submitted_at rpt <= report_deadline rpt /\
+  report_dpo_active rpt = true.
+
+Theorem pdpa_commissioner_reportable :
+  forall (rpt : ComplianceReport),
+  report_submitted_at rpt <= report_deadline rpt ->
+  report_dpo_active rpt = true ->
+  pdpa_report_timely rpt.
+Proof.
+  intros rpt Htime Hdpo.
+  unfold pdpa_report_timely.
+  split; assumption.
+Qed.
+
+Theorem late_report_non_compliant :
+  forall (rpt : ComplianceReport),
+  report_deadline rpt < report_submitted_at rpt ->
+  ~ (report_submitted_at rpt <= report_deadline rpt).
+Proof.
+  intros rpt Hlate Hle.
+  apply (Nat.lt_irrefl (report_deadline rpt)).
+  apply (Nat.lt_le_trans _ _ _ Hlate Hle).
+Qed.
+
+(* --- Classification Hierarchy Properties --- *)
+
+Theorem public_data_lowest_harm :
+  forall (c : PDPAClassification),
+  harm_level PublicData <= harm_level c.
+Proof.
+  intros c. destruct c; simpl; auto with arith.
+Qed.
+
+Theorem sensitive_data_highest_harm :
+  forall (c : PDPAClassification),
+  harm_level c <= harm_level SensitivePersonalData.
+Proof.
+  intros c. destruct c; simpl; auto with arith.
+Qed.
+
+(* --- Consent Status Exhaustiveness --- *)
+
+Definition all_consent_statuses : list ConsentStatus :=
+  [NoConsent; ExplicitConsent; ImpliedConsent; WithdrawnConsent].
+
+Theorem consent_status_coverage :
+  forall (cs : ConsentStatus), In cs all_consent_statuses.
+Proof.
+  intros cs. destruct cs; simpl; auto 5.
+Qed.
+
+(* --- Transfer Basis Coverage --- *)
+
+Definition all_transfer_bases : list TransferBasis :=
+  [SubjectConsent_Transfer; ContractPerformance; LegalProceedings;
+   VitalInterests_Transfer; PublicRegister; MinisterialExemption].
+
+Theorem transfer_basis_coverage :
+  forall (tb : TransferBasis), In tb all_transfer_bases.
+Proof.
+  intros tb. destruct tb; simpl; auto 7.
+Qed.

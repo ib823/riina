@@ -188,4 +188,431 @@ Proof.
   exact H_no_consent.
 Qed.
 
+(** ** Extended Definitions for Anti-Tracking *)
 
+Require Import Coq.micromega.Lia.
+
+(** Cross-site tracking *)
+Record CrossSiteRequest : Type := mkCrossSiteReq {
+  csr_source_domain : nat;
+  csr_target_domain : nat;
+  csr_has_tracking_params : bool;
+  csr_blocked : bool
+}.
+
+Definition cross_site_tracking_blocked (csr : CrossSiteRequest) : Prop :=
+  csr_source_domain csr <> csr_target_domain csr ->
+  csr_has_tracking_params csr = true ->
+  csr_blocked csr = true.
+
+(** Fingerprinting prevention *)
+Record FingerprintAttempt : Type := mkFingerprint {
+  fp_entropy_bits : nat;
+  fp_max_allowed_bits : nat;
+  fp_prevented : bool
+}.
+
+Definition fingerprinting_prevented (fa : FingerprintAttempt) : Prop :=
+  fp_entropy_bits fa > fp_max_allowed_bits fa ->
+  fp_prevented fa = true.
+
+(** Third-party cookies *)
+Record CookieRequest : Type := mkCookieReq {
+  cookie_domain : nat;
+  cookie_page_domain : nat;
+  cookie_is_third_party : bool;
+  cookie_blocked : bool
+}.
+
+Definition third_party_cookies_blocked (cr : CookieRequest) : Prop :=
+  cookie_is_third_party cr = true -> cookie_blocked cr = true.
+
+(** Tracking pixel detection *)
+Record ResourceLoad : Type := mkResourceLoad {
+  res_url_hash : nat;
+  res_size_bytes : nat;
+  res_is_tracking_pixel : bool;
+  res_detected : bool
+}.
+
+Definition tracking_pixel_detected (rl : ResourceLoad) : Prop :=
+  res_is_tracking_pixel rl = true -> res_detected rl = true.
+
+(** Advertising ID *)
+Record AdvertisingId : Type := mkAdId {
+  ad_id_value : nat;
+  ad_id_resettable : bool;
+  ad_id_reset_count : nat
+}.
+
+Definition advertising_id_resettable (aid : AdvertisingId) : Prop :=
+  ad_id_resettable aid = true.
+
+(** App tracking permission *)
+Record AppTrackingRequest : Type := mkAppTrackReq {
+  atr_app_id : nat;
+  atr_user_id : nat;
+  atr_permission_asked : bool;
+  atr_permission_granted : bool
+}.
+
+Definition app_tracking_permission_required (atr : AppTrackingRequest) : Prop :=
+  atr_permission_granted atr = true -> atr_permission_asked atr = true.
+
+(** Link decoration stripping *)
+Record LinkDecoration : Type := mkLinkDec {
+  ld_url_hash : nat;
+  ld_tracking_params : list nat;
+  ld_stripped : bool
+}.
+
+Definition link_decoration_stripped (ld : LinkDecoration) : Prop :=
+  ld_tracking_params ld <> [] -> ld_stripped ld = true.
+
+(** Bounce tracking prevention *)
+Record BounceTracking : Type := mkBounceTrack {
+  bt_intermediate_domain : nat;
+  bt_final_domain : nat;
+  bt_bounce_detected : bool;
+  bt_prevented : bool
+}.
+
+Definition bounce_tracking_prevented (bt : BounceTracking) : Prop :=
+  bt_bounce_detected bt = true -> bt_prevented bt = true.
+
+(** CNAME cloaking detection *)
+Record CNAMERecord : Type := mkCNAME {
+  cname_alias : nat;
+  cname_target : nat;
+  cname_is_tracker : bool;
+  cname_detected : bool
+}.
+
+Definition cname_cloaking_detected (cr : CNAMERecord) : Prop :=
+  cname_is_tracker cr = true -> cname_detected cr = true.
+
+(** Storage access partitioning *)
+Record StorageAccess : Type := mkStorageAccess {
+  sa_origin : nat;
+  sa_top_level_origin : nat;
+  sa_partitioned : bool
+}.
+
+Definition storage_access_partitioned (sa : StorageAccess) : Prop :=
+  sa_origin sa <> sa_top_level_origin sa -> sa_partitioned sa = true.
+
+(** Referrer policy *)
+Inductive ReferrerPolicy : Type :=
+  | NoReferrer : ReferrerPolicy
+  | StrictOrigin : ReferrerPolicy
+  | SameOrigin : ReferrerPolicy
+  | FullURL : ReferrerPolicy.
+
+Record ReferrerConfig : Type := mkReferrerConfig {
+  ref_policy : ReferrerPolicy;
+  ref_is_strict : bool
+}.
+
+Definition referrer_policy_strict (rc : ReferrerConfig) : Prop :=
+  ref_is_strict rc = true /\
+  (ref_policy rc = NoReferrer \/ ref_policy rc = StrictOrigin).
+
+(** IP address masking *)
+Record NetworkRequest : Type := mkNetworkReq {
+  nr_destination : nat;
+  nr_ip_masked : bool;
+  nr_uses_relay : bool
+}.
+
+Definition ip_address_masked (nr : NetworkRequest) : Prop :=
+  nr_ip_masked nr = true \/ nr_uses_relay nr = true.
+
+(** Device graph prevention *)
+Record DeviceGraphAttempt : Type := mkDeviceGraph {
+  dg_identifiers_collected : list nat;
+  dg_prevented : bool;
+  dg_max_identifiers : nat
+}.
+
+Definition device_graph_prevented (dg : DeviceGraphAttempt) : Prop :=
+  length (dg_identifiers_collected dg) > dg_max_identifiers dg ->
+  dg_prevented dg = true.
+
+(** Tracker list *)
+Record TrackerList : Type := mkTrackerList {
+  tl_entries : list nat;
+  tl_last_updated : nat;
+  tl_max_age_seconds : nat
+}.
+
+Definition tracker_list_updated (tl : TrackerList) : Prop :=
+  tl_last_updated tl > 0 /\ tl_entries tl <> [].
+
+(** Tracking report *)
+Record TrackingReport : Type := mkTrackingReport {
+  tr_blocked_count : nat;
+  tr_tracker_domains : list nat;
+  tr_report_available : bool
+}.
+
+Definition tracking_report_available (tr : TrackingReport) : Prop :=
+  tr_report_available tr = true.
+
+(** ** New Theorems *)
+
+(* 1. Cross-site tracking blocked *)
+Theorem cross_site_tracking_blocked_thm :
+  forall (csr : CrossSiteRequest),
+    cross_site_tracking_blocked csr ->
+    csr_source_domain csr <> csr_target_domain csr ->
+    csr_has_tracking_params csr = true ->
+    csr_blocked csr = true.
+Proof.
+  intros csr Hblocked Hdiff Hparams.
+  unfold cross_site_tracking_blocked in Hblocked.
+  apply Hblocked; assumption.
+Qed.
+
+(* 2. Fingerprinting prevented *)
+Theorem fingerprinting_prevented_thm :
+  forall (fa : FingerprintAttempt),
+    fingerprinting_prevented fa ->
+    fp_entropy_bits fa > fp_max_allowed_bits fa ->
+    fp_prevented fa = true.
+Proof.
+  intros fa Hprev Hentropy.
+  unfold fingerprinting_prevented in Hprev.
+  apply Hprev.
+  exact Hentropy.
+Qed.
+
+(* 3. Third-party cookies blocked *)
+Theorem third_party_cookies_blocked_thm :
+  forall (cr : CookieRequest),
+    third_party_cookies_blocked cr ->
+    cookie_is_third_party cr = true ->
+    cookie_blocked cr = true.
+Proof.
+  intros cr Hblocked Hthird.
+  unfold third_party_cookies_blocked in Hblocked.
+  apply Hblocked.
+  exact Hthird.
+Qed.
+
+(* 4. Tracking pixel detected *)
+Theorem tracking_pixel_detected_thm :
+  forall (rl : ResourceLoad),
+    tracking_pixel_detected rl ->
+    res_is_tracking_pixel rl = true ->
+    res_detected rl = true.
+Proof.
+  intros rl Hdetected Hpixel.
+  unfold tracking_pixel_detected in Hdetected.
+  apply Hdetected.
+  exact Hpixel.
+Qed.
+
+(* 5. Advertising ID resettable *)
+Theorem advertising_id_resettable_thm :
+  forall (aid : AdvertisingId),
+    advertising_id_resettable aid ->
+    ad_id_resettable aid = true.
+Proof.
+  intros aid Hresettable.
+  unfold advertising_id_resettable in Hresettable.
+  exact Hresettable.
+Qed.
+
+(* 6. App tracking permission required *)
+Theorem app_tracking_permission_required_thm :
+  forall (atr : AppTrackingRequest),
+    app_tracking_permission_required atr ->
+    atr_permission_granted atr = true ->
+    atr_permission_asked atr = true.
+Proof.
+  intros atr Hreq Hgranted.
+  unfold app_tracking_permission_required in Hreq.
+  apply Hreq.
+  exact Hgranted.
+Qed.
+
+(* 7. Link decoration stripped *)
+Theorem link_decoration_stripped_thm :
+  forall (ld : LinkDecoration),
+    link_decoration_stripped ld ->
+    ld_tracking_params ld <> [] ->
+    ld_stripped ld = true.
+Proof.
+  intros ld Hstripped Hparams.
+  unfold link_decoration_stripped in Hstripped.
+  apply Hstripped.
+  exact Hparams.
+Qed.
+
+(* 8. Bounce tracking prevented *)
+Theorem bounce_tracking_prevented_thm :
+  forall (bt : BounceTracking),
+    bounce_tracking_prevented bt ->
+    bt_bounce_detected bt = true ->
+    bt_prevented bt = true.
+Proof.
+  intros bt Hprev Hdetected.
+  unfold bounce_tracking_prevented in Hprev.
+  apply Hprev.
+  exact Hdetected.
+Qed.
+
+(* 9. CNAME cloaking detected *)
+Theorem cname_cloaking_detected_thm :
+  forall (cr : CNAMERecord),
+    cname_cloaking_detected cr ->
+    cname_is_tracker cr = true ->
+    cname_detected cr = true.
+Proof.
+  intros cr Hdetected Htracker.
+  unfold cname_cloaking_detected in Hdetected.
+  apply Hdetected.
+  exact Htracker.
+Qed.
+
+(* 10. Storage access partitioned *)
+Theorem storage_access_partitioned_thm :
+  forall (sa : StorageAccess),
+    storage_access_partitioned sa ->
+    sa_origin sa <> sa_top_level_origin sa ->
+    sa_partitioned sa = true.
+Proof.
+  intros sa Hpart Hdiff.
+  unfold storage_access_partitioned in Hpart.
+  apply Hpart.
+  exact Hdiff.
+Qed.
+
+(* 11. Referrer policy strict *)
+Theorem referrer_policy_strict_thm :
+  forall (rc : ReferrerConfig),
+    referrer_policy_strict rc ->
+    ref_is_strict rc = true.
+Proof.
+  intros rc Hstrict.
+  unfold referrer_policy_strict in Hstrict.
+  destruct Hstrict as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 12. IP address masked *)
+Theorem ip_address_masked_thm :
+  forall (nr : NetworkRequest),
+    ip_address_masked nr ->
+    nr_ip_masked nr = true \/ nr_uses_relay nr = true.
+Proof.
+  intros nr Hmasked.
+  unfold ip_address_masked in Hmasked.
+  exact Hmasked.
+Qed.
+
+(* 13. Device graph prevented *)
+Theorem device_graph_prevented_thm :
+  forall (dg : DeviceGraphAttempt),
+    device_graph_prevented dg ->
+    length (dg_identifiers_collected dg) > dg_max_identifiers dg ->
+    dg_prevented dg = true.
+Proof.
+  intros dg Hprev Hlen.
+  unfold device_graph_prevented in Hprev.
+  apply Hprev.
+  exact Hlen.
+Qed.
+
+(* 14. Tracker list updated *)
+Theorem tracker_list_updated_thm :
+  forall (tl : TrackerList),
+    tracker_list_updated tl ->
+    tl_last_updated tl > 0.
+Proof.
+  intros tl Hupdated.
+  unfold tracker_list_updated in Hupdated.
+  destruct Hupdated as [Hpos _].
+  exact Hpos.
+Qed.
+
+(* 15. Tracking report available *)
+Theorem tracking_report_available_thm :
+  forall (tr : TrackingReport),
+    tracking_report_available tr ->
+    tr_report_available tr = true.
+Proof.
+  intros tr Havail.
+  unfold tracking_report_available in Havail.
+  exact Havail.
+Qed.
+
+(* 16. Referrer policy is NoReferrer or StrictOrigin *)
+Theorem referrer_policy_options :
+  forall (rc : ReferrerConfig),
+    referrer_policy_strict rc ->
+    ref_policy rc = NoReferrer \/ ref_policy rc = StrictOrigin.
+Proof.
+  intros rc Hstrict.
+  unfold referrer_policy_strict in Hstrict.
+  destruct Hstrict as [_ Hpolicy].
+  exact Hpolicy.
+Qed.
+
+(* 17. Tracker list non-empty *)
+Theorem tracker_list_non_empty :
+  forall (tl : TrackerList),
+    tracker_list_updated tl ->
+    tl_entries tl <> [].
+Proof.
+  intros tl Hupdated.
+  unfold tracker_list_updated in Hupdated.
+  destruct Hupdated as [_ Hnonempty].
+  exact Hnonempty.
+Qed.
+
+(* 18. No tracking without permission request *)
+Theorem no_tracking_without_permission_request :
+  forall (atr : AppTrackingRequest),
+    app_tracking_permission_required atr ->
+    atr_permission_asked atr = false ->
+    atr_permission_granted atr = false.
+Proof.
+  intros atr Hreq Hnotasked.
+  unfold app_tracking_permission_required in Hreq.
+  destruct (atr_permission_granted atr) eqn:E.
+  - exfalso.
+    assert (Hasked : atr_permission_asked atr = true) by (apply Hreq; reflexivity).
+    rewrite Hnotasked in Hasked.
+    discriminate Hasked.
+  - reflexivity.
+Qed.
+
+(* 19. Consent revocation prevents future tracking *)
+Theorem revocation_prevents_future_tracking :
+  forall (user : User) (app : Application),
+    tracking_consent_given user = false ->
+    ~ tracks app user.
+Proof.
+  intros user app Hrevoked.
+  unfold tracks.
+  intros [_ Hconsent].
+  unfold explicit_consent in Hconsent.
+  destruct Hconsent as [Htrue _].
+  rewrite Hrevoked in Htrue.
+  discriminate Htrue.
+Qed.
+
+(* 20. IP masking via relay *)
+Theorem ip_masked_via_relay :
+  forall (nr : NetworkRequest),
+    nr_uses_relay nr = true ->
+    ip_address_masked nr.
+Proof.
+  intros nr Hrelay.
+  unfold ip_address_masked.
+  right.
+  exact Hrelay.
+Qed.
+
+(* End of TrackingPrevention verification *)

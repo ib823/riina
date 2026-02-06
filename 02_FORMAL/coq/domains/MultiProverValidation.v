@@ -293,3 +293,88 @@ Proof.
   intros. rewrite translation_preserves_structure_A, translation_preserves_structure_B.
   reflexivity.
 Qed.
+
+(* Theorem 13: Confidence level is symmetric in its arguments' truth values *)
+Theorem confidence_symmetric :
+  forall vA vB, confidence_level vA vB = confidence_level vB vA ->
+    (vA = vB) \/ (confidence_level vA vB = SingleProver).
+Proof.
+  intros vA vB H.
+  destruct vA; destruct vB; simpl in *; auto.
+Qed.
+
+(* Theorem 14: NoConfidence only when both provers fail *)
+Theorem no_confidence_means_both_fail :
+  forall vA vB,
+    confidence_level vA vB = NoConfidence ->
+    vA = false /\ vB = false.
+Proof.
+  intros vA vB H.
+  destruct vA; destruct vB; simpl in H; try discriminate; auto.
+Qed.
+
+(* Theorem 15: SingleProver means exactly one prover succeeded *)
+Theorem single_prover_means_one_true :
+  forall vA vB,
+    confidence_level vA vB = SingleProver ->
+    (vA = true /\ vB = false) \/ (vA = false /\ vB = true).
+Proof.
+  intros vA vB H.
+  destruct vA; destruct vB; simpl in H; try discriminate; auto.
+Qed.
+
+(* Theorem 16: DualProver means both succeeded *)
+Theorem dual_prover_means_both_true :
+  forall vA vB,
+    confidence_level vA vB = DualProver ->
+    vA = true /\ vB = true.
+Proof.
+  intros vA vB H.
+  destruct vA; destruct vB; simpl in H; try discriminate; auto.
+Qed.
+
+(* Theorem 17: confidence_ge is reflexive *)
+Theorem confidence_ge_refl : forall c, confidence_ge c c.
+Proof.
+  destruct c; simpl; exact I.
+Qed.
+
+(* Theorem 18: confidence_ge is transitive *)
+Theorem confidence_ge_trans :
+  forall c1 c2 c3,
+    confidence_ge c1 c2 -> confidence_ge c2 c3 -> confidence_ge c1 c3.
+Proof.
+  destruct c1; destruct c2; destruct c3; simpl; intros; auto.
+Qed.
+
+(* Theorem 19: Confidence level monotonicity — adding a valid prover can only help *)
+Theorem confidence_monotone_add_valid :
+  forall vA,
+    confidence_ge (confidence_level vA true) (confidence_level vA false).
+Proof.
+  destruct vA; simpl; exact I.
+Qed.
+
+(* Theorem 20: Certificate for And has correct sub-formulas *)
+Theorem cert_and_sub_formulas :
+  forall c1 c2,
+    cert_formula (CertAndI c1 c2) = FAnd (cert_formula c1) (cert_formula c2).
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+(* Theorem 21: Formula equality is symmetric *)
+Theorem formula_eqb_sym : forall f1 f2, formula_eqb f1 f2 = formula_eqb f2 f1.
+Proof.
+  induction f1; destruct f2; simpl; auto.
+  - apply Nat.eqb_sym.
+  - rewrite IHf1_1, IHf1_2. reflexivity.
+  - rewrite IHf1_1, IHf1_2. reflexivity.
+Qed.
+
+(* Theorem 22: Validate atomic false for non-atom certificates *)
+Theorem validate_atomic_non_atom :
+  forall f c n, validate_atomic (CertNotI f c) n = false.
+Proof.
+  intros. simpl. reflexivity.
+Qed.

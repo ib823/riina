@@ -165,3 +165,104 @@ Proof.
   intros r1 r2 r3 H31 H32 n H3.
   split; [apply H31 | apply H32]; exact H3.
 Qed.
+
+(** Theorem 11: Conjunction is commutative on full_pred *)
+Theorem conj_full_pred_comm : forall (r1 r2 : RefinedType) (v : nat),
+  full_pred (refine_conj r1 r2) v <-> full_pred (refine_conj r2 r1) v.
+Proof.
+  intros. simpl. tauto.
+Qed.
+
+(** Theorem 12: Conjunction is associative on full_pred *)
+Theorem conj_full_pred_assoc : forall (r1 r2 r3 : RefinedType) (v : nat),
+  full_pred (refine_conj (refine_conj r1 r2) r3) v <->
+  full_pred (refine_conj r1 (refine_conj r2 r3)) v.
+Proof.
+  intros. simpl. tauto.
+Qed.
+
+(** Theorem 13: Conjunction light_pred is AND *)
+Theorem conj_light_is_andb : forall (r1 r2 : RefinedType) (v : nat),
+  light_pred (refine_conj r1 r2) v = (light_pred r1 v && light_pred r2 v)%bool.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+(** Theorem 14: Eval of EConst is the constant itself *)
+Theorem eval_const : forall n, eval (EConst n) = n.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+(** Theorem 15: Eval of EPlus is sum of evaluations *)
+Theorem eval_plus : forall e1 e2, eval (EPlus e1 e2) = eval e1 + eval e2.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+(** Theorem 16: Lightweight check false implies not full_check for decidable *)
+Theorem lightweight_false_implies_not_full : forall (rt : RefinedType) (v : nat),
+  decidable_refinement rt ->
+  lightweight_check rt v = false ->
+  ~ full_check rt v.
+Proof.
+  intros rt v Hdec Hfalse Hfull.
+  apply Hdec in Hfull. unfold lightweight_check in Hfalse.
+  rewrite Hfull in Hfalse. discriminate.
+Qed.
+
+(** Theorem 17: Subtype preserves lightweight soundness *)
+Theorem subtype_lightweight_sound : forall (r1 r2 : RefinedType) (v : nat),
+  refine_subtype r1 r2 ->
+  lightweight_check r1 v = true ->
+  full_check r2 v.
+Proof.
+  intros r1 r2 v Hsub Hlight.
+  apply Hsub. apply lightweight_sound. exact Hlight.
+Qed.
+
+(** Theorem 18: Conjunction of decidable refinements is decidable *)
+Theorem conj_decidable : forall (r1 r2 : RefinedType),
+  decidable_refinement r1 ->
+  decidable_refinement r2 ->
+  decidable_refinement (refine_conj r1 r2).
+Proof.
+  unfold decidable_refinement. intros r1 r2 H1 H2 n.
+  simpl. rewrite andb_true_iff.
+  specialize (H1 n). specialize (H2 n). tauto.
+Qed.
+
+(** Theorem 19: Refine_subtype is antisymmetric under full_pred equality *)
+Theorem refine_subtype_antisym_eq : forall (r1 r2 : RefinedType),
+  refine_subtype r1 r2 ->
+  refine_subtype r2 r1 ->
+  forall n, full_pred r1 n <-> full_pred r2 n.
+Proof.
+  intros r1 r2 H12 H21 n. split; [apply H12 | apply H21].
+Qed.
+
+(** Theorem 20: Eval of EIf with 0 guard takes else branch *)
+Theorem eval_if_false : forall et ef,
+  eval (EIf (EConst 0) et ef) = eval ef.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+(** Theorem 21: Eval of EIf with nonzero guard takes then branch *)
+Theorem eval_if_true : forall n et ef,
+  n <> 0 ->
+  eval (EIf (EConst n) et ef) = eval et.
+Proof.
+  intros n et ef Hneq. simpl.
+  destruct n.
+  - contradiction.
+  - simpl. reflexivity.
+Qed.
+
+(** Theorem 22: Conjunction subtyping both ways *)
+Theorem conj_sub_both : forall (r1 r2 : RefinedType) (v : nat),
+  full_check (refine_conj r1 r2) v ->
+  full_check r1 v /\ full_check r2 v.
+Proof.
+  unfold full_check. intros. simpl in H. exact H.
+Qed.

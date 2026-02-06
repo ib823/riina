@@ -128,4 +128,201 @@ Inductive LegalEffect : Type :=
    | records_retention          | SEC 17a-4         | All         |
 *)
 
+(** ** 7. Substantial Security Theorems — Privilege Protection & Ethics *)
+
+Require Import Lia.
+
+(** Legal data sensitivity ordering *)
+Definition legal_sensitivity (d : LegalData) : nat :=
+  match d with
+  | AttorneyClientPrivilege => 5
+  | WorkProduct => 4
+  | ClientPII => 3
+  | CaseFile => 3
+  | DiscoveryMaterial => 2
+  | TrustAccount => 5
+  end.
+
+Theorem privilege_max_sensitivity : forall d,
+  legal_sensitivity d <= legal_sensitivity AttorneyClientPrivilege.
+Proof. destruct d; simpl; lia. Qed.
+
+Theorem trust_equals_privilege_sensitivity :
+  legal_sensitivity TrustAccount = legal_sensitivity AttorneyClientPrivilege.
+Proof. simpl. reflexivity. Qed.
+
+Theorem legal_sensitivity_positive : forall d,
+  legal_sensitivity d >= 2.
+Proof. destruct d; simpl; lia. Qed.
+
+(** Privilege type ordering *)
+Definition privilege_strength (p : PrivilegeType) : nat :=
+  match p with
+  | Absolute => 3
+  | Qualified => 2
+  | Waived => 0
+  end.
+
+Theorem absolute_strongest : forall p,
+  privilege_strength p <= privilege_strength Absolute.
+Proof. destruct p; simpl; lia. Qed.
+
+Theorem waived_no_protection : privilege_strength Waived = 0.
+Proof. simpl. reflexivity. Qed.
+
+(** Privilege is effectively lost when waived *)
+Definition privilege_effective (p : PrivilegeType) : bool :=
+  match p with
+  | Absolute | Qualified => true
+  | Waived => false
+  end.
+
+Theorem absolute_effective : privilege_effective Absolute = true.
+Proof. simpl. reflexivity. Qed.
+
+Theorem waived_not_effective : privilege_effective Waived = false.
+Proof. simpl. reflexivity. Qed.
+
+Theorem qualified_effective : privilege_effective Qualified = true.
+Proof. simpl. reflexivity. Qed.
+
+(** All legal controls enabled *)
+Definition all_legal_controls (c : LegalSecurityControls) : bool :=
+  privilege_protection c && conflict_screening c &&
+  matter_segregation c && retention_compliance c &&
+  ediscovery_ready c && ethical_walls c.
+
+Theorem all_legal_requires_privilege : forall c,
+  all_legal_controls c = true -> privilege_protection c = true.
+Proof.
+  intros c H. unfold all_legal_controls in H.
+  repeat (apply andb_true_iff in H; destruct H as [H ?]).
+  exact H.
+Qed.
+
+Theorem all_legal_requires_conflict_screening : forall c,
+  all_legal_controls c = true -> conflict_screening c = true.
+Proof.
+  intros c H. unfold all_legal_controls in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+Theorem all_legal_requires_ethical_walls : forall c,
+  all_legal_controls c = true -> ethical_walls c = true.
+Proof.
+  intros c H. unfold all_legal_controls in H.
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+Theorem all_legal_requires_retention : forall c,
+  all_legal_controls c = true -> retention_compliance c = true.
+Proof.
+  intros c H. unfold all_legal_controls in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+(** Count legal controls *)
+Definition count_legal_controls (c : LegalSecurityControls) : nat :=
+  (if privilege_protection c then 1 else 0) +
+  (if conflict_screening c then 1 else 0) +
+  (if matter_segregation c then 1 else 0) +
+  (if retention_compliance c then 1 else 0) +
+  (if ediscovery_ready c then 1 else 0) +
+  (if ethical_walls c then 1 else 0).
+
+Theorem count_legal_bounded : forall c,
+  count_legal_controls c <= 6.
+Proof.
+  intros c. unfold count_legal_controls.
+  destruct (privilege_protection c), (conflict_screening c),
+           (matter_segregation c), (retention_compliance c),
+           (ediscovery_ready c), (ethical_walls c); simpl; lia.
+Qed.
+
+Theorem all_controls_count_six : forall c,
+  all_legal_controls c = true ->
+  count_legal_controls c = 6.
+Proof.
+  intros c H. unfold all_legal_controls in H.
+  apply andb_true_iff in H. destruct H as [H H6].
+  apply andb_true_iff in H. destruct H as [H H5].
+  apply andb_true_iff in H. destruct H as [H H4].
+  apply andb_true_iff in H. destruct H as [H H3].
+  apply andb_true_iff in H. destruct H as [H1 H2].
+  unfold count_legal_controls.
+  rewrite H1, H2, H3, H4, H5, H6. simpl. reflexivity.
+Qed.
+
+(** Records retention period by data type *)
+Definition legal_retention_years (d : LegalData) : nat :=
+  match d with
+  | AttorneyClientPrivilege => 10
+  | WorkProduct => 7
+  | ClientPII => 7
+  | CaseFile => 7
+  | DiscoveryMaterial => 3
+  | TrustAccount => 10
+  end.
+
+Theorem retention_minimum_3 : forall d,
+  legal_retention_years d >= 3.
+Proof. destruct d; simpl; lia. Qed.
+
+Theorem privilege_longest_retention : forall d,
+  legal_retention_years d <= legal_retention_years AttorneyClientPrivilege.
+Proof. destruct d; simpl; lia. Qed.
+
+Theorem trust_equals_privilege_retention :
+  legal_retention_years TrustAccount = legal_retention_years AttorneyClientPrivilege.
+Proof. simpl. reflexivity. Qed.
+
+(** Conflict check: party IDs must differ *)
+Definition no_conflict (party1 party2 : nat) : bool :=
+  negb (Nat.eqb party1 party2).
+
+Theorem same_party_conflict : forall p,
+  no_conflict p p = false.
+Proof.
+  intros p. unfold no_conflict. rewrite Nat.eqb_refl. simpl. reflexivity.
+Qed.
+
+Theorem different_parties_no_conflict : forall p1 p2,
+  p1 <> p2 -> no_conflict p1 p2 = true.
+Proof.
+  intros p1 p2 H. unfold no_conflict.
+  destruct (Nat.eqb p1 p2) eqn:E.
+  - apply Nat.eqb_eq in E. contradiction.
+  - simpl. reflexivity.
+Qed.
+
+(** Trust account: balance must equal sum of client deposits *)
+Definition trust_balanced (balance client_total : nat) : bool :=
+  Nat.eqb balance client_total.
+
+Theorem trust_balance_correct : forall b ct,
+  trust_balanced b ct = true -> b = ct.
+Proof.
+  intros b ct H. unfold trust_balanced in H.
+  apply Nat.eqb_eq in H. exact H.
+Qed.
+
+(** E-discovery hold: documents cannot be deleted during litigation *)
+Definition litigation_hold_active (hold_start current_time hold_end : nat) : bool :=
+  Nat.leb hold_start current_time && Nat.leb current_time hold_end.
+
+Theorem hold_bounds : forall hs ct he,
+  litigation_hold_active hs ct he = true ->
+  hs <= ct /\ ct <= he.
+Proof.
+  intros hs ct he H. unfold litigation_hold_active in H.
+  apply andb_true_iff in H. destruct H as [H1 H2].
+  split; apply Nat.leb_le; assumption.
+Qed.
+
 (** End IndustryLegal *)

@@ -172,4 +172,58 @@ Proof.
   unfold xor_nat. intros. apply Nat.lxor_0_r.
 Qed.
 
+(** * Theorem 9: XOR is associative *)
+Theorem xor_assoc : forall a b c, xor_nat (xor_nat a b) c = xor_nat a (xor_nat b c).
+Proof.
+  unfold xor_nat. intros. apply Nat.lxor_assoc.
+Qed.
+
+(** * Theorem 10: XOR self is zero *)
+Theorem xor_self_zero : forall a, xor_nat a a = 0%nat.
+Proof.
+  unfold xor_nat. intros. apply Nat.lxor_nilpotent.
+Qed.
+
+(** * Theorem 11: Double OTP encryption-decryption roundtrip *)
+Theorem otp_roundtrip : forall msg key,
+  xor_nat (xor_nat msg key) key = msg.
+Proof.
+  intros. apply xor_self_inverse.
+Qed.
+
+(** * Theorem 12: XOR with same key is deterministic *)
+Theorem xor_deterministic : forall a b k,
+  xor_nat a k = xor_nat b k -> a = b.
+Proof.
+  unfold xor_nat. intros a b k H.
+  assert (H1: Nat.lxor (Nat.lxor a k) k = Nat.lxor (Nat.lxor b k) k) by (rewrite H; reflexivity).
+  rewrite Nat.lxor_assoc in H1.
+  rewrite Nat.lxor_nilpotent in H1.
+  rewrite Nat.lxor_0_r in H1.
+  rewrite Nat.lxor_assoc in H1.
+  rewrite Nat.lxor_nilpotent in H1.
+  rewrite Nat.lxor_0_r in H1.
+  exact H1.
+Qed.
+
+(** * Theorem 13: Uniform distribution has correct length *)
+Theorem uniform_length : forall n (Hn : (0 < n)%nat),
+  length (uniform_dist n Hn) = n.
+Proof.
+  unfold uniform_dist. intros.
+  rewrite map_length. rewrite seq_length. reflexivity.
+Qed.
+
+(** * Theorem 14: Qabs is non-negative *)
+Theorem qabs_nonneg : forall q : Q, (0 <= Qabs q)%Q.
+Proof.
+  intros. apply Qabs_nonneg.
+Qed.
+
+(** * Theorem 15: Qabs of zero is zero *)
+Theorem qabs_zero : Qabs 0 == 0.
+Proof.
+  apply Qabs_pos. apply Qle_refl.
+Qed.
+
 Close Scope Q_scope.

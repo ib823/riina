@@ -706,3 +706,9 @@ Proof.
       rewrite Hdropped.
       reflexivity.
 Qed.
+
+(* Lifetime outlives is reflexive *)
+Theorem lifetime_outlives_refl : forall l, lifetime_outlives l l = true.
+Proof.
+  intros l. unfold lifetime_outlives. apply Nat.leb_refl.
+Qed.

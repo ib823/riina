@@ -17,6 +17,7 @@
 Require Import Coq.Bool.Bool.
 Require Import Coq.Arith.Arith.
 Require Import Coq.Arith.PeanoNat.
+Require Import Coq.micromega.Lia.
 
 (** ============================================================================
     SECTION 1: BUFFER MODEL
@@ -198,8 +199,70 @@ Proof.
   apply BOF_010_stack_canaries. exact H.
 Qed.
 
+(** BOF_016: Write Cannot Exceed Buffer Size *)
+Theorem BOF_016_write_bounded :
+  forall b n : nat,
+    buffer_can_write (mkBuffer b 0) n = true ->
+    n <= b.
+Proof.
+  intros b n H.
+  unfold buffer_can_write in H. simpl in H.
+  apply Nat.leb_le in H. lia.
+Qed.
+
+(** BOF_017: Read Start Within Used *)
+Theorem BOF_017_read_start_within :
+  forall b offset len,
+    buffer_can_read b offset len = true ->
+    offset <= buf_used b.
+Proof.
+  intros b offset len H.
+  unfold buffer_can_read in H.
+  apply Nat.leb_le in H. lia.
+Qed.
+
+(** BOF_018: Zero Read Always Safe *)
+Theorem BOF_018_zero_read_safe :
+  forall b : Buffer,
+    buffer_can_read b 0 0 = true.
+Proof.
+  intros b. unfold buffer_can_read. simpl.
+  destruct (buf_used b); reflexivity.
+Qed.
+
+(** BOF_019: Full Buffer Cannot Write More *)
+Theorem BOF_019_full_buffer_no_write :
+  forall sz : nat,
+    buffer_can_write (mkBuffer sz sz) 1 = false.
+Proof.
+  intros sz. unfold buffer_can_write. simpl.
+  apply Nat.leb_gt. lia.
+Qed.
+
+(** BOF_020: Null Terminator Check Required *)
+Theorem BOF_020_null_terminator_check :
+  forall p : OverflowPrevention,
+    overflow_protected p = true ->
+    op_null_terminator_check p = true.
+Proof.
+  intros p H. unfold overflow_protected in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H].
+  exact H.
+Qed.
+
+(** BOF_021: Valid Buffer After Write *)
+Theorem BOF_021_valid_after_write :
+  forall b n : nat,
+    buffer_can_write (mkBuffer (b + n) b) n = true.
+Proof.
+  intros b n. unfold buffer_can_write. simpl.
+  apply Nat.leb_le. lia.
+Qed.
+
 (** ============================================================================
     VERIFICATION COMPLETE
-    Total Theorems: 15
+    Total Theorems: 21
     Admits: 0, Axioms: 0
     ============================================================================ *)

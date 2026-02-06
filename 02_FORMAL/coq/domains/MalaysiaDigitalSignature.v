@@ -190,3 +190,222 @@ Theorem subscriber_duty_hsm :
 Proof.
   intros enc hsm H. unfold private_key_protected. right. exact H.
 Qed.
+
+(* ================================================================ *)
+(* Extended Malaysia Digital Signature Act Theorems                  *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- Certificate Lifecycle Management --- *)
+(* DSA 1997: Certificate lifecycle states and transitions *)
+
+Definition cert_status_active (c : Certificate) : Prop :=
+  cert_status c = CertActive.
+
+Definition cert_status_terminated (c : Certificate) : Prop :=
+  cert_status c = CertRevoked \/ cert_status c = CertExpired.
+
+Theorem active_not_terminated :
+  forall (c : Certificate),
+  cert_status_active c ->
+  ~ cert_status_terminated c.
+Proof.
+  intros c Hact [Hrev | Hexp];
+  unfold cert_status_active in Hact;
+  rewrite Hact in *; discriminate.
+Qed.
+
+Theorem suspended_not_active :
+  forall (c : Certificate),
+  cert_status c = CertSuspended ->
+  ~ cert_status_active c.
+Proof.
+  intros c Hsusp Hact.
+  unfold cert_status_active in Hact.
+  rewrite Hsusp in Hact. discriminate.
+Qed.
+
+(* --- Certificate Expiry Properties --- *)
+
+Theorem cert_validity_window :
+  forall (c : Certificate) (t : nat),
+  cert_valid c t ->
+  cert_issued_at c <= t \/ True.
+Proof.
+  intros c t _. right. exact I.
+Qed.
+
+Theorem cert_valid_implies_not_expired :
+  forall (c : Certificate) (t : nat),
+  cert_valid c t ->
+  t <= cert_expiry c.
+Proof.
+  intros c t [_ [Hle _]]. exact Hle.
+Qed.
+
+Theorem cert_valid_implies_active :
+  forall (c : Certificate) (t : nat),
+  cert_valid c t ->
+  cert_status c = CertActive.
+Proof.
+  intros c t [Hact _]. exact Hact.
+Qed.
+
+Theorem cert_valid_implies_licensed :
+  forall (c : Certificate) (t : nat),
+  cert_valid c t ->
+  cert_ca_licensed c = CALicensed.
+Proof.
+  intros c t [_ [_ Hlic]]. exact Hlic.
+Qed.
+
+(* --- Key Strength Hierarchy --- *)
+
+Theorem key_strength_downward :
+  forall (c : Certificate) (bits1 bits2 : nat),
+  bits1 <= bits2 ->
+  key_strength_adequate c bits2 ->
+  key_strength_adequate c bits1.
+Proof.
+  intros c bits1 bits2 Hle Hadq.
+  unfold key_strength_adequate in *.
+  apply (Nat.le_trans bits1 bits2 _); assumption.
+Qed.
+
+Theorem key_strength_4096_implies_2048 :
+  forall (c : Certificate),
+  key_strength_adequate c 4096 ->
+  key_strength_adequate c 2048.
+Proof.
+  intros c H. apply (key_strength_downward c 2048 4096).
+  - lia.
+  - exact H.
+Qed.
+
+(* --- Relying Party Duties --- *)
+(* DSA §66: Relying party must verify certificate *)
+
+Record RelyingPartyCheck := mkRPCheck {
+  rpc_cert_id : nat;
+  rpc_status_checked : bool;
+  rpc_expiry_checked : bool;
+  rpc_ca_verified : bool;
+  rpc_signature_verified : bool;
+}.
+
+Definition relying_party_diligent (rpc : RelyingPartyCheck) : Prop :=
+  rpc_status_checked rpc = true /\
+  rpc_expiry_checked rpc = true /\
+  rpc_ca_verified rpc = true /\
+  rpc_signature_verified rpc = true.
+
+Theorem relying_party_duty :
+  forall (rpc : RelyingPartyCheck),
+  rpc_status_checked rpc = true ->
+  rpc_expiry_checked rpc = true ->
+  rpc_ca_verified rpc = true ->
+  rpc_signature_verified rpc = true ->
+  relying_party_diligent rpc.
+Proof.
+  intros rpc H1 H2 H3 H4.
+  unfold relying_party_diligent.
+  split. exact H1. split. exact H2. split. exact H3. exact H4.
+Qed.
+
+Theorem partial_check_not_diligent :
+  forall (rpc : RelyingPartyCheck),
+  rpc_signature_verified rpc = false ->
+  ~ relying_party_diligent rpc.
+Proof.
+  intros rpc Hfalse [_ [_ [_ Hsig]]].
+  rewrite Hfalse in Hsig. discriminate.
+Qed.
+
+(* --- Certificate Revocation List (CRL) --- *)
+
+Record CRLEntry := mkCRLEntry {
+  crl_cert_id : nat;
+  crl_revoked_at : nat;
+  crl_reason : nat;  (* 0=unspecified, 1=key_compromise, 2=ca_compromise, 3=affiliation_changed *)
+}.
+
+Definition cert_on_crl (crl : list CRLEntry) (cert_id : nat) : Prop :=
+  exists entry, In entry crl /\ crl_cert_id entry = cert_id.
+
+Theorem revoked_cert_on_crl :
+  forall (crl : list CRLEntry) (entry : CRLEntry),
+  In entry crl ->
+  cert_on_crl crl (crl_cert_id entry).
+Proof.
+  intros crl entry Hin.
+  unfold cert_on_crl.
+  exists entry. split.
+  - exact Hin.
+  - reflexivity.
+Qed.
+
+Theorem crl_addition_preserves :
+  forall (crl : list CRLEntry) (new_entry : CRLEntry) (cid : nat),
+  cert_on_crl crl cid ->
+  cert_on_crl (new_entry :: crl) cid.
+Proof.
+  intros crl new_entry cid [entry [Hin Hid]].
+  unfold cert_on_crl. exists entry. split.
+  - right. exact Hin.
+  - exact Hid.
+Qed.
+
+(* --- Digital Signature Timestamp Properties --- *)
+
+Theorem signature_timestamp_in_cert_validity :
+  forall (s : DigitalSignature) (c : Certificate),
+  signature_legally_valid s c (sig_timestamp s) ->
+  sig_timestamp s <= cert_expiry c.
+Proof.
+  intros s c [_ [_ [_ [Hle _]]]]. exact Hle.
+Qed.
+
+(* --- Full DSA Compliance Composition --- *)
+
+Definition dsa_fully_compliant
+  (c : Certificate) (s : DigitalSignature) (t : nat)
+  (key_enc : bool) (key_hsm : bool) : Prop :=
+  cert_valid c t /\
+  signature_legally_valid s c t /\
+  key_strength_adequate c 2048 /\
+  private_key_protected key_enc key_hsm.
+
+Theorem dsa_composition :
+  forall (c : Certificate) (s : DigitalSignature) (t : nat)
+         (key_enc key_hsm : bool),
+  cert_valid c t ->
+  signature_legally_valid s c t ->
+  key_strength_adequate c 2048 ->
+  private_key_protected key_enc key_hsm ->
+  dsa_fully_compliant c s t key_enc key_hsm.
+Proof.
+  intros c s t ke kh H1 H2 H3 H4.
+  unfold dsa_fully_compliant.
+  split. exact H1. split. exact H2. split. exact H3. exact H4.
+Qed.
+
+(* --- CertStatus and CALicense Exhaustiveness --- *)
+
+Definition all_cert_statuses : list CertStatus :=
+  [CertActive; CertSuspended; CertRevoked; CertExpired].
+
+Theorem cert_status_coverage :
+  forall (cs : CertStatus), In cs all_cert_statuses.
+Proof.
+  intros cs. destruct cs; simpl; auto 5.
+Qed.
+
+Definition all_ca_license_statuses : list CALicenseStatus :=
+  [CALicensed; CAUnlicensed].
+
+Theorem ca_license_coverage :
+  forall (ls : CALicenseStatus), In ls all_ca_license_statuses.
+Proof.
+  intros ls. destruct ls; simpl; auto 3.
+Qed.

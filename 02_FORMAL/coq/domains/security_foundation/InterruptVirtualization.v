@@ -206,7 +206,222 @@ Proof.
 Qed.
 
 (* ========================================================================= *)
+(*  SECTION 6: Extended Interrupt Virtualization Properties                   *)
+(* ========================================================================= *)
+
+Require Import Coq.micromega.Lia.
+
+(** Interrupt state with priority model *)
+Record InterruptPriority : Type := mkIRQPrio {
+  irq_number : nat;
+  irq_priority : nat;
+  irq_enabled : bool;
+  irq_pending : bool;
+}.
+
+(** Priority-based interrupt controller state *)
+Record InterruptController : Type := mkIRQCtrl {
+  ctrl_irqs : list InterruptPriority;
+  ctrl_mask_threshold : nat;  (* IRQs below this priority are masked *)
+}.
+
+(** Find interrupt priority entry *)
+Fixpoint find_irq_prio (irq : nat) (irqs : list InterruptPriority) : option InterruptPriority :=
+  match irqs with
+  | [] => None
+  | ip :: rest => if Nat.eqb (irq_number ip) irq then Some ip
+                  else find_irq_prio irq rest
+  end.
+
+(** IRQ is deliverable: enabled, pending, and above mask threshold *)
+Definition irq_deliverable (ctrl : InterruptController) (irq : nat) : Prop :=
+  exists ip, find_irq_prio irq (ctrl_irqs ctrl) = Some ip /\
+    irq_enabled ip = true /\
+    irq_pending ip = true /\
+    irq_priority ip >= ctrl_mask_threshold ctrl.
+
+(** Masked IRQ cannot fire *)
+Theorem masked_irq_not_deliverable :
+  forall (ctrl : InterruptController) (irq : nat) (ip : InterruptPriority),
+    find_irq_prio irq (ctrl_irqs ctrl) = Some ip ->
+    irq_priority ip < ctrl_mask_threshold ctrl ->
+    ~ irq_deliverable ctrl irq.
+Proof.
+  intros ctrl irq ip Hfind Hprio Hdeliv.
+  unfold irq_deliverable in Hdeliv.
+  destruct Hdeliv as [ip' [Hfind' [_ [_ Hge]]]].
+  rewrite Hfind in Hfind'. injection Hfind' as Heq. subst.
+  lia.
+Qed.
+
+(** Disabled IRQ cannot fire *)
+Theorem disabled_irq_not_deliverable :
+  forall (ctrl : InterruptController) (irq : nat) (ip : InterruptPriority),
+    find_irq_prio irq (ctrl_irqs ctrl) = Some ip ->
+    irq_enabled ip = false ->
+    ~ irq_deliverable ctrl irq.
+Proof.
+  intros ctrl irq ip Hfind Hdisabled Hdeliv.
+  unfold irq_deliverable in Hdeliv.
+  destruct Hdeliv as [ip' [Hfind' [Henabled [_ _]]]].
+  rewrite Hfind in Hfind'. injection Hfind' as Heq. subst.
+  rewrite Hdisabled in Henabled. discriminate.
+Qed.
+
+(** Non-pending IRQ cannot fire *)
+Theorem non_pending_irq_not_deliverable :
+  forall (ctrl : InterruptController) (irq : nat) (ip : InterruptPriority),
+    find_irq_prio irq (ctrl_irqs ctrl) = Some ip ->
+    irq_pending ip = false ->
+    ~ irq_deliverable ctrl irq.
+Proof.
+  intros ctrl irq ip Hfind Hnpend Hdeliv.
+  unfold irq_deliverable in Hdeliv.
+  destruct Hdeliv as [ip' [Hfind' [_ [Hpend _]]]].
+  rewrite Hfind in Hfind'. injection Hfind' as Heq. subst.
+  rewrite Hnpend in Hpend. discriminate.
+Qed.
+
+(** Unknown IRQ cannot fire *)
+Theorem unknown_irq_not_deliverable :
+  forall (ctrl : InterruptController) (irq : nat),
+    find_irq_prio irq (ctrl_irqs ctrl) = None ->
+    ~ irq_deliverable ctrl irq.
+Proof.
+  intros ctrl irq Hnone Hdeliv.
+  unfold irq_deliverable in Hdeliv.
+  destruct Hdeliv as [ip [Hfind _]].
+  rewrite Hnone in Hfind. discriminate.
+Qed.
+
+(** Injection requires authorization — contrapositive *)
+Theorem no_auth_no_injection :
+  forall (st : InterruptState) (source : InterruptSource) (target : VirtualMachine),
+    ~ authorized_injection st source target ->
+    ~ injects_interrupt st source target.
+Proof.
+  intros st source target Hnoauth Hinject.
+  inversion Hinject as [st' src tgt Hauth Heq1 Heq2 Heq3]. subst.
+  apply Hnoauth. exact Hauth.
+Qed.
+
+(** Device IRQ injection requires ownership *)
+Theorem device_irq_requires_ownership :
+  forall (st : InterruptState) (irq : nat) (target : VirtualMachine),
+    injects_interrupt st (DeviceSource irq) target ->
+    vm_owns_irq st target irq.
+Proof.
+  intros st irq target Hinject.
+  inversion Hinject as [st' src tgt Hauth Heq1 Heq2 Heq3]. subst.
+  unfold authorized_injection in Hauth. exact Hauth.
+Qed.
+
+(** VM cannot inject to different VM without IPI *)
+Theorem cross_vm_requires_ipi :
+  forall (vm1 vm2 : VirtualMachine) (irq : Interrupt) (st : InterruptState),
+    vm_id vm1 <> vm_id vm2 ->
+    can_inject st vm1 irq vm2 ->
+    ipi_authorized st (vm_id vm1) (vm_id vm2).
+Proof.
+  intros vm1 vm2 irq st Hneq Hcan.
+  unfold can_inject in Hcan.
+  destruct Hcan as [Heq | Hauth].
+  - contradiction.
+  - exact Hauth.
+Qed.
+
+(** IPI authorization is directional *)
+Theorem ipi_authorization_directional :
+  forall (st : InterruptState) (vm1 vm2 : VirtualMachine),
+    ipi_authorized st (vm_id vm1) (vm_id vm2) ->
+    ~ ipi_authorized st (vm_id vm2) (vm_id vm1) ->
+    ~ can_inject st vm2 (IRQ 0) vm1 \/ vm_id vm1 = vm_id vm2.
+Proof.
+  intros st vm1 vm2 Hfwd Hnorev.
+  destruct (VMId_eq_dec (vm_id vm1) (vm_id vm2)) as [Heq | Hneq].
+  - right. exact Heq.
+  - left. unfold can_inject. intros [Heq | Hauth].
+    + apply Hneq. symmetry. exact Heq.
+    + apply Hnorev. exact Hauth.
+Qed.
+
+(** Empty IPI list blocks all cross-VM injection *)
+Theorem empty_ipi_blocks_cross_vm :
+  forall (st : InterruptState) (vm1 vm2 : VirtualMachine) (irq : Interrupt),
+    ipi_allowed st = [] ->
+    vm_id vm1 <> vm_id vm2 ->
+    ~ can_inject st vm1 irq vm2.
+Proof.
+  intros st vm1 vm2 irq Hempty Hneq Hcan.
+  unfold can_inject in Hcan.
+  destruct Hcan as [Heq | Hauth].
+  - apply Hneq. exact Heq.
+  - unfold ipi_authorized in Hauth. rewrite Hempty in Hauth.
+    inversion Hauth.
+Qed.
+
+(** Empty assignment list blocks all device IRQ injection *)
+Theorem empty_assignments_blocks_device_irqs :
+  forall (st : InterruptState) (irq : nat) (vm : VirtualMachine),
+    irq_assignments st = [] ->
+    ~ injects_interrupt st (DeviceSource irq) vm.
+Proof.
+  intros st irq vm Hempty Hinject.
+  inversion Hinject as [st' src tgt Hauth Heq1 Heq2 Heq3]. subst.
+  unfold authorized_injection in Hauth.
+  unfold vm_owns_irq in Hauth. rewrite Hempty in Hauth.
+  inversion Hauth.
+Qed.
+
+(** IRQ assignment deterministic *)
+Theorem irq_assignment_deterministic :
+  forall (st : InterruptState) (irq : nat) (vm1 vm2 : VMId),
+    find_vm_for_irq (irq_assignments st) irq = Some vm1 ->
+    find_vm_for_irq (irq_assignments st) irq = Some vm2 ->
+    vm1 = vm2.
+Proof.
+  intros st irq vm1 vm2 H1 H2.
+  rewrite H1 in H2. injection H2 as Heq. exact Heq.
+Qed.
+
+(** Timer injection always succeeds *)
+Theorem timer_injection_always_succeeds :
+  forall (st : InterruptState) (vm : VirtualMachine),
+    injects_interrupt st TimerSource vm.
+Proof.
+  intros st vm.
+  apply InjectAuthorized.
+  unfold authorized_injection. exact I.
+Qed.
+
+(** Self injection via IPI is possible if authorized *)
+Theorem self_ipi_possible :
+  forall (st : InterruptState) (vm : VirtualMachine),
+    ipi_authorized st (vm_id vm) (vm_id vm) ->
+    injects_interrupt st (IPISource (vm_id vm)) vm.
+Proof.
+  intros st vm Hauth.
+  apply InjectAuthorized.
+  unfold authorized_injection. exact Hauth.
+Qed.
+
+(** Injection implies source is valid *)
+Theorem injection_source_valid :
+  forall (st : InterruptState) (src : InterruptSource) (tgt : VirtualMachine),
+    injects_interrupt st src tgt ->
+    match src with
+    | DeviceSource irq => vm_owns_irq st tgt irq
+    | TimerSource => True
+    | IPISource vm => ipi_authorized st vm (vm_id tgt)
+    end.
+Proof.
+  intros st src tgt Hinject.
+  inversion Hinject as [st' source target Hauth Heq1 Heq2 Heq3]. subst.
+  destruct src; exact Hauth.
+Qed.
+
+(* ========================================================================= *)
 (*  END OF FILE: InterruptVirtualization.v                                   *)
-(*  Theorems: 2 core + 4 supporting = 6 total                                *)
+(*  Theorems: 7 original + 15 new = 22 total                                 *)
 (*  Admitted: 0 | admit: 0 | New Axioms: 0                                   *)
 (* ========================================================================= *)

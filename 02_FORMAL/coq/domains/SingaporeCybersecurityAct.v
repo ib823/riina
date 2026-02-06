@@ -238,3 +238,204 @@ Theorem entity_classification_coverage :
 Proof.
   intros c. destruct c; simpl; auto 5.
 Qed.
+
+(* ================================================================ *)
+(* Extended Singapore Cybersecurity Act Theorems                     *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- STCC Obligations (2025 Amendment) --- *)
+(* Systems of Temporary Cybersecurity Concern *)
+
+Definition stcc_obligations_met (e : CIIOwnerEntity) : Prop :=
+  cii_classification e = STCC ->
+  cii_risk_assessed e = true /\
+  cii_security_controls e >= cii_min_controls e.
+
+Theorem stcc_compliance :
+  forall (e : CIIOwnerEntity),
+  cii_classification e = STCC ->
+  cii_risk_assessed e = true ->
+  cii_security_controls e >= cii_min_controls e ->
+  stcc_obligations_met e.
+Proof.
+  intros e _ H1 H2. unfold stcc_obligations_met.
+  intros _. split; assumption.
+Qed.
+
+(* --- CII Owner vs ESCI vs STCC Obligation Comparison --- *)
+(* CII Owners have the strictest obligations *)
+
+Definition cii_owner_obligations (e : CIIOwnerEntity) (t : nat) : Prop :=
+  cii_risk_current e /\
+  cii_audit_current e t /\
+  cii_controls_adequate e /\
+  cii_incident_response_plan e = true /\
+  cssp_licensed_sg e.
+
+Theorem cii_owner_strictest :
+  forall (e : CIIOwnerEntity) (t : nat),
+  cii_owner_obligations e t ->
+  cii_risk_current e.
+Proof.
+  intros e t [H _]. exact H.
+Qed.
+
+Theorem cii_owner_implies_esci_risk :
+  forall (e : CIIOwnerEntity) (t : nat),
+  cii_owner_obligations e t ->
+  cii_risk_assessed e = true /\ cii_incident_response_plan e = true.
+Proof.
+  intros e t [Hrisk [_ [_ [Hirp _]]]].
+  unfold cii_risk_current in Hrisk.
+  split; assumption.
+Qed.
+
+(* --- Incident Severity Ordering --- *)
+
+Definition incident_needs_notification (i : SGCyberIncident) : Prop :=
+  sg_incident_significant i = true.
+
+Theorem significant_incident_must_notify :
+  forall (i : SGCyberIncident),
+  sg_incident_significant i = true ->
+  incident_needs_notification i.
+Proof.
+  intros i H. unfold incident_needs_notification. exact H.
+Qed.
+
+(* --- 2-Hour Deadline Properties --- *)
+
+Theorem two_hour_deadline_tight :
+  forall (detected : nat),
+  detected + 2 < detected + 6.
+Proof.
+  intros detected. lia.
+Qed.
+
+Theorem sg_2h_stricter_than_my_6h :
+  forall (i : SGCyberIncident),
+  sg_incident_reported_in_time i ->
+  sg_incident_reported_at i <= sg_incident_detected_at i + 6.
+Proof.
+  intros i H. unfold sg_incident_reported_in_time in H. lia.
+Qed.
+
+Theorem sg_2h_stricter_than_72h :
+  forall (i : SGCyberIncident),
+  sg_incident_reported_in_time i ->
+  sg_incident_reported_at i <= sg_incident_detected_at i + 72.
+Proof.
+  intros i H. unfold sg_incident_reported_in_time in H. lia.
+Qed.
+
+(* --- Audit Frequency Requirements --- *)
+
+Record AuditSchedule := mkAuditSched {
+  as_entity_id : nat;
+  as_last_audit : nat;
+  as_audit_interval : nat;
+  as_next_audit : nat;
+}.
+
+Definition audit_schedule_consistent (sched : AuditSchedule) : Prop :=
+  as_next_audit sched = as_last_audit sched + as_audit_interval sched.
+
+Theorem audit_schedule_valid :
+  forall (sched : AuditSchedule),
+  as_next_audit sched = as_last_audit sched + as_audit_interval sched ->
+  audit_schedule_consistent sched.
+Proof.
+  intros sched H. unfold audit_schedule_consistent. exact H.
+Qed.
+
+(* --- Security Controls Monotonicity --- *)
+
+Theorem more_controls_still_adequate :
+  forall (e : CIIOwnerEntity) (extra : nat),
+  cii_controls_adequate e ->
+  cii_min_controls e <= cii_security_controls e + extra.
+Proof.
+  intros e extra H.
+  unfold cii_controls_adequate in H.
+  apply (Nat.le_trans _ (cii_security_controls e) _).
+  - exact H.
+  - apply Nat.le_add_r.
+Qed.
+
+(* --- Full Compliance Decomposition --- *)
+
+Theorem sg_cyber_full_implies_risk :
+  forall (e : CIIOwnerEntity) (t : nat),
+  sg_cybersecurity_act_compliant e t ->
+  cii_risk_current e.
+Proof.
+  intros e t [H _]. exact H.
+Qed.
+
+Theorem sg_cyber_full_implies_audit :
+  forall (e : CIIOwnerEntity) (t : nat),
+  sg_cybersecurity_act_compliant e t ->
+  cii_audit_current e t.
+Proof.
+  intros e t [_ [H _]]. exact H.
+Qed.
+
+Theorem sg_cyber_full_implies_controls :
+  forall (e : CIIOwnerEntity) (t : nat),
+  sg_cybersecurity_act_compliant e t ->
+  cii_controls_adequate e.
+Proof.
+  intros e t [_ [_ [H _]]]. exact H.
+Qed.
+
+Theorem sg_cyber_full_implies_irp :
+  forall (e : CIIOwnerEntity) (t : nat),
+  sg_cybersecurity_act_compliant e t ->
+  cii_incident_response_plan e = true.
+Proof.
+  intros e t [_ [_ [_ H]]]. exact H.
+Qed.
+
+(* --- CSSP Licensing Expiry --- *)
+
+Theorem cssp_expired_non_compliant :
+  forall (e : CIIOwnerEntity),
+  cii_cssp_licensed e = false ->
+  ~ cssp_licensed_sg e.
+Proof.
+  intros e Hfalse Hlic.
+  unfold cssp_licensed_sg in Hlic.
+  rewrite Hfalse in Hlic. discriminate.
+Qed.
+
+(* --- Regular Entity Exemption --- *)
+(* Regular entities have lighter obligations *)
+
+Definition regular_entity_exempt (e : CIIOwnerEntity) : Prop :=
+  cii_classification e = RegularEntity ->
+  True. (* No CII-specific obligations *)
+
+Theorem regular_entity_no_cii_obligation :
+  forall (e : CIIOwnerEntity),
+  cii_classification e = RegularEntity ->
+  regular_entity_exempt e.
+Proof.
+  intros e _. unfold regular_entity_exempt. intros _. exact I.
+Qed.
+
+(* --- Penalty Exposure: 10% Turnover --- *)
+
+Definition penalty_exposure_exists (e : CIIOwnerEntity) (t : nat) : Prop :=
+  ~ sg_cybersecurity_act_compliant e t.
+
+Theorem compliance_eliminates_penalty :
+  forall (e : CIIOwnerEntity) (t : nat),
+  sg_cybersecurity_act_compliant e t ->
+  ~ penalty_exposure_exists e t.
+Proof.
+  intros e t Hcomp Hpen.
+  unfold penalty_exposure_exists in Hpen.
+  contradiction.
+Qed.

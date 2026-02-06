@@ -224,3 +224,76 @@ Proof.
     specialize (IHsfrs H3).
     lia.
 Qed.
+
+(** * Theorem 11: Empty traceability is vacuously fully traced *)
+Theorem empty_trace_fully_traced :
+  forall tm tt,
+    fully_traced (mkTrace [] tm tt).
+Proof.
+  unfold fully_traced. simpl. intros. contradiction.
+Qed.
+
+(** * Theorem 12: DAL_E is the lowest level *)
+Theorem dal_e_lowest : forall d, dal_leq DAL_E d = true.
+Proof.
+  destruct d; simpl; auto.
+Qed.
+
+(** * Theorem 13: DAL ordering is antisymmetric on nat *)
+Theorem dal_leq_antisym : forall d1 d2,
+  dal_leq d1 d2 = true ->
+  dal_leq d2 d1 = true ->
+  dal_to_nat d1 = dal_to_nat d2.
+Proof.
+  unfold dal_leq. intros.
+  apply Nat.leb_le in H. apply Nat.leb_le in H0. lia.
+Qed.
+
+(** * Theorem 14: dal_to_nat is bounded *)
+Theorem dal_to_nat_bounded : forall d, dal_to_nat d <= 5 /\ dal_to_nat d >= 1.
+Proof.
+  destruct d; simpl; lia.
+Qed.
+
+(** * Theorem 15: Evidence count of nil is zero *)
+Theorem evidence_count_nil : evidence_count [] = 0.
+Proof.
+  unfold evidence_count. simpl. reflexivity.
+Qed.
+
+(** * Theorem 16: Evidence count of singleton *)
+Theorem evidence_count_singleton : forall s,
+  evidence_count [s] = sfr_evidence_count s.
+Proof.
+  unfold evidence_count. intros. simpl. lia.
+Qed.
+
+(** * Theorem 17: SFR satisfied decomposition *)
+Theorem sfr_satisfied_decompose : forall sid sv sec,
+  sfr_satisfied (mkSFR sid sv sec) ->
+  sv = true /\ sec >= 1.
+Proof.
+  unfold sfr_satisfied. simpl. auto.
+Qed.
+
+(** * Theorem 18: No self MC/DC means no decision flip *)
+Theorem no_self_mcdc_no_flip : forall v d,
+  ~ mcdc_pair v v d.
+Proof.
+  unfold mcdc_pair. intros v d [pos [Hdiff _]].
+  rewrite no_self_mcdc in Hdiff. discriminate.
+Qed.
+
+(** * Theorem 19: DAL_A strictly greater than DAL_B *)
+Theorem dal_a_gt_b : dal_to_nat DAL_A > dal_to_nat DAL_B.
+Proof.
+  simpl. lia.
+Qed.
+
+(** * Theorem 20: Evidence count monotonic under append *)
+Theorem evidence_count_mono : forall l s,
+  evidence_count l <= evidence_count (l ++ [s]).
+Proof.
+  intros. rewrite evidence_count_app.
+  rewrite evidence_count_singleton. lia.
+Qed.

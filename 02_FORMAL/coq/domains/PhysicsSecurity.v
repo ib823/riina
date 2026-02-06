@@ -246,3 +246,74 @@ Theorem idle_is_operational :
 Proof.
   reflexivity.
 Qed.
+
+(* Sensor reading in bounds implies values are within range *)
+Theorem reading_bounded_values :
+  forall r, reading_in_bounds r = true ->
+  reading_min r <= reading_value r /\ reading_value r <= reading_max r.
+Proof.
+  intros r H. unfold reading_in_bounds in H.
+  apply andb_true_iff in H. destruct H as [H1 H2].
+  split; apply Nat.leb_le; assumption.
+Qed.
+
+Theorem sensing_transitions_depend_on_input :
+  phys_transition Sensing true <> phys_transition Sensing false.
+Proof. simpl. discriminate. Qed.
+
+Theorem actuating_transitions_to_idle :
+  forall ok, phys_transition Actuating ok = Idle.
+Proof. intro. reflexivity. Qed.
+
+Theorem processing_transitions_to_actuating :
+  forall ok, phys_transition Processing ok = Actuating.
+Proof. intro. reflexivity. Qed.
+
+(** ═══════════════════════════════════════════════════════════════════════════
+    THEOREMS: ADDITIONAL PROPERTIES
+    ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem processing_is_operational :
+  is_operational Processing = true.
+Proof.
+  reflexivity.
+Qed.
+
+Theorem actuating_is_operational :
+  is_operational Actuating = true.
+Proof.
+  reflexivity.
+Qed.
+
+Theorem sensing_is_operational :
+  is_operational Sensing = true.
+Proof.
+  reflexivity.
+Qed.
+
+Theorem error_recovery_cycle :
+  forall ok,
+    phys_run Error [ok; true; true; true; ok] = Idle.
+Proof.
+  intro ok. simpl. destruct ok; reflexivity.
+Qed.
+
+Theorem reading_bounds_decomposition :
+  forall r,
+    reading_in_bounds r = true ->
+    (reading_min r <=? reading_value r) = true /\
+    (reading_value r <=? reading_max r) = true.
+Proof.
+  intros r H. unfold reading_in_bounds in H.
+  apply andb_true_iff in H. exact H.
+Qed.
+
+Theorem timing_feasible_decomposition :
+  forall tc,
+    timing_feasible tc = true ->
+    (wcet tc + jitter_bound tc <=? deadline tc) = true /\
+    (deadline tc <=? period tc) = true.
+Proof.
+  intros tc H. unfold timing_feasible in H.
+  apply andb_true_iff in H. exact H.
+Qed.

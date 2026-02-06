@@ -121,3 +121,121 @@ Theorem mcmc_license_coverage :
 Proof.
   intros l. destruct l; simpl; auto 5.
 Qed.
+
+(* ================================================================ *)
+(* Additional Substantial Theorems                                   *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(** License type numerical encoding *)
+Definition license_level (l : MCMCLicense) : nat :=
+  match l with
+  | NFP => 4   (* Infrastructure — highest regulation *)
+  | NSP => 3
+  | ASP => 2
+  | CSP => 1   (* Content — lowest *)
+  end.
+
+Theorem nfp_highest_level : forall l,
+  license_level l <= license_level NFP.
+Proof. destruct l; simpl; lia. Qed.
+
+Theorem csp_lowest_level : forall l,
+  license_level CSP <= license_level l.
+Proof. destruct l; simpl; lia. Qed.
+
+Theorem license_level_positive : forall l,
+  license_level l >= 1.
+Proof. destruct l; simpl; lia. Qed.
+
+(** Compliance field decomposition *)
+Theorem mcmc_compliant_licensed : forall c,
+  mcmc_fully_compliant c -> mcmc_licensed c = true.
+Proof.
+  intros c [H _]. exact H.
+Qed.
+
+Theorem mcmc_compliant_technical : forall c,
+  mcmc_fully_compliant c -> mcmc_technical_standards_met c = true.
+Proof.
+  intros c [_ [H _]]. exact H.
+Qed.
+
+Theorem mcmc_compliant_consumer : forall c,
+  mcmc_fully_compliant c -> mcmc_consumer_code_adopted c = true.
+Proof.
+  intros c [_ [_ [H _]]]. exact H.
+Qed.
+
+Theorem mcmc_compliant_interception : forall c,
+  mcmc_fully_compliant c -> mcmc_interception_protected c = true.
+Proof.
+  intros c [_ [_ [_ [H _]]]]. exact H.
+Qed.
+
+Theorem mcmc_compliant_fraud : forall c,
+  mcmc_fully_compliant c -> mcmc_fraud_controls c = true.
+Proof.
+  intros c [_ [_ [_ [_ H]]]]. exact H.
+Qed.
+
+(** Counting compliance controls *)
+Definition count_mcmc_controls (c : MCMCCompliance) : nat :=
+  (if mcmc_licensed c then 1 else 0) +
+  (if mcmc_technical_standards_met c then 1 else 0) +
+  (if mcmc_consumer_code_adopted c then 1 else 0) +
+  (if mcmc_interception_protected c then 1 else 0) +
+  (if mcmc_fraud_controls c then 1 else 0).
+
+Theorem count_mcmc_bounded : forall c,
+  count_mcmc_controls c <= 5.
+Proof.
+  intros c. unfold count_mcmc_controls.
+  destruct (mcmc_licensed c), (mcmc_technical_standards_met c),
+           (mcmc_consumer_code_adopted c), (mcmc_interception_protected c),
+           (mcmc_fraud_controls c); simpl; lia.
+Qed.
+
+Theorem mcmc_compliant_all_five : forall c,
+  mcmc_fully_compliant c -> count_mcmc_controls c = 5.
+Proof.
+  intros c [H1 [H2 [H3 [H4 H5]]]].
+  unfold count_mcmc_controls.
+  rewrite H1, H2, H3, H4, H5. simpl. reflexivity.
+Qed.
+
+(** License equality decidability *)
+Definition license_eqb (a b : MCMCLicense) : bool :=
+  Nat.eqb (license_level a) (license_level b).
+
+Theorem license_eqb_refl : forall l,
+  license_eqb l l = true.
+Proof.
+  intros l. unfold license_eqb. apply Nat.eqb_refl.
+Qed.
+
+(** Fraud controls require identity *)
+Theorem fraud_requires_identity : forall id_v tx_s audit,
+  fraud_controls_active id_v tx_s audit -> id_v = true.
+Proof.
+  intros id_v tx_s audit [H _]. exact H.
+Qed.
+
+Theorem fraud_requires_signing : forall id_v tx_s audit,
+  fraud_controls_active id_v tx_s audit -> tx_s = true.
+Proof.
+  intros id_v tx_s audit [_ [H _]]. exact H.
+Qed.
+
+Theorem fraud_requires_audit : forall id_v tx_s audit,
+  fraud_controls_active id_v tx_s audit -> audit = true.
+Proof.
+  intros id_v tx_s audit [_ [_ H]]. exact H.
+Qed.
+
+(** Four license types *)
+Theorem mcmc_license_count : length all_mcmc_licenses = 4.
+Proof. simpl. reflexivity. Qed.
+
+(** End MalaysiaMCMC *)

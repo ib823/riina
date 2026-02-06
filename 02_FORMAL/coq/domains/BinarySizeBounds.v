@@ -399,3 +399,44 @@ Proof.
   unfold total_rom_size in H.
   split; [| split]; lia.
 Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_002_13: Empty basic block has zero size                       *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_002_13 : forall (arch : ArchParams),
+  bb_size arch [] = 0.
+Proof.
+  intros arch.
+  simpl.
+  reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_002_14: Empty module has data-only size                       *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_002_14 : forall (arch : ArchParams) (data bss : Size),
+  let m := mkMod [] data bss in
+  mod_size arch m = data.
+Proof.
+  intros arch data bss.
+  unfold mod_size.
+  simpl.
+  lia.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM PERF_002_15: ROM layout additivity                                 *)
+(* total_rom_size is sum of all sections                                      *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem PERF_002_15 : forall (t r d : Size),
+  let layout := mkROMLayout t r d in
+  total_rom_size layout = t + r + d.
+Proof.
+  intros t r d.
+  unfold total_rom_size.
+  simpl.
+  lia.
+Qed.

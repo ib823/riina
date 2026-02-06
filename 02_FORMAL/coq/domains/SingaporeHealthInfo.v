@@ -208,3 +208,236 @@ Theorem health_category_coverage :
 Proof.
   intros c. destruct c; simpl; auto 6.
 Qed.
+
+(* ================================================================ *)
+(* Extended Singapore Health Information Bill Theorems               *)
+(* ================================================================ *)
+
+Require Import Coq.Arith.PeanoNat.
+Require Import Lia.
+
+(* --- Patient Data Access Rights --- *)
+(* HIB: Patients have right to access their health records *)
+
+Record PatientAccessRequest := mkPatAccess {
+  par_patient_id : nat;
+  par_requested_at : nat;
+  par_responded_at : nat;
+  par_data_provided : bool;
+  par_provider : SGHealthcareProvider;
+}.
+
+Definition hib_access_deadline : nat := 504. (* 21 days in hours *)
+
+Definition patient_access_fulfilled (req : PatientAccessRequest) : Prop :=
+  par_responded_at req <= par_requested_at req + hib_access_deadline /\
+  par_data_provided req = true.
+
+Theorem patient_access_right :
+  forall (req : PatientAccessRequest),
+  par_responded_at req <= par_requested_at req + hib_access_deadline ->
+  par_data_provided req = true ->
+  patient_access_fulfilled req.
+Proof.
+  intros req Htime Hdata.
+  unfold patient_access_fulfilled.
+  split; assumption.
+Qed.
+
+Theorem patient_access_late_violation :
+  forall (req : PatientAccessRequest),
+  par_requested_at req + hib_access_deadline < par_responded_at req ->
+  ~ (par_responded_at req <= par_requested_at req + hib_access_deadline).
+Proof.
+  intros req Hlate Hle.
+  apply (Nat.lt_irrefl (par_requested_at req + hib_access_deadline)).
+  apply (Nat.lt_le_trans _ _ _ Hlate Hle).
+Qed.
+
+(* --- Data Correction and Audit Trail --- *)
+(* HIB: Corrections must be logged *)
+
+Record HealthDataCorrection := mkHDCorrection {
+  hdc_patient_id : nat;
+  hdc_field_corrected : nat;
+  hdc_old_value_hash : nat;
+  hdc_new_value_hash : nat;
+  hdc_corrected_at : nat;
+  hdc_corrected_by : nat;
+  hdc_audit_logged : bool;
+}.
+
+Definition correction_properly_logged (c : HealthDataCorrection) : Prop :=
+  hdc_audit_logged c = true /\
+  hdc_old_value_hash c <> hdc_new_value_hash c.
+
+Theorem data_correction_logged :
+  forall (c : HealthDataCorrection),
+  hdc_audit_logged c = true ->
+  hdc_old_value_hash c <> hdc_new_value_hash c ->
+  correction_properly_logged c.
+Proof.
+  intros c Hlog Hdiff.
+  unfold correction_properly_logged.
+  split; assumption.
+Qed.
+
+(* --- Cross-Institutional Health Data Exchange --- *)
+(* HIB: Data exchange between providers requires framework *)
+
+Record HealthDataExchange := mkHDExchange {
+  hde_source_provider : SGHealthcareProvider;
+  hde_target_provider : SGHealthcareProvider;
+  hde_patient_consent : bool;
+  hde_encrypted : bool;
+  hde_purpose_treatment : bool;
+  hde_audit_logged_exchange : bool;
+}.
+
+Definition exchange_authorized (ex : HealthDataExchange) : Prop :=
+  hde_patient_consent ex = true /\
+  hde_encrypted ex = true /\
+  hde_purpose_treatment ex = true /\
+  hde_audit_logged_exchange ex = true.
+
+Theorem cross_institutional_exchange :
+  forall (ex : HealthDataExchange),
+  hde_patient_consent ex = true ->
+  hde_encrypted ex = true ->
+  hde_purpose_treatment ex = true ->
+  hde_audit_logged_exchange ex = true ->
+  exchange_authorized ex.
+Proof.
+  intros ex H1 H2 H3 H4.
+  unfold exchange_authorized.
+  split. exact H1. split. exact H2. split. exact H3. exact H4.
+Qed.
+
+(* --- Sensitive Category Enumeration Properties --- *)
+
+Theorem general_health_not_sensitive :
+  ~ sg_health_sensitive GeneralHealth.
+Proof.
+  intros [H | [H | [H | H]]]; discriminate.
+Qed.
+
+Theorem mental_health_is_sensitive :
+  sg_health_sensitive MentalHealthSG.
+Proof.
+  unfold sg_health_sensitive. left. reflexivity.
+Qed.
+
+Theorem hiv_sti_is_sensitive :
+  sg_health_sensitive HIV_STI_SG.
+Proof.
+  unfold sg_health_sensitive. right. left. reflexivity.
+Qed.
+
+Theorem genetic_info_is_sensitive :
+  sg_health_sensitive GeneticInfo.
+Proof.
+  unfold sg_health_sensitive. right. right. left. reflexivity.
+Qed.
+
+(* --- NEHR Mandatory Sharing Compliance --- *)
+(* All providers must contribute to NEHR *)
+
+Theorem nehr_requires_encryption :
+  forall (r : SGHealthRecord),
+  nehr_sharing_compliant r ->
+  sgh_encrypted r = true.
+Proof.
+  intros r [_ Henc]. exact Henc.
+Qed.
+
+Theorem nehr_requires_sharing :
+  forall (r : SGHealthRecord),
+  nehr_sharing_compliant r ->
+  sgh_nehr_shared r = true.
+Proof.
+  intros r [Hshared _]. exact Hshared.
+Qed.
+
+(* --- Use Type Exhaustiveness --- *)
+
+Definition all_use_types : list UseType :=
+  [Treatment; Research; PublicHealth; InsuranceUnderwriting; Employment].
+
+Theorem use_type_coverage :
+  forall (u : UseType), In u all_use_types.
+Proof.
+  intros u. destruct u; simpl; auto 6.
+Qed.
+
+(* --- Permitted Use Properties --- *)
+
+Theorem research_allowed :
+  use_permitted Research.
+Proof.
+  simpl. exact I.
+Qed.
+
+Theorem public_health_allowed :
+  use_permitted PublicHealth.
+Proof.
+  simpl. exact I.
+Qed.
+
+(* --- Full HIB Compliance Decomposition --- *)
+
+Theorem hib_full_implies_cybersecurity :
+  forall (r : SGHealthRecord),
+  hib_fully_compliant r ->
+  hib_cybersecurity r.
+Proof.
+  intros r [H _]. exact H.
+Qed.
+
+Theorem hib_full_implies_audit :
+  forall (r : SGHealthRecord),
+  hib_fully_compliant r ->
+  hib_audit_compliant r.
+Proof.
+  intros r [_ [H _]]. exact H.
+Qed.
+
+Theorem hib_full_implies_nehr :
+  forall (r : SGHealthRecord),
+  hib_fully_compliant r ->
+  nehr_sharing_compliant r.
+Proof.
+  intros r [_ [_ H]]. exact H.
+Qed.
+
+(* --- Cybersecurity Penalty Threshold --- *)
+(* HIB: Penalty up to S$1,000,000 for inadequate cybersecurity *)
+
+Definition hib_penalty_exposure (r : SGHealthRecord) : Prop :=
+  ~ hib_cybersecurity r.
+
+Theorem cybersecurity_eliminates_penalty :
+  forall (r : SGHealthRecord),
+  hib_cybersecurity r ->
+  ~ hib_penalty_exposure r.
+Proof.
+  intros r Hcyber Hpen.
+  unfold hib_penalty_exposure in Hpen.
+  contradiction.
+Qed.
+
+(* --- Provider-Specific Obligations --- *)
+(* Public hospitals have mandatory NEHR sharing *)
+
+Definition public_hospital_nehr_mandatory (r : SGHealthRecord) : Prop :=
+  sgh_provider_type r = PublicHospital ->
+  sgh_nehr_shared r = true.
+
+Theorem public_hospital_must_share :
+  forall (r : SGHealthRecord),
+  sgh_provider_type r = PublicHospital ->
+  sgh_nehr_shared r = true ->
+  public_hospital_nehr_mandatory r.
+Proof.
+  intros r _ Hshared. unfold public_hospital_nehr_mandatory.
+  intros _. exact Hshared.
+Qed.

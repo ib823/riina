@@ -130,4 +130,176 @@ Inductive MediaEffect : Type :=
    | cdsa_compliance            | CDSA              | All         |
 *)
 
+(** ** 7. Substantial Security Theorems — Content Protection & DRM *)
+
+Require Import Lia.
+
+(** Content type sensitivity ordering *)
+Definition content_sensitivity (c : ContentType) : nat :=
+  match c with
+  | PreRelease => 5
+  | MasterFile => 4
+  | DailyRushes => 3
+  | Screening => 3
+  | PostRelease => 1
+  end.
+
+Theorem prerelease_highest_sensitivity : forall c,
+  content_sensitivity c <= content_sensitivity PreRelease.
+Proof. destruct c; simpl; lia. Qed.
+
+Theorem postrelease_lowest_sensitivity : forall c,
+  content_sensitivity PostRelease <= content_sensitivity c.
+Proof. destruct c; simpl; lia. Qed.
+
+Theorem content_sensitivity_positive : forall c,
+  content_sensitivity c >= 1.
+Proof. destruct c; simpl; lia. Qed.
+
+(** Protection strength ordering *)
+Definition protection_strength (p : ContentProtection) : nat :=
+  match p with
+  | Unencrypted => 0
+  | BasicDRM => 1
+  | StudioDRM => 2
+  | ForensicWatermark => 3
+  | HardwareProtected => 4
+  end.
+
+Theorem hardware_strongest : forall p,
+  protection_strength p <= protection_strength HardwareProtected.
+Proof. destruct p; simpl; lia. Qed.
+
+Theorem unencrypted_weakest : forall p,
+  protection_strength Unencrypted <= protection_strength p.
+Proof. destruct p; simpl; lia. Qed.
+
+(** Protection must match content sensitivity *)
+Definition protection_adequate (ct : ContentType) (cp : ContentProtection) : bool :=
+  Nat.leb (content_sensitivity ct) (protection_strength cp).
+
+Theorem hw_protects_any_content : forall ct,
+  protection_adequate ct HardwareProtected = true.
+Proof.
+  intros ct. unfold protection_adequate. simpl.
+  destruct ct; simpl; reflexivity.
+Qed.
+
+Theorem unencrypted_inadequate_for_prerelease :
+  protection_adequate PreRelease Unencrypted = false.
+Proof. simpl. reflexivity. Qed.
+
+Theorem postrelease_accepts_basic_drm :
+  protection_adequate PostRelease BasicDRM = true.
+Proof. simpl. reflexivity. Qed.
+
+(** ECP compliance: all controls *)
+Definition ecp_all_controls (c : ECP_Compliance) : bool :=
+  content_encryption c && access_control c && forensic_watermarking c &&
+  audit_logging c && secure_viewing c && no_unauthorized_copies c.
+
+Theorem ecp_all_requires_encryption : forall c,
+  ecp_all_controls c = true -> content_encryption c = true.
+Proof.
+  intros c H. unfold ecp_all_controls in H.
+  repeat (apply andb_true_iff in H; destruct H as [H ?]).
+  exact H.
+Qed.
+
+Theorem ecp_all_requires_watermarking : forall c,
+  ecp_all_controls c = true -> forensic_watermarking c = true.
+Proof.
+  intros c H. unfold ecp_all_controls in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+Theorem ecp_all_requires_no_copies : forall c,
+  ecp_all_controls c = true -> no_unauthorized_copies c = true.
+Proof.
+  intros c H. unfold ecp_all_controls in H.
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+(** Count ECP controls *)
+Definition count_ecp_controls (c : ECP_Compliance) : nat :=
+  (if content_encryption c then 1 else 0) +
+  (if access_control c then 1 else 0) +
+  (if forensic_watermarking c then 1 else 0) +
+  (if audit_logging c then 1 else 0) +
+  (if secure_viewing c then 1 else 0) +
+  (if no_unauthorized_copies c then 1 else 0).
+
+Theorem count_ecp_bounded : forall c,
+  count_ecp_controls c <= 6.
+Proof.
+  intros c. unfold count_ecp_controls.
+  destruct (content_encryption c), (access_control c),
+           (forensic_watermarking c), (audit_logging c),
+           (secure_viewing c), (no_unauthorized_copies c); simpl; lia.
+Qed.
+
+Theorem all_ecp_count_six : forall c,
+  ecp_all_controls c = true -> count_ecp_controls c = 6.
+Proof.
+  intros c H. unfold ecp_all_controls in H.
+  apply andb_true_iff in H. destruct H as [H H6].
+  apply andb_true_iff in H. destruct H as [H H5].
+  apply andb_true_iff in H. destruct H as [H H4].
+  apply andb_true_iff in H. destruct H as [H H3].
+  apply andb_true_iff in H. destruct H as [H1 H2].
+  unfold count_ecp_controls.
+  rewrite H1, H2, H3, H4, H5, H6. simpl. reflexivity.
+Qed.
+
+(** DCI key length: AES-128 minimum *)
+Definition dci_min_key_bits : nat := 128.
+
+Theorem dci_key_sufficient : forall bits,
+  Nat.leb dci_min_key_bits bits = true -> bits >= 128.
+Proof. intros bits H. apply Nat.leb_le in H. exact H. Qed.
+
+(** Content access window: time-limited viewing *)
+Record ViewingSession : Type := mkViewing {
+  view_start : nat;
+  view_end : nat;
+  view_content : ContentType;
+  view_watermarked : bool;
+}.
+
+Definition viewing_duration (v : ViewingSession) : nat :=
+  view_end v - view_start v.
+
+Definition viewing_within_window (v : ViewingSession) (max_hours : nat) : bool :=
+  Nat.leb (viewing_duration v) max_hours.
+
+Theorem viewing_bounded : forall v max_h,
+  viewing_within_window v max_h = true ->
+  viewing_duration v <= max_h.
+Proof.
+  intros v mh H. unfold viewing_within_window in H.
+  apply Nat.leb_le. exact H.
+Qed.
+
+(** Screener copy count: limited distribution *)
+Definition screener_count_valid (copies max_copies : nat) : bool :=
+  Nat.leb copies max_copies.
+
+Theorem screener_bounded : forall c mc,
+  screener_count_valid c mc = true -> c <= mc.
+Proof.
+  intros c mc H. unfold screener_count_valid in H.
+  apply Nat.leb_le. exact H.
+Qed.
+
+(** Content type decidable equality *)
+Definition content_type_eq_dec (c1 c2 : ContentType) : {c1 = c2} + {c1 <> c2}.
+Proof. decide equality. Defined.
+
+(** Protection type decidable equality *)
+Definition protection_eq_dec (p1 p2 : ContentProtection) : {p1 = p2} + {p1 <> p2}.
+Proof. decide equality. Defined.
+
 (** End IndustryMedia *)

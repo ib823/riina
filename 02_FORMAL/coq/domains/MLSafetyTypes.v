@@ -144,3 +144,111 @@ Theorem lipschitz_id : lipschitz_bound 1 (fun x => x).
 Proof.
   unfold lipschitz_bound. intros x y. simpl. lia.
 Qed.
+
+(** * Theorem 9: Constant function is 0-Lipschitz *)
+Theorem lipschitz_const : forall c, lipschitz_bound 0 (fun _ => c).
+Proof.
+  unfold lipschitz_bound. intros c x y. simpl. lia.
+Qed.
+
+(** * Theorem 10: DP composition preserves query count *)
+Theorem dp_queries_additive : forall d1 d2,
+  dp_queries (dp_compose d1 d2) = dp_queries d1 + dp_queries d2.
+Proof.
+  intros. destruct d1, d2. simpl. reflexivity.
+Qed.
+
+(** * Theorem 11: DP composition with zero-epsilon is identity for epsilon *)
+Theorem dp_compose_zero_l : forall d,
+  dp_epsilon (dp_compose (mkDP 0 0) d) = dp_epsilon d.
+Proof.
+  intros. destruct d. simpl. reflexivity.
+Qed.
+
+(** * Theorem 12: DP composition with zero-epsilon is identity for epsilon (right) *)
+Theorem dp_compose_zero_r : forall d,
+  dp_epsilon (dp_compose d (mkDP 0 0)) = dp_epsilon d.
+Proof.
+  intros. destruct d. simpl. lia.
+Qed.
+
+(** * Theorem 13: DP compose is commutative *)
+Theorem dp_compose_comm : forall d1 d2,
+  dp_compose d1 d2 = dp_compose d2 d1.
+Proof.
+  intros. destruct d1, d2. unfold dp_compose. f_equal; lia.
+Qed.
+
+(** * Theorem 14: shape_eq true means same length *)
+Theorem shape_eq_implies_same_length : forall s1 s2,
+  shape_eq s1 s2 = true -> length s1 = length s2.
+Proof.
+  unfold shape_eq. intros s1 s2 H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply Nat.eqb_eq in H. exact H.
+Qed.
+
+(** * Theorem 15: Empty shapes are equal *)
+Theorem shape_eq_nil : shape_eq [] [] = true.
+Proof.
+  unfold shape_eq. simpl. reflexivity.
+Qed.
+
+(** * Theorem 16: Singleton shapes equal iff values equal *)
+Theorem shape_eq_singleton : forall a b,
+  shape_eq [a] [b] = true -> a = b.
+Proof.
+  unfold shape_eq. simpl. intros a b H.
+  rewrite andb_true_r in H.
+  apply Nat.eqb_eq in H. exact H.
+Qed.
+
+(** * Theorem 17: matmul of square matrices produces square *)
+Theorem matmul_square : forall n s,
+  matmul_compat [n; n] [n; n] = Some s -> s = [n; n].
+Proof.
+  intros. simpl in H. rewrite Nat.eqb_refl in H.
+  inversion H. reflexivity.
+Qed.
+
+(** * Theorem 18: matmul with 1-row right gives column vector *)
+Theorem matmul_col_vector : forall r c s,
+  matmul_compat [r; c] [c; 1] = Some s -> s = [r; 1].
+Proof.
+  intros. simpl in H. rewrite Nat.eqb_refl in H.
+  inversion H. reflexivity.
+Qed.
+
+(** * Theorem 19: DP epsilon is always non-negative for compose *)
+Theorem dp_epsilon_nonneg : forall d1 d2,
+  dp_epsilon (dp_compose d1 d2) >= dp_epsilon d1.
+Proof.
+  intros. destruct d1, d2. simpl. lia.
+Qed.
+
+(** * Theorem 20: Lipschitz bound monotonicity *)
+Theorem lipschitz_mono : forall k1 k2 f,
+  lipschitz_bound k1 f -> k1 <= k2 -> lipschitz_bound k2 f.
+Proof.
+  unfold lipschitz_bound. intros k1 k2 f Hk1 Hle x y.
+  specialize (Hk1 x y). destruct Hk1 as [H1 H2].
+  split.
+  - apply (Nat.le_trans _ (k1 * (x - y)) _). exact H1.
+    apply Nat.mul_le_mono_r. exact Hle.
+  - apply (Nat.le_trans _ (k1 * (y - x)) _). exact H2.
+    apply Nat.mul_le_mono_r. exact Hle.
+Qed.
+
+(** * Theorem 21: compose_fn associativity *)
+Theorem compose_fn_assoc : forall f g h x,
+  compose_fn f (compose_fn g h) x = compose_fn (compose_fn f g) h x.
+Proof.
+  unfold compose_fn. intros. reflexivity.
+Qed.
+
+(** * Theorem 22: compose_fn with id is identity (left) *)
+Theorem compose_fn_id_l : forall f x,
+  compose_fn (fun y => y) f x = f x.
+Proof.
+  unfold compose_fn. intros. reflexivity.
+Qed.

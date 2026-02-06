@@ -145,3 +145,112 @@ Theorem wcet_nested_if_bound : forall ec1 ec2 et1 et2 ef1 ef2,
 Proof.
   intros. simpl. lia.
 Qed.
+
+(** * Theorem 9: WCET bound of Plus is additive plus one *)
+Theorem wcet_plus_bound : forall e1 e2,
+  wcet_bound (EPlus e1 e2) = wcet_bound e1 + wcet_bound e2 + 1.
+Proof.
+  intros. simpl. reflexivity.
+Qed.
+
+(** * Theorem 10: Cost of constant is exactly 1 *)
+Theorem cost_const : forall e n v c,
+  eval e (EConst n) v c -> c = 1.
+Proof.
+  intros. inversion H; subst. reflexivity.
+Qed.
+
+(** * Theorem 11: Cost of variable is exactly 1 *)
+Theorem cost_var : forall e i v c,
+  eval e (EVar i) v c -> c = 1.
+Proof.
+  intros. inversion H; subst. reflexivity.
+Qed.
+
+(** * Theorem 12: Constant evaluates to its value *)
+Theorem const_eval_value : forall e n v c,
+  eval e (EConst n) v c -> v = n.
+Proof.
+  intros. inversion H; subst. reflexivity.
+Qed.
+
+(** * Theorem 13: WCET bound is monotonic under Plus (left) *)
+Theorem wcet_plus_mono_l : forall e1 e2,
+  wcet_bound e1 <= wcet_bound (EPlus e1 e2).
+Proof.
+  intros. simpl. lia.
+Qed.
+
+(** * Theorem 14: WCET bound is monotonic under Plus (right) *)
+Theorem wcet_plus_mono_r : forall e1 e2,
+  wcet_bound e2 <= wcet_bound (EPlus e1 e2).
+Proof.
+  intros. simpl. lia.
+Qed.
+
+(** * Theorem 15: Seq cost is exactly sum of subexpression costs *)
+Theorem seq_cost_sum : forall e e1 e2 v1 v2 c1 c2,
+  eval e e1 v1 c1 ->
+  eval e e2 v2 c2 ->
+  exists c, eval e (ESeq e1 e2) v2 c /\ c = c1 + c2.
+Proof.
+  intros. exists (c1 + c2). split.
+  - econstructor; eauto.
+  - reflexivity.
+Qed.
+
+(** * Theorem 16: Cost of Plus is at least 3 *)
+Theorem cost_plus_at_least_3 : forall e e1 e2 v c,
+  eval e (EPlus e1 e2) v c -> c >= 3.
+Proof.
+  intros. inversion H; subst.
+  assert (1 <= c1) by (eapply cost_positive; eauto).
+  assert (1 <= c2) by (eapply cost_positive; eauto).
+  lia.
+Qed.
+
+(** * Theorem 17: WCET of nested sequences *)
+Theorem wcet_nested_seq : forall e1 e2 e3,
+  wcet_bound (ESeq (ESeq e1 e2) e3) =
+  wcet_bound e1 + wcet_bound e2 + wcet_bound e3.
+Proof.
+  intros. simpl. lia.
+Qed.
+
+(** * Theorem 18: WCET bound is at least 2 for Plus *)
+Theorem wcet_plus_at_least_3 : forall e1 e2,
+  wcet_bound (EPlus e1 e2) >= 3.
+Proof.
+  intros. simpl.
+  assert (H1 := wcet_positive e1).
+  assert (H2 := wcet_positive e2).
+  lia.
+Qed.
+
+(** * Theorem 19: Evaluation cost never zero *)
+Theorem cost_nonzero : forall e ex v c,
+  eval e ex v c -> c > 0.
+Proof.
+  intros. apply cost_positive in H. lia.
+Qed.
+
+(** * Theorem 20: WCET bound of if is at least condition bound plus 1 *)
+Theorem wcet_if_ge_cond : forall ec et ef,
+  wcet_bound (EIf ec et ef) >= wcet_bound ec + 1.
+Proof.
+  intros. simpl. lia.
+Qed.
+
+(** * Theorem 21: Seq WCET is at least the WCET of its second part *)
+Theorem wcet_seq_ge_right : forall e1 e2,
+  wcet_bound (ESeq e1 e2) >= wcet_bound e2.
+Proof.
+  intros. simpl. lia.
+Qed.
+
+(** * Theorem 22: Seq WCET is at least the WCET of its first part *)
+Theorem wcet_seq_ge_left : forall e1 e2,
+  wcet_bound (ESeq e1 e2) >= wcet_bound e1.
+Proof.
+  intros. simpl. lia.
+Qed.

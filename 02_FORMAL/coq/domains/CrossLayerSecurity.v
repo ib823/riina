@@ -455,3 +455,15 @@ Theorem label_lattice_join_least : forall l1 l2 l3,
   label_leb l2 l3 = true ->
   label_leb (label_join l1 l2) l3 = true.
 Proof. destruct l1, l2, l3; simpl; auto. Qed.
+
+(* Label equality is reflexive *)
+Theorem label_eqb_refl2 : forall l, label_eqb l l = true.
+Proof. destruct l; reflexivity. Qed.
+
+(* Label join is commutative *)
+Theorem label_join_comm2 : forall l1 l2, label_join l1 l2 = label_join l2 l1.
+Proof. destruct l1, l2; reflexivity. Qed.
+
+(* Label join is idempotent *)
+Theorem label_join_idem2 : forall l, label_join l l = l.
+Proof. destruct l; reflexivity. Qed.

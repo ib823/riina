@@ -194,3 +194,62 @@ Theorem TYPE_004_12_refinement_preservation :
   forall (e e' : Expr) (b : BaseTy) (p : Pred) (n : nat),
     step_clean e e' -> e' = EVal n -> sat_pred n p -> has_type nil e' (RRefine b p).
 Proof. intros. subst. apply TyVal. assumption. Qed.
+
+(* TYPE_004_13 *)
+Theorem TYPE_004_13_pred_true_satisfied :
+  forall v, sat_pred v PTrue.
+Proof. intros. simpl. exact I. Qed.
+
+(* TYPE_004_14 *)
+Theorem TYPE_004_14_pred_false_unsatisfied :
+  forall v, ~ sat_pred v PFalse.
+Proof. intros v H. simpl in H. exact H. Qed.
+
+(* TYPE_004_15 *)
+Theorem TYPE_004_15_pred_and_comm :
+  forall v p q, sat_pred v (PAnd p q) <-> sat_pred v (PAnd q p).
+Proof. intros. simpl. tauto. Qed.
+
+(* TYPE_004_16 *)
+Theorem TYPE_004_16_pred_or_comm :
+  forall v p q, sat_pred v (POr p q) <-> sat_pred v (POr q p).
+Proof. intros. simpl. tauto. Qed.
+
+(* TYPE_004_17 *)
+Theorem TYPE_004_17_pred_implies_ptrue :
+  forall p, pred_implies p PTrue.
+Proof. unfold pred_implies. intros. simpl. exact I. Qed.
+
+(* TYPE_004_18 *)
+Theorem TYPE_004_18_pred_pfalse_implies :
+  forall p, pred_implies PFalse p.
+Proof. unfold pred_implies. intros p v H. simpl in H. contradiction. Qed.
+
+(* TYPE_004_19 *)
+Theorem TYPE_004_19_subtype_refl : forall b, refty_subtype (RBase b) (RBase b).
+Proof. intros. apply SubBase. Qed.
+
+(* TYPE_004_20 *)
+Theorem TYPE_004_20_pred_double_neg :
+  forall v p, sat_pred v p -> sat_pred v (PNot (PNot p)).
+Proof. intros. simpl. tauto. Qed.
+
+(* TYPE_004_21 *)
+Theorem TYPE_004_21_eval_val : forall env n,
+  eval env (EVal n) = Some n.
+Proof. intros. simpl. reflexivity. Qed.
+
+(* TYPE_004_22 *)
+Theorem TYPE_004_22_pred_impl_refl :
+  forall v p, sat_pred v (PImpl p p).
+Proof. intros. simpl. tauto. Qed.
+
+(* TYPE_004_23 *)
+Theorem TYPE_004_23_pred_and_assoc :
+  forall v p q r, sat_pred v (PAnd (PAnd p q) r) <-> sat_pred v (PAnd p (PAnd q r)).
+Proof. intros. simpl. tauto. Qed.
+
+(* TYPE_004_24 *)
+Theorem TYPE_004_24_pred_or_assoc :
+  forall v p q r, sat_pred v (POr (POr p q) r) <-> sat_pred v (POr p (POr q r)).
+Proof. intros. simpl. tauto. Qed.

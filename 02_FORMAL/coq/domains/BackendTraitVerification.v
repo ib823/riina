@@ -202,6 +202,20 @@ Proof.
   intros. rewrite H. reflexivity.
 Qed.
 
+(* WASM targets produce WASM format *)
+Theorem backend_wasm32_format :
+  backend_format (dispatch TWasm32) = FmtWasm.
+Proof. reflexivity. Qed.
+
+Theorem backend_wasm64_format :
+  backend_format (dispatch TWasm64) = FmtWasm.
+Proof. reflexivity. Qed.
+
+(* Mobile targets produce C with bridge *)
+Theorem backend_android_format :
+  backend_format (dispatch TAndroidArm64) = FmtCWithBridge.
+Proof. reflexivity. Qed.
+
 (* ═══════════════════════════════════════════════════════════════════════════ *)
 (* SUMMARY: All backend trait verification theorems proven                     *)
 (*                                                                             *)

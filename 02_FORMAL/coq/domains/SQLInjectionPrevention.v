@@ -215,8 +215,33 @@ Proof.
   apply SQLI_012_escape_required. exact H.
 Qed.
 
+(** Additional theorems *)
+
+(* Taint safety: Untainted is safe *)
+Theorem untainted_safe : taint_safe Untainted = true.
+Proof. reflexivity. Qed.
+
+(* Taint safety: Sanitized is safe *)
+Theorem sanitized_safe : taint_safe Sanitized = true.
+Proof. reflexivity. Qed.
+
+(* Taint safety: UserInput is unsafe *)
+Theorem user_input_unsafe : taint_safe UserInput = false.
+Proof. reflexivity. Qed.
+
+(* Method safety: StringConcat is unsafe *)
+Theorem string_concat_unsafe : method_safe StringConcat = false.
+Proof. reflexivity. Qed.
+
+(* Method safety: Parameterized is safe *)
+Theorem parameterized_safe : method_safe Parameterized = true.
+Proof. reflexivity. Qed.
+
+(* RIINA config is protected *)
+Theorem riina_config_protected : sql_injection_protected riina_sql_config = true.
+Proof. reflexivity. Qed.
+
 (** ============================================================================
     VERIFICATION COMPLETE
-    Total Theorems: 15
     Admits: 0, Axioms: 0
     ============================================================================ *)

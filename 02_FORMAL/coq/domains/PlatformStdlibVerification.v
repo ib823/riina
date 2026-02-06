@@ -236,6 +236,36 @@ Proof.
 Qed.
 
 (* ═══════════════════════════════════════════════════════════════════════════ *)
+(* SECTION G: PLAT-006 — Additional Platform Safety Properties                 *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+(* DOM capability is exclusive to WASM *)
+Theorem plat_006_dom_only_wasm : forall p,
+  platform_has_cap p CapDOM = true -> p = PWasm32.
+Proof.
+  intros. destruct p; simpl in H; try discriminate.
+  reflexivity.
+Qed.
+
+(* Push notifications are mobile-only *)
+Theorem plat_006_push_mobile_only : forall p,
+  platform_has_cap p CapPushNotif = true ->
+  p = PAndroid \/ p = PIos.
+Proof.
+  intros. destruct p; simpl in H; try discriminate.
+  - left. reflexivity.
+  - right. reflexivity.
+Qed.
+
+(* Console + timer functions compile on all platforms *)
+Theorem plat_006_console_timer_universal : forall p name,
+  can_compile p (mkPFunc name PEIO [CapConsole; CapTimer]) = true.
+Proof.
+  intros. unfold can_compile. simpl.
+  destruct p; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
 (* SUMMARY: All platform stdlib verification theorems proven                   *)
 (*                                                                             *)
 (* PLAT-001: Universal capabilities (console, timer, network) + mobile caps    *)
@@ -243,4 +273,5 @@ Qed.
 (* PLAT-003: Platform-conditional compilation preserves effect gates            *)
 (* PLAT-004: I/O abstraction preserves non-interference                        *)
 (* PLAT-005: Pure computations identical cross-platform                        *)
+(* PLAT-006: Additional platform safety (DOM web-only, push mobile-only)       *)
 (* ═══════════════════════════════════════════════════════════════════════════ *)

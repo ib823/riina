@@ -282,3 +282,35 @@ Theorem addr_in_region_bounds :
 Proof.
   intros addr sz r [H1 H2]. split; lia.
 Qed.
+
+(** ═══════════════════════════════════════════════════════════════════════════
+    THEOREMS: ADDITIONAL FFI PROPERTIES
+    ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem ffi_void_size_zero :
+  ffi_type_size FFI_Void = 0.
+Proof.
+  reflexivity.
+Qed.
+
+Theorem ffi_int8_size :
+  ffi_type_size FFI_Int8 = 1.
+Proof.
+  reflexivity.
+Qed.
+
+Theorem marshal_void_preserves_used :
+  forall b b',
+    buf_used b <= buf_capacity b ->
+    marshal_into b FFI_Void = Some b' ->
+    buf_used b' = buf_used b.
+Proof.
+  intros b b' Hle H.
+  unfold marshal_into in H.
+  unfold can_marshal in H. simpl in H.
+  assert (buf_used b + 0 <=? buf_capacity b = true) as E.
+  { apply Nat.leb_le. lia. }
+  rewrite E in H.
+  injection H as <-.
+  simpl. lia.
+Qed.

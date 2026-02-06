@@ -239,3 +239,220 @@ Theorem fi_type_coverage :
 Proof.
   intros ft. destruct ft; simpl; auto 7.
 Qed.
+
+(* ================================================================ *)
+(* Extended BNM RMiT Compliance Theorems                             *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- Cyber Control Strengthening --- *)
+(* RMiT Domain 3: Adding controls only strengthens compliance *)
+
+Theorem cyber_controls_strengthened :
+  forall (fi : FinancialInstitution) (extra : nat),
+  cyber_controls_adequate fi ->
+  fi_min_cyber_controls fi <= fi_cyber_controls fi + extra.
+Proof.
+  intros fi extra H.
+  unfold cyber_controls_adequate in H.
+  apply (Nat.le_trans _ (fi_cyber_controls fi) _).
+  - exact H.
+  - apply Nat.le_add_r.
+Qed.
+
+(* --- Cloud Deployment Risk Assessment Coverage --- *)
+
+Definition all_cloud_deployments : list CloudDeployment :=
+  [OnPremise; PrivateCloud; PublicCloud; HybridCloud].
+
+Theorem cloud_deployment_coverage :
+  forall (cd : CloudDeployment), In cd all_cloud_deployments.
+Proof.
+  intros cd. destruct cd; simpl; auto 5.
+Qed.
+
+(* --- On-Premise Always Cloud Compliant --- *)
+
+Theorem on_premise_always_compliant :
+  forall (fi : FinancialInstitution),
+  fi_cloud_model fi = OnPremise ->
+  cloud_compliant fi.
+Proof.
+  intros fi H. unfold cloud_compliant. rewrite H. exact I.
+Qed.
+
+(* --- RMiT Partial Compliance Decomposition --- *)
+(* If fully compliant, each individual domain is satisfied *)
+
+Theorem rmit_full_implies_governance :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  governance_compliant fi.
+Proof.
+  intros fi [H _]. exact H.
+Qed.
+
+Theorem rmit_full_implies_risk :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  risk_framework_established fi.
+Proof.
+  intros fi [_ [H _]]. exact H.
+Qed.
+
+Theorem rmit_full_implies_cyber :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  cyber_controls_adequate fi.
+Proof.
+  intros fi [_ [_ [H _]]]. exact H.
+Qed.
+
+Theorem rmit_full_implies_ops :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  ops_resilience_verified fi.
+Proof.
+  intros fi [_ [_ [_ [H _]]]]. exact H.
+Qed.
+
+Theorem rmit_full_implies_audit :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  audit_compliant fi.
+Proof.
+  intros fi [_ [_ [_ [_ [H _]]]]]. exact H.
+Qed.
+
+Theorem rmit_full_implies_cloud :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  cloud_compliant fi.
+Proof.
+  intros fi [_ [_ [_ [_ [_ [H _]]]]]]. exact H.
+Qed.
+
+Theorem rmit_full_implies_third_party :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  third_party_compliant fi.
+Proof.
+  intros fi [_ [_ [_ [_ [_ [_ [H _]]]]]]]. exact H.
+Qed.
+
+Theorem rmit_full_implies_bcp :
+  forall (fi : FinancialInstitution),
+  rmit_fully_compliant fi ->
+  bcp_compliant fi.
+Proof.
+  intros fi [_ [_ [_ [_ [_ [_ [_ H]]]]]]]. exact H.
+Qed.
+
+(* --- Incident Response Time Model --- *)
+(* BNM requires incident notification within 6 hours *)
+
+Record BNMIncident := mkBNMIncident {
+  bnm_inc_id : nat;
+  bnm_inc_detected : nat;
+  bnm_inc_reported : nat;
+  bnm_inc_severity : nat;
+}.
+
+Definition bnm_incident_deadline : nat := 6.
+
+Definition bnm_incident_reported_timely (inc : BNMIncident) : Prop :=
+  bnm_inc_reported inc <= bnm_inc_detected inc + bnm_incident_deadline.
+
+Theorem bnm_incident_reporting :
+  forall (inc : BNMIncident),
+  bnm_inc_reported inc <= bnm_inc_detected inc + 6 ->
+  bnm_incident_reported_timely inc.
+Proof.
+  intros inc H. unfold bnm_incident_reported_timely, bnm_incident_deadline. exact H.
+Qed.
+
+Theorem bnm_late_incident_violation :
+  forall (inc : BNMIncident),
+  bnm_inc_detected inc + bnm_incident_deadline < bnm_inc_reported inc ->
+  ~ bnm_incident_reported_timely inc.
+Proof.
+  intros inc Hlate Htimely.
+  unfold bnm_incident_reported_timely, bnm_incident_deadline in Htimely.
+  apply (Nat.lt_irrefl (bnm_inc_detected inc + 6)).
+  apply (Nat.lt_le_trans _ _ _ Hlate Htimely).
+Qed.
+
+(* --- Outsourcing Risk Management --- *)
+(* RMiT §10: Material outsourcing requires BNM notification *)
+
+Record OutsourcingArrangement := mkOutsource {
+  oa_vendor_id : nat;
+  oa_material : bool;
+  oa_risk_assessed : bool;
+  oa_bnm_notified : bool;
+  oa_exit_strategy : bool;
+}.
+
+Definition outsourcing_compliant (oa : OutsourcingArrangement) : Prop :=
+  oa_risk_assessed oa = true /\
+  (oa_material oa = true -> oa_bnm_notified oa = true) /\
+  oa_exit_strategy oa = true.
+
+Theorem outsourcing_risk_managed :
+  forall (oa : OutsourcingArrangement),
+  oa_risk_assessed oa = true ->
+  (oa_material oa = true -> oa_bnm_notified oa = true) ->
+  oa_exit_strategy oa = true ->
+  outsourcing_compliant oa.
+Proof.
+  intros oa H1 H2 H3.
+  unfold outsourcing_compliant.
+  split. exact H1. split. exact H2. exact H3.
+Qed.
+
+Theorem non_material_no_notification :
+  forall (oa : OutsourcingArrangement),
+  oa_material oa = false ->
+  oa_risk_assessed oa = true ->
+  oa_exit_strategy oa = true ->
+  outsourcing_compliant oa.
+Proof.
+  intros oa Hnonmat Hrisk Hexit.
+  unfold outsourcing_compliant.
+  split. exact Hrisk.
+  split.
+  - intros Hmat. rewrite Hnonmat in Hmat. discriminate.
+  - exact Hexit.
+Qed.
+
+(* --- Technology Refresh Cycle --- *)
+(* RMiT requires regular technology refresh *)
+
+Record TechRefreshStatus := mkTechRefresh {
+  tr_system_id : nat;
+  tr_last_refresh : nat;
+  tr_max_age : nat;
+}.
+
+Definition tech_refresh_current (trs : TechRefreshStatus) (current_time : nat) : Prop :=
+  current_time <= tr_last_refresh trs + tr_max_age trs.
+
+Theorem tech_refresh_valid :
+  forall (trs : TechRefreshStatus) (t : nat),
+  t <= tr_last_refresh trs + tr_max_age trs ->
+  tech_refresh_current trs t.
+Proof.
+  intros trs t H. unfold tech_refresh_current. exact H.
+Qed.
+
+Theorem tech_refresh_expired :
+  forall (trs : TechRefreshStatus) (t : nat),
+  tr_last_refresh trs + tr_max_age trs < t ->
+  ~ tech_refresh_current trs t.
+Proof.
+  intros trs t Hexp Hcur.
+  unfold tech_refresh_current in Hcur.
+  apply (Nat.lt_irrefl (tr_last_refresh trs + tr_max_age trs)).
+  apply (Nat.lt_le_trans _ t _ Hexp Hcur).
+Qed.

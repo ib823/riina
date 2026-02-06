@@ -537,6 +537,105 @@ Proof.
 Qed.
 
 (* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM SEC_002_16: Output Covert Channel Absence                           *)
+(* Program output is independent of secret data                                *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem SEC_002_16 : forall s1 s2 : State,
+  let t1 := prog_execute riina_program s1 in
+  let t2 := prog_execute riina_program s2 in
+  constant_output s1 s2 t1 t2.
+Proof.
+  intros s1 s2 t1 t2.
+  unfold constant_output.
+  intro Hlow.
+  unfold t1, t2.
+  simpl.
+  unfold secure_execute.
+  unfold low_equiv in Hlow.
+  apply Nat.eqb_eq in Hlow.
+  rewrite Hlow.
+  reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM SEC_002_17: Level ordering reflexivity                              *)
+(* Every security level is less than or equal to itself                        *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem SEC_002_17 : forall l : SecLevel,
+  level_leq l l = true.
+Proof.
+  intros l.
+  destruct l; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM SEC_002_18: Level equality reflexivity                              *)
+(* Every security level equals itself                                          *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem SEC_002_18 : forall l : SecLevel,
+  level_eq l l = true.
+Proof.
+  intros l.
+  destruct l; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM SEC_002_19: Public always flows to higher levels                    *)
+(* Public data can always flow to Secret or TopSecret                          *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem SEC_002_19 : forall l : SecLevel,
+  level_leq Public l = true.
+Proof.
+  intros l.
+  destruct l; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM SEC_002_20: TopSecret cannot flow down                              *)
+(* TopSecret data cannot flow to Public or Secret                              *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem SEC_002_20 :
+  level_leq TopSecret Public = false /\
+  level_leq TopSecret Secret = false.
+Proof.
+  split; reflexivity.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+(* THEOREM SEC_002_21: Low equivalence is reflexive                            *)
+(* A state is always low-equivalent to itself                                  *)
+(* ═══════════════════════════════════════════════════════════════════════════ *)
+
+Theorem SEC_002_21 : forall s : State,
+  low_equiv s s = true.
+Proof.
+  intros s.
+  unfold low_equiv.
+  apply Nat.eqb_refl.
+Qed.
+
+(* Level ordering is reflexive *)
+Theorem level_leq_refl : forall l, level_leq l l = true.
+Proof. destruct l; reflexivity. Qed.
+
+(* Public is the lowest level *)
+Theorem public_lowest : forall l, level_leq Public l = true.
+Proof. destruct l; reflexivity. Qed.
+
+(* TopSecret does not flow to Public *)
+Theorem topsecret_no_flow_public : level_leq TopSecret Public = false.
+Proof. reflexivity. Qed.
+
+(* Secret does not flow to Public *)
+Theorem secret_no_flow_public : level_leq Secret Public = false.
+Proof. reflexivity. Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════ *)
 (* END OF COVERT CHANNEL PROOFS                                                *)
-(* All 15 theorems proven without Admitted, admit, or new Axiom                *)
+(* All theorems proven without Admitted, admit, or new Axiom                   *)
 (* ═══════════════════════════════════════════════════════════════════════════ *)

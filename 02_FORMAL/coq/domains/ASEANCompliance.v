@@ -236,3 +236,271 @@ Theorem audit_trail_grows :
 Proof.
   intros. unfold log_transfer. simpl. reflexivity.
 Qed.
+
+(* ================================================================ *)
+(* Extended ASEAN Compliance Theorems                                *)
+(* ================================================================ *)
+
+Require Import Coq.Arith.Arith.
+Require Import Coq.Arith.PeanoNat.
+Require Import Lia.
+
+(* --- ASEAN Data Management Framework (DMF) --- *)
+
+Inductive DataLocalization : Type :=
+  | LocalOnly : DataLocalization        (* Must stay in jurisdiction *)
+  | RegionalASEAN : DataLocalization    (* Can move within ASEAN *)
+  | GlobalAllowed : DataLocalization.   (* Can move anywhere with consent *)
+
+Record ASEANDataPolicy := mkASEANPolicy {
+  adp_jurisdiction : jurisdiction;
+  adp_localization : DataLocalization;
+  adp_adequacy_recognized : list jurisdiction;
+  adp_consent_required : bool;
+  adp_breach_notification_hours : nat;
+  adp_dpo_required : bool;
+}.
+
+(* --- ASEAN Data Localization Enforcement --- *)
+
+Definition localization_permits_transfer
+  (loc : DataLocalization) (from to : jurisdiction) : Prop :=
+  match loc with
+  | LocalOnly => from = to
+  | RegionalASEAN => from <= 9 /\ to <= 9  (* ASEAN members 0-9 *)
+  | GlobalAllowed => True
+  end.
+
+Theorem local_only_blocks_cross_border :
+  forall (from to : jurisdiction),
+  from <> to ->
+  ~ localization_permits_transfer LocalOnly from to.
+Proof.
+  intros from to Hneq Hperm.
+  unfold localization_permits_transfer in Hperm.
+  contradiction.
+Qed.
+
+Theorem regional_allows_intra_asean :
+  forall (from to : jurisdiction),
+  from <= 9 -> to <= 9 ->
+  localization_permits_transfer RegionalASEAN from to.
+Proof.
+  intros from to Hf Ht.
+  unfold localization_permits_transfer.
+  split; assumption.
+Qed.
+
+Theorem global_allows_all :
+  forall (from to : jurisdiction),
+  localization_permits_transfer GlobalAllowed from to.
+Proof.
+  intros from to. unfold localization_permits_transfer. exact I.
+Qed.
+
+(* --- Adequacy Recognition Symmetry --- *)
+
+Definition adequacy_recognized (policy : ASEANDataPolicy) (target : jurisdiction) : Prop :=
+  In target (adp_adequacy_recognized policy).
+
+Theorem adequacy_list_membership :
+  forall (policy : ASEANDataPolicy) (j : jurisdiction) (rest : list jurisdiction),
+  adp_adequacy_recognized policy = j :: rest ->
+  adequacy_recognized policy j.
+Proof.
+  intros policy j rest Heq.
+  unfold adequacy_recognized. rewrite Heq.
+  simpl. left. reflexivity.
+Qed.
+
+(* --- ASEAN Cross-Border Data Flow Framework --- *)
+
+Record CBDataFlow := mkCBFlow {
+  cbf_data : DataItem;
+  cbf_source_policy : ASEANDataPolicy;
+  cbf_target_jurisdiction : jurisdiction;
+  cbf_consent_obtained : bool;
+  cbf_safeguards_in_place : bool;
+}.
+
+Definition cbf_compliant (flow : CBDataFlow) : Prop :=
+  (adp_consent_required (cbf_source_policy flow) = true ->
+   cbf_consent_obtained flow = true) /\
+  localization_permits_transfer
+    (adp_localization (cbf_source_policy flow))
+    (data_jurisdiction (cbf_data flow))
+    (cbf_target_jurisdiction flow) /\
+  (cbf_safeguards_in_place flow = true).
+
+Theorem asean_data_flow_compliant :
+  forall (flow : CBDataFlow),
+  (adp_consent_required (cbf_source_policy flow) = true ->
+   cbf_consent_obtained flow = true) ->
+  localization_permits_transfer
+    (adp_localization (cbf_source_policy flow))
+    (data_jurisdiction (cbf_data flow))
+    (cbf_target_jurisdiction flow) ->
+  cbf_safeguards_in_place flow = true ->
+  cbf_compliant flow.
+Proof.
+  intros flow Hconsent Hloc Hsafe.
+  unfold cbf_compliant.
+  split. exact Hconsent.
+  split. exact Hloc.
+  exact Hsafe.
+Qed.
+
+(* --- Breach Notification Harmonization --- *)
+
+Definition breach_notification_compliant
+  (policy : ASEANDataPolicy) (detected_at notified_at : nat) : Prop :=
+  notified_at <= detected_at + adp_breach_notification_hours policy.
+
+Theorem breach_notification_timeliness :
+  forall (policy : ASEANDataPolicy) (det notif : nat),
+  notif <= det + adp_breach_notification_hours policy ->
+  breach_notification_compliant policy det notif.
+Proof.
+  intros policy det notif H. unfold breach_notification_compliant. exact H.
+Qed.
+
+Theorem stricter_deadline_satisfies_weaker :
+  forall (p1 p2 : ASEANDataPolicy) (det notif : nat),
+  adp_breach_notification_hours p1 <= adp_breach_notification_hours p2 ->
+  breach_notification_compliant p1 det notif ->
+  breach_notification_compliant p2 det notif.
+Proof.
+  intros p1 p2 det notif Hle Hcomp.
+  unfold breach_notification_compliant in *.
+  apply (Nat.le_trans notif (det + adp_breach_notification_hours p1)
+                          (det + adp_breach_notification_hours p2)).
+  - exact Hcomp.
+  - apply Nat.add_le_mono_l. exact Hle.
+Qed.
+
+(* --- ASEAN Model Contractual Clauses (MCCs) --- *)
+
+Record ModelContractualClause := mkMCC {
+  mcc_id : nat;
+  mcc_from_jurisdiction : jurisdiction;
+  mcc_to_jurisdiction : jurisdiction;
+  mcc_data_protection_standard : nat;  (* 0-3: increasing strictness *)
+  mcc_audit_rights : bool;
+  mcc_termination_clause : bool;
+}.
+
+Definition mcc_adequate (mcc : ModelContractualClause) (min_standard : nat) : Prop :=
+  mcc_data_protection_standard mcc >= min_standard /\
+  mcc_audit_rights mcc = true /\
+  mcc_termination_clause mcc = true.
+
+Theorem mcc_compliance :
+  forall (mcc : ModelContractualClause) (min : nat),
+  mcc_data_protection_standard mcc >= min ->
+  mcc_audit_rights mcc = true ->
+  mcc_termination_clause mcc = true ->
+  mcc_adequate mcc min.
+Proof.
+  intros mcc min H1 H2 H3.
+  unfold mcc_adequate.
+  split. exact H1. split. exact H2. exact H3.
+Qed.
+
+Theorem higher_standard_subsumes :
+  forall (mcc : ModelContractualClause) (s1 s2 : nat),
+  s1 <= s2 ->
+  mcc_adequate mcc s2 ->
+  mcc_adequate mcc s1.
+Proof.
+  intros mcc s1 s2 Hle [Hstd [Haudit Hterm]].
+  unfold mcc_adequate.
+  split.
+  - apply (Nat.le_trans s1 s2 _); assumption.
+  - split; assumption.
+Qed.
+
+(* --- ASEAN Mutual Recognition Arrangement --- *)
+
+Definition mutual_recognition (j1 j2 : jurisdiction) (agreements : Agreements) : Prop :=
+  authorized agreements j1 j2 0 /\ authorized agreements j2 j1 0.
+
+Theorem mutual_recognition_symmetric :
+  forall (j1 j2 : jurisdiction) (agreements : Agreements),
+  mutual_recognition j1 j2 agreements ->
+  mutual_recognition j2 j1 agreements.
+Proof.
+  intros j1 j2 agreements [H1 H2].
+  unfold mutual_recognition. split; assumption.
+Qed.
+
+(* --- Classification Level Properties --- *)
+
+Theorem classification_bounded :
+  forall (d : DataItem),
+  data_classification d <= 3 \/
+  data_classification d > 3.
+Proof.
+  intros d.
+  destruct (Nat.le_gt_cases (data_classification d) 3).
+  - left. exact H.
+  - right. exact H.
+Qed.
+
+(* --- Audit Trail Non-Shrinking --- *)
+
+Theorem audit_trail_monotonic :
+  forall (trail : AuditTrail) (did from to : nat) (e : TransferEntry),
+  In e trail ->
+  In e (log_transfer trail did from to).
+Proof.
+  intros trail did from to e Hin.
+  unfold log_transfer. simpl. right. exact Hin.
+Qed.
+
+(* --- Multiple Transfers Logging --- *)
+
+Theorem two_transfers_logged :
+  forall (trail : AuditTrail) (d1 f1 t1 d2 f2 t2 : nat),
+  let trail1 := log_transfer trail d1 f1 t1 in
+  let trail2 := log_transfer trail1 d2 f2 t2 in
+  transfer_logged trail2 d1 f1 t1 /\ transfer_logged trail2 d2 f2 t2.
+Proof.
+  intros trail d1 f1 t1 d2 f2 t2.
+  simpl. split.
+  - unfold transfer_logged, log_transfer. simpl. right. left. reflexivity.
+  - unfold transfer_logged, log_transfer. simpl. left. reflexivity.
+Qed.
+
+(* --- Localization Coverage --- *)
+
+Definition all_localizations : list DataLocalization :=
+  [LocalOnly; RegionalASEAN; GlobalAllowed].
+
+Theorem localization_coverage :
+  forall (dl : DataLocalization), In dl all_localizations.
+Proof.
+  intros dl. destruct dl; simpl; auto 4.
+Qed.
+
+(* --- ASEAN Data Protection Officers Network --- *)
+
+Definition dpo_requirement_met (policy : ASEANDataPolicy) (dpo_appointed : bool) : Prop :=
+  adp_dpo_required policy = true -> dpo_appointed = true.
+
+Theorem dpo_appointed_when_required :
+  forall (policy : ASEANDataPolicy),
+  adp_dpo_required policy = true ->
+  dpo_requirement_met policy true.
+Proof.
+  intros policy _. unfold dpo_requirement_met. intros _. reflexivity.
+Qed.
+
+Theorem dpo_not_required_always_met :
+  forall (policy : ASEANDataPolicy) (appointed : bool),
+  adp_dpo_required policy = false ->
+  dpo_requirement_met policy appointed.
+Proof.
+  intros policy appointed Hnot.
+  unfold dpo_requirement_met.
+  intros Hreq. rewrite Hnot in Hreq. discriminate.
+Qed.

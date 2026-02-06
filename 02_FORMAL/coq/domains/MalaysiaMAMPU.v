@@ -205,3 +205,227 @@ Theorem gov_classification_coverage :
 Proof.
   intros c. destruct c; simpl; auto 6.
 Qed.
+
+(* ================================================================ *)
+(* Extended MAMPU / MyGovCloud Compliance Theorems                   *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- Classification Level Arithmetic Properties --- *)
+
+Theorem terbuka_is_level_zero :
+  classification_level Terbuka = 0.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem rahsia_besar_is_level_four :
+  classification_level RahsiaBesar = 4.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem classification_level_positive_for_non_terbuka :
+  forall (c : GovClassification),
+  c <> Terbuka ->
+  classification_level c >= 1.
+Proof.
+  intros c Hneq. destruct c; simpl; try lia. contradiction.
+Qed.
+
+(* --- Controls Escalation Properties --- *)
+
+Theorem mampu_terhad :
+  forall (s : GovSystem),
+  gov_classification s = Terhad ->
+  gov_access_controlled s = true ->
+  controls_match_classification s.
+Proof.
+  intros s Hc Ha. unfold controls_match_classification. rewrite Hc. exact Ha.
+Qed.
+
+Theorem mampu_sulit :
+  forall (s : GovSystem),
+  gov_classification s = Sulit ->
+  gov_encrypted s = true ->
+  gov_access_controlled s = true ->
+  controls_match_classification s.
+Proof.
+  intros s Hc He Ha. unfold controls_match_classification.
+  rewrite Hc. split; assumption.
+Qed.
+
+(* --- Higher Classification Requires Stronger Controls --- *)
+
+Theorem rahsia_besar_requires_encryption :
+  forall (s : GovSystem),
+  gov_classification s = RahsiaBesar ->
+  controls_match_classification s ->
+  gov_encrypted s = true.
+Proof.
+  intros s Hc Hctl. unfold controls_match_classification in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [He _]. exact He.
+Qed.
+
+Theorem rahsia_besar_requires_access_control :
+  forall (s : GovSystem),
+  gov_classification s = RahsiaBesar ->
+  controls_match_classification s ->
+  gov_access_controlled s = true.
+Proof.
+  intros s Hc Hctl. unfold controls_match_classification in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [_ [Ha _]]. exact Ha.
+Qed.
+
+Theorem rahsia_besar_requires_audit :
+  forall (s : GovSystem),
+  gov_classification s = RahsiaBesar ->
+  controls_match_classification s ->
+  gov_audit_logged s = true.
+Proof.
+  intros s Hc Hctl. unfold controls_match_classification in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [_ [_ [Hau _]]]. exact Hau.
+Qed.
+
+Theorem rahsia_besar_requires_isms :
+  forall (s : GovSystem),
+  gov_classification s = RahsiaBesar ->
+  controls_match_classification s ->
+  gov_isms_certified s = true.
+Proof.
+  intros s Hc Hctl. unfold controls_match_classification in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [_ [_ [_ Hi]]]. exact Hi.
+Qed.
+
+(* --- Data Sovereignty Enforcement --- *)
+(* Government data MUST stay in Malaysia — no exceptions *)
+
+Theorem sovereignty_mandatory_for_all_levels :
+  forall (s : GovSystem),
+  mampu_fully_compliant s ->
+  data_sovereign s.
+Proof.
+  intros s [Hsov _]. exact Hsov.
+Qed.
+
+Theorem sovereignty_violation_blocks_compliance :
+  forall (s : GovSystem),
+  gov_data_in_malaysia s = false ->
+  ~ data_sovereign s.
+Proof.
+  intros s Hfalse Hsov.
+  unfold data_sovereign in Hsov.
+  rewrite Hfalse in Hsov. discriminate.
+Qed.
+
+(* --- RAKKSSA Framework Properties --- *)
+(* Rangka Kerja Keselamatan Siber Sektor Awam *)
+
+Record RAKKSSAAssessment := mkRAKKSSA {
+  rk_system_id : nat;
+  rk_vulnerability_scan : bool;
+  rk_penetration_test : bool;
+  rk_risk_assessment : bool;
+  rk_compliance_check : bool;
+  rk_score : nat;          (* 0-100 *)
+  rk_min_score : nat;
+}.
+
+Definition rakkssa_passed (ra : RAKKSSAAssessment) : Prop :=
+  rk_vulnerability_scan ra = true /\
+  rk_penetration_test ra = true /\
+  rk_risk_assessment ra = true /\
+  rk_compliance_check ra = true /\
+  rk_score ra >= rk_min_score ra.
+
+Theorem rakkssa_assessment_complete :
+  forall (ra : RAKKSSAAssessment),
+  rk_vulnerability_scan ra = true ->
+  rk_penetration_test ra = true ->
+  rk_risk_assessment ra = true ->
+  rk_compliance_check ra = true ->
+  rk_score ra >= rk_min_score ra ->
+  rakkssa_passed ra.
+Proof.
+  intros ra H1 H2 H3 H4 H5.
+  unfold rakkssa_passed.
+  split. exact H1. split. exact H2. split. exact H3.
+  split. exact H4. exact H5.
+Qed.
+
+Theorem rakkssa_score_insufficient :
+  forall (ra : RAKKSSAAssessment),
+  rk_score ra < rk_min_score ra ->
+  ~ (rk_score ra >= rk_min_score ra).
+Proof.
+  intros ra Hlt Hge. lia.
+Qed.
+
+(* --- MyGovCloud Deployment Properties --- *)
+
+Definition mygovcloud_eligible (s : GovSystem) : Prop :=
+  data_sovereign s /\
+  security_assessed s /\
+  (gov_classification s <> RahsiaBesar).
+
+Theorem mygovcloud_check :
+  forall (s : GovSystem),
+  gov_data_in_malaysia s = true ->
+  gov_security_assessed s = true ->
+  gov_classification s <> RahsiaBesar ->
+  mygovcloud_eligible s.
+Proof.
+  intros s H1 H2 H3.
+  unfold mygovcloud_eligible.
+  split. unfold data_sovereign. exact H1.
+  split. unfold security_assessed. exact H2.
+  exact H3.
+Qed.
+
+(* --- DKICT Compliance --- *)
+(* Dasar Keselamatan ICT — Government ICT security policy *)
+
+Record DKICTCompliance := mkDKICT {
+  dkict_password_policy : bool;
+  dkict_access_review : bool;
+  dkict_incident_response : bool;
+  dkict_backup_tested : bool;
+}.
+
+Definition dkict_compliant (d : DKICTCompliance) : Prop :=
+  dkict_password_policy d = true /\
+  dkict_access_review d = true /\
+  dkict_incident_response d = true /\
+  dkict_backup_tested d = true.
+
+Theorem dkict_full_compliance :
+  forall (d : DKICTCompliance),
+  dkict_password_policy d = true ->
+  dkict_access_review d = true ->
+  dkict_incident_response d = true ->
+  dkict_backup_tested d = true ->
+  dkict_compliant d.
+Proof.
+  intros d H1 H2 H3 H4.
+  unfold dkict_compliant.
+  split. exact H1. split. exact H2. split. exact H3. exact H4.
+Qed.
+
+(* --- Full Compliance Decomposition --- *)
+
+Theorem mampu_full_implies_sovereign :
+  forall (s : GovSystem),
+  mampu_fully_compliant s ->
+  gov_data_in_malaysia s = true.
+Proof.
+  intros s [Hsov _]. unfold data_sovereign in Hsov. exact Hsov.
+Qed.
+
+Theorem mampu_full_implies_assessed :
+  forall (s : GovSystem),
+  mampu_fully_compliant s ->
+  gov_security_assessed s = true.
+Proof.
+  intros s [_ [_ Hassess]]. unfold security_assessed in Hassess. exact Hassess.
+Qed.

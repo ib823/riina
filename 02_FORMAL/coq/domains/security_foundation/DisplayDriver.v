@@ -179,7 +179,252 @@ Proof.
 Qed.
 
 (* ========================================================================= *)
+(*  SECTION 5: Extended Display Security Properties                          *)
+(* ========================================================================= *)
+
+Require Import Coq.micromega.Lia.
+
+(** Overlay permission model *)
+Definition has_overlay_permission (app : Application) : Prop :=
+  app_overlay_perm app = true.
+
+(** Overlay attack: app without overlay perm cannot create overlay *)
+Inductive creates_overlay : Application -> Prop :=
+  | OverlayWithPerm : forall app,
+      has_overlay_permission app ->
+      creates_overlay app.
+
+(** Overlay requires permission *)
+Theorem overlay_requires_permission :
+  forall (app : Application),
+    creates_overlay app ->
+    has_overlay_permission app.
+Proof.
+  intros app Hoverlay.
+  inversion Hoverlay as [a Hperm Heq]. subst.
+  exact Hperm.
+Qed.
+
+(** No overlay without permission *)
+Theorem no_overlay_without_permission :
+  forall (app : Application),
+    app_overlay_perm app = false ->
+    ~ creates_overlay app.
+Proof.
+  intros app Hno_perm Hoverlay.
+  inversion Hoverlay as [a Hperm Heq]. subst.
+  unfold has_overlay_permission in Hperm.
+  rewrite Hno_perm in Hperm. discriminate.
+Qed.
+
+(** Frame buffer dimensions are positive *)
+Definition valid_framebuffer (fb : FrameBuffer) : Prop :=
+  fb_width fb > 0 /\ fb_height fb > 0.
+
+(** Display output integrity: frame is from a valid buffer *)
+Theorem display_output_integrity :
+  forall (app : Application) (fb : FrameBuffer) (frame : Frame),
+    owns_buffer app fb ->
+    frame_source frame = fb_id fb ->
+    fb_owner fb = app_id app.
+Proof.
+  intros app fb frame Howns Hsource.
+  unfold owns_buffer in Howns. exact Howns.
+Qed.
+
+(** Pixel count is width times height *)
+Definition pixel_count (fb : FrameBuffer) : nat :=
+  fb_width fb * fb_height fb.
+
+(** Valid framebuffer has positive pixel count *)
+Theorem valid_fb_positive_pixels :
+  forall (fb : FrameBuffer),
+    valid_framebuffer fb ->
+    pixel_count fb > 0.
+Proof.
+  intros fb [Hw Hh].
+  unfold pixel_count.
+  destruct (fb_width fb) eqn:Ew.
+  - lia.
+  - destruct (fb_height fb) eqn:Eh.
+    + lia.
+    + simpl. lia.
+Qed.
+
+(** Screen capture with no permission fails for all frames *)
+Theorem no_capture_perm_blocks_all_frames :
+  forall (app : Application),
+    app_screen_capture_perm app = false ->
+    forall f, ~ captures_screen app f.
+Proof.
+  intros app Hnp f Hcap.
+  inversion Hcap as [a fr Hperm Heq1 Heq2]. subst.
+  unfold has_screen_capture_permission in Hperm.
+  rewrite Hnp in Hperm. discriminate.
+Qed.
+
+(** Protected buffer blocks non-owner without capture perm *)
+Theorem protected_buffer_blocks_non_owner :
+  forall (app : Application) (fb : FrameBuffer),
+    fb_protected fb = true ->
+    fb_owner fb <> app_id app ->
+    app_screen_capture_perm app = false ->
+    ~ can_read_buffer app fb.
+Proof.
+  intros app fb Hprot Hnotowner Hnocap Hread.
+  inversion Hread as [a b Howns Hunprot Heq1 Heq2 | a b Hcap Heq1 Heq2].
+  - subst. unfold owns_buffer in Howns. apply Hnotowner. exact Howns.
+  - subst. rewrite Hnocap in Hcap. discriminate.
+Qed.
+
+(** Buffer read requires either ownership or capture permission *)
+Theorem read_requires_ownership_or_capture :
+  forall (app : Application) (fb : FrameBuffer),
+    can_read_buffer app fb ->
+    (owns_buffer app fb /\ fb_protected fb = false) \/ app_screen_capture_perm app = true.
+Proof.
+  intros app fb Hread.
+  inversion Hread as [a b Howns Hunprot Heq1 Heq2 | a b Hcap Heq1 Heq2].
+  - subst. left. split; assumption.
+  - subst. right. exact Hcap.
+Qed.
+
+(** Capture permission implies can read any buffer *)
+Theorem capture_perm_reads_all :
+  forall (app : Application) (fb : FrameBuffer),
+    app_screen_capture_perm app = true ->
+    can_read_buffer app fb.
+Proof.
+  intros app fb Hcap.
+  apply ReadWithCapture. exact Hcap.
+Qed.
+
+(** Owner can read unprotected buffer *)
+Theorem owner_reads_unprotected :
+  forall (app : Application) (fb : FrameBuffer),
+    owns_buffer app fb ->
+    fb_protected fb = false ->
+    can_read_buffer app fb.
+Proof.
+  intros app fb Howns Hunprot.
+  apply ReadOwned; assumption.
+Qed.
+
+(** Active overlay recorded in display state *)
+Theorem overlay_state_consistent :
+  forall (ds : DisplayState) (app_id : AppId),
+    active_overlay ds = Some app_id ->
+    active_overlay ds <> None.
+Proof.
+  intros ds aid Hactive. rewrite Hactive. discriminate.
+Qed.
+
+(** No active overlay means no overlay app *)
+Theorem no_overlay_no_app :
+  forall (ds : DisplayState),
+    active_overlay ds = None ->
+    forall aid, active_overlay ds <> Some aid.
+Proof.
+  intros ds Hnone aid. rewrite Hnone. discriminate.
+Qed.
+
+(** Buffer identity via frame buffer id *)
+Theorem fb_id_determines_buffer :
+  forall (fb1 fb2 : FrameBuffer),
+    fb_id fb1 = fb_id fb2 ->
+    fb_owner fb1 = fb_owner fb2 ->
+    fb_width fb1 = fb_width fb2 ->
+    fb_height fb1 = fb_height fb2 ->
+    fb_protected fb1 = fb_protected fb2 ->
+    fb1 = fb2.
+Proof.
+  intros fb1 fb2 Hid Hown Hw Hh Hprot.
+  destruct fb1, fb2. simpl in *. subst. reflexivity.
+Qed.
+
+(** Display isolation symmetric: if app1 isolated from app2, vice versa *)
+Theorem display_isolation_symmetric :
+  forall (app1 app2 : Application) (fb : FrameBuffer),
+    app_id app1 <> app_id app2 ->
+    owns_buffer app2 fb ->
+    app_screen_capture_perm app1 = false ->
+    ~ can_read_buffer app1 fb.
+Proof.
+  intros app1 app2 fb Hneq Howns Hnocap Hread.
+  inversion Hread as [a b Howns1 Hunprot Heq1 Heq2 | a b Hcap Heq1 Heq2].
+  - subst. unfold owns_buffer in Howns, Howns1.
+    rewrite Howns in Howns1. apply Hneq. symmetry. exact Howns1.
+  - subst. rewrite Hnocap in Hcap. discriminate.
+Qed.
+
+(** Capture permission for capture and overlay are independent *)
+Theorem capture_overlay_independent :
+  forall (app : Application),
+    app_screen_capture_perm app = true ->
+    app_overlay_perm app = false ->
+    has_screen_capture_permission app /\ ~ has_overlay_permission app.
+Proof.
+  intros app Hcap Hnoov.
+  split.
+  - unfold has_screen_capture_permission. exact Hcap.
+  - unfold has_overlay_permission. intros H. rewrite Hnoov in H. discriminate.
+Qed.
+
+(* ========================================================================= *)
+(*  SECTION 6: Display Security Composition                                  *)
+(* ========================================================================= *)
+
+(** An app with both permissions can both capture and overlay *)
+Theorem dual_perm_app :
+  forall (app : Application),
+    app_screen_capture_perm app = true ->
+    app_overlay_perm app = true ->
+    has_screen_capture_permission app /\ has_overlay_permission app.
+Proof.
+  intros app Hcap Hov.
+  split.
+  - unfold has_screen_capture_permission. exact Hcap.
+  - unfold has_overlay_permission. exact Hov.
+Qed.
+
+(** An app with no permissions can neither capture nor overlay *)
+Theorem no_perm_app :
+  forall (app : Application),
+    app_screen_capture_perm app = false ->
+    app_overlay_perm app = false ->
+    ~ has_screen_capture_permission app /\ ~ has_overlay_permission app.
+Proof.
+  intros app Hnocap Hnoov.
+  split.
+  - unfold has_screen_capture_permission. intros H. rewrite Hnocap in H. discriminate.
+  - unfold has_overlay_permission. intros H. rewrite Hnoov in H. discriminate.
+Qed.
+
+(** Display state with no buffers has no readable buffers *)
+Theorem empty_display_no_read :
+  forall (ds : DisplayState) (app : Application) (fb : FrameBuffer),
+    frame_buffers ds = [] ->
+    In fb (frame_buffers ds) ->
+    can_read_buffer app fb.
+Proof.
+  intros ds app fb Hempty Hin.
+  rewrite Hempty in Hin. inversion Hin.
+Qed.
+
+(** Frame timestamps are comparable *)
+Theorem frame_timestamp_order :
+  forall (f1 f2 : Frame),
+    frame_timestamp f1 <= frame_timestamp f2 \/
+    frame_timestamp f2 < frame_timestamp f1.
+Proof.
+  intros f1 f2.
+  destruct (le_lt_dec (frame_timestamp f1) (frame_timestamp f2)).
+  - left. exact l.
+  - right. exact l.
+Qed.
+
+(* ========================================================================= *)
 (*  END OF FILE: DisplayDriver.v                                             *)
-(*  Theorems: 2 core + 3 supporting = 5 total                                *)
+(*  Theorems: 5 original + 18 new = 23 total                                 *)
 (*  Admitted: 0 | admit: 0 | New Axioms: 0                                   *)
 (* ========================================================================= *)

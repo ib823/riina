@@ -465,6 +465,70 @@ Proof.
   exact H_crypto.
 Qed.
 
+(* PHY_001_16: Tamper response disables operation *)
+Theorem PHY_001_16_tamper_disables_operation : forall d d',
+  tamper_detected d ->
+  step d d' ->
+  dev_operational d' = false.
+Proof.
+  intros d d' H_tamper H_step.
+  inversion H_step; subst.
+  - simpl. reflexivity.
+  - contradiction.
+Qed.
+
+(* PHY_001_17: Normal step preserves state *)
+Theorem PHY_001_17_normal_preserves_state : forall d d',
+  ~ tamper_detected d ->
+  step d d' ->
+  d' = d.
+Proof.
+  intros d d' Hnormal Hstep.
+  inversion Hstep; subst.
+  - contradiction.
+  - reflexivity.
+Qed.
+
+(* PHY_001_18: Mesh broken implies tamper detected *)
+Theorem PHY_001_18_mesh_broken_tamper : forall d,
+  dev_mesh_intact d = false ->
+  tamper_detected d.
+Proof.
+  intros d Hmesh.
+  unfold tamper_detected.
+  left. exact Hmesh.
+Qed.
+
+(* PHY_001_19: Voltage out of range implies tamper detected *)
+Theorem PHY_001_19_voltage_oor_tamper : forall d,
+  ~ voltage_ok d ->
+  tamper_detected d.
+Proof.
+  intros d Hvoltage.
+  unfold tamper_detected.
+  right. left. exact Hvoltage.
+Qed.
+
+(* PHY_001_20: Temperature out of range implies tamper detected *)
+Theorem PHY_001_20_temp_oor_tamper : forall d,
+  ~ temp_ok d ->
+  tamper_detected d.
+Proof.
+  intros d Htemp.
+  unfold tamper_detected.
+  right. right. exact Htemp.
+Qed.
+
+(* PHY_001_21: Synthesis preserves behavior for all inputs *)
+Theorem PHY_001_21_synthesis_all_inputs : forall rtl inputs,
+  rtl_behavior rtl inputs = nl_behavior (synthesize rtl) inputs.
+Proof.
+  intros rtl inputs.
+  pose proof (synthesis_preserves_semantics rtl) as Hpres.
+  unfold semantic_equivalent in Hpres.
+  apply Hpres.
+Qed.
+
 (** ═══════════════════════════════════════════════════════════════════════════
     END OF PHYSICAL SECURITY VERIFICATION
     ═══════════════════════════════════════════════════════════════════════════ *)

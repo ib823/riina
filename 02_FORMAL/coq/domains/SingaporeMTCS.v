@@ -254,3 +254,216 @@ Theorem im8_classification_coverage :
 Proof.
   intros c. destruct c; simpl; auto 5.
 Qed.
+
+(* ================================================================ *)
+(* Extended MTCS / IM8 Compliance Theorems                           *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- MTCS Level Numerical Properties --- *)
+
+Theorem mtcs_level_positive :
+  forall (l : MTCSLevel),
+  mtcs_level_nat l >= 1.
+Proof.
+  intros l. destruct l; simpl; lia.
+Qed.
+
+Theorem mtcs_level_bounded :
+  forall (l : MTCSLevel),
+  mtcs_level_nat l <= 3.
+Proof.
+  intros l. destruct l; simpl; lia.
+Qed.
+
+Theorem mtcs_level_ordering :
+  forall (l1 l2 : MTCSLevel),
+  mtcs_level_nat l1 <= mtcs_level_nat l2 \/
+  mtcs_level_nat l2 <= mtcs_level_nat l1.
+Proof.
+  intros l1 l2.
+  destruct (Nat.le_ge_cases (mtcs_level_nat l1) (mtcs_level_nat l2)).
+  - left. exact H.
+  - right. exact H.
+Qed.
+
+(* --- MTCS Data-at-Rest Encryption Requirement for L2+ --- *)
+
+Theorem mtcs_l2_requires_encryption :
+  forall (s : CloudService),
+  mtcs_l2_compliant s ->
+  cs_data_encrypted_at_rest s = true.
+Proof.
+  intros s [_ [Henc _]]. exact Henc.
+Qed.
+
+Theorem mtcs_l3_requires_sovereignty :
+  forall (s : CloudService),
+  mtcs_l3_compliant s ->
+  cs_data_sovereign s = true.
+Proof.
+  intros s [_ [Hsov _]]. exact Hsov.
+Qed.
+
+Theorem mtcs_l3_requires_iso27001 :
+  forall (s : CloudService),
+  mtcs_l3_compliant s ->
+  cs_iso27001_certified s = true.
+Proof.
+  intros s [_ [_ Hiso]]. exact Hiso.
+Qed.
+
+(* --- MTCS Level Minimum Data Protection --- *)
+
+Definition mtcs_min_controls (l : MTCSLevel) : nat :=
+  match l with
+  | MTCS_Level1 => 2  (* transit encryption + access control *)
+  | MTCS_Level2 => 5  (* + at-rest encryption + audit + pentest *)
+  | MTCS_Level3 => 7  (* + sovereignty + ISO 27001 *)
+  end.
+
+Theorem mtcs_controls_monotonic :
+  forall (l1 l2 : MTCSLevel),
+  mtcs_level_nat l1 <= mtcs_level_nat l2 ->
+  mtcs_min_controls l1 <= mtcs_min_controls l2.
+Proof.
+  intros l1 l2. destruct l1, l2; simpl; intro H; lia.
+Qed.
+
+(* --- IM8 Classification Level Properties --- *)
+
+Theorem im8_level_bounded :
+  forall (c : IM8Classification),
+  im8_level c <= 3.
+Proof.
+  intros c. destruct c; simpl; lia.
+Qed.
+
+Theorem im8_official_lowest :
+  forall (c : IM8Classification),
+  im8_level IM8_Official <= im8_level c.
+Proof.
+  intros c. destruct c; simpl; lia.
+Qed.
+
+(* --- IM8 Controls Escalation --- *)
+
+Theorem im8_confidential :
+  forall (s : GovTechSystem),
+  gt_classification s = IM8_Confidential ->
+  gt_encrypted s = true ->
+  gt_access_controlled_gt s = true ->
+  im8_controls_adequate s.
+Proof.
+  intros s Hc He Ha. unfold im8_controls_adequate.
+  rewrite Hc. split; assumption.
+Qed.
+
+Theorem im8_restricted :
+  forall (s : GovTechSystem),
+  gt_classification s = IM8_Restricted ->
+  gt_access_controlled_gt s = true ->
+  im8_controls_adequate s.
+Proof.
+  intros s Hc Ha. unfold im8_controls_adequate. rewrite Hc. exact Ha.
+Qed.
+
+(* --- IM8 Secret Requires All Controls --- *)
+
+Theorem im8_secret_requires_encryption :
+  forall (s : GovTechSystem),
+  gt_classification s = IM8_Secret ->
+  im8_controls_adequate s ->
+  gt_encrypted s = true.
+Proof.
+  intros s Hc Hctl. unfold im8_controls_adequate in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [He _]. exact He.
+Qed.
+
+Theorem im8_secret_requires_access_control :
+  forall (s : GovTechSystem),
+  gt_classification s = IM8_Secret ->
+  im8_controls_adequate s ->
+  gt_access_controlled_gt s = true.
+Proof.
+  intros s Hc Hctl. unfold im8_controls_adequate in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [_ [Ha _]]. exact Ha.
+Qed.
+
+Theorem im8_secret_requires_audit :
+  forall (s : GovTechSystem),
+  gt_classification s = IM8_Secret ->
+  im8_controls_adequate s ->
+  gt_audit_logged_gt s = true.
+Proof.
+  intros s Hc Hctl. unfold im8_controls_adequate in Hctl.
+  rewrite Hc in Hctl. destruct Hctl as [_ [_ Hau]]. exact Hau.
+Qed.
+
+(* --- GCC Cloud Mandate --- *)
+(* Government systems should be on Government Commercial Cloud *)
+
+Definition gcc_required (s : GovTechSystem) : Prop :=
+  im8_level (gt_classification s) >= 1 ->
+  gt_on_gcc s = true.
+
+Theorem gcc_required_for_restricted :
+  forall (s : GovTechSystem),
+  gt_classification s = IM8_Restricted ->
+  gt_on_gcc s = true ->
+  gcc_required s.
+Proof.
+  intros s _ Hgcc. unfold gcc_required. intros _. exact Hgcc.
+Qed.
+
+(* --- MTCS and IM8 Cross-Mapping --- *)
+(* IM8 Restricted maps to MTCS Level 2; Secret maps to Level 3 *)
+
+Definition im8_to_mtcs_level (c : IM8Classification) : MTCSLevel :=
+  match c with
+  | IM8_Official => MTCS_Level1
+  | IM8_Restricted => MTCS_Level2
+  | IM8_Confidential => MTCS_Level2
+  | IM8_Secret => MTCS_Level3
+  end.
+
+Theorem im8_secret_maps_to_mtcs3 :
+  im8_to_mtcs_level IM8_Secret = MTCS_Level3.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem im8_to_mtcs_monotonic :
+  forall (c1 c2 : IM8Classification),
+  im8_level c1 <= im8_level c2 ->
+  mtcs_level_nat (im8_to_mtcs_level c1) <= mtcs_level_nat (im8_to_mtcs_level c2).
+Proof.
+  intros c1 c2. destruct c1, c2; simpl; intro H; lia.
+Qed.
+
+(* --- Full IM8 + MTCS Integrated Compliance --- *)
+
+Definition integrated_sg_cloud_compliant
+  (cs : CloudService) (gs : GovTechSystem) : Prop :=
+  mtcs_l2_compliant cs /\
+  im8_fully_compliant gs.
+
+Theorem integrated_compliance :
+  forall (cs : CloudService) (gs : GovTechSystem),
+  mtcs_l2_compliant cs ->
+  im8_fully_compliant gs ->
+  integrated_sg_cloud_compliant cs gs.
+Proof.
+  intros cs gs Hmtcs Him8.
+  unfold integrated_sg_cloud_compliant. split; assumption.
+Qed.
+
+Theorem integrated_implies_encrypted :
+  forall (cs : CloudService) (gs : GovTechSystem),
+  integrated_sg_cloud_compliant cs gs ->
+  cs_data_encrypted_at_rest cs = true.
+Proof.
+  intros cs gs [Hmtcs _].
+  apply mtcs_l2_requires_encryption. exact Hmtcs.
+Qed.

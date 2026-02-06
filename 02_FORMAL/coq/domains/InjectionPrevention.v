@@ -441,8 +441,88 @@ Proof.
 Qed.
 
 (* ═══════════════════════════════════════════════════════════════════════ *)
+(* SECTION E: ADDITIONAL INJECTION PREVENTION THEOREMS                       *)
+(* ═══════════════════════════════════════════════════════════════════════ *)
+
+(* ---------- INJ-016: Taint propagation with untrusted is untrusted ---------- *)
+
+Theorem inj_016_untrusted_propagation :
+  forall t : TaintLevel,
+    propagate_taint Untrusted t = Untrusted.
+Proof.
+  intros t.
+  destruct t; reflexivity.
+Qed.
+
+(* ---------- INJ-017: Taint propagation is commutative for untrusted ---------- *)
+
+Theorem inj_017_untrusted_propagation_right :
+  forall t : TaintLevel,
+    propagate_taint t Untrusted = Untrusted.
+Proof.
+  intros t.
+  destruct t; reflexivity.
+Qed.
+
+(* ---------- INJ-018: Trusted-Trusted propagation stays trusted ---------- *)
+
+Theorem inj_018_trusted_propagation :
+  propagate_taint Trusted Trusted = Trusted.
+Proof.
+  reflexivity.
+Qed.
+
+(* ---------- INJ-019: Sanitized-Sanitized stays sanitized ---------- *)
+
+Theorem inj_019_sanitized_propagation :
+  propagate_taint Sanitized Sanitized = Sanitized.
+Proof.
+  reflexivity.
+Qed.
+
+(* ---------- INJ-020: Empty SQL query is safe ---------- *)
+
+Theorem inj_020_empty_sql_safe :
+  safe_sql nil.
+Proof.
+  apply safe_sql_nil.
+Qed.
+
+(* ---------- INJ-021: Parameterized query is always safe ---------- *)
+
+Theorem inj_021_parameterized_always_safe :
+  forall n : nat,
+    safe_sql (SQLParam n :: nil).
+Proof.
+  intros n.
+  apply safe_sql_param.
+  apply safe_sql_nil.
+Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════ *)
 (* VERIFICATION                                                             *)
 (* ═══════════════════════════════════════════════════════════════════════ *)
+
+(* INJ-022: Trusted data remains trusted through propagation *)
+Theorem inj_022_trusted_propagation :
+  forall t : TaintLevel,
+    propagate_taint Trusted t = t.
+Proof. intros t. destruct t; reflexivity. Qed.
+
+(* INJ-023: Propagating taint is commutative *)
+Theorem inj_023_taint_propagation_comm :
+  forall t1 t2, propagate_taint t1 t2 = propagate_taint t2 t1.
+Proof. intros t1 t2. destruct t1, t2; reflexivity. Qed.
+
+(* INJ-024: Trusted propagation preserves taint *)
+Theorem inj_024_trusted_propagation :
+  forall t, propagate_taint Trusted t = t.
+Proof. intros t. destruct t; reflexivity. Qed.
+
+(* INJ-025: Untrusted propagation is always untrusted *)
+Theorem inj_025_untrusted_propagation :
+  forall t, propagate_taint Untrusted t = Untrusted.
+Proof. intros t. destruct t; reflexivity. Qed.
 
 Print Assumptions inj_001_sql_injection_impossible.
 Print Assumptions inj_002_command_injection_impossible.

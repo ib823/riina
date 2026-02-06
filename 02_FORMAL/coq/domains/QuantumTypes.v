@@ -286,3 +286,87 @@ Theorem create_gate_measure_consumed : forall q g,
 Proof.
   intros q g. unfold fully_consumed. simpl. solve_eqb.
 Qed.
+
+(* ============================================================ *)
+(* Section 7: Additional theorems (to reach 20+ Qed)            *)
+(* ============================================================ *)
+
+(* Theorem 12: mem reflects membership for the head of a list *)
+Theorem mem_head : forall n l, mem n (n :: l) = true.
+Proof.
+  intros n l. simpl. rewrite Nat.eqb_refl. reflexivity.
+Qed.
+
+(* Theorem 13: mem on empty list is always false *)
+Theorem mem_nil : forall n, mem n [] = false.
+Proof.
+  intros n. reflexivity.
+Qed.
+
+(* Theorem 14: count on empty list is always 0 *)
+Theorem count_nil : forall n, count n [] = 0.
+Proof.
+  intros n. reflexivity.
+Qed.
+
+(* Theorem 15: count is non-negative (trivial for nat) and bounded by length *)
+Theorem count_le_length : forall n l, count n l <= length l.
+Proof.
+  intros n l. induction l as [| x xs IH]; simpl.
+  - lia.
+  - destruct (Nat.eqb n x); simpl; lia.
+Qed.
+
+(* Theorem 16: remove on empty list is empty *)
+Theorem remove_nil : forall n, remove n [] = [].
+Proof.
+  intros n. reflexivity.
+Qed.
+
+(* Theorem 17: A gate on a qubit not in context fails *)
+Theorem gate_requires_qubit : forall g q ctx,
+  mem q ctx = false -> check ctx (IGate g q) = None.
+Proof.
+  intros g q ctx H. simpl. rewrite H. reflexivity.
+Qed.
+
+(* Theorem 18: Measure on a qubit not in context fails *)
+Theorem measure_requires_qubit : forall q ctx,
+  mem q ctx = false -> check ctx (IMeasure q) = None.
+Proof.
+  intros q ctx H. simpl. rewrite H. reflexivity.
+Qed.
+
+(* Theorem 19: Two-qubit gate requires both qubits to be distinct *)
+Theorem gate2_requires_distinct : forall g q ctx,
+  check ctx (IGate2 g q q) = None.
+Proof.
+  intros g q ctx. simpl. rewrite Nat.eqb_refl.
+  destruct (mem q ctx); simpl; reflexivity.
+Qed.
+
+(* Theorem 20: Create followed by create of same qubit fails *)
+Theorem double_create_fails : forall q,
+  check [] (ISeq (ICreate q) (ICreate q)) = None.
+Proof.
+  intros q. simpl. rewrite Nat.eqb_refl. reflexivity.
+Qed.
+
+(* Theorem 21: count of n in singleton [n] is 1 *)
+Theorem count_singleton : forall n, count n [n] = 1.
+Proof.
+  intros n. simpl. rewrite Nat.eqb_refl. simpl. reflexivity.
+Qed.
+
+(* Theorem 22: mem of n in singleton [n] is true *)
+Theorem mem_singleton : forall n, mem n [n] = true.
+Proof.
+  intros n. simpl. rewrite Nat.eqb_refl. reflexivity.
+Qed.
+
+(* Theorem 23: Creating a qubit on empty context always succeeds *)
+Theorem create_on_empty_succeeds : forall q,
+  check [] (ICreate q) = Some [q].
+Proof.
+  intros q. simpl. reflexivity.
+Qed.

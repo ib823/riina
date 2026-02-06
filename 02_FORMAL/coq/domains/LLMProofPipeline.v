@@ -381,3 +381,9 @@ Theorem identity_is_valid : forall a v, sem v (FImpl a a).
 Proof.
   intros a v. simpl. auto.
 Qed.
+
+(* Theorem 11: Conjunction is commutative under semantics *)
+Theorem conj_comm_sem : forall a b v, sem v (FConj a b) -> sem v (FConj b a).
+Proof.
+  intros a b v H. simpl in *. tauto.
+Qed.

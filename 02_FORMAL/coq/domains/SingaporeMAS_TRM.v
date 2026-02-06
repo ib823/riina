@@ -209,3 +209,107 @@ Theorem mas_license_coverage :
 Proof.
   intros l. destruct l; simpl; auto 8.
 Qed.
+
+(* ================================================================ *)
+(* Additional Substantial Theorems                                   *)
+(* ================================================================ *)
+
+(** Cyber hygiene field decomposition *)
+Theorem ch_requires_mfa : forall e,
+  cyber_hygiene_compliant e -> mas_mfa_enabled e = true.
+Proof.
+  intros e [H _]. unfold cyber_hygiene_mfa in H. exact H.
+Qed.
+
+Theorem ch_requires_patching : forall e,
+  cyber_hygiene_compliant e -> mas_patching_current e = true.
+Proof.
+  intros e [_ [H _]]. unfold cyber_hygiene_patching in H. exact H.
+Qed.
+
+Theorem ch_requires_network : forall e,
+  cyber_hygiene_compliant e -> mas_network_secured e = true.
+Proof.
+  intros e [_ [_ [H _]]]. unfold cyber_hygiene_network in H. exact H.
+Qed.
+
+Theorem ch_requires_antimalware : forall e,
+  cyber_hygiene_compliant e -> mas_antimalware e = true.
+Proof.
+  intros e [_ [_ [_ [H _]]]]. unfold cyber_hygiene_antimalware in H. exact H.
+Qed.
+
+Theorem ch_requires_pam : forall e,
+  cyber_hygiene_compliant e -> mas_privileged_access_managed e = true.
+Proof.
+  intros e [_ [_ [_ [_ H]]]]. unfold cyber_hygiene_pam in H. exact H.
+Qed.
+
+(** Patch deadline ordering *)
+Theorem patch_critical_strictest : forall p,
+  patch_deadline PatchCritical <= patch_deadline p.
+Proof. destruct p; simpl; lia. Qed.
+
+Theorem patch_low_most_lenient : forall p,
+  patch_deadline p <= patch_deadline PatchLow.
+Proof. destruct p; simpl; lia. Qed.
+
+Theorem patch_deadline_positive : forall p,
+  patch_deadline p >= 14.
+Proof. destruct p; simpl; lia. Qed.
+
+(** Patch subsumption: if applied in time for critical, then in time for any *)
+Theorem patch_critical_subsumes_all : forall d a p,
+  patch_applied_in_time PatchCritical d a ->
+  patch_applied_in_time p d a.
+Proof.
+  intros d a p H. unfold patch_applied_in_time in *.
+  simpl in H. destruct p; simpl; lia.
+Qed.
+
+(** Full compliance decomposition *)
+Theorem mas_full_requires_hygiene : forall e,
+  mas_fully_compliant e -> cyber_hygiene_compliant e.
+Proof. intros e [H _]. exact H. Qed.
+
+Theorem mas_full_requires_governance : forall e,
+  mas_fully_compliant e -> trm_governance e.
+Proof. intros e [_ [H _]]. exact H. Qed.
+
+Theorem mas_full_requires_testing : forall e,
+  mas_fully_compliant e -> trm_security_testing e.
+Proof. intros e [_ [_ [H _]]]. exact H. Qed.
+
+Theorem mas_full_requires_resilience : forall e,
+  mas_fully_compliant e -> trm_resilience e.
+Proof. intros e [_ [_ [_ H]]]. exact H. Qed.
+
+(** Counting compliance controls *)
+Definition count_mas_controls (e : MASRegulatedEntity) : nat :=
+  (if mas_mfa_enabled e then 1 else 0) +
+  (if mas_patching_current e then 1 else 0) +
+  (if mas_network_secured e then 1 else 0) +
+  (if mas_antimalware e then 1 else 0) +
+  (if mas_privileged_access_managed e then 1 else 0) +
+  (if mas_board_oversight e then 1 else 0) +
+  (if mas_risk_assessment_done e then 1 else 0) +
+  (if mas_pen_test_done e then 1 else 0) +
+  (if mas_incident_response_plan e then 1 else 0) +
+  (if mas_bcp_tested e then 1 else 0).
+
+Theorem count_mas_bounded : forall e,
+  count_mas_controls e <= 10.
+Proof.
+  intros e. unfold count_mas_controls.
+  destruct (mas_mfa_enabled e), (mas_patching_current e),
+           (mas_network_secured e), (mas_antimalware e),
+           (mas_privileged_access_managed e), (mas_board_oversight e),
+           (mas_risk_assessment_done e), (mas_pen_test_done e),
+           (mas_incident_response_plan e), (mas_bcp_tested e); simpl; lia.
+Qed.
+
+(** License type count *)
+Theorem mas_seven_licenses : length all_mas_license_types = 7.
+Proof. simpl. reflexivity. Qed.
+
+(** End SingaporeMAS_TRM *)

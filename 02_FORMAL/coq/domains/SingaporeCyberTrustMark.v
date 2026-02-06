@@ -201,3 +201,221 @@ Theorem ctm_tier_coverage :
 Proof.
   intros t. destruct t; simpl; auto 5.
 Qed.
+
+(* ================================================================ *)
+(* Extended Singapore Cyber Trust Mark Theorems                      *)
+(* ================================================================ *)
+
+(* --- Tier Level Properties --- *)
+
+Theorem essential_is_tier_1 :
+  tier_level Essential = 1.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem expert_is_tier_4 :
+  tier_level Expert = 4.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem tier_level_positive :
+  forall (t : CTMTier),
+  tier_level t >= 1.
+Proof.
+  intros t. destruct t; simpl; lia.
+Qed.
+
+Theorem tier_level_bounded :
+  forall (t : CTMTier),
+  tier_level t <= 4.
+Proof.
+  intros t. destruct t; simpl; lia.
+Qed.
+
+(* --- Threshold Properties --- *)
+
+Theorem essential_threshold_30 :
+  tier_threshold Essential = 30.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem expert_threshold_90 :
+  tier_threshold Expert = 90.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+Theorem threshold_positive :
+  forall (t : CTMTier),
+  tier_threshold t >= 30.
+Proof.
+  intros t. destruct t; simpl; lia.
+Qed.
+
+Theorem threshold_bounded :
+  forall (t : CTMTier),
+  tier_threshold t <= 90.
+Proof.
+  intros t. destruct t; simpl; lia.
+Qed.
+
+(* --- Higher Tier Subsumption --- *)
+(* If certified at a higher tier, all lower tiers are met *)
+
+Theorem certified_expert_implies_advanced :
+  forall (a : CTMAssessment),
+  ctm_certified_at_tier a Expert ->
+  ctm_certified_at_tier a Advanced.
+Proof.
+  intros a [Hg [Hp [Hr [Ha He]]]].
+  unfold ctm_certified_at_tier.
+  unfold governance_meets_tier, protection_meets_tier,
+         resilience_meets_tier, assurance_meets_tier,
+         education_meets_tier in *.
+  repeat split; lia.
+Qed.
+
+Theorem certified_advanced_implies_intermediate :
+  forall (a : CTMAssessment),
+  ctm_certified_at_tier a Advanced ->
+  ctm_certified_at_tier a Intermediate.
+Proof.
+  intros a [Hg [Hp [Hr [Ha He]]]].
+  unfold ctm_certified_at_tier.
+  unfold governance_meets_tier, protection_meets_tier,
+         resilience_meets_tier, assurance_meets_tier,
+         education_meets_tier in *.
+  repeat split; lia.
+Qed.
+
+Theorem certified_intermediate_implies_essential :
+  forall (a : CTMAssessment),
+  ctm_certified_at_tier a Intermediate ->
+  ctm_certified_at_tier a Essential.
+Proof.
+  intros a [Hg [Hp [Hr [Ha He]]]].
+  unfold ctm_certified_at_tier.
+  unfold governance_meets_tier, protection_meets_tier,
+         resilience_meets_tier, assurance_meets_tier,
+         education_meets_tier in *.
+  repeat split; lia.
+Qed.
+
+(* --- 2025 Extension: Cloud Security Assessment --- *)
+
+Definition cloud_security_assessed (a : CTMAssessment) : Prop :=
+  ctm_cloud_security a = true.
+
+Theorem ctm_cloud_check :
+  forall (a : CTMAssessment),
+  ctm_cloud_security a = true ->
+  cloud_security_assessed a.
+Proof.
+  intros a H. unfold cloud_security_assessed. exact H.
+Qed.
+
+(* --- 2025 Extension: OT Security Assessment --- *)
+
+Definition ot_security_assessed (a : CTMAssessment) : Prop :=
+  ctm_ot_security a = true.
+
+Theorem ctm_ot_check :
+  forall (a : CTMAssessment),
+  ctm_ot_security a = true ->
+  ot_security_assessed a.
+Proof.
+  intros a H. unfold ot_security_assessed. exact H.
+Qed.
+
+(* --- Full 2025 Extension Compliance --- *)
+
+Definition ctm_2025_extensions_compliant (a : CTMAssessment) : Prop :=
+  ai_security_assessed a /\
+  cloud_security_assessed a /\
+  ot_security_assessed a.
+
+Theorem ctm_2025_full :
+  forall (a : CTMAssessment),
+  ctm_ai_security a = true ->
+  ctm_cloud_security a = true ->
+  ctm_ot_security a = true ->
+  ctm_2025_extensions_compliant a.
+Proof.
+  intros a H1 H2 H3.
+  unfold ctm_2025_extensions_compliant.
+  split. unfold ai_security_assessed. exact H1.
+  split. unfold cloud_security_assessed. exact H2.
+  unfold ot_security_assessed. exact H3.
+Qed.
+
+(* --- Domain Score Minimum Check --- *)
+
+Definition all_domains_above (a : CTMAssessment) (min : nat) : Prop :=
+  ctm_governance a >= min /\
+  ctm_protection a >= min /\
+  ctm_resilience a >= min /\
+  ctm_assurance a >= min /\
+  ctm_education a >= min.
+
+Theorem all_domains_above_implies_tier :
+  forall (a : CTMAssessment) (t : CTMTier),
+  all_domains_above a (tier_threshold t) ->
+  ctm_certified_at_tier a t.
+Proof.
+  intros a t [Hg [Hp [Hr [Ha He]]]].
+  unfold ctm_certified_at_tier.
+  unfold governance_meets_tier, protection_meets_tier,
+         resilience_meets_tier, assurance_meets_tier,
+         education_meets_tier.
+  repeat split; lia.
+Qed.
+
+(* --- CSSP Mandatory CTM (from Jan 2027) --- *)
+
+Record CSSPEntity := mkCSSPEntity {
+  cssp_entity_id : nat;
+  cssp_ctm_tier : CTMTier;
+  cssp_ctm_certified : bool;
+  cssp_license_valid : bool;
+}.
+
+Definition cssp_ctm_requirement (e : CSSPEntity) : Prop :=
+  cssp_ctm_certified e = true /\
+  cssp_license_valid e = true.
+
+Theorem cssp_must_have_ctm :
+  forall (e : CSSPEntity),
+  cssp_ctm_certified e = true ->
+  cssp_license_valid e = true ->
+  cssp_ctm_requirement e.
+Proof.
+  intros e H1 H2. unfold cssp_ctm_requirement. split; assumption.
+Qed.
+
+Theorem cssp_without_ctm_non_compliant :
+  forall (e : CSSPEntity),
+  cssp_ctm_certified e = false ->
+  ~ cssp_ctm_requirement e.
+Proof.
+  intros e Hfalse [Hctm _].
+  rewrite Hfalse in Hctm. discriminate.
+Qed.
+
+(* --- Expert Tier: Maximum Certification Properties --- *)
+
+Theorem expert_requires_90_all_domains :
+  forall (a : CTMAssessment),
+  ctm_certified_at_tier a Expert ->
+  ctm_governance a >= 90 /\ ctm_protection a >= 90 /\
+  ctm_resilience a >= 90 /\ ctm_assurance a >= 90 /\
+  ctm_education a >= 90.
+Proof.
+  intros a [Hg [Hp [Hr [Ha He]]]].
+  unfold governance_meets_tier, protection_meets_tier,
+         resilience_meets_tier, assurance_meets_tier,
+         education_meets_tier in *.
+  simpl in *. repeat split; lia.
+Qed.

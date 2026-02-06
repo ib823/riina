@@ -312,3 +312,28 @@ Theorem pure_implies_spec_safe : forall i,
 Proof.
   intros i H. unfold is_spec_safe. rewrite H. reflexivity.
 Qed.
+
+(** * Theorem 11: Timed programs are speculatively safe *)
+
+Theorem timed_implies_spec_safe : forall i,
+  infer_effect i = Eff_timed ->
+  is_spec_safe i = true.
+Proof.
+  intros i H. unfold is_spec_safe. rewrite H. reflexivity.
+Qed.
+
+(** * Theorem 12: Constant is always pure *)
+
+Theorem const_is_pure : forall v,
+  infer_effect (IConst v) = Eff_pure.
+Proof.
+  intros v. reflexivity.
+Qed.
+
+(** * Theorem 13: Effect join is commutative *)
+
+Theorem eff_join_comm : forall e1 e2,
+  eff_join e1 e2 = eff_join e2 e1.
+Proof.
+  destruct e1, e2; reflexivity.
+Qed.

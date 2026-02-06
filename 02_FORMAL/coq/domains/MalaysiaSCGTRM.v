@@ -200,3 +200,205 @@ Theorem cm_entity_coverage :
 Proof.
   intros t. destruct t; simpl; auto 7.
 Qed.
+
+(* ================================================================ *)
+(* Extended SC GTRM Compliance Theorems                              *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- Pentest Interval Properties --- *)
+
+Theorem pentest_expired :
+  forall (e : CMEntity) (t : nat),
+  cm_last_pentest e + cm_pentest_interval e < t ->
+  ~ gtrm_pentest_current e t.
+Proof.
+  intros e t Hexp [_ Hle]. lia.
+Qed.
+
+Theorem pentest_recently_done :
+  forall (e : CMEntity),
+  cm_pentest_done e = true ->
+  gtrm_pentest_current e (cm_last_pentest e).
+Proof.
+  intros e Hdone.
+  unfold gtrm_pentest_current.
+  split. exact Hdone. lia.
+Qed.
+
+(* --- Full Compliance Decomposition --- *)
+
+Theorem gtrm_full_implies_board :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_board_accountable e.
+Proof.
+  intros e t [H _]. exact H.
+Qed.
+
+Theorem gtrm_full_implies_risk :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_risk_framework e.
+Proof.
+  intros e t [_ [H _]]. exact H.
+Qed.
+
+Theorem gtrm_full_implies_pentest :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_pentest_current e t.
+Proof.
+  intros e t [_ [_ [H _]]]. exact H.
+Qed.
+
+Theorem gtrm_full_implies_ai :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_ai_assessed e.
+Proof.
+  intros e t [_ [_ [_ [H _]]]]. exact H.
+Qed.
+
+Theorem gtrm_full_implies_vendor :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_vendor_compliant e.
+Proof.
+  intros e t [_ [_ [_ [_ [H _]]]]]. exact H.
+Qed.
+
+Theorem gtrm_full_implies_incident :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_incident_ready e.
+Proof.
+  intros e t [_ [_ [_ [_ [_ [H _]]]]]]. exact H.
+Qed.
+
+Theorem gtrm_full_implies_data :
+  forall (e : CMEntity) (t : nat),
+  gtrm_fully_compliant e t ->
+  gtrm_data_protected e.
+Proof.
+  intros e t [_ [_ [_ [_ [_ [_ H]]]]]]. exact H.
+Qed.
+
+(* --- SC Incident Reporting --- *)
+(* GTRM requires incident reporting to SC Malaysia *)
+
+Record SCIncident := mkSCIncident {
+  sci_id : nat;
+  sci_entity_id : nat;
+  sci_detected_at : nat;
+  sci_reported_at : nat;
+  sci_impact_level : nat;  (* 0=low, 1=medium, 2=high, 3=critical *)
+}.
+
+Definition sc_incident_deadline : nat := 24. (* 24 hours for initial report *)
+
+Definition sc_incident_timely (inc : SCIncident) : Prop :=
+  sci_reported_at inc <= sci_detected_at inc + sc_incident_deadline.
+
+Theorem sc_incident_reporting :
+  forall (inc : SCIncident),
+  sci_reported_at inc <= sci_detected_at inc + 24 ->
+  sc_incident_timely inc.
+Proof.
+  intros inc H. unfold sc_incident_timely, sc_incident_deadline. exact H.
+Qed.
+
+Theorem sc_incident_late :
+  forall (inc : SCIncident),
+  sci_detected_at inc + sc_incident_deadline < sci_reported_at inc ->
+  ~ sc_incident_timely inc.
+Proof.
+  intros inc Hlate Htimely.
+  unfold sc_incident_timely, sc_incident_deadline in Htimely. lia.
+Qed.
+
+(* --- AI/ML Model Risk Governance --- *)
+(* GTRM: AI/ML-specific risk management requirements *)
+
+Record AIModelRisk := mkAIRisk {
+  ai_model_id : nat;
+  ai_bias_assessed : bool;
+  ai_explainability_documented : bool;
+  ai_data_quality_verified : bool;
+  ai_model_validated : bool;
+  ai_monitoring_active : bool;
+}.
+
+Definition ai_risk_managed (ar : AIModelRisk) : Prop :=
+  ai_bias_assessed ar = true /\
+  ai_explainability_documented ar = true /\
+  ai_data_quality_verified ar = true /\
+  ai_model_validated ar = true /\
+  ai_monitoring_active ar = true.
+
+Theorem ai_model_risk_complete :
+  forall (ar : AIModelRisk),
+  ai_bias_assessed ar = true ->
+  ai_explainability_documented ar = true ->
+  ai_data_quality_verified ar = true ->
+  ai_model_validated ar = true ->
+  ai_monitoring_active ar = true ->
+  ai_risk_managed ar.
+Proof.
+  intros ar H1 H2 H3 H4 H5.
+  unfold ai_risk_managed.
+  split. exact H1. split. exact H2. split. exact H3.
+  split. exact H4. exact H5.
+Qed.
+
+Theorem ai_not_validated_not_managed :
+  forall (ar : AIModelRisk),
+  ai_model_validated ar = false ->
+  ~ ai_risk_managed ar.
+Proof.
+  intros ar Hf [_ [_ [_ [Hv _]]]].
+  rewrite Hf in Hv. discriminate.
+Qed.
+
+(* --- Cloud Risk Assessment for Capital Markets --- *)
+
+Record CMCloudRisk := mkCMCloud {
+  cmc_provider_id : nat;
+  cmc_data_residency_compliant : bool;
+  cmc_encryption_at_rest : bool;
+  cmc_encryption_in_transit : bool;
+  cmc_access_controls : bool;
+  cmc_exit_strategy : bool;
+}.
+
+Definition cm_cloud_risk_assessed (cr : CMCloudRisk) : Prop :=
+  cmc_data_residency_compliant cr = true /\
+  cmc_encryption_at_rest cr = true /\
+  cmc_encryption_in_transit cr = true /\
+  cmc_access_controls cr = true /\
+  cmc_exit_strategy cr = true.
+
+Theorem cm_cloud_fully_assessed :
+  forall (cr : CMCloudRisk),
+  cmc_data_residency_compliant cr = true ->
+  cmc_encryption_at_rest cr = true ->
+  cmc_encryption_in_transit cr = true ->
+  cmc_access_controls cr = true ->
+  cmc_exit_strategy cr = true ->
+  cm_cloud_risk_assessed cr.
+Proof.
+  intros cr H1 H2 H3 H4 H5.
+  unfold cm_cloud_risk_assessed.
+  split. exact H1. split. exact H2. split. exact H3.
+  split. exact H4. exact H5.
+Qed.
+
+Theorem cm_cloud_missing_exit_strategy :
+  forall (cr : CMCloudRisk),
+  cmc_exit_strategy cr = false ->
+  ~ cm_cloud_risk_assessed cr.
+Proof.
+  intros cr Hf [_ [_ [_ [_ He]]]].
+  rewrite Hf in He. discriminate.
+Qed.

@@ -384,3 +384,93 @@ Proof.
   apply Z.leb_le in H2.
   repeat split; assumption.
 Qed.
+
+(* ═══════════════════════════════════════════════════════════════════════════════════════════ *)
+(* ADDITIONAL THEOREMS                                                                        *)
+(* ═══════════════════════════════════════════════════════════════════════════════════════════ *)
+
+Theorem relu_non_negative :
+  forall x, 0 <= relu x.
+Proof.
+  intro x. unfold relu. lia.
+Qed.
+
+Theorem relu_idempotent :
+  forall x, relu (relu x) = relu x.
+Proof.
+  intro x. unfold relu.
+  destruct (Z.le_gt_cases 0 x).
+  - rewrite Z.max_r by lia. rewrite Z.max_r by lia. reflexivity.
+  - rewrite Z.max_l by lia. rewrite Z.max_l by lia. reflexivity.
+Qed.
+
+Theorem relu_preserves_positive :
+  forall x, x >= 0 -> relu x = x.
+Proof.
+  intros x H. unfold relu. lia.
+Qed.
+
+Theorem relu_kills_negative :
+  forall x, x <= 0 -> relu x = 0.
+Proof.
+  intros x H. unfold relu. lia.
+Qed.
+
+Theorem classify_binary :
+  forall x threshold,
+    classify x threshold = 0 \/ classify x threshold = 1.
+Proof.
+  intros x threshold. unfold classify.
+  destruct (Z.leb threshold x); [right | left]; reflexivity.
+Qed.
+
+Theorem classify_above_threshold :
+  forall x threshold,
+    threshold <= x ->
+    classify x threshold = 1.
+Proof.
+  intros x threshold H. unfold classify.
+  destruct (Z.leb threshold x) eqn:E.
+  - reflexivity.
+  - apply Z.leb_nle in E. lia.
+Qed.
+
+Theorem classify_below_threshold :
+  forall x threshold,
+    x < threshold ->
+    classify x threshold = 0.
+Proof.
+  intros x threshold H. unfold classify.
+  destruct (Z.leb threshold x) eqn:E.
+  - apply Z.leb_le in E. lia.
+  - reflexivity.
+Qed.
+
+Theorem inference_deterministic :
+  forall m x y,
+    x = y -> inference m x = inference m y.
+Proof.
+  intros m x y Heq. rewrite Heq. reflexivity.
+Qed.
+
+Theorem gradient_step_decreases :
+  forall loss lr grad,
+    lr > 0 -> grad > 0 ->
+    gradient_step loss lr grad < loss.
+Proof.
+  intros loss lr grad Hlr Hgrad. unfold gradient_step. lia.
+Qed.
+
+Theorem within_epsilon_symmetric :
+  forall x1 x2 epsilon,
+    within_epsilon x1 x2 epsilon = true ->
+    within_epsilon x2 x1 epsilon = true.
+Proof.
+  intros x1 x2 epsilon H.
+  unfold within_epsilon in *.
+  apply Z.leb_le in H.
+  apply Z.leb_le.
+  assert (Z.abs (x2 - x1) = Z.abs (x1 - x2)) by
+    (rewrite <- Z.abs_opp; f_equal; lia).
+  lia.
+Qed.

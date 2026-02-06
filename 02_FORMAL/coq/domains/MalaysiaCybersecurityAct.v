@@ -220,3 +220,199 @@ Theorem ncii_sector_coverage :
 Proof.
   intros s. destruct s; simpl; auto 12.
 Qed.
+
+(* ================================================================ *)
+(* Extended Malaysia Cybersecurity Act 2024 (Act 854) Theorems       *)
+(* ================================================================ *)
+
+Require Import Lia.
+
+(* --- Risk Level Properties --- *)
+
+Theorem critical_is_highest_risk :
+  forall (r : RiskLevel),
+  risk_level_nat r <= risk_level_nat Critical.
+Proof.
+  intros r. destruct r; simpl; lia.
+Qed.
+
+Theorem low_is_lowest_risk :
+  forall (r : RiskLevel),
+  risk_level_nat Low <= risk_level_nat r.
+Proof.
+  intros r. destruct r; simpl; lia.
+Qed.
+
+Theorem risk_level_bounded :
+  forall (r : RiskLevel),
+  risk_level_nat r <= 3.
+Proof.
+  intros r. destruct r; simpl; lia.
+Qed.
+
+(* --- Risk Level Coverage --- *)
+
+Definition all_risk_levels : list RiskLevel :=
+  [Low; Medium; High; Critical].
+
+Theorem risk_level_coverage :
+  forall (r : RiskLevel), In r all_risk_levels.
+Proof.
+  intros r. destruct r; simpl; auto 5.
+Qed.
+
+(* --- Audit Current and Expiry Are Exclusive --- *)
+
+Theorem audit_current_expiry_exclusive :
+  forall (e : NCIIEntity) (t : nat),
+  audit_current e t \/ ~ audit_current e t.
+Proof.
+  intros e t. unfold audit_current.
+  destruct (Nat.le_gt_cases t (ncii_last_audit e + ncii_audit_interval e)).
+  - left. exact H.
+  - right. lia.
+Qed.
+
+(* --- Controls Strengthening --- *)
+
+Theorem more_controls_still_sufficient :
+  forall (e : NCIIEntity) (extra : nat),
+  controls_sufficient e ->
+  ncii_min_controls e <= ncii_security_controls e + extra.
+Proof.
+  intros e extra H.
+  unfold controls_sufficient in H.
+  apply (Nat.le_trans _ (ncii_security_controls e) _).
+  - exact H.
+  - apply Nat.le_add_r.
+Qed.
+
+(* --- Full Compliance Decomposition --- *)
+
+Theorem act854_implies_risk_assessed :
+  forall (e : NCIIEntity) (l : CSSPLicense) (t : nat),
+  act854_compliant e l t ->
+  risk_assessment_current e.
+Proof.
+  intros e l t [H _]. exact H.
+Qed.
+
+Theorem act854_implies_audit_current :
+  forall (e : NCIIEntity) (l : CSSPLicense) (t : nat),
+  act854_compliant e l t ->
+  audit_current e t.
+Proof.
+  intros e l t [_ [H _]]. exact H.
+Qed.
+
+Theorem act854_implies_controls :
+  forall (e : NCIIEntity) (l : CSSPLicense) (t : nat),
+  act854_compliant e l t ->
+  controls_sufficient e.
+Proof.
+  intros e l t [_ [_ [H _]]]. exact H.
+Qed.
+
+Theorem act854_implies_cssp_valid :
+  forall (e : NCIIEntity) (l : CSSPLicense) (t : nat),
+  act854_compliant e l t ->
+  cssp_valid l t.
+Proof.
+  intros e l t [_ [_ [_ H]]]. exact H.
+Qed.
+
+(* --- CSSP License Expiry Properties --- *)
+
+Theorem cssp_expired :
+  forall (l : CSSPLicense) (t : nat),
+  cssp_license_expiry l < t ->
+  ~ cssp_valid l t.
+Proof.
+  intros l t Hexp [_ Hle]. lia.
+Qed.
+
+Theorem cssp_unlicensed_invalid :
+  forall (l : CSSPLicense) (t : nat),
+  cssp_licensed l = false ->
+  ~ cssp_valid l t.
+Proof.
+  intros l t Hfalse [Hlic _].
+  rewrite Hfalse in Hlic. discriminate.
+Qed.
+
+(* --- CEO Personal Liability --- *)
+(* Act 854: CEO/board members personally liable for non-compliance *)
+
+Record CEOLiability := mkCEOLiab {
+  ceo_entity_id : nat;
+  ceo_compliant : bool;
+  ceo_due_diligence : bool;
+  ceo_personally_liable : bool;
+}.
+
+Definition ceo_liability_applies (cl : CEOLiability) : Prop :=
+  ceo_compliant cl = false ->
+  ceo_due_diligence cl = false ->
+  ceo_personally_liable cl = true.
+
+Theorem ceo_liable_when_negligent :
+  forall (cl : CEOLiability),
+  ceo_compliant cl = false ->
+  ceo_due_diligence cl = false ->
+  ceo_personally_liable cl = true ->
+  ceo_liability_applies cl.
+Proof.
+  intros cl _ _ Hliab. unfold ceo_liability_applies.
+  intros _ _. exact Hliab.
+Qed.
+
+Theorem ceo_due_diligence_defense :
+  forall (cl : CEOLiability),
+  ceo_due_diligence cl = true ->
+  ~ (ceo_due_diligence cl = false).
+Proof.
+  intros cl Htrue Hfalse. rewrite Htrue in Hfalse. discriminate.
+Qed.
+
+(* --- Incident Reporting: 6-Hour Deadline Properties --- *)
+
+Theorem incident_6h_stricter_than_24h :
+  forall (i : CyberIncident),
+  incident_reported_promptly i ->
+  incident_reported_at i <= incident_detected_at i + 24.
+Proof.
+  intros i H. unfold incident_reported_promptly in H. lia.
+Qed.
+
+Theorem immediate_report_always_timely :
+  forall (i : CyberIncident),
+  incident_reported_at i = incident_detected_at i ->
+  incident_reported_promptly i.
+Proof.
+  intros i Heq. unfold incident_reported_promptly. lia.
+Qed.
+
+(* --- Sector-Specific Risk Requirements --- *)
+(* Some sectors have higher minimum control requirements *)
+
+Definition sector_critical (s : NCIISector) : Prop :=
+  s = BankingFinance \/ s = Defense \/ s = Healthcare \/
+  s = Energy \/ s = Water \/ s = Government.
+
+Theorem banking_is_critical :
+  sector_critical BankingFinance.
+Proof.
+  unfold sector_critical. left. reflexivity.
+Qed.
+
+Theorem defense_is_critical :
+  sector_critical Defense.
+Proof.
+  unfold sector_critical. right. left. reflexivity.
+Qed.
+
+Theorem telecom_not_critical :
+  ~ sector_critical Telecom.
+Proof.
+  intros [H | [H | [H | [H | [H | H]]]]]; discriminate.
+Qed.

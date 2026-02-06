@@ -152,3 +152,180 @@ Theorem participant_coverage :
 Proof.
   intros t. destruct t; simpl; auto 5.
 Qed.
+
+Require Import Coq.micromega.Lia.
+
+(* ================================================================ *)
+(* Risk Management                                                   *)
+(* ================================================================ *)
+
+Definition risk_managed (p : MarketParticipant) : Prop :=
+  mp_risk_managed p = true.
+
+Theorem bursa_risk :
+  forall (p : MarketParticipant),
+  mp_risk_managed p = true ->
+  risk_managed p.
+Proof.
+  intros p H. unfold risk_managed. exact H.
+Qed.
+
+(* ================================================================ *)
+(* Compliance Decomposition Theorems                                 *)
+(* ================================================================ *)
+
+Theorem bursa_compliant_implies_governance :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant p ->
+  it_governance_established p.
+Proof.
+  intros p [H _]. exact H.
+Qed.
+
+Theorem bursa_compliant_implies_integrity :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant p ->
+  system_integrity p.
+Proof.
+  intros p [_ [H _]]. exact H.
+Qed.
+
+Theorem bursa_compliant_implies_data_protection :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant p ->
+  data_protected p.
+Proof.
+  intros p [_ [_ [H _]]]. exact H.
+Qed.
+
+Theorem bursa_compliant_implies_connectivity :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant p ->
+  connectivity_secured p.
+Proof.
+  intros p [_ [_ [_ [H _]]]]. exact H.
+Qed.
+
+Theorem bursa_compliant_implies_bcp :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant p ->
+  bcp_ready p.
+Proof.
+  intros p [_ [_ [_ [_ H]]]]. exact H.
+Qed.
+
+(* ================================================================ *)
+(* Violation Detection Theorems                                      *)
+(* ================================================================ *)
+
+Theorem governance_violation_blocks_compliance :
+  forall (p : MarketParticipant),
+  mp_it_governance p = false ->
+  ~ it_governance_established p.
+Proof.
+  intros p Hf Hc. unfold it_governance_established in Hc.
+  rewrite Hf in Hc. discriminate.
+Qed.
+
+Theorem integrity_violation_blocks_compliance :
+  forall (p : MarketParticipant),
+  mp_system_integrity p = false ->
+  ~ system_integrity p.
+Proof.
+  intros p Hf Hc. unfold system_integrity in Hc.
+  rewrite Hf in Hc. discriminate.
+Qed.
+
+Theorem data_violation_blocks_compliance :
+  forall (p : MarketParticipant),
+  mp_data_protected p = false ->
+  ~ data_protected p.
+Proof.
+  intros p Hf Hc. unfold data_protected in Hc.
+  rewrite Hf in Hc. discriminate.
+Qed.
+
+Theorem connectivity_violation_blocks_compliance :
+  forall (p : MarketParticipant),
+  mp_connectivity_secured p = false ->
+  ~ connectivity_secured p.
+Proof.
+  intros p Hf Hc. unfold connectivity_secured in Hc.
+  rewrite Hf in Hc. discriminate.
+Qed.
+
+Theorem bcp_violation_blocks_compliance :
+  forall (p : MarketParticipant),
+  mp_bcp_tested p = false ->
+  ~ bcp_ready p.
+Proof.
+  intros p Hf Hc. unfold bcp_ready in Hc.
+  rewrite Hf in Hc. discriminate.
+Qed.
+
+(* ================================================================ *)
+(* Trading System Availability Model                                 *)
+(* ================================================================ *)
+
+Record TradingSystem := mkTradingSystem {
+  ts_participant_id : nat;
+  ts_uptime_pct : nat;         (* percentage, 0-100 *)
+  ts_min_uptime : nat;         (* minimum required uptime *)
+  ts_redundant : bool;
+  ts_failover_tested : bool;
+}.
+
+Definition ts_availability_adequate (ts : TradingSystem) : Prop :=
+  ts_min_uptime ts <= ts_uptime_pct ts.
+
+Definition ts_resilient (ts : TradingSystem) : Prop :=
+  ts_redundant ts = true /\ ts_failover_tested ts = true.
+
+Theorem trading_system_availability :
+  forall (ts : TradingSystem),
+  ts_min_uptime ts <= ts_uptime_pct ts ->
+  ts_availability_adequate ts.
+Proof.
+  intros ts H. unfold ts_availability_adequate. exact H.
+Qed.
+
+Theorem trading_system_resilience :
+  forall (ts : TradingSystem),
+  ts_redundant ts = true ->
+  ts_failover_tested ts = true ->
+  ts_resilient ts.
+Proof.
+  intros ts H1 H2. unfold ts_resilient. split; assumption.
+Qed.
+
+Theorem insufficient_uptime :
+  forall (ts : TradingSystem),
+  ts_uptime_pct ts < ts_min_uptime ts ->
+  ~ ts_availability_adequate ts.
+Proof.
+  intros ts Hlt Hge. unfold ts_availability_adequate in Hge. lia.
+Qed.
+
+(* ================================================================ *)
+(* Full Compliance with Risk Management                              *)
+(* ================================================================ *)
+
+Definition bursa_fully_compliant_v2 (p : MarketParticipant) : Prop :=
+  bursa_fully_compliant p /\ risk_managed p.
+
+Theorem bursa_composition_v2 :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant p ->
+  risk_managed p ->
+  bursa_fully_compliant_v2 p.
+Proof.
+  intros p H1 H2. unfold bursa_fully_compliant_v2. split; assumption.
+Qed.
+
+Theorem bursa_v2_implies_v1 :
+  forall (p : MarketParticipant),
+  bursa_fully_compliant_v2 p ->
+  bursa_fully_compliant p.
+Proof.
+  intros p [H _]. exact H.
+Qed.

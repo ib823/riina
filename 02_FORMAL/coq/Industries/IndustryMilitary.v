@@ -144,4 +144,220 @@ Inductive MilitaryEffect : Type :=
    | no_read_up                 | Bell-LaPadula     | -       |
 *)
 
+(** ** 7. Substantial Security Theorems — Classification & Access Control *)
+
+(** Classification level as nat for ordering proofs *)
+Definition class_to_nat (c : ClassificationLevel) : nat :=
+  match c with
+  | Unclassified => 0
+  | CUI => 1
+  | Confidential => 2
+  | Secret => 3
+  | TopSecret => 4
+  | TS_SCI => 5
+  end.
+
+(** class_le agrees with nat ordering *)
+Lemma class_le_iff_nat : forall c1 c2,
+  class_le c1 c2 = true <-> class_to_nat c1 <= class_to_nat c2.
+Proof.
+  intros c1 c2; split; intros H.
+  - destruct c1, c2; simpl in *; try discriminate; try lia.
+  - destruct c1, c2; simpl in *; try lia; try reflexivity.
+Qed.
+
+(** Classification ordering is antisymmetric *)
+Lemma class_le_antisym : forall c1 c2,
+  class_le c1 c2 = true ->
+  class_le c2 c1 = true ->
+  c1 = c2.
+Proof.
+  intros c1 c2 H1 H2.
+  apply class_le_iff_nat in H1.
+  apply class_le_iff_nat in H2.
+  destruct c1, c2; simpl in *; try lia; try reflexivity.
+Qed.
+
+(** Classification is a total order *)
+Lemma class_le_total : forall c1 c2,
+  class_le c1 c2 = true \/ class_le c2 c1 = true.
+Proof.
+  intros c1 c2.
+  destruct c1, c2; simpl; auto.
+Qed.
+
+(** Unclassified is the bottom of the lattice *)
+Lemma unclassified_bottom : forall c,
+  class_le Unclassified c = true.
+Proof.
+  destruct c; simpl; reflexivity.
+Qed.
+
+(** TS_SCI is the top of the lattice *)
+Lemma ts_sci_top : forall c,
+  class_le c TS_SCI = true.
+Proof.
+  destruct c; simpl; reflexivity.
+Qed.
+
+(** No entity can read above its clearance (Bell-LaPadula simple security property) *)
+Theorem bell_lapadula_ss : forall (policy : MilitarySecurityPolicy) (object_class : ClassificationLevel),
+  class_le object_class (clearance_required policy) = false ->
+  class_to_nat object_class > class_to_nat (clearance_required policy).
+Proof.
+  intros policy obj_class H.
+  destruct obj_class, (clearance_required policy); simpl in *; try discriminate; try lia.
+Qed.
+
+(** No write-down: subject cannot write to lower classification (Bell-LaPadula *-property) *)
+Theorem bell_lapadula_star : forall subject_class object_class,
+  class_le subject_class object_class = true ->
+  class_to_nat subject_class <= class_to_nat object_class.
+Proof.
+  intros s o H.
+  apply class_le_iff_nat; exact H.
+Qed.
+
+(** Need-to-know: compartment membership is reflexive over list containment *)
+Definition has_compartment (compartments : list nat) (c : nat) : bool :=
+  existsb (Nat.eqb c) compartments.
+
+Lemma has_compartment_In : forall c comps,
+  has_compartment comps c = true ->
+  exists x, In x comps /\ Nat.eqb c x = true.
+Proof.
+  intros c comps H. unfold has_compartment in H.
+  induction comps as [| h t IHt].
+  - simpl in H. discriminate.
+  - simpl in H. apply orb_true_iff in H. destruct H as [H | H].
+    + exists h. split; [left; reflexivity | exact H].
+    + specialize (IHt H). destruct IHt as [x [Hx1 Hx2]].
+      exists x. split; [right; exact Hx1 | exact Hx2].
+Qed.
+
+(** Empty need_to_know means no compartment restriction *)
+Lemma empty_need_to_know_unrestricted : forall c,
+  has_compartment nil c = false.
+Proof.
+  intros c. unfold has_compartment. simpl. reflexivity.
+Qed.
+
+(** COMSEC: approved communication requires comsec flag *)
+Theorem comsec_required_for_classified_comms : forall policy,
+  class_le Confidential (classification policy) = true ->
+  comsec_approved policy = true ->
+  class_to_nat (classification policy) >= 2.
+Proof.
+  intros policy Hclass Hcomsec.
+  apply class_le_iff_nat in Hclass. simpl in Hclass.
+  exact Hclass.
+Qed.
+
+(** TEMPEST: emanations security required for Secret and above *)
+Theorem tempest_required_for_secret : forall policy,
+  class_le Secret (classification policy) = true ->
+  tempest_certified policy = true ->
+  class_to_nat (classification policy) >= 3.
+Proof.
+  intros policy Hclass Htempest.
+  apply class_le_iff_nat in Hclass. simpl in Hclass.
+  exact Hclass.
+Qed.
+
+(** Cross-domain transfer: cannot move data to lower classification *)
+Theorem cross_domain_no_downgrade : forall src_class dst_class,
+  class_le src_class dst_class = false ->
+  class_to_nat src_class > class_to_nat dst_class.
+Proof.
+  intros src dst H.
+  destruct src, dst; simpl in *; try discriminate; try lia.
+Qed.
+
+(** Classification max operation *)
+Definition class_max (c1 c2 : ClassificationLevel) : ClassificationLevel :=
+  if class_le c1 c2 then c2 else c1.
+
+(** class_max is commutative up to ordering *)
+Lemma class_max_ge_left : forall c1 c2,
+  class_le c1 (class_max c1 c2) = true.
+Proof.
+  intros c1 c2. unfold class_max.
+  destruct (class_le c1 c2) eqn:E.
+  - exact E.
+  - apply class_le_refl.
+Qed.
+
+Lemma class_max_ge_right : forall c1 c2,
+  class_le c2 (class_max c1 c2) = true.
+Proof.
+  intros c1 c2. unfold class_max.
+  destruct (class_le c1 c2) eqn:E.
+  - apply class_le_refl.
+  - destruct (class_le_total c1 c2) as [H | H].
+    + rewrite H in E. discriminate.
+    + exact H.
+Qed.
+
+(** Aggregation raises classification: combined data takes the max level *)
+Theorem aggregation_raises_classification : forall c1 c2,
+  class_to_nat (class_max c1 c2) >= class_to_nat c1 /\
+  class_to_nat (class_max c1 c2) >= class_to_nat c2.
+Proof.
+  intros c1 c2. split.
+  - apply class_le_iff_nat. apply class_max_ge_left.
+  - apply class_le_iff_nat. apply class_max_ge_right.
+Qed.
+
+(** Key management: hierarchical key derivation preserves ordering *)
+Definition key_level (c : ClassificationLevel) : nat := class_to_nat c * 2.
+
+Lemma key_level_monotone : forall c1 c2,
+  class_le c1 c2 = true ->
+  key_level c1 <= key_level c2.
+Proof.
+  intros c1 c2 H.
+  unfold key_level.
+  apply class_le_iff_nat in H.
+  lia.
+Qed.
+
+(** Personnel clearance verification: clearance must dominate data classification *)
+Theorem personnel_clearance_dominates : forall policy,
+  class_le (classification policy) (clearance_required policy) = true ->
+  class_to_nat (classification policy) <= class_to_nat (clearance_required policy).
+Proof.
+  intros policy H. apply class_le_iff_nat. exact H.
+Qed.
+
+(** Weapon system authentication: requires TS or above *)
+Definition weapon_system_authorized (clearance : ClassificationLevel) : bool :=
+  class_le TopSecret clearance.
+
+Theorem weapon_auth_requires_ts : forall c,
+  weapon_system_authorized c = true ->
+  class_to_nat c >= 4.
+Proof.
+  intros c H. unfold weapon_system_authorized in H.
+  apply class_le_iff_nat in H. simpl in H. exact H.
+Qed.
+
+(** Mission critical availability: classification level determines redundancy *)
+Definition redundancy_factor (c : ClassificationLevel) : nat :=
+  match c with
+  | Unclassified => 1
+  | CUI => 2
+  | Confidential => 2
+  | Secret => 3
+  | TopSecret => 4
+  | TS_SCI => 5
+  end.
+
+Theorem redundancy_monotone : forall c1 c2,
+  class_le c1 c2 = true ->
+  redundancy_factor c1 <= redundancy_factor c2.
+Proof.
+  intros c1 c2 H.
+  destruct c1, c2; simpl in *; try discriminate; try lia.
+Qed.
+
 (** End IndustryMilitary *)

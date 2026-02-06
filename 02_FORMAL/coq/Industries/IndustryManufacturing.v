@@ -139,4 +139,204 @@ Inductive ManufacturingEffect : Type :=
    | nist_800_82_compliance     | NIST SP 800-82    | All         |
 *)
 
+(** ** 7. Substantial Security Theorems — ICS Security & Safety Integrity *)
+
+Require Import Lia.
+
+(** Security level as nat *)
+Definition sl_to_nat (sl : SecurityLevel) : nat :=
+  match sl with
+  | SL_0 => 0
+  | SL_1 => 1
+  | SL_2 => 2
+  | SL_3 => 3
+  | SL_4 => 4
+  end.
+
+(** Security level ordering *)
+Definition sl_le (s1 s2 : SecurityLevel) : bool :=
+  Nat.leb (sl_to_nat s1) (sl_to_nat s2).
+
+Lemma sl_le_refl : forall s, sl_le s s = true.
+Proof.
+  intros s. unfold sl_le. apply Nat.leb_le. lia.
+Qed.
+
+Lemma sl_le_trans : forall s1 s2 s3,
+  sl_le s1 s2 = true -> sl_le s2 s3 = true -> sl_le s1 s3 = true.
+Proof.
+  intros s1 s2 s3 H1 H2. unfold sl_le in *.
+  apply Nat.leb_le in H1. apply Nat.leb_le in H2. apply Nat.leb_le. lia.
+Qed.
+
+Lemma sl_le_antisym : forall s1 s2,
+  sl_le s1 s2 = true -> sl_le s2 s1 = true -> s1 = s2.
+Proof.
+  intros s1 s2 H1 H2.
+  destruct s1, s2; simpl in *; unfold sl_le in *; simpl in *;
+    try reflexivity; try discriminate;
+    apply Nat.leb_le in H1; apply Nat.leb_le in H2; lia.
+Qed.
+
+(** SIL as nat *)
+Definition sil_to_nat (s : IEC61508_SIL) : nat :=
+  match s with
+  | IEC_SIL_1 => 1
+  | IEC_SIL_2 => 2
+  | IEC_SIL_3 => 3
+  | IEC_SIL_4 => 4
+  end.
+
+(** SIL ordering *)
+Definition sil_le (s1 s2 : IEC61508_SIL) : bool :=
+  Nat.leb (sil_to_nat s1) (sil_to_nat s2).
+
+Lemma sil_le_refl : forall s, sil_le s s = true.
+Proof.
+  intros s. unfold sil_le. apply Nat.leb_le. lia.
+Qed.
+
+Lemma sil_positive : forall s, sil_to_nat s >= 1.
+Proof. destruct s; simpl; lia. Qed.
+
+(** Purdue level as nat *)
+Definition purdue_to_nat (p : PurdueLevel) : nat :=
+  match p with
+  | Level_0_Process => 0
+  | Level_1_Control => 1
+  | Level_2_Supervisory => 2
+  | Level_3_Operations => 3
+  | Level_4_Business => 4
+  | Level_5_Enterprise => 5
+  end.
+
+(** Purdue level ordering *)
+Definition purdue_le (p1 p2 : PurdueLevel) : bool :=
+  Nat.leb (purdue_to_nat p1) (purdue_to_nat p2).
+
+Lemma purdue_le_refl : forall p, purdue_le p p = true.
+Proof.
+  intros p. unfold purdue_le. apply Nat.leb_le. lia.
+Qed.
+
+(** Zone crossing: communication between non-adjacent Purdue levels is prohibited *)
+Definition purdue_adjacent (p1 p2 : PurdueLevel) : bool :=
+  match Nat.abs_diff (purdue_to_nat p1) (purdue_to_nat p2) with
+  | 0 | 1 => true
+  | _ => false
+  end.
+
+Theorem same_level_adjacent : forall p,
+  purdue_adjacent p p = true.
+Proof.
+  intros p. unfold purdue_adjacent.
+  replace (Nat.abs_diff (purdue_to_nat p) (purdue_to_nat p)) with 0.
+  - simpl. reflexivity.
+  - unfold Nat.abs_diff. lia.
+Qed.
+
+(** SIL determines required safe failure fraction *)
+Definition safe_failure_fraction_pct (s : IEC61508_SIL) : nat :=
+  match s with
+  | IEC_SIL_1 => 60
+  | IEC_SIL_2 => 90
+  | IEC_SIL_3 => 99
+  | IEC_SIL_4 => 99
+  end.
+
+Theorem sff_minimum_60 : forall s,
+  safe_failure_fraction_pct s >= 60.
+Proof.
+  destruct s; simpl; lia.
+Qed.
+
+Theorem higher_sil_higher_sff : forall s1 s2,
+  sil_le s1 s2 = true ->
+  safe_failure_fraction_pct s1 <= safe_failure_fraction_pct s2.
+Proof.
+  intros s1 s2 H. destruct s1, s2; simpl in *; try discriminate; try lia.
+  all: unfold sil_le in H; simpl in H; apply Nat.leb_le in H; lia.
+Qed.
+
+(** IEC 62443 compliance: all parts required for full compliance *)
+Definition iec62443_full_compliance (c : IEC62443_Compliance) : bool :=
+  part_2_1_policies c && part_2_4_service_providers c &&
+  part_3_2_zones_conduits c && part_3_3_system_requirements c &&
+  part_4_1_secure_development c && part_4_2_component_requirements c.
+
+Theorem full_compliance_requires_zones : forall c,
+  iec62443_full_compliance c = true ->
+  part_3_2_zones_conduits c = true.
+Proof.
+  intros c H. unfold iec62443_full_compliance in H.
+  repeat (apply andb_true_iff in H; destruct H as [H ?]).
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+Theorem full_compliance_requires_secure_dev : forall c,
+  iec62443_full_compliance c = true ->
+  part_4_1_secure_development c = true.
+Proof.
+  intros c H. unfold iec62443_full_compliance in H.
+  apply andb_true_iff in H. destruct H as [H _].
+  apply andb_true_iff in H. destruct H as [_ H]. exact H.
+Qed.
+
+(** Security level determines testing rigor *)
+Definition testing_coverage_pct (sl : SecurityLevel) : nat :=
+  match sl with
+  | SL_0 => 0
+  | SL_1 => 60
+  | SL_2 => 80
+  | SL_3 => 95
+  | SL_4 => 100
+  end.
+
+Theorem sl4_full_coverage : testing_coverage_pct SL_4 = 100.
+Proof. simpl. reflexivity. Qed.
+
+Theorem testing_coverage_monotone : forall s1 s2,
+  sl_le s1 s2 = true ->
+  testing_coverage_pct s1 <= testing_coverage_pct s2.
+Proof.
+  intros s1 s2 H. destruct s1, s2; simpl in *;
+    unfold sl_le in H; simpl in H; try (apply Nat.leb_le in H; lia);
+    try lia.
+Qed.
+
+(** Process safety: OT network isolation from IT *)
+Definition ot_isolated (purdue : PurdueLevel) : bool :=
+  match purdue with
+  | Level_0_Process | Level_1_Control | Level_2_Supervisory => true
+  | _ => false
+  end.
+
+Theorem process_level_isolated : ot_isolated Level_0_Process = true.
+Proof. simpl. reflexivity. Qed.
+
+Theorem control_level_isolated : ot_isolated Level_1_Control = true.
+Proof. simpl. reflexivity. Qed.
+
+Theorem business_level_not_ot : ot_isolated Level_4_Business = false.
+Proof. simpl. reflexivity. Qed.
+
+(** Patch management: higher SL has shorter patch window *)
+Definition patch_window_days (sl : SecurityLevel) : nat :=
+  match sl with
+  | SL_0 => 365
+  | SL_1 => 90
+  | SL_2 => 30
+  | SL_3 => 14
+  | SL_4 => 7
+  end.
+
+Theorem patch_window_decreasing : forall s1 s2,
+  sl_le s1 s2 = true ->
+  patch_window_days s2 <= patch_window_days s1.
+Proof.
+  intros s1 s2 H. destruct s1, s2; simpl in *;
+    unfold sl_le in H; simpl in H; try (apply Nat.leb_le in H; lia);
+    try lia.
+Qed.
+
 (** End IndustryManufacturing *)

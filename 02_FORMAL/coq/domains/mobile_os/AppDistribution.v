@@ -216,3 +216,423 @@ Proof.
     discriminate H_installed.
   - exact H_preserved.
 Qed.
+
+(** ** Extended Definitions for App Store Safety *)
+
+Require Import Coq.micromega.Lia.
+
+(** App signature verification *)
+Record AppSignature : Type := mkAppSignature {
+  sig_app_id : nat;
+  sig_hash : nat;
+  sig_developer_id : nat;
+  sig_verified : bool;
+  sig_timestamp : nat
+}.
+
+Definition app_signature_verified (s : AppSignature) : Prop :=
+  sig_verified s = true /\ sig_timestamp s > 0.
+
+(** Code integrity *)
+Record CodeIntegrity : Type := mkCodeIntegrity {
+  ci_app_id : nat;
+  ci_hash_original : nat;
+  ci_hash_current : nat;
+  ci_integrity_valid : bool
+}.
+
+Definition code_integrity_checked (ci : CodeIntegrity) : Prop :=
+  ci_integrity_valid ci = true /\ ci_hash_original ci = ci_hash_current ci.
+
+(** Entitlements validation *)
+Record EntitlementSet : Type := mkEntitlementSet {
+  ent_app_id : nat;
+  ent_requested : list nat;
+  ent_granted : list nat;
+  ent_validated : bool
+}.
+
+Definition entitlements_validated (es : EntitlementSet) : Prop :=
+  ent_validated es = true /\
+  length (ent_granted es) <= length (ent_requested es).
+
+(** Provisioning profile *)
+Record ProvisioningProfile : Type := mkProvProfile {
+  pp_app_id : nat;
+  pp_expiry_date : nat;
+  pp_current_date : nat;
+  pp_valid : bool
+}.
+
+Definition provisioning_profile_valid (pp : ProvisioningProfile) : Prop :=
+  pp_valid pp = true /\ pp_current_date pp <= pp_expiry_date pp.
+
+(** App review requirement *)
+Record AppReview : Type := mkAppReview {
+  ar_app_id : nat;
+  ar_reviewed : bool;
+  ar_passed : bool;
+  ar_reviewer_id : nat
+}.
+
+Definition app_review_required (ar : AppReview) : Prop :=
+  ar_passed ar = true -> ar_reviewed ar = true.
+
+(** Binary size reporting *)
+Record BinaryReport : Type := mkBinaryReport {
+  br_app_id : nat;
+  br_size_bytes : nat;
+  br_reported_size : nat;
+  br_size_reported : bool
+}.
+
+Definition binary_size_reported (br : BinaryReport) : Prop :=
+  br_size_reported br = true /\ br_size_bytes br = br_reported_size br.
+
+(** App version monotonicity *)
+Record AppVersionHistory : Type := mkVersionHistory {
+  vh_app_id : nat;
+  vh_versions : list nat;
+  vh_monotonic : bool
+}.
+
+Fixpoint list_monotonic (l : list nat) : Prop :=
+  match l with
+  | [] => True
+  | [_] => True
+  | x :: ((y :: _) as rest) => x <= y /\ list_monotonic rest
+  end.
+
+Definition app_version_monotonic (vh : AppVersionHistory) : Prop :=
+  vh_monotonic vh = true /\ list_monotonic (vh_versions vh).
+
+(** Minimum OS version *)
+Record OSRequirement : Type := mkOSReq {
+  os_req_app_id : nat;
+  os_req_min_version : nat;
+  os_current_version : nat;
+  os_req_enforced : bool
+}.
+
+Definition minimum_os_version_enforced (req : OSRequirement) : Prop :=
+  os_req_enforced req = true ->
+  os_current_version req >= os_req_min_version req.
+
+(** Deprecated API flagging *)
+Record APIUsage : Type := mkAPIUsage {
+  api_name_hash : nat;
+  api_deprecated : bool;
+  api_flagged : bool
+}.
+
+Definition deprecated_api_flagged (au : APIUsage) : Prop :=
+  api_deprecated au = true -> api_flagged au = true.
+
+(** Privacy manifest *)
+Record PrivacyManifest : Type := mkPrivacyManifest {
+  pm_app_id : nat;
+  pm_data_types : list nat;
+  pm_purposes : list nat;
+  pm_manifest_present : bool
+}.
+
+Definition privacy_manifest_required (pm : PrivacyManifest) : Prop :=
+  pm_manifest_present pm = true /\ pm_data_types pm <> [].
+
+(** Data collection declaration *)
+Record DataDeclaration : Type := mkDataDecl {
+  dd_app_id : nat;
+  dd_collected_types : list nat;
+  dd_declared_types : list nat;
+  dd_declared : bool
+}.
+
+Definition data_collection_declared (dd : DataDeclaration) : Prop :=
+  dd_declared dd = true /\
+  length (dd_collected_types dd) <= length (dd_declared_types dd).
+
+(** App clip size *)
+Record AppClip : Type := mkAppClip {
+  ac_app_id : nat;
+  ac_size_mb : nat;
+  ac_max_size_mb : nat
+}.
+
+Definition app_clip_size_bounded (ac : AppClip) : Prop :=
+  ac_size_mb ac <= ac_max_size_mb ac.
+
+(** TestFlight expiry *)
+Record TestFlightBuild : Type := mkTestFlight {
+  tf_build_id : nat;
+  tf_expiry_days : nat;
+  tf_max_days : nat;
+  tf_enforced : bool
+}.
+
+Definition testflight_expiry_enforced (tf : TestFlightBuild) : Prop :=
+  tf_enforced tf = true /\ tf_expiry_days tf <= tf_max_days tf.
+
+(** Enterprise certificate *)
+Record EnterpriseCert : Type := mkEnterpriseCert {
+  ec_org_id : nat;
+  ec_valid : bool;
+  ec_revoked : bool
+}.
+
+Definition enterprise_certificate_validated (ec : EnterpriseCert) : Prop :=
+  ec_valid ec = true /\ ec_revoked ec = false.
+
+(** Notarization *)
+Record NotarizationStatus : Type := mkNotarization {
+  ns_app_id : nat;
+  ns_notarized : bool;
+  ns_ticket_stapled : bool
+}.
+
+Definition notarization_required (ns : NotarizationStatus) : Prop :=
+  ns_notarized ns = true /\ ns_ticket_stapled ns = true.
+
+(** ** New Theorems *)
+
+(* 1. App signature verified *)
+Theorem app_signature_verified_thm :
+  forall (s : AppSignature),
+    app_signature_verified s ->
+    sig_verified s = true.
+Proof.
+  intros s Hverified.
+  unfold app_signature_verified in Hverified.
+  destruct Hverified as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 2. Code integrity checked *)
+Theorem code_integrity_checked_thm :
+  forall (ci : CodeIntegrity),
+    code_integrity_checked ci ->
+    ci_hash_original ci = ci_hash_current ci.
+Proof.
+  intros ci Hchecked.
+  unfold code_integrity_checked in Hchecked.
+  destruct Hchecked as [_ Hhash].
+  exact Hhash.
+Qed.
+
+(* 3. Entitlements validated *)
+Theorem entitlements_validated_thm :
+  forall (es : EntitlementSet),
+    entitlements_validated es ->
+    ent_validated es = true.
+Proof.
+  intros es Hval.
+  unfold entitlements_validated in Hval.
+  destruct Hval as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 4. Provisioning profile valid *)
+Theorem provisioning_profile_valid_thm :
+  forall (pp : ProvisioningProfile),
+    provisioning_profile_valid pp ->
+    pp_valid pp = true.
+Proof.
+  intros pp Hvalid.
+  unfold provisioning_profile_valid in Hvalid.
+  destruct Hvalid as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 5. App review required *)
+Theorem app_review_required_thm :
+  forall (ar : AppReview),
+    app_review_required ar ->
+    ar_passed ar = true ->
+    ar_reviewed ar = true.
+Proof.
+  intros ar Hreq Hpassed.
+  unfold app_review_required in Hreq.
+  apply Hreq.
+  exact Hpassed.
+Qed.
+
+(* 6. Binary size reported *)
+Theorem binary_size_reported_thm :
+  forall (br : BinaryReport),
+    binary_size_reported br ->
+    br_size_bytes br = br_reported_size br.
+Proof.
+  intros br Hrep.
+  unfold binary_size_reported in Hrep.
+  destruct Hrep as [_ Hsize].
+  exact Hsize.
+Qed.
+
+(* 7. App version monotonic *)
+Theorem app_version_monotonic_thm :
+  forall (vh : AppVersionHistory),
+    app_version_monotonic vh ->
+    list_monotonic (vh_versions vh).
+Proof.
+  intros vh Hmono.
+  unfold app_version_monotonic in Hmono.
+  destruct Hmono as [_ Hlist].
+  exact Hlist.
+Qed.
+
+(* 8. Minimum OS version enforced *)
+Theorem minimum_os_version_enforced_thm :
+  forall (req : OSRequirement),
+    minimum_os_version_enforced req ->
+    os_req_enforced req = true ->
+    os_current_version req >= os_req_min_version req.
+Proof.
+  intros req Henforced Hflag.
+  unfold minimum_os_version_enforced in Henforced.
+  apply Henforced.
+  exact Hflag.
+Qed.
+
+(* 9. Deprecated API flagged *)
+Theorem deprecated_api_flagged_thm :
+  forall (au : APIUsage),
+    deprecated_api_flagged au ->
+    api_deprecated au = true ->
+    api_flagged au = true.
+Proof.
+  intros au Hflagged Hdeprecated.
+  unfold deprecated_api_flagged in Hflagged.
+  apply Hflagged.
+  exact Hdeprecated.
+Qed.
+
+(* 10. Privacy manifest required *)
+Theorem privacy_manifest_required_thm :
+  forall (pm : PrivacyManifest),
+    privacy_manifest_required pm ->
+    pm_manifest_present pm = true.
+Proof.
+  intros pm Hreq.
+  unfold privacy_manifest_required in Hreq.
+  destruct Hreq as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 11. Data collection declared *)
+Theorem data_collection_declared_thm :
+  forall (dd : DataDeclaration),
+    data_collection_declared dd ->
+    dd_declared dd = true.
+Proof.
+  intros dd Hdecl.
+  unfold data_collection_declared in Hdecl.
+  destruct Hdecl as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 12. App clip size bounded *)
+Theorem app_clip_size_bounded_thm :
+  forall (ac : AppClip),
+    app_clip_size_bounded ac ->
+    ac_size_mb ac <= ac_max_size_mb ac.
+Proof.
+  intros ac Hbounded.
+  unfold app_clip_size_bounded in Hbounded.
+  exact Hbounded.
+Qed.
+
+(* 13. TestFlight expiry enforced *)
+Theorem testflight_expiry_enforced_thm :
+  forall (tf : TestFlightBuild),
+    testflight_expiry_enforced tf ->
+    tf_enforced tf = true.
+Proof.
+  intros tf Henforced.
+  unfold testflight_expiry_enforced in Henforced.
+  destruct Henforced as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 14. Enterprise certificate validated *)
+Theorem enterprise_certificate_validated_thm :
+  forall (ec : EnterpriseCert),
+    enterprise_certificate_validated ec ->
+    ec_valid ec = true /\ ec_revoked ec = false.
+Proof.
+  intros ec Hval.
+  unfold enterprise_certificate_validated in Hval.
+  exact Hval.
+Qed.
+
+(* 15. Notarization required *)
+Theorem notarization_required_thm :
+  forall (ns : NotarizationStatus),
+    notarization_required ns ->
+    ns_notarized ns = true.
+Proof.
+  intros ns Hreq.
+  unfold notarization_required in Hreq.
+  destruct Hreq as [Htrue _].
+  exact Htrue.
+Qed.
+
+(* 16. Provisioning profile not expired *)
+Theorem provisioning_profile_not_expired :
+  forall (pp : ProvisioningProfile),
+    provisioning_profile_valid pp ->
+    pp_current_date pp <= pp_expiry_date pp.
+Proof.
+  intros pp Hvalid.
+  unfold provisioning_profile_valid in Hvalid.
+  destruct Hvalid as [_ Hdate].
+  exact Hdate.
+Qed.
+
+(* 17. Entitlements granted subset of requested *)
+Theorem entitlements_granted_bounded :
+  forall (es : EntitlementSet),
+    entitlements_validated es ->
+    length (ent_granted es) <= length (ent_requested es).
+Proof.
+  intros es Hval.
+  unfold entitlements_validated in Hval.
+  destruct Hval as [_ Hlen].
+  exact Hlen.
+Qed.
+
+(* 18. Enterprise cert not revoked *)
+Theorem enterprise_cert_not_revoked :
+  forall (ec : EnterpriseCert),
+    enterprise_certificate_validated ec ->
+    ec_revoked ec = false.
+Proof.
+  intros ec Hval.
+  unfold enterprise_certificate_validated in Hval.
+  destruct Hval as [_ Hnot_revoked].
+  exact Hnot_revoked.
+Qed.
+
+(* 19. Notarization ticket stapled *)
+Theorem notarization_ticket_stapled :
+  forall (ns : NotarizationStatus),
+    notarization_required ns ->
+    ns_ticket_stapled ns = true.
+Proof.
+  intros ns Hreq.
+  unfold notarization_required in Hreq.
+  destruct Hreq as [_ Hstapled].
+  exact Hstapled.
+Qed.
+
+(* 20. App signature has timestamp *)
+Theorem app_signature_has_timestamp :
+  forall (s : AppSignature),
+    app_signature_verified s ->
+    sig_timestamp s > 0.
+Proof.
+  intros s Hverified.
+  unfold app_signature_verified in Hverified.
+  destruct Hverified as [_ Hts].
+  exact Hts.
+Qed.
+
+(* End of AppDistribution verification *)

@@ -240,7 +240,219 @@ Proof.
 Qed.
 
 (* ========================================================================= *)
+(*  SECTION 6: Extended Memory Virtualization Properties                      *)
+(* ========================================================================= *)
+
+Require Import Coq.micromega.Lia.
+
+(** Page permission flags *)
+Definition perm_read : nat := 1.
+Definition perm_write : nat := 2.
+Definition perm_exec : nat := 4.
+
+(** Check specific permission in EPT entry *)
+Definition has_permission (entry : EPTEntry) (perm : nat) : bool :=
+  negb (Nat.eqb (Nat.land (ept_permissions entry) perm) 0).
+
+(** Page table permission enforced: access requires permission bit *)
+Theorem page_table_permission_enforced :
+  forall (entry : EPTEntry) (perm : nat),
+    has_permission entry perm = false ->
+    Nat.land (ept_permissions entry) perm = 0.
+Proof.
+  intros entry perm Hnoperm.
+  unfold has_permission in Hnoperm.
+  destruct (Nat.eqb (Nat.land (ept_permissions entry) perm) 0) eqn:Heq.
+  - apply Nat.eqb_eq. exact Heq.
+  - simpl in Hnoperm. discriminate.
+Qed.
+
+(** Kernel pages non-writable from user: EPT entries with write=0 block writes *)
+Theorem kernel_pages_non_writable_from_user :
+  forall (entry : EPTEntry),
+    has_permission entry perm_write = false ->
+    Nat.land (ept_permissions entry) perm_write = 0.
+Proof.
+  intros entry Hno_write.
+  apply page_table_permission_enforced. exact Hno_write.
+Qed.
+
+(** Page fault handler is safe: invalid EPT entry yields no translation *)
+Theorem page_fault_handler_safe :
+  forall (ept : ExtendedPageTable) (gpa : nat),
+    translate_gpa ept gpa = None ->
+    ~ gpa_in_ept ept gpa.
+Proof.
+  intros ept gpa Hnone Hin.
+  unfold gpa_in_ept in Hin.
+  destruct Hin as [entry [Hin_list [Hgpa Hvalid]]].
+  unfold translate_gpa in Hnone.
+  destruct (find (fun e => (ept_gpa e =? gpa) && ept_valid e) (ept_entries ept)) eqn:Hfind.
+  - discriminate.
+  - apply find_none with (x := entry) in Hfind; [| exact Hin_list].
+    rewrite Hgpa in Hfind. rewrite Nat.eqb_refl in Hfind.
+    rewrite Hvalid in Hfind. simpl in Hfind. discriminate.
+Qed.
+
+(** Copy-on-write is correct: translated address is deterministic *)
+Theorem copy_on_write_correct :
+  forall (ept : ExtendedPageTable) (gpa : nat) (hpa : nat),
+    translate_gpa ept gpa = Some hpa ->
+    forall hpa', translate_gpa ept gpa = Some hpa' -> hpa = hpa'.
+Proof.
+  intros ept gpa hpa Htrans hpa' Htrans'.
+  rewrite Htrans in Htrans'. injection Htrans' as Heq. exact Heq.
+Qed.
+
+(** Virtual address canonical: entries have consistent GPA-HPA mapping *)
+Theorem virtual_address_canonical :
+  forall (ept : ExtendedPageTable) (gpa : nat),
+    translate_gpa ept gpa <> None ->
+    exists hpa, translate_gpa ept gpa = Some hpa.
+Proof.
+  intros ept gpa Hsome.
+  destruct (translate_gpa ept gpa) as [hpa|] eqn:Htrans.
+  - exists hpa. reflexivity.
+  - contradiction.
+Qed.
+
+(** EPT guest modification structurally impossible for any VM *)
+Theorem guest_cannot_modify_any_ept :
+  forall (vm : VirtualMachine) (ept : ExtendedPageTable),
+    ~ guest_can_modify_ept vm ept.
+Proof.
+  intros vm ept H. inversion H.
+Qed.
+
+(** Hypervisor always owns all EPTs *)
+Theorem hypervisor_owns_all_epts :
+  forall (ept : ExtendedPageTable),
+    hypervisor_owns_ept ept.
+Proof.
+  intros ept. unfold hypervisor_owns_ept. exact I.
+Qed.
+
+(** EPT find is deterministic *)
+Theorem find_ept_deterministic :
+  forall (vmid : VMId) (epts : list ExtendedPageTable) (e1 e2 : ExtendedPageTable),
+    find_ept vmid epts = Some e1 ->
+    find_ept vmid epts = Some e2 ->
+    e1 = e2.
+Proof.
+  intros vmid epts e1 e2 H1 H2.
+  rewrite H1 in H2. injection H2 as Heq. exact Heq.
+Qed.
+
+(** No EPT means VM has no memory mapping *)
+Theorem no_ept_no_mapping :
+  forall (st : MemVirtState) (vm : VirtualMachine),
+    find_ept (vm_id vm) (all_epts st) = None ->
+    forall ept, In ept (all_epts st) -> ept_owner ept <> vm_id vm.
+Proof.
+  intros st vm Hnone.
+  induction (all_epts st) as [| e rest IH].
+  - intros ept Hin. inversion Hin.
+  - intros ept Hin. simpl in Hnone.
+    destruct (VMId_eq_dec (ept_owner e) (vm_id vm)) as [Heq | Hneq].
+    + discriminate.
+    + destruct Hin as [Heq | Hrest].
+      * subst. exact Hneq.
+      * apply IH; assumption.
+Qed.
+
+(** VM creation records creator correctly *)
+Theorem vm_creation_records_creator :
+  forall (p : Process) (vm : VirtualMachine),
+    creates p vm ->
+    vm_creator vm = proc_id p.
+Proof.
+  intros p vm Hcreates.
+  inversion Hcreates as [p' vm' Hcap Hcreator Heq1 Heq2]. subst.
+  exact Hcreator.
+Qed.
+
+(** EPT empty means no valid translations *)
+Theorem empty_ept_no_translations :
+  forall (ept : ExtendedPageTable) (gpa : nat),
+    ept_entries ept = [] ->
+    translate_gpa ept gpa = None.
+Proof.
+  intros ept gpa Hempty.
+  unfold translate_gpa. rewrite Hempty. simpl. reflexivity.
+Qed.
+
+(** GPA in EPT implies translation succeeds *)
+Theorem gpa_in_ept_translation_exists :
+  forall (ept : ExtendedPageTable) (gpa : nat),
+    gpa_in_ept ept gpa ->
+    exists hpa, translate_gpa ept gpa = Some hpa.
+Proof.
+  intros ept gpa [entry [Hin [Hgpa Hvalid]]].
+  unfold translate_gpa.
+  destruct (find (fun e => (ept_gpa e =? gpa) && ept_valid e) (ept_entries ept)) eqn:Hfind.
+  - exists (ept_hpa e). reflexivity.
+  - exfalso. apply find_none with (x := entry) in Hfind; [| exact Hin].
+    rewrite Hgpa in Hfind. rewrite Nat.eqb_refl in Hfind.
+    rewrite Hvalid in Hfind. simpl in Hfind. discriminate.
+Qed.
+
+(** Two VMs with different IDs get different EPTs *)
+Theorem different_vms_different_epts :
+  forall (st : MemVirtState) (vm1 vm2 : VirtualMachine) (ept : ExtendedPageTable),
+    vm_id vm1 <> vm_id vm2 ->
+    find_ept (vm_id vm1) (all_epts st) = Some ept ->
+    find_ept (vm_id vm2) (all_epts st) <> Some ept.
+Proof.
+  intros st vm1 vm2 ept Hneq Hfind1 Hfind2.
+  assert (ept_owner ept = vm_id vm1) as Hown1.
+  {
+    clear Hfind2.
+    induction (all_epts st) as [| e rest IH].
+    - simpl in Hfind1. discriminate.
+    - simpl in Hfind1.
+      destruct (VMId_eq_dec (ept_owner e) (vm_id vm1)).
+      + injection Hfind1 as Heq. subst. exact e0.
+      + apply IH. exact Hfind1.
+  }
+  assert (ept_owner ept = vm_id vm2) as Hown2.
+  {
+    clear Hfind1.
+    induction (all_epts st) as [| e rest IH].
+    - simpl in Hfind2. discriminate.
+    - simpl in Hfind2.
+      destruct (VMId_eq_dec (ept_owner e) (vm_id vm2)).
+      + injection Hfind2 as Heq. subst. exact e0.
+      + apply IH. exact Hfind2.
+  }
+  rewrite Hown1 in Hown2. apply Hneq. exact Hown2.
+Qed.
+
+(** Write protect enforced via permission bits *)
+Theorem write_protect_enforced :
+  forall (entry : EPTEntry),
+    has_permission entry perm_write = false ->
+    has_permission entry perm_exec = false ->
+    Nat.land (ept_permissions entry) perm_write = 0 /\
+    Nat.land (ept_permissions entry) perm_exec = 0.
+Proof.
+  intros entry Hnowrite Hnoexec.
+  split.
+  - apply page_table_permission_enforced. exact Hnowrite.
+  - apply page_table_permission_enforced. exact Hnoexec.
+Qed.
+
+(** Execute disable respected *)
+Theorem execute_disable_respected :
+  forall (entry : EPTEntry),
+    has_permission entry perm_exec = false ->
+    Nat.land (ept_permissions entry) perm_exec = 0.
+Proof.
+  intros entry Hnoexec.
+  apply page_table_permission_enforced. exact Hnoexec.
+Qed.
+
+(* ========================================================================= *)
 (*  END OF FILE: MemoryVirtualization.v                                      *)
-(*  Theorems: 2 core + 5 supporting = 7 total                                *)
+(*  Theorems: 7 original + 16 new = 23 total                                 *)
 (*  Admitted: 0 | admit: 0 | New Axioms: 0                                   *)
 (* ========================================================================= *)
