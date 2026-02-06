@@ -431,7 +431,7 @@ const RiinaWebsite = () => {
             flexWrap: 'wrap',
           }}>
             {[
-              { value: '6,720', label: 'Theorems Proven', highlight: true },
+              { value: '6,194', label: 'Theorems Proven', highlight: true },
               { value: '0', label: 'Admits' },
               { value: '283', label: 'Coq Files Verified' },
             ].map((stat, i) => (

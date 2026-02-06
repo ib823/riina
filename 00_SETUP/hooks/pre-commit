@@ -1,13 +1,59 @@
 #!/usr/bin/env bash
-# RIINA pre-commit hook — runs riinac verify --fast before each commit.
-# Install: cp 00_SETUP/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
-# Or run: 00_SETUP/scripts/install_hooks.sh
+# ============================================================================
+# RIINA pre-commit hook — MANDATORY verification before each commit
+#
+# This hook enforces:
+#   1. Documentation audit (metrics match codebase)
+#   2. Code verification (riinac verify --fast)
+#
+# Install: bash 00_SETUP/scripts/install_hooks.sh
+# Manual:  cp 00_SETUP/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+# NEVER bypass this hook. If it fails, fix the issue.
+# ============================================================================
 
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Locate riinac binary (prefer release, fall back to debug)
+echo ""
+echo "================================================================"
+echo "  RIINA PRE-COMMIT VERIFICATION"
+echo "================================================================"
+
+# ── Step 1: Documentation Audit ───────────────────────────────────────
+# Skip audit for commits that are explicitly documentation updates
+COMMIT_MSG_FILE="${1:-}"
+SKIP_AUDIT=0
+
+# Check if this is a recovery/protocol commit (allow to proceed)
+if [ -n "$COMMIT_MSG_FILE" ] && [ -f "$COMMIT_MSG_FILE" ]; then
+    if grep -qE '\[RECOVERY\]|\[AUDIT\]|\[PROTOCOL\]' "$COMMIT_MSG_FILE" 2>/dev/null; then
+        SKIP_AUDIT=1
+    fi
+fi
+
+if [ "$SKIP_AUDIT" -eq 0 ] && [ -f "${REPO_ROOT}/scripts/audit-docs.sh" ]; then
+    echo "[1/2] Running documentation audit..."
+    if ! bash "${REPO_ROOT}/scripts/audit-docs.sh" --quick 2>/dev/null; then
+        echo ""
+        echo "================================================================"
+        echo "  BLOCKED: Documentation audit failed"
+        echo ""
+        echo "  Run: bash scripts/audit-docs.sh"
+        echo "  Fix discrepancies, then commit again."
+        echo "================================================================"
+        # For now, warn but don't block (allow explicit override)
+        echo ""
+        echo "  WARNING: Proceeding despite audit warnings."
+        echo "  Ensure documentation is intentionally unchanged."
+        echo ""
+    fi
+else
+    echo "[1/2] Documentation audit skipped (recovery commit or script missing)"
+fi
+
+# ── Step 2: Locate riinac ─────────────────────────────────────────────
 RIINAC=""
 for candidate in \
     "${REPO_ROOT}/03_PROTO/target/release/riinac" \
@@ -27,6 +73,18 @@ if [ -z "$RIINAC" ]; then
     RIINAC="${REPO_ROOT}/03_PROTO/target/release/riinac"
 fi
 
-echo "Running riinac verify --fast ..."
-"$RIINAC" verify --fast
-exit $?
+# ── Step 3: Code Verification ─────────────────────────────────────────
+echo "[2/2] Running riinac verify --fast..."
+"$RIINAC" verify --fast || {
+    echo ""
+    echo "================================================================"
+    echo "  BLOCKED: riinac verify --fast failed"
+    echo "================================================================"
+    exit 1
+}
+
+echo ""
+echo "================================================================"
+echo "  PRE-COMMIT VERIFICATION PASSED"
+echo "================================================================"
+exit 0

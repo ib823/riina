@@ -155,13 +155,13 @@ const PlaygroundPage = ({ onNavigate }) => {
           fontSize: 13, color: '#666', marginBottom: 12,
           fontFamily: 'monospace',
         }}>
-          6,720 theorems · 0 admits · 283 verified files · Browser-only
+          6,194 theorems · 0 admits · 283 verified files · Browser-only
         </p>
         <p style={{ color: '#555', fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}>
           This is the RIINA compiler running entirely in your browser via WebAssembly.
           Every program that type-checks inherits mathematically proven security
           guarantees — no information leaks, no unauthorized effects, no runtime type
-          errors. These guarantees are backed by 6,720 machine-checked proofs in Coq,
+          errors. These guarantees are backed by 6,194 machine-checked proofs in Coq,
           with zero admits.
           {!wasmReady && !wasmError && ' Loading WASM compiler...'}
           {wasmError && <span style={{ color: '#c00' }}> {wasmError}</span>}

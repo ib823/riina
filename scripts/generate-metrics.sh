@@ -15,11 +15,23 @@ echo "=== RIINA Metrics Generator ==="
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 DATE_HUMAN=$(date -u +"%B %d, %Y at %H:%M UTC")
 
-# Count Qed proofs (active build)
-QED_ACTIVE=$(find "$ROOT_DIR/02_FORMAL/coq" -name "*.v" -type f -exec grep -l "." {} \; 2>/dev/null | xargs grep -E '\bQed\.' 2>/dev/null | wc -l)
+# Count Qed proofs (active build) - using reliable loop method
+QED_ACTIVE=0
+while IFS= read -r f; do
+    count=$(grep -c "Qed" "$f" 2>/dev/null || true)
+    if [ -n "$count" ] && [ "$count" -gt 0 ] 2>/dev/null; then
+        QED_ACTIVE=$((QED_ACTIVE + count))
+    fi
+done < <(find "$ROOT_DIR/02_FORMAL/coq" -name "*.v" -type f ! -path "*/_archive_deprecated/*" 2>/dev/null)
 
 # Count Qed proofs in deprecated archive
-QED_DEPRECATED=$(find "$ROOT_DIR/02_FORMAL/coq/properties/_archive_deprecated" -name "*.v" -type f 2>/dev/null | xargs grep -E '\bQed\.' 2>/dev/null | wc -l || echo "507")
+QED_DEPRECATED=0
+while IFS= read -r f; do
+    count=$(grep -c "Qed" "$f" 2>/dev/null || true)
+    if [ -n "$count" ] && [ "$count" -gt 0 ] 2>/dev/null; then
+        QED_DEPRECATED=$((QED_DEPRECATED + count))
+    fi
+done < <(find "$ROOT_DIR/02_FORMAL/coq/properties/_archive_deprecated" -name "*.v" -type f 2>/dev/null)
 
 # Count total .v files
 COQ_FILES=$(find "$ROOT_DIR/02_FORMAL/coq" -name "*.v" -type f 2>/dev/null | wc -l)
