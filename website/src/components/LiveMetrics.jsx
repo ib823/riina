@@ -135,7 +135,7 @@ export const LiveMetrics = ({
           generated: new Date().toISOString(),
           version: '0.2.0',
           session: 73,
-          proofs: { qedActive: 6720, admitted: 0, axioms: 4 },
+          proofs: { qedActive: 6194, admitted: 0, axioms: 4 },
           coq: { filesActive: 249, domains: 195 },
           rust: { tests: 679, crates: 15 },
           examples: 113,

@@ -14,6 +14,12 @@
 
 set -euo pipefail
 
+# Source cargo environment if available
+# (needed for riinac verify which runs cargo commands)
+if [ -f "${HOME}/.cargo/env" ]; then
+    source "${HOME}/.cargo/env"
+fi
+
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
 echo ""
