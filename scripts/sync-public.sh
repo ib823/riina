@@ -194,14 +194,17 @@ EOF
 echo -e "${GREEN}[✓] Committed on public${NC}"
 
 # Step 10: Push public to origin (ib823/proof) and riina (ib823/riina)
+# Use --no-verify because main was already fully verified by pre-push hook.
+# Public branch doesn't have the full repo structure (03_PROTO is missing),
+# so pre-push hook would fail trying to run riinac.
 echo "Pushing public..."
-git push origin public
+git push origin public --no-verify
 echo -e "${GREEN}[✓] Public branch pushed to origin (ib823/proof)${NC}"
 
 # Also push to riina remote (public → main) if configured
 if git remote | grep -q "^riina$"; then
     echo "Pushing to riina remote (public → main)..."
-    git push riina public:main
+    git push riina public:main --no-verify
     echo -e "${GREEN}[✓] Public branch pushed to riina (ib823/riina)${NC}"
 fi
 
