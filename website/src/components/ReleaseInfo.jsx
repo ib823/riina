@@ -150,11 +150,11 @@ export const ActivityTimeline = ({ maxItems = 5 }) => {
 
   // Enhanced milestones with types
   const activities = [
+    { date: '2026-02-06', type: 'feature', title: 'Session 75: P2/P4/P5 Implementation', detail: 'Typechecker formalization, mobile backends, self-hosting scaffolds (782 tests)' },
+    { date: '2026-02-06', type: 'proof', title: 'Session 74: Triple-Prover Verification', detail: '84 theorems verified in Coq + Lean 4 + Isabelle/HOL' },
     { date: '2026-02-05', type: 'proof', title: 'Session 73: Proof Depth Expansion', detail: '+1,830 Qed proofs across 15 domain files' },
     { date: '2026-02-05', type: 'platform', title: 'Session 72: Coq 8.20.1 Migration', detail: 'Migrated from Rocq 9.1, all Admitted eliminated' },
     { date: '2026-02-01', type: 'platform', title: 'Phase 7 Complete', detail: 'WASM backend, mobile backends, playground' },
-    { date: '2026-01-31', type: 'feature', title: 'Phase 6 Complete', detail: 'FFI, demos, community setup, enterprise docs' },
-    { date: '2026-01-30', type: 'proof', title: 'Session 50: Zero Admits', detail: 'Eliminated all admits and Admitted from active build' },
   ];
 
   return (

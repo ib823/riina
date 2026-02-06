@@ -883,6 +883,41 @@ html, body {
   border-radius: 2px;
 }
 
+/* ---------- Prover Card (Triple-Prover Verification) ---------- */
+.prover-card {
+  padding: var(--space-lg);
+  border: 1px solid var(--c-border);
+  background-color: var(--c-white);
+  text-align: center;
+}
+
+.prover-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+  color: var(--c-text);
+}
+
+.prover-card__theorems {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--c-green);
+  margin-bottom: var(--space-xs);
+}
+
+.prover-card__role {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.prover-card__desc {
+  font-size: 13px;
+  color: var(--c-text-secondary);
+}
+
 /* ---------- Stat Card ---------- */
 .stat-card {
   text-align: center;

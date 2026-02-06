@@ -249,8 +249,9 @@ const RiinaWebsite = () => {
           <div className="hero-stats-row">
             {[
               { value: '6,194', label: 'Theorems Proven', highlight: true },
+              { value: '84', label: 'Triple-Prover Verified' },
               { value: '0', label: 'Admits' },
-              { value: '283', label: 'Coq Files Verified' },
+              { value: '283', label: 'Coq Files' },
             ].map((stat, i) => (
               <div key={i} className="hero-stat">
                 <div className={`hero-stat-value${stat.highlight ? ' hero-stat-value--highlight' : ''}`}>{stat.value}</div>
@@ -260,7 +261,7 @@ const RiinaWebsite = () => {
           </div>
 
           {/* Build reference with date */}
-          <p className="hero-build-ref">Verified with Coq 8.20.1 · Session 73</p>
+          <p className="hero-build-ref">Verified with Coq 8.20.1 + Lean 4 + Isabelle/HOL · Session 75</p>
           <p className="hero-build-date">Last updated: 06 Feb 2026</p>
         </div>
       </section>
@@ -1884,7 +1885,7 @@ Every security claim has a machine-checked proof behind it.`
     <div className="page-top">
       <PageHeader
         title="Research"
-        subtitle="RIINA is built on formal verification in Coq, with 6,194 machine-checked theorems across 249 files. Every security property has a proof."
+        subtitle="RIINA is built on formal verification with 6,194 machine-checked theorems across 250 files. Triple-prover verification: 84 theorems independently verified in Coq, Lean 4, and Isabelle/HOL."
       />
 
       {/* Stats */}
@@ -1893,15 +1894,37 @@ Every security claim has a machine-checked proof behind it.`
           <div className="grid-4 gap-lg mb-4xl">
             {[
               { value: '6,194', label: 'Qed Proofs' },
+              { value: '84', label: 'Triple-Prover' },
               { value: '0', label: 'Admits' },
-              { value: '4', label: 'Justified Axioms' },
-              { value: '283', label: 'Coq Files' },
+              { value: '250', label: 'Active Files' },
             ].map((stat, i) => (
               <div key={i} className="stat-card">
                 <div className="stat-large text-2xl">{stat.value}</div>
                 <div className="stat-label-sm">{stat.label}</div>
               </div>
             ))}
+          </div>
+
+          <h2 className="section-label">TRIPLE-PROVER VERIFICATION</h2>
+          <div className="mb-4xl">
+            <p className="text-secondary text-md mb-lg">
+              84 core theorems are independently verified in three proof assistants: Coq (primary), Lean 4 (secondary), and Isabelle/HOL (tertiary).
+              If the same theorem is proven in three independent systems, the probability of a bug affecting all three is virtually zero.
+            </p>
+            <div className="grid-3 gap-md mb-2xl">
+              {[
+                { prover: 'Coq 8.20.1', theorems: '6,194', role: 'Primary', desc: 'Authoritative proofs, full coverage' },
+                { prover: 'Lean 4', theorems: '84', role: 'Secondary', desc: 'Independent port of core theorems' },
+                { prover: 'Isabelle/HOL', theorems: '84', role: 'Tertiary', desc: 'Third verification layer' },
+              ].map((p, i) => (
+                <div key={i} className="prover-card">
+                  <div className="prover-card__name">{p.prover}</div>
+                  <div className="prover-card__theorems">{p.theorems} theorems</div>
+                  <div className="prover-card__role">{p.role}</div>
+                  <div className="prover-card__desc">{p.desc}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <h2 className="section-label">VERIFIED PROPERTIES</h2>

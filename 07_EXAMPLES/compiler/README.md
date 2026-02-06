@@ -2,11 +2,11 @@
 
 This directory contains the scaffolding for RIINA's self-hosted compiler.
 
-## Status: Phase 5 Scaffolding
+## Status: Phase 8 Scaffolding (Session 75)
 
 The self-hosting effort is part of **Phase 8: Long-term Vision** in the
-Materialization Plan. This directory provides initial structure and
-placeholder files for the eventual self-hosted implementation.
+Materialization Plan. Phase 7 (Platform Universality) is complete. This
+directory provides scaffolding for the self-hosted implementation.
 
 ## Directory Structure
 

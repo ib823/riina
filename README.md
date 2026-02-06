@@ -217,7 +217,7 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Rust crates | 15 |
-| Test count | 744 (all passing) |
+| Test count | 782 (all passing) |
 | External dependencies | **0** |
 | Lines of Rust | 31,043 |
 | Standard library builtins | 88 across 9 modules |
@@ -258,7 +258,7 @@ This is not a whitepaper. This is working software.
 
 ### Example Programs
 
-114 example `.rii` files across 9 categories:
+120 example `.rii` files across 10 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -316,7 +316,7 @@ riina/
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            114 example .rii files
+├── 07_EXAMPLES/            120 example .rii files
 ├── docs/                   Enterprise docs, multilingual READMEs
 ├── VERSION                 Semver source of truth (0.2.0)
 ├── CHANGELOG.md            Public-facing changelog
@@ -369,7 +369,7 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
 | 3. Formal Verification | 6,194 Qed proofs (active build), 4 justified axioms, 0 admits | Stable |
-| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 114 examples | Done |
+| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 120 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
 | 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 15-page website (Why Proof, 15 industries, Releases) | Done |
 | 7. Platform Universality | Multi-backend (WASM, Android, iOS), platform-conditional stdlib, WASM playground, backend verification | Done |
