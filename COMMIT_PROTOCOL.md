@@ -159,15 +159,40 @@ If ANY hook fails, the operation is BLOCKED. Fix the issue, don't bypass the hoo
 
 ---
 
-## 8. FOR AI ASSISTANTS
+## 8. FOR AI ASSISTANTS (THIS IS YOUR JOB, NOT THE USER'S)
 
-If you are an AI assistant (Claude, GPT, or any other):
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  THE USER DOES NOT RUN THESE COMMANDS. YOU DO.                               ║
+║  IF YOU ASK THE USER TO RUN VERIFICATION, YOU ARE DOING IT WRONG.            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+If you are an AI assistant (Claude, GPT, Cursor, Copilot, or any other):
+
+**Your responsibilities (YOU execute these, not the user):**
 
 1. **READ THIS FILE FIRST** at the start of every session
-2. **VERIFY HOOKS ARE INSTALLED** before any work
-3. **RUN THE AUDIT SCRIPT** before any commit
-4. **FOLLOW THE CHECKLISTS** without exception
-5. **DO NOT ASSUME** anything is configured correctly
+2. **RUN** `ls -la .git/hooks/pre-commit .git/hooks/pre-push` to verify hooks
+3. **RUN** `bash 00_SETUP/scripts/install_hooks.sh` if hooks are missing
+4. **RUN** `bash scripts/audit-docs.sh` before ANY commit
+5. **FIX** all discrepancies in documentation YOURSELF
+6. **COMMIT** with proper message format
+7. **PUSH** and let hooks verify
+8. **SYNC** to public with `bash scripts/sync-public.sh`
+9. **DEPLOY** website with `npm run deploy` in website/
+
+**The user's role:**
+- Tell you what work to do
+- Approve/deny your tool executions
+- Grant permissions (tokens) when needed for protected operations
+
+**Your role:**
+- Execute the ENTIRE protocol automatically
+- Verify EVERYTHING yourself
+- Never ask the user to run verification commands
+- Never skip steps
+- Never assume hooks are installed
 
 The user does not trust you. You do not trust the user. You do not trust GitHub.
 You trust ONLY the verification gates encoded in this repository.
