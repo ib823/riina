@@ -1,8 +1,8 @@
 # Multi-Prover Validation Report
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Date:** 2026-02-06
-**Status:** Active Implementation (Phase 4 Complete)
+**Status:** Active Implementation (Phase 5 Complete)
 
 ---
 
@@ -33,7 +33,10 @@ RIINA employs multi-prover verification to provide absolute confidence in formal
 ║   ├── 02_FORMAL/lean/RIINA/TypeSystem/Typing.lean (✅ Ported)   ║
 ║   ├── 02_FORMAL/lean/RIINA/TypeSystem/Progress.lean (✅ Ported) ║
 ║   ├── 02_FORMAL/lean/RIINA/TypeSystem/TypeSafety.lean (✅ Ported)║
-║   └── Ported: 39 theorems                                       ║
+║   ├── 02_FORMAL/lean/RIINA/Effects/EffectAlgebra.lean (✅ Ported)║
+║   ├── 02_FORMAL/lean/RIINA/Effects/EffectSystem.lean (✅ Ported)║
+║   ├── 02_FORMAL/lean/RIINA/Effects/EffectGate.lean (✅ Ported)  ║
+║   └── Ported: 52 theorems                                       ║
 ║                                                                  ║
 ║   Isabelle/HOL (Tertiary)                                       ║
 ║   ├── 02_FORMAL/isabelle/RIINA/Syntax.thy (✅ Ported)           ║
@@ -41,7 +44,10 @@ RIINA employs multi-prover verification to provide absolute confidence in formal
 ║   ├── 02_FORMAL/isabelle/RIINA/Typing.thy (✅ Ported)           ║
 ║   ├── 02_FORMAL/isabelle/RIINA/Progress.thy (✅ Ported)         ║
 ║   ├── 02_FORMAL/isabelle/RIINA/TypeSafety.thy (✅ Ported)       ║
-║   └── Ported: 39 lemmas                                         ║
+║   ├── 02_FORMAL/isabelle/RIINA/EffectAlgebra.thy (✅ Ported)    ║
+║   ├── 02_FORMAL/isabelle/RIINA/EffectSystem.thy (✅ Ported)     ║
+║   ├── 02_FORMAL/isabelle/RIINA/EffectGate.thy (✅ Ported)       ║
+║   └── Ported: 52 lemmas                                         ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
@@ -184,7 +190,43 @@ RIINA employs multi-prover verification to provide absolute confidence in formal
 Note: `multi_step_safety` depends on the full Preservation theorem (~1200 lines with 16 auxiliary lemmas).
 The core `type_safety` and `progress` theorems are fully proved.
 
-## Phase 5: Non-Interference (PLANNED)
+## Phase 5: Effects (COMPLETE)
+
+| Coq Definition | Lean Definition | Isabelle Definition | Status |
+|----------------|-----------------|---------------------|--------|
+| `effect_leq` | `effectLeq` | `effect_leq` | ✅ All 3 |
+| `performs_within` | `performsWithin` | `performs_within` | ✅ All 3 |
+| `has_type_full` | `HasTypeFull` | `has_type_full` | ✅ All 3 |
+| `is_gate` | `IsGate` | `is_gate` | ✅ All 3 |
+
+### Effect Algebra Theorems Ported
+
+| Coq Theorem | Lean Proof | Isabelle Proof | Agreement |
+|-------------|------------|----------------|-----------|
+| `effect_leq_refl` | `effectLeq_refl` | `effect_leq_refl` | ✅ |
+| `effect_leq_trans` | `effectLeq_trans` | `effect_leq_trans` | ✅ |
+| `effect_leq_antisym` | `effectLeq_antisym` | `effect_leq_antisym` | ✅ |
+| `effect_join_comm` | `effectJoin_comm` | `effect_join_comm` | ✅ |
+| `effect_level_join` | `effectLevel_join` | `effect_level_join` | ✅ |
+| `effect_join_assoc` | `effectJoin_assoc` | `effect_join_assoc` | ✅ |
+| `effect_join_ub_l` | `effectJoin_ub_l` | `effect_join_ub_l` | ✅ |
+| `effect_join_ub_r` | `effectJoin_ub_r` | `effect_join_ub_r` | ✅ |
+| `effect_join_lub` | `effectJoin_lub` | `effect_join_lub` | ✅ |
+| `effect_leq_pure` | `effectLeq_pure` | `effect_leq_pure` | ✅ |
+
+### Effect System Theorems Ported
+
+| Coq Theorem | Lean Proof | Isabelle Proof | Agreement |
+|-------------|------------|----------------|-----------|
+| `performs_within_mono` | `performsWithin_mono` | `performs_within_mono` | ✅ |
+| `effect_safety` | `effectSafety` | `effect_safety` | ✅ |
+| `gate_enforcement` | `gateEnforcement` | `gate_enforcement` | ✅ |
+
+**Total Phase 5: 13 theorems with triple-prover agreement**
+
+Note: `core_effects_within` requires 28-case induction on typing rules and is stated but not fully proved in Lean/Isabelle.
+
+## Phase 6: Non-Interference (PLANNED)
 
 | Coq Theorem | Lean Target | Isabelle Target | Priority |
 |-------------|-------------|-----------------|----------|
@@ -212,10 +254,10 @@ Inductive confidence_level : Type :=
 | Semantics | TripleProver | 12 |
 | Type system | TripleProver | 11 |
 | Type Safety | TripleProver | 11 |
-| Effects | SingleProver | ~16 |
+| Effects | TripleProver | 13 |
 | Non-interference | SingleProver | ~199 |
 
-**Total Triple-Prover Theorems: 39**
+**Total Triple-Prover Theorems: 52**
 
 ## File Structure
 
@@ -240,10 +282,14 @@ Inductive confidence_level : Type :=
 │       ├── Foundations/
 │       │   ├── Syntax.lean       # ✅ Ported
 │       │   └── Semantics.lean    # ✅ Ported
-│       └── TypeSystem/
-│           ├── Typing.lean       # ✅ Ported
-│           ├── Progress.lean     # ✅ Ported
-│           └── TypeSafety.lean   # ✅ Ported
+│       ├── TypeSystem/
+│       │   ├── Typing.lean       # ✅ Ported
+│       │   ├── Progress.lean     # ✅ Ported
+│       │   └── TypeSafety.lean   # ✅ Ported
+│       └── Effects/
+│           ├── EffectAlgebra.lean  # ✅ Ported
+│           ├── EffectSystem.lean   # ✅ Ported
+│           └── EffectGate.lean     # ✅ Ported
 ├── isabelle/                      # Tertiary (Isabelle/HOL)
 │   └── RIINA/
 │       ├── ROOT                  # Session config
@@ -252,6 +298,9 @@ Inductive confidence_level : Type :=
 │       ├── Typing.thy            # ✅ Ported
 │       ├── Progress.thy          # ✅ Ported
 │       ├── TypeSafety.thy        # ✅ Ported
+│       ├── EffectAlgebra.thy     # ✅ Ported
+│       ├── EffectSystem.thy      # ✅ Ported
+│       ├── EffectGate.thy        # ✅ Ported
 │       └── root.tex              # Documentation
 └── MULTIPROVER_VALIDATION.md     # This file
 ```
@@ -274,7 +323,7 @@ Inductive confidence_level : Type :=
 | Phase 2: Semantics | Week 3-4 | ✅ COMPLETE |
 | Phase 3: Type System | Week 5-6 | ✅ COMPLETE |
 | Phase 4: Type Safety | Week 7 | ✅ COMPLETE |
-| Phase 5: Effects | Week 8 | 🔄 Planned |
+| Phase 5: Effects | Week 8 | ✅ COMPLETE |
 | Phase 6: Non-Interference | Week 9-10 | 🔄 Planned |
 
 ## Validation Protocol

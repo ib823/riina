@@ -23,5 +23,8 @@ session RIINA = HOL +
     Typing
     Progress
     TypeSafety
+    EffectAlgebra
+    EffectSystem
+    EffectGate
   document_files
     "root.tex"

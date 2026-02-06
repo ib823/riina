@@ -14,7 +14,7 @@
     "admitted": 0,
     "axioms": 4,
     "axiomsJustified": true,
-    "tripleProver": 39
+    "tripleProver": 52
   },
   "coq": {
     "filesTotal": 283,
@@ -23,12 +23,12 @@
     "prover": "Coq 8.20.1"
   },
   "lean": {
-    "theorems": 39,
-    "files": 5
+    "theorems": 52,
+    "files": 8
   },
   "isabelle": {
-    "lemmas": 39,
-    "theories": 5
+    "lemmas": 52,
+    "theories": 8
   },
   "rust": {
     "tests": 744,
@@ -41,7 +41,7 @@
     "threats": "1231+"
   },
   "milestones": [
-    { "date": "2026-02-06", "event": "Session 74: Multi-Prover Phase 4 Complete (39 triple-prover theorems)" },
+    { "date": "2026-02-06", "event": "Session 74: Multi-Prover Phase 5 Complete (52 triple-prover theorems)" },
     { "date": "2026-02-05", "event": "Session 73: Proof Depth Expansion (+1,830 Qed)" },
     { "date": "2026-02-05", "event": "Session 72: Coq 8.20.1 Migration" },
     { "date": "2026-02-01", "event": "Phase 7 Complete: Platform Universality" },
