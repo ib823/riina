@@ -862,9 +862,9 @@ fungsi hash_kata_laluan(
       </section>
 
       {/* Code Example */}
-      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '32px', marginBottom: '32px' }}>Real RIINA code</h2>
+      <section className="section--bg-light py-4xl px-gutter">
+        <div className="max-w-narrow mx-auto">
+          <h2 className="heading-lg mb-xl">Real RIINA code</h2>
           <pre className="code-block">
 {`// Verify password with full security guarantees
 fungsi sahkan_kata_laluan(
@@ -888,21 +888,18 @@ fungsi sahkan_kata_laluan(
       </section>
 
       {/* RIINA vs Rust */}
-      <section style={{ padding: '80px 32px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="py-4xl px-gutter">
+        <div className="max-w-1000 mx-auto">
           <h2 className="section-label">RIINA vs RUST</h2>
-          <p style={{ color: '#666', marginBottom: '32px', lineHeight: 1.6 }}>
+          <p className="text-secondary mb-xl lh-relaxed">
             Rust guarantees memory safety. RIINA guarantees memory safety <em>and</em> information flow security.
             Here is code that Rust compiles — and RIINA refuses.
           </p>
 
-          <div style={{ display: 'grid', gap: '32px' }}>
+          <div className="grid-cols-1 gap-xl">
             <div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                marginBottom: '12px', color: '#c62828', fontWeight: 600, fontSize: '14px'
-              }}>
-                <span style={{ fontSize: '18px' }}>✗</span> Rust — compiles, but leaks secrets
+              <div className="code-label code-label--error">
+                <span className="code-label__icon">✗</span> Rust — compiles, but leaks secrets
               </div>
               <pre className="code-block code-block--red-border">
 {`fn process_payment(
@@ -919,11 +916,8 @@ fungsi sahkan_kata_laluan(
             </div>
 
             <div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                marginBottom: '12px', color: '#2e7d32', fontWeight: 600, fontSize: '14px'
-              }}>
-                <span style={{ fontSize: '18px' }}>✓</span> RIINA — compiler catches the leak
+              <div className="code-label code-label--success">
+                <span className="code-label__icon">✓</span> RIINA — compiler catches the leak
               </div>
               <pre className="code-block code-block--green-border">
 {`fungsi proses_pembayaran(
@@ -940,24 +934,19 @@ fungsi sahkan_kata_laluan(
             </div>
           </div>
 
-          <p style={{ color: '#666', fontSize: '14px', marginTop: '24px', fontStyle: 'italic' }}>
+          <p className="text-secondary text-md mt-lg text-italic">
             Rust has no concept of information flow. RIINA proves at the type level that secret data never reaches public outputs.
-            See <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setCurrentPage('research')}>non-interference proofs</span> in Coq.
+            See <button className="btn--link-underline" onClick={() => setCurrentPage('research')}>non-interference proofs</button> in Coq.
           </p>
         </div>
       </section>
 
       {/* Proven Properties */}
-      <section style={{ padding: '80px 32px', backgroundColor: '#000', color: '#fff' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <h2 style={{
-            fontSize: '14px',
-            letterSpacing: '0.2em',
-            color: '#666',
-            marginBottom: '48px'
-          }}>PROVEN AT COMPILE TIME</h2>
+      <section className="section--bg-dark py-4xl px-gutter">
+        <div className="max-w-1000 mx-auto">
+          <h2 className="section-label section-label--dark mb-2xl">PROVEN AT COMPILE TIME</h2>
 
-          <div className="grid-3" style={{ display: 'grid', gap: '32px' }}>
+          <div className="grid-3">
             {[
               'Type safety (Progress + Preservation)',
               'Non-interference',
@@ -969,14 +958,8 @@ fungsi sahkan_kata_laluan(
               'Secret zeroization',
               'Declassification policy'
             ].map((prop, i) => (
-              <div key={i} style={{
-                padding: '20px',
-                borderBottom: '1px solid #333',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <span style={{ color: '#0f0' }}>⊢</span>
+              <div key={i} className="proven-item">
+                <span className="proven-item__check">⊢</span>
                 {prop}
               </div>
             ))}
@@ -996,8 +979,8 @@ fungsi sahkan_kata_laluan(
         subtitle="RIINA uses Bahasa Melayu keywords — the first systems programming language with native non-English syntax. 60+ keywords across 9 categories."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="section--flush-top-inner">
           <KeywordTable title="DECLARATIONS" keywords={[
             { bm: 'fungsi', en: 'fn', ex: 'fungsi tambah(x: Nombor) -> Nombor' },
             { bm: 'biar', en: 'let', ex: 'biar nama = "Ahmad";' },
@@ -1110,11 +1093,11 @@ fungsi sahkan_kata_laluan(
         subtitle="RIINA's type system encodes security properties directly. The compiler proves information flow, constant-time execution, and declassification correctness."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="section--flush-top-inner">
           <h2 className="section-label">SECURITY WRAPPER TYPES</h2>
 
-          <div style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
+          <div className="grid-cols-1 gap-lg mb-3xl">
             {[
               { name: 'Rahsia<T>', en: 'Secret', desc: 'Wraps sensitive values. Cannot be logged, printed, serialized, or sent over the network. Must be explicitly declassified with dedah() and a policy proof. Information flow is tracked at compile time.' },
               { name: 'Terbuka<T>', en: 'Public', desc: 'Marks data as public. Can flow anywhere freely. Default for unannoted types. Explicit annotation documents intent.' },
@@ -1124,36 +1107,21 @@ fungsi sahkan_kata_laluan(
               { name: 'Bukti<T>', en: 'Proof', desc: 'A compile-time proof witness. Carries no runtime data. Used to prove security policies are satisfied before declassification or unsafe operations.' },
             ].map((t, i) => (
               <div key={i} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <code style={{ fontSize: '16px', fontWeight: 600 }}>{t.name}</code>
-                  <span style={{ color: '#999', fontSize: '12px' }}>{t.en}</span>
+                <div className="flex justify-between mb-md">
+                  <code className="text-xl fw-600">{t.name}</code>
+                  <span className="text-muted text-sm">{t.en}</span>
                 </div>
-                <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6 }}>{t.desc}</p>
+                <p className="text-secondary text-md lh-relaxed">{t.desc}</p>
               </div>
             ))}
           </div>
 
           <h2 className="section-label">SECURITY LEVELS (LATTICE)</h2>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            padding: '24px',
-            backgroundColor: '#f8f8f8',
-            marginBottom: '64px',
-            overflowX: 'auto'
-          }}>
+          <div className="lattice-flow">
             {['Terbuka (Public)', 'Dalaman (Internal)', 'Sesi (Session)', 'Pengguna (User)', 'Sistem (System)', 'Rahsia (Secret)'].map((level, i) => (
               <React.Fragment key={i}>
-                <div style={{
-                  padding: '12px 16px',
-                  border: '1px solid #ddd',
-                  backgroundColor: '#fff',
-                  fontSize: '13px',
-                  fontFamily: 'monospace',
-                  whiteSpace: 'nowrap'
-                }}>{level}</div>
-                {i < 5 && <span style={{ color: '#ccc', fontSize: '18px' }}>&lt;</span>}
+                <div className="lattice-level">{level}</div>
+                {i < 5 && <span className="flow-sep">&lt;</span>}
               </React.Fragment>
             ))}
           </div>
@@ -1222,10 +1190,10 @@ fungsi banding_rahsia(
         subtitle="Every side effect in RIINA is declared in the type signature and tracked by the compiler. Algebraic effects with handlers give you control over what your code can do."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="section--flush-top-inner">
           <h2 className="section-label">EFFECT KEYWORDS</h2>
-          <div style={{ display: 'grid', gap: '16px', marginBottom: '64px' }}>
+          <div className="grid-cols-1 gap-md mb-3xl">
             {[
               { kw: 'kesan', en: 'effect', desc: 'Declare effects in function signatures' },
               { kw: 'laku', en: 'perform', desc: 'Perform an effect operation' },
@@ -1234,15 +1202,15 @@ fungsi banding_rahsia(
               { kw: 'batal', en: 'abort', desc: 'Abort computation without resuming' },
             ].map((e, i) => (
               <div key={i} className="card">
-                <code style={{ fontWeight: 600, fontSize: '16px' }}>{e.kw}</code>
-                <span style={{ color: '#999', fontSize: '12px', marginLeft: '8px' }}>({e.en})</span>
-                <p style={{ color: '#666', fontSize: '14px', marginTop: '8px' }}>{e.desc}</p>
+                <code className="fw-600 text-xl">{e.kw}</code>
+                <span className="text-muted text-sm ml-sm">({e.en})</span>
+                <p className="text-secondary text-md mt-sm">{e.desc}</p>
               </div>
             ))}
           </div>
 
           <h2 className="section-label">BUILT-IN EFFECTS</h2>
-          <div className="grid-3" style={{ display: 'grid', gap: '16px', marginBottom: '64px' }}>
+          <div className="grid-3 gap-md mb-3xl">
             {[
               { name: 'Bersih', en: 'Pure', desc: 'No side effects. Default. Provably terminating.' },
               { name: 'Baca', en: 'Read', desc: 'File system read access.' },
@@ -1251,14 +1219,10 @@ fungsi banding_rahsia(
               { name: 'Kripto', en: 'Crypto', desc: 'Cryptographic operations. Implies constant-time.' },
               { name: 'Sistem', en: 'System', desc: 'System calls, process management.' },
             ].map((e, i) => (
-              <div key={i} style={{
-                padding: '20px',
-                border: '1px solid #eee',
-                textAlign: 'center'
-              }}>
-                <code style={{ fontSize: '16px', fontWeight: 600 }}>{e.name}</code>
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>{e.en}</div>
-                <p style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>{e.desc}</p>
+              <div key={i} className="keyword-display">
+                <code className="text-xl fw-600">{e.name}</code>
+                <div className="text-xs text-muted mt-xs">{e.en}</div>
+                <p className="text-sm text-secondary mt-sm">{e.desc}</p>
               </div>
             ))}
           </div>
@@ -1336,10 +1300,10 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
         subtitle="112 example .rii files across 9 categories, demonstrating RIINA's syntax, security types, effects, compliance, and design patterns."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="section--flush-top-inner">
           <h2 className="section-label">EXAMPLE CATEGORIES</h2>
-          <div style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
+          <div className="grid-cols-1 gap-lg mb-3xl">
             {[
               { name: '00_basics/', count: 20, desc: 'Hello world, variables, loops, pattern matching, closures, recursion' },
               { name: '01_security/', count: 18, desc: 'Secret types, declassification, constant-time, capabilities, taint tracking, zeroizing' },
@@ -1353,11 +1317,11 @@ fungsi jana_kunci() -> Rahsia<Bait> kesan Kripto {
               { name: 'showcase/', count: 3, desc: 'Secure web server, PQ messenger, HIPAA medical records' },
             ].map((cat, i) => (
               <div key={i} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <code style={{ fontWeight: 600, fontSize: '14px' }}>{cat.name}</code>
-                  <span style={{ color: '#999', fontSize: '12px' }}>{cat.count} files</span>
+                <div className="flex justify-between mb-sm">
+                  <code className="fw-600 text-md">{cat.name}</code>
+                  <span className="text-muted text-sm">{cat.count} files</span>
                 </div>
-                <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.5 }}>{cat.desc}</p>
+                <p className="text-secondary text-md lh-normal">{cat.desc}</p>
               </div>
             ))}
           </div>
@@ -1474,7 +1438,7 @@ awam fungsi sulit(
           </pre>
 
           <h2 className="section-label mt-3xl">LIVE DEMOS</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px' }}>
+          <p className="text-secondary text-md mb-lg">
             Pre-recorded output from <code>riinac run</code> on actual demo files.
           </p>
           {[
@@ -1502,8 +1466,8 @@ Hello from RIINA via C FFI!
 abs(-42) = 42
 rand() = 1804289383` },
           ].map((demo, i) => (
-            <div key={i} style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+            <div key={i} className="mb-lg">
+              <div className="text-md fw-600 mb-sm">
                 {demo.title} — <code>{demo.name}</code>
               </div>
               <pre className="code-block--terminal">
@@ -1591,17 +1555,10 @@ fungsi akses_rekod(
 }`}
           </pre>
 
-          <div style={{ textAlign: 'center', marginTop: '48px' }}>
+          <div className="cta-center">
             <a
               href="https://github.com/ib823/riina/tree/main/07_EXAMPLES"
-              style={{
-                display: 'inline-block',
-                padding: '14px 28px',
-                border: '1px solid #000',
-                color: '#000',
-                textDecoration: 'none',
-                fontSize: '14px'
-              }}
+              className="btn--outline-dark"
             >
               Browse all 112 examples on GitHub
             </a>
@@ -1622,8 +1579,8 @@ fungsi akses_rekod(
       />
 
       {/* Step by step */}
-      <section style={{ padding: '80px 32px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <section className="py-4xl px-gutter">
+        <div className="container-lg">
           {[
             {
               step: '01',
@@ -1670,29 +1627,13 @@ The formal proofs (283 Coq files) ship with the compiler. You can audit them.
 Every security claim has a machine-checked proof behind it.`
             }
           ].map((item, i) => (
-            <div key={i} style={{
-              display: 'grid',
-              gridTemplateColumns: '80px 1fr',
-              gap: '48px',
-              marginBottom: '80px'
-            }}>
-              <div style={{
-                fontSize: '48px',
-                fontWeight: 200,
-                color: '#ddd',
-                fontFamily: 'Georgia, serif'
-              }}>
+            <div key={i} className="how-step-alt mb-4xl">
+              <div className="how-step__num">
                 {item.step}
               </div>
               <div>
-                <h3 style={{ fontSize: '24px', marginBottom: '16px' }}>{item.title}</h3>
-                <pre style={{
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'inherit',
-                  color: '#666',
-                  lineHeight: 1.8,
-                  margin: 0
-                }}>
+                <h3 className="heading-sm mb-md">{item.title}</h3>
+                <pre className="how-step__code">
                   {item.content}
                 </pre>
               </div>
@@ -1702,23 +1643,23 @@ Every security claim has a machine-checked proof behind it.`
       </section>
 
       {/* Type System Deep Dive */}
-      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '32px', marginBottom: '48px' }}>The Type System</h2>
+      <section className="section--bg-light py-4xl px-gutter">
+        <div className="container-lg">
+          <h2 className="heading-lg mb-3xl">The Type System</h2>
 
-          <div style={{ display: 'grid', gap: '32px' }}>
-            <div style={{ padding: '24px', backgroundColor: '#fff', border: '1px solid #eee' }}>
-              <h4 style={{ fontSize: '14px', letterSpacing: '0.1em', color: '#999', marginBottom: '16px' }}>SECURITY TYPES</h4>
-              <code style={{ fontSize: '14px', lineHeight: 2, display: 'block' }}>
+          <div className="grid-cols-1 gap-xl">
+            <div className="card--padded bg-white">
+              <h4 className="section-label-sm">SECURITY TYPES</h4>
+              <code className="code-display">
                 Rahsia&lt;T&gt;<br/>
                 Terbuka&lt;T&gt;<br/>
                 Mungkin&lt;T&gt;<br/>
                 Hasil&lt;T, Ralat&gt;
               </code>
             </div>
-            <div style={{ padding: '24px', backgroundColor: '#fff', border: '1px solid #eee' }}>
-              <h4 style={{ fontSize: '14px', letterSpacing: '0.1em', color: '#999', marginBottom: '16px' }}>EFFECT TYPES</h4>
-              <code style={{ fontSize: '14px', lineHeight: 2, display: 'block' }}>
+            <div className="card--padded bg-white">
+              <h4 className="section-label-sm">EFFECT TYPES</h4>
+              <code className="code-display">
                 kesan IO<br/>
                 kesan Baca<br/>
                 kesan Tulis<br/>
@@ -1743,33 +1684,25 @@ Every security claim has a machine-checked proof behind it.`
       />
 
       {/* Stats */}
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <div className="grid-4" style={{
-            display: 'grid',
-            gap: '24px',
-            marginBottom: '64px'
-          }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-md">
+          <div className="grid-4 gap-lg mb-4xl">
             {[
               { value: '6,194', label: 'Qed Proofs' },
               { value: '0', label: 'Admits' },
               { value: '4', label: 'Justified Axioms' },
               { value: '283', label: 'Coq Files' },
             ].map((stat, i) => (
-              <div key={i} style={{
-                textAlign: 'center',
-                padding: '24px',
-                border: '1px solid #eee'
-              }}>
-                <div style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'Georgia, serif' }}>{stat.value}</div>
-                <div style={{ fontSize: '12px', color: '#999', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{stat.label}</div>
+              <div key={i} className="stat-card">
+                <div className="stat-large text-2xl">{stat.value}</div>
+                <div className="stat-label-sm">{stat.label}</div>
               </div>
             ))}
           </div>
 
           <h2 className="section-label">VERIFIED PROPERTIES</h2>
 
-          <div style={{ marginBottom: '64px' }}>
+          <div className="mb-4xl">
             {[
               {
                 title: 'Type Safety',
@@ -1802,25 +1735,12 @@ Every security claim has a machine-checked proof behind it.`
                 status: 'Verified'
               }
             ].map((paper, i) => (
-              <div key={i} style={{
-                padding: '24px 0',
-                borderBottom: '1px solid #eee',
-                display: 'grid',
-                gridTemplateColumns: '1fr auto',
-                gap: '24px',
-                alignItems: 'start'
-              }}>
+              <div key={i} className="paper-row">
                 <div>
-                  <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{paper.title}</h3>
-                  <p style={{ color: '#666', fontSize: '14px' }}>{paper.desc}</p>
+                  <h3 className="text-lg fw-600 mb-sm">{paper.title}</h3>
+                  <p className="text-secondary text-md">{paper.desc}</p>
                 </div>
-                <span style={{
-                  fontSize: '12px',
-                  padding: '4px 12px',
-                  backgroundColor: '#e8f5e9',
-                  color: '#2e7d32',
-                  borderRadius: '2px'
-                }}>
+                <span className="paper-badge">
                   ⊢ {paper.status}
                 </span>
               </div>
@@ -1829,12 +1749,7 @@ Every security claim has a machine-checked proof behind it.`
 
           <h2 className="section-label">26 RESEARCH DOMAINS</h2>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '12px',
-            marginBottom: '48px'
-          }}>
+          <div className="domain-grid-wrap">
             {[
               { id: 'A', name: 'Core Type Theory & Proofs', desc: 'Type safety, non-interference, logical relations — the mathematical foundation' },
               { id: 'B', name: 'Compiler & Prototype', desc: '15 Rust crates, 679 tests, Bahasa Melayu lexer through C code emission' },
@@ -1850,34 +1765,22 @@ Every security claim has a machine-checked proof behind it.`
               { id: 'Y', name: 'Verified Standard Library', desc: 'Every stdlib function proven correct — not just tested, mathematically verified' },
               { id: 'Z', name: 'Declassification Policy', desc: 'Robust declassification with budgets — controlled secret release with formal guarantees' },
             ].map((domain, i) => (
-              <div key={i} style={{
-                padding: '16px 20px',
-                backgroundColor: '#f8f8f8',
-                display: 'grid',
-                gridTemplateColumns: '48px 1fr',
-                gap: '12px',
-                alignItems: 'start'
-              }}>
-                <span style={{ fontWeight: 600, fontSize: '13px', color: '#999', fontFamily: 'monospace' }}>{domain.id}</span>
+              <div key={i} className="domain-card-alt">
+                <span className="domain-card__id">{domain.id}</span>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{domain.name}</div>
-                  <div style={{ fontSize: '13px', color: '#666' }}>{domain.desc}</div>
+                  <div className="domain-card__name">{domain.name}</div>
+                  <div className="domain-card__desc">{domain.desc}</div>
                 </div>
               </div>
             ))}
           </div>
 
           <h2 className="section-label">INDUSTRY-SPECIFIC RESEARCH</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px', lineHeight: 1.8 }}>
+          <p className="text-secondary text-md mb-lg lh-relaxed">
             Beyond core language research, RIINA maintains dedicated security models for 15 industry verticals —
             each with domain-specific threat models, compliance axioms, and formal verification strategies.
           </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '12px',
-            marginBottom: '32px'
-          }}>
+          <div className="industry-btn-grid">
             {[
               'Defence & Military', 'Healthcare', 'Financial Services',
               'Aerospace & Aviation', 'Energy & Utilities', 'Telecommunications',
@@ -1887,86 +1790,61 @@ Every security claim has a machine-checked proof behind it.`
             ].map((ind, i) => (
               <button key={i}
                 onClick={() => setCurrentPage('enterprise')}
-                style={{
-                  padding: '12px 16px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #eee',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
+                className="industry-btn-alt"
               >
                 ⊢ {ind}
               </button>
             ))}
           </div>
 
-          <p style={{
-            color: '#666',
-            fontSize: '14px'
-          }}>
+          <p className="text-secondary text-md">
             218 research tracks across 55 domains. 679 Rust tests, 15 crates, 112 example .rii files.
           </p>
         </div>
       </section>
 
       {/* Axiom Elimination Story */}
-      <section style={{ padding: '80px 32px', backgroundColor: '#f8f8f8' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <section className="section--bg-light py-4xl px-gutter">
+        <div className="container-md">
           <h2 className="section-label">FROM 92 AXIOMS TO 4</h2>
-          <h3 style={{ fontSize: '28px', fontWeight: 300, marginBottom: '24px' }}>How We Earned Our Proofs</h3>
+          <h3 className="heading-md mb-lg">How We Earned Our Proofs</h3>
 
-          <p style={{ color: '#666', lineHeight: 1.8, marginBottom: '32px' }}>
+          <p className="text-secondary lh-relaxed mb-xl">
             When RIINA's formal verification began, the proof system contained 92 unproven axioms —
             assumptions the system took on faith. Over 70 sessions, each axiom was systematically
             eliminated by constructing the actual proof. Today, only 4 remain, and all are justified.
           </p>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '16px',
-            marginBottom: '32px'
-          }}>
+          <div className="stat-row-grid">
             {[
               { value: '92', label: 'Starting Axioms', color: '#c62828' },
               { value: '88', label: 'Eliminated', color: '#2e7d32' },
               { value: '4', label: 'Remaining (Justified)', color: '#000' },
             ].map((stat, i) => (
-              <div key={i} style={{
-                textAlign: 'center',
-                padding: '24px',
-                border: '1px solid #ddd',
-                backgroundColor: '#fff'
-              }}>
-                <div style={{ fontSize: '36px', fontWeight: 300, fontFamily: 'Georgia, serif', color: stat.color }}>{stat.value}</div>
-                <div style={{ fontSize: '12px', color: '#999', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{stat.label}</div>
+              <div key={i} className="stat-card bg-white">
+                <div className="stat-large" style={{ color: stat.color }}>{stat.value}</div>
+                <div className="stat-label-sm">{stat.label}</div>
               </div>
             ))}
           </div>
 
-          <h4 style={{ fontSize: '14px', letterSpacing: '0.1em', marginBottom: '16px', color: '#999' }}>THE 4 REMAINING AXIOMS</h4>
-          <div style={{ marginBottom: '32px' }}>
+          <h4 className="section-label-sm">THE 4 REMAINING AXIOMS</h4>
+          <div className="mb-xl">
             {[
               { name: 'logical_relation_ref', file: 'NonInterference_v2_LogicalRelation.v', reason: 'Store reference creation in logical relation — requires store_rel_n restructuring to eliminate' },
               { name: 'logical_relation_assign', file: 'NonInterference_v2_LogicalRelation.v', reason: 'Store assignment — same store_rel_n dependency; elimination planned' },
               { name: 'logical_relation_declassify', file: 'NonInterference_v2_LogicalRelation.v', reason: 'Permanent policy axiom — encodes the declassification security policy (standard in IFC literature)' },
               { name: 'fundamental_theorem_step_0', file: 'NonInterference_v2.v', reason: 'Standard closure compatibility axiom from logical relations literature' },
             ].map((ax, i) => (
-              <div key={i} style={{
-                padding: '16px',
-                borderBottom: '1px solid #eee',
-                fontSize: '14px'
-              }}>
-                <code style={{ fontWeight: 600 }}>{ax.name}</code>
-                <span style={{ color: '#999', marginLeft: '8px' }}>({ax.file})</span>
-                <p style={{ color: '#666', marginTop: '4px', fontSize: '13px' }}>{ax.reason}</p>
+              <div key={i} className="axiom-row">
+                <code className="fw-600">{ax.name}</code>
+                <span className="text-muted ml-sm">({ax.file})</span>
+                <p className="text-secondary text-sm mt-xs">{ax.reason}</p>
               </div>
             ))}
           </div>
 
-          <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>
+          <p className="text-secondary text-md lh-relaxed">
             Every eliminated axiom was replaced by a constructive proof — not a workaround, not a weaker statement.
             The axiom count is a measure of honest engineering: we show exactly what is proven and what is assumed.
           </p>
@@ -1974,28 +1852,16 @@ Every security claim has a machine-checked proof behind it.`
       </section>
 
       {/* GitHub */}
-      <section style={{
-        padding: '80px 32px',
-        backgroundColor: '#000',
-        color: '#fff',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ fontSize: '32px', fontWeight: 300, marginBottom: '16px' }}>
+      <section className="section--dark-cta">
+        <h2 className="heading-lg mb-md">
           Open Source
         </h2>
-        <p style={{ color: '#888', marginBottom: '32px' }}>
+        <p className="text-muted mb-xl">
           MPL-2.0 licensed. Explore the proofs yourself.
         </p>
         <a
           href="https://github.com/ib823/riina"
-          style={{
-            display: 'inline-block',
-            padding: '16px 32px',
-            border: '1px solid #fff',
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px'
-          }}
+          className="btn--outline-light"
         >
           github.com/ib823/riina
         </a>
@@ -2024,37 +1890,23 @@ Every security claim has a machine-checked proof behind it.`
 
     return (
       <div className="page-top">
-        <section style={{ padding: '80px 32px', maxWidth: '1200px', margin: '0 auto' }}>
-          <h1 style={{ fontSize: '48px', fontWeight: 300, marginBottom: '48px' }}>
+        <section className="section--large-padding">
+          <h1 className="heading-xl mb-3xl">
             Documentation
           </h1>
 
-          <div className="grid-3" style={{ display: 'grid', gap: '32px' }}>
+          <div className="grid-3 gap-xl">
             {docCards.map((section, i) => (
-              <div key={i} style={{
-                padding: '32px',
-                border: '1px solid #eee',
-                cursor: 'pointer',
-                transition: 'border-color 0.2s'
-              }}
+              <div key={i} className="doc-section-card"
               onClick={() => setCurrentPage(section.page)}
               >
-                <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{section.title}</h3>
-                <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px' }}>{section.desc}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h3 className="text-lg fw-600 mb-sm">{section.title}</h3>
+                <p className="text-secondary text-md mb-lg">{section.desc}</p>
+                <div className="flex flex-col gap-sm">
                   {section.links.map((link, j) => (
                     <button key={j}
                       onClick={(e) => { e.stopPropagation(); setCurrentPage(link.page); }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#000',
-                        fontSize: '14px',
-                        textDecoration: 'none',
-                        textAlign: 'left',
-                        padding: 0
-                      }}
+                      className="doc-link-btn"
                     >
                       → {link.text}
                     </button>
@@ -2078,13 +1930,13 @@ Every security claim has a machine-checked proof behind it.`
         subtitle="Install RIINA and compile your first provably secure program."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-lg">
           <h2 className="section-label">INSTALLATION</h2>
 
-          <div style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
+          <div className="grid-cols-1 gap-lg mb-3xl">
             <div className="card">
-              <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>From Source</h3>
+              <h3 className="subheading mb-md">From Source</h3>
               <pre className="code-block--inline">
 {`git clone https://github.com/ib823/riina.git
 cd proof/03_PROTO
@@ -2092,20 +1944,20 @@ cargo build --release`}
               </pre>
             </div>
             <div className="card">
-              <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Docker</h3>
+              <h3 className="subheading mb-md">Docker</h3>
               <pre className="code-block--inline">
 {`docker build -t riina .
 docker run --rm riina check myfile.rii`}
               </pre>
             </div>
             <div className="card">
-              <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Nix Flake</h3>
+              <h3 className="subheading mb-md">Nix Flake</h3>
               <pre className="code-block--inline">
 {`nix run github:ib823/riina`}
               </pre>
             </div>
             <div className="card">
-              <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Portable Installer</h3>
+              <h3 className="subheading mb-md">Portable Installer</h3>
               <pre className="code-block--inline">
 {`curl -sSf https://ib823.github.io/riina/install.sh | bash
 # or: bash scripts/install.sh`}
@@ -2114,7 +1966,7 @@ docker run --rm riina check myfile.rii`}
           </div>
 
           <h2 className="section-label">HELLO WORLD</h2>
-          <p style={{ color: '#666', marginBottom: '16px', fontSize: '14px' }}>Create <code>hello.rii</code>:</p>
+          <p className="text-secondary text-md mb-md">Create <code>hello.rii</code>:</p>
           <pre className="code-block mb-lg">
 {`// hello.rii — Your first RIINA program
 modul hello;
@@ -2125,7 +1977,7 @@ awam fungsi utama() -> kesan Tulis {
     laku Tulis cetak_baris(mesej);
 }`}
           </pre>
-          <p style={{ color: '#666', marginBottom: '16px', fontSize: '14px' }}>Compile and run:</p>
+          <p className="text-secondary text-md mb-md">Compile and run:</p>
           <pre className="code-block mb-3xl">
 {`riinac check hello.rii    # Type-check + verify security properties
 riinac run hello.rii      # Run directly
@@ -2133,7 +1985,7 @@ riinac build hello.rii    # Compile to native binary via C`}
           </pre>
 
           <h2 className="section-label">RIINAC CLI COMMANDS</h2>
-          <div style={{ display: 'grid', gap: '12px' }}>
+          <div className="grid-cols-1 gap-sm">
             {[
               { cmd: 'riinac check', desc: 'Type-check and verify security properties' },
               { cmd: 'riinac run', desc: 'Execute .rii file directly' },
@@ -2151,9 +2003,9 @@ riinac build hello.rii    # Compile to native binary via C`}
               { cmd: 'riinac pkg build', desc: 'Build package with dependencies' },
               { cmd: 'riinac pkg publish', desc: 'Publish to registry' },
             ].map((c, i) => (
-              <div key={i} style={{ padding: '12px 16px', backgroundColor: '#f8f8f8', display: 'flex', gap: '16px' }}>
-                <code style={{ fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap' }}>{c.cmd}</code>
-                <span style={{ color: '#666', fontSize: '13px' }}>{c.desc}</span>
+              <div key={i} className="cli-row">
+                <code className="fw-600 text-sm whitespace-nowrap">{c.cmd}</code>
+                <span className="text-secondary text-sm">{c.desc}</span>
               </div>
             ))}
           </div>
@@ -2172,8 +2024,8 @@ riinac build hello.rii    # Compile to native binary via C`}
         subtitle="88 builtins across 9 modules. All functions have bilingual names (Bahasa Melayu and English). Effect-gated I/O — pure functions cannot perform side effects."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="section--flush-top-inner">
           {[
             { mod: 'teks', en: 'String', desc: 'String manipulation', fns: [
               'panjang / length', 'gabung / concat', 'potong / trim', 'pecah / split',
@@ -2214,26 +2066,21 @@ riinac build hello.rii    # Compile to native binary via C`}
               'senarai_dir / list_dir', 'buat_dir / create_dir', 'laluan / path'
             ]},
           ].map((m, i) => (
-            <div key={i} style={{ marginBottom: '32px', padding: '24px', border: '1px solid #eee' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
-                <code style={{ fontSize: '18px', fontWeight: 600 }}>std::{m.mod}</code>
-                <span style={{ color: '#999', fontSize: '13px' }}>({m.en})</span>
-                <span style={{ color: '#666', fontSize: '13px' }}>— {m.desc}</span>
+            <div key={i} className="stdlib-module">
+              <div className="stdlib-module__header">
+                <code className="text-lg fw-600">std::{m.mod}</code>
+                <span className="text-muted text-sm">({m.en})</span>
+                <span className="text-secondary text-sm">— {m.desc}</span>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <div className="stdlib-module__fns">
                 {m.fns.map((fn, j) => (
-                  <code key={j} style={{
-                    fontSize: '12px',
-                    padding: '4px 8px',
-                    backgroundColor: '#f8f8f8',
-                    border: '1px solid #eee'
-                  }}>{fn}</code>
+                  <code key={j} className="stdlib-fn-alt">{fn}</code>
                 ))}
               </div>
             </div>
           ))}
 
-          <p style={{ color: '#666', fontSize: '14px', marginTop: '16px' }}>
+          <p className="text-secondary text-md mt-md">
             All I/O functions require appropriate effect annotations (<code>kesan Baca</code>, <code>kesan Tulis</code>, etc.).
             Pure functions (<code>kesan Bersih</code>) cannot call effect-gated functions.
           </p>
@@ -2252,8 +2099,8 @@ riinac build hello.rii    # Compile to native binary via C`}
         subtitle="RIINA is open source under MPL-2.0. Contributions to the compiler, proofs, standard library, and documentation are welcome."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-lg">
           <h2 className="section-label">SETUP</h2>
           <pre className="code-block mb-2xl">
 {`# Clone the repository
@@ -2291,9 +2138,9 @@ Examples:
           </pre>
 
           <h2 className="section-label">VERIFICATION GATES</h2>
-          <div style={{ display: 'grid', gap: '24px', marginBottom: '48px' }}>
+          <div className="grid-cols-1 gap-lg mb-2xl">
             <div className="card">
-              <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Pre-Commit (Fast)</h3>
+              <h3 className="subheading mb-sm">Pre-Commit (Fast)</h3>
               <pre className="code-block--inline">
 {`riinac verify --fast
 cargo test --all
@@ -2301,7 +2148,7 @@ cargo clippy -- -D warnings`}
               </pre>
             </div>
             <div className="card">
-              <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>Pre-Push (Full)</h3>
+              <h3 className="subheading mb-sm">Pre-Push (Full)</h3>
               <pre className="code-block--inline">
 {`riinac verify --full
 cd 02_FORMAL/coq && make clean && make
@@ -2311,7 +2158,7 @@ grep -r "Admitted" *.v  # Must be empty`}
           </div>
 
           <h2 className="section-label">RULES</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="list-none p-0">
             {[
               'All Coq proofs must compile with 0 Admitted',
               'All Rust tests must pass (612+)',
@@ -2320,8 +2167,8 @@ grep -r "Admitted" *.v  # Must be empty`}
               'Use Bahasa Melayu keywords in all .rii examples',
               'Cross-reference Track A proofs with Track B implementations',
             ].map((rule, i) => (
-              <li key={i} style={{ padding: '12px 0', borderBottom: '1px solid #eee', color: '#333', fontSize: '14px' }}>
-                <span style={{ marginRight: '8px' }}>⊢</span>{rule}
+              <li key={i} className="rule-item">
+                <span className="mr-sm">⊢</span>{rule}
               </li>
             ))}
           </ul>
@@ -2340,39 +2187,39 @@ grep -r "Admitted" *.v  # Must be empty`}
         subtitle="RIINA is licensed under the Mozilla Public License 2.0 with the 'Incompatible With Secondary Licenses' notice."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-lg">
           <h2 className="section-label">SUMMARY</h2>
 
-          <div className="grid-3" style={{ display: 'grid', gap: '24px', marginBottom: '64px' }}>
+          <div className="grid-3 gap-lg mb-3xl">
             <div className="card">
-              <h3 style={{ fontSize: '14px', color: '#2e7d32', marginBottom: '12px' }}>PERMISSIONS</h3>
-              <ul style={{ listStyle: 'none', padding: 0, fontSize: '14px', color: '#666' }}>
+              <h3 className="section-label-sm section-label-success">PERMISSIONS</h3>
+              <ul className="list-none p-0 text-md text-secondary">
                 {['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'].map((p, i) => (
-                  <li key={i} style={{ padding: '4px 0' }}>+ {p}</li>
+                  <li key={i} className="py-xs">+ {p}</li>
                 ))}
               </ul>
             </div>
             <div className="card">
-              <h3 style={{ fontSize: '14px', color: '#e65100', marginBottom: '12px' }}>CONDITIONS</h3>
-              <ul style={{ listStyle: 'none', padding: 0, fontSize: '14px', color: '#666' }}>
+              <h3 className="section-label-sm section-label-warning">CONDITIONS</h3>
+              <ul className="list-none p-0 text-md text-secondary">
                 {['Disclose source (file-level)', 'Same license for modified files', 'Copyright notice preserved'].map((c, i) => (
-                  <li key={i} style={{ padding: '4px 0' }}>~ {c}</li>
+                  <li key={i} className="py-xs">~ {c}</li>
                 ))}
               </ul>
             </div>
             <div className="card">
-              <h3 style={{ fontSize: '14px', color: '#c62828', marginBottom: '12px' }}>LIMITATIONS</h3>
-              <ul style={{ listStyle: 'none', padding: 0, fontSize: '14px', color: '#666' }}>
+              <h3 className="section-label-sm section-label-error">LIMITATIONS</h3>
+              <ul className="list-none p-0 text-md text-secondary">
                 {['No liability', 'No warranty', 'No trademark rights'].map((l, i) => (
-                  <li key={i} style={{ padding: '4px 0' }}>- {l}</li>
+                  <li key={i} className="py-xs">- {l}</li>
                 ))}
               </ul>
             </div>
           </div>
 
           <h2 className="section-label">INCOMPATIBLE WITH SECONDARY LICENSES</h2>
-          <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8, marginBottom: '48px' }}>
+          <p className="text-secondary text-md lh-relaxed mb-3xl">
             This Source Code Form is "Incompatible With Secondary Licenses" as defined by
             the Mozilla Public License, v. 2.0. This means the code <strong>cannot be relicensed
             under GPL, AGPL, or LGPL</strong>. This is a deliberate choice to prevent license
@@ -2380,27 +2227,15 @@ grep -r "Admitted" *.v  # Must be empty`}
           </p>
 
           <h2 className="section-label">APPLIES TO</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '48px' }}>
+          <div className="flex flex-wrap gap-md mb-3xl">
             {['Compiler (riinac)', 'Formal Proofs (Coq)', 'Standard Library', 'Tooling', 'Examples', 'Documentation'].map((item, i) => (
-              <span key={i} style={{
-                padding: '8px 16px',
-                backgroundColor: '#f8f8f8',
-                border: '1px solid #eee',
-                fontSize: '14px'
-              }}>{item}</span>
+              <span key={i} className="tech-badge">{item}</span>
             ))}
           </div>
 
           <a
             href="https://github.com/ib823/riina/blob/main/LICENSE"
-            style={{
-              display: 'inline-block',
-              padding: '14px 28px',
-              border: '1px solid #000',
-              color: '#000',
-              textDecoration: 'none',
-              fontSize: '14px'
-            }}
+            className="btn--outline-dark"
           >
             Read full LICENSE on GitHub
           </a>
@@ -2419,11 +2254,11 @@ grep -r "Admitted" *.v  # Must be empty`}
         subtitle="RIINA respects your privacy completely."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-md">
           <div className="card card--xl">
-            <h2 style={{ fontSize: '24px', fontWeight: 400, marginBottom: '24px' }}>No data collection</h2>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
+            <h2 className="heading-sm mb-lg">No data collection</h2>
+            <ul className="list-none p-0">
               {[
                 'This is a static website. No server-side processing.',
                 'No cookies are set or read.',
@@ -2432,7 +2267,7 @@ grep -r "Admitted" *.v  # Must be empty`}
                 'No third-party services are loaded.',
                 'The RIINA compiler (riinac) does not phone home or collect telemetry.',
               ].map((item, i) => (
-                <li key={i} style={{ padding: '12px 0', borderBottom: '1px solid #eee', color: '#666', fontSize: '14px' }}>
+                <li key={i} className="license-list__item">
                   {item}
                 </li>
               ))}
@@ -2453,25 +2288,25 @@ grep -r "Admitted" *.v  # Must be empty`}
         subtitle="Terms of use for the RIINA website and software."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-md">
           <div className="card card--xl">
-            <h2 style={{ fontSize: '20px', fontWeight: 500, marginBottom: '16px' }}>Software License</h2>
-            <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8, marginBottom: '32px' }}>
+            <h2 className="heading-xs fw-500 mb-md">Software License</h2>
+            <p className="text-secondary text-md lh-relaxed mb-xl">
               RIINA is distributed under the Mozilla Public License 2.0 (MPL-2.0).
-              See the <button onClick={() => setCurrentPage('license')} style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', color: '#000', fontSize: '14px', padding: 0 }}>License page</button> for details.
+              See the <button onClick={() => setCurrentPage('license')} className="link-btn">License page</button> for details.
             </p>
 
-            <h2 style={{ fontSize: '20px', fontWeight: 500, marginBottom: '16px' }}>No Warranty</h2>
-            <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8, marginBottom: '32px' }}>
+            <h2 className="heading-xs fw-500 mb-md">No Warranty</h2>
+            <p className="text-secondary text-md lh-relaxed mb-xl">
               Covered Software is provided under this License on an "as is" basis, without warranty
               of any kind, either expressed, implied, or statutory, including, without limitation,
               warranties that the Covered Software is free of defects, merchantable, fit for a
               particular purpose or non-infringing.
             </p>
 
-            <h2 style={{ fontSize: '20px', fontWeight: 500, marginBottom: '16px' }}>Limitation of Liability</h2>
-            <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.8 }}>
+            <h2 className="heading-xs fw-500 mb-md">Limitation of Liability</h2>
+            <p className="text-secondary text-md lh-relaxed">
               Under no circumstances and under no legal theory, whether tort (including negligence),
               contract, or otherwise, shall any Contributor be liable to any person for any direct,
               indirect, special, incidental, or consequential damages of any character.
@@ -2492,11 +2327,11 @@ grep -r "Admitted" *.v  # Must be empty`}
         subtitle="Working demonstrations of RIINA's compile-time security guarantees. Every demo compiles and runs today."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="section--flush-top-inner">
           <h2 className="section-label">LIVE TERMINAL OUTPUT</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px' }}>
-            Pre-recorded output from <code style={{ backgroundColor: '#f0f0f0', padding: '2px 6px' }}>riinac run</code> on actual demo files.
+          <p className="text-secondary text-md mb-xl">
+            Pre-recorded output from <code className="code-inline">riinac run</code> on actual demo files.
           </p>
 
           {[
@@ -2529,10 +2364,10 @@ Hello from RIINA via C FFI!
 abs(-42) = 42
 rand() = 1804289383` },
           ].map((demo, i) => (
-            <div key={i} style={{ marginBottom: '32px' }}>
-              <div style={{ marginBottom: '8px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 600 }}>{demo.title}</span>
-                <span style={{ color: '#999', fontSize: '14px', marginLeft: '12px' }}>{demo.desc}</span>
+            <div key={i} className="mb-xl">
+              <div className="mb-sm">
+                <span className="text-xl fw-600">{demo.title}</span>
+                <span className="demo-desc">{demo.desc}</span>
               </div>
               <pre className="code-block--terminal">
 {demo.output}
@@ -2541,15 +2376,15 @@ rand() = 1804289383` },
           ))}
 
           <h2 className="section-label mt-3xl">SHOWCASE APPLICATIONS</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px' }}>
+          <p className="text-secondary text-md mb-xl">
             Three production-grade applications demonstrating compiler-proven security properties.
           </p>
 
-          <div style={{ marginBottom: '48px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 400, marginBottom: '8px' }}>
+          <div className="mb-3xl">
+            <h3 className="heading-xs mb-sm">
               Provably Secure Web Server
             </h3>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+            <p className="text-secondary text-md mb-md">
               The compiler PROVES: no SQL injection, no XSS, no path traversal, no secret leakage, no timing attacks.
             </p>
             <pre className="code-block">
@@ -2579,11 +2414,11 @@ fungsi kendalikan(permintaan: Permintaan, db: Pangkalan)
             </pre>
           </div>
 
-          <div style={{ marginBottom: '48px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 400, marginBottom: '8px' }}>
+          <div className="mb-3xl">
+            <h3 className="heading-xs mb-sm">
               Post-Quantum Encrypted Messenger
             </h3>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+            <p className="text-secondary text-md mb-md">
               ML-KEM-1024 key encapsulation, ML-DSA-87 signatures, ChaCha20-Poly1305 AEAD. Compiler proves keys are zeroized and no plaintext leaks.
             </p>
             <pre className="code-block">
@@ -2612,11 +2447,11 @@ fungsi hantar_mesej(
             </pre>
           </div>
 
-          <div style={{ marginBottom: '48px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: 400, marginBottom: '8px' }}>
+          <div className="mb-3xl">
+            <h3 className="heading-xs mb-sm">
               HIPAA-Compliant Medical Records
             </h3>
-            <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+            <p className="text-secondary text-md mb-md">
               PHI (Protected Health Information) handling with role-based access control, audit trails, and de-identification. Compiler proves PHI never escapes authorized scope.
             </p>
             <pre className="code-block">
@@ -2664,10 +2499,10 @@ fungsi akses_rekod(
         subtitle="Write code. Get compliance proofs. Machine-checkable certificates across 15 regulatory frameworks, 15 industries, and 218 research tracks — every angle covered."
       />
 
-      <section style={{ padding: '0 32px 80px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <section className="section--flush-top px-gutter">
+        <div className="container-xl">
           <h2 className="section-label">COMPLIANCE AUTOMATION</h2>
-          <p style={{ color: '#666', fontSize: '16px', marginBottom: '32px', lineHeight: 1.8 }}>
+          <p className="text-secondary text-base mb-xl lh-relaxed">
             RIINA programs carry machine-checkable proof certificates that satisfy regulatory requirements.
             When you compile a RIINA program, the compiler generates a compliance report mapping your code's
             proven properties to specific regulatory controls. No manual audit. No "trust us". Mathematical proof.
@@ -2675,12 +2510,12 @@ fungsi akses_rekod(
 
           {/* Industry verticals */}
           <h2 className="section-label">15 INDUSTRY VERTICALS — PROVEN SECURITY FOR YOUR DOMAIN</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px', lineHeight: 1.8 }}>
+          <p className="text-secondary text-md mb-xl lh-relaxed">
             RIINA doesn't just cover generic compliance. We built dedicated security models for each industry —
             with formal axioms, domain-specific types, and compiler-proven properties tailored to your exact regulatory landscape.
           </p>
 
-          <div className="grid-3" style={{ display: 'grid', gap: '20px', marginBottom: '64px' }}>
+          <div className="grid-3 mb-3xl">
             {[
               { icon: '⊢', industry: 'Defence & Military', regs: 'CMMC, ITAR, NIST 800-171',
                 desc: 'Classified data handling with proven compartmentalization. CUI isolation enforced at the type level. Cross-domain guard verification. Side-channel resistance for signals intelligence. Formal evidence for DISA STIG compliance.' },
@@ -2713,23 +2548,19 @@ fungsi akses_rekod(
               { icon: '⊢', industry: 'Legal & LegalTech', regs: 'Attorney-Client Privilege, GDPR, eIDAS',
                 desc: 'Privileged communication provably isolated — the compiler mathematically guarantees no cross-matter data leakage. Document management with proven chain of custody. e-Discovery with formally verified data boundaries. Digital signature verification per eIDAS.' },
             ].map((ind, i) => (
-              <div key={i} style={{
-                padding: '24px',
-                border: '1px solid #eee',
-                transition: 'border-color 0.2s',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 600, fontSize: '15px' }}>{ind.icon} {ind.industry}</span>
+              <div key={i} className="industry-card-alt">
+                <div className="industry-card__header">
+                  <span className="fw-600 text-base">{ind.icon} {ind.industry}</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#999', letterSpacing: '0.05em', marginBottom: '12px' }}>{ind.regs}</div>
-                <p style={{ color: '#666', fontSize: '13px', lineHeight: 1.7, margin: 0 }}>{ind.desc}</p>
+                <div className="industry-card__regs">{ind.regs}</div>
+                <p className="industry-card__desc">{ind.desc}</p>
               </div>
             ))}
           </div>
 
           {/* Regulatory frameworks */}
           <h2 className="section-label">15 REGULATORY FRAMEWORKS — MACHINE-CHECKABLE COMPLIANCE</h2>
-          <div className="grid-3" style={{ display: 'grid', gap: '16px', marginBottom: '48px' }}>
+          <div className="grid-3 mb-2xl">
             {[
               { reg: 'HIPAA', jurisdiction: 'United States', coverage: 'PHI access control, audit trails, encryption' },
               { reg: 'PCI-DSS', jurisdiction: 'Global', coverage: 'Cardholder data isolation, key management' },
@@ -2748,39 +2579,34 @@ fungsi akses_rekod(
               { reg: 'ISO 27001', jurisdiction: 'International', coverage: 'Information security management' },
             ].map((r, i) => (
               <div key={i} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600, fontSize: '14px' }}>{r.reg}</span>
-                  <span style={{ color: '#999', fontSize: '11px' }}>{r.jurisdiction}</span>
+                <div className="reg-row__header">
+                  <span className="fw-600 text-md">{r.reg}</span>
+                  <span className="reg-row__jurisdiction">{r.jurisdiction}</span>
                 </div>
-                <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>{r.coverage}</p>
+                <p className="reg-row__coverage">{r.coverage}</p>
               </div>
             ))}
           </div>
 
           {/* Research depth */}
-          <div style={{
-            backgroundColor: '#000',
-            color: '#fff',
-            padding: '48px',
-            marginBottom: '48px'
-          }}>
-            <h2 style={{ fontSize: '14px', letterSpacing: '0.2em', color: '#666', marginBottom: '24px' }}>
+          <div className="enterprise-dark-box">
+            <h2 className="section-label-sm mb-lg">
               RESEARCH DEPTH
             </h2>
-            <div className="grid-4" style={{ display: 'grid', gap: '32px', marginBottom: '32px' }}>
+            <div className="grid-4 mb-xl">
               {[
                 { value: '218', label: 'Research Tracks' },
                 { value: '1,231+', label: 'Threats Modeled' },
                 { value: '15', label: 'Industries' },
                 { value: '26+', label: 'Research Domains (A–Z)' },
               ].map((stat, i) => (
-                <div key={i} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '36px', fontWeight: 300, fontFamily: 'Georgia, serif' }}>{stat.value}</div>
-                  <div style={{ fontSize: '11px', color: '#888', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '8px' }}>{stat.label}</div>
+                <div key={i} className="text-center">
+                  <div className="stat-large">{stat.value}</div>
+                  <div className="stat-label-xs">{stat.label}</div>
                 </div>
               ))}
             </div>
-            <p style={{ color: '#888', fontSize: '14px', lineHeight: 1.8, maxWidth: '800px' }}>
+            <p className="text-muted text-md lh-relaxed container-md">
               Beyond regulatory compliance, RIINA's research covers certified compilation (Track R), hardware side-channel
               contracts (Track S), hermetic binary bootstrap (Track T), verified micro-hypervisor runtime (Track U),
               termination guarantees (Track V), separation-logic memory safety (Track W), session-typed concurrency (Track X),
@@ -2791,7 +2617,7 @@ fungsi akses_rekod(
 
           {/* Proof certificate */}
           <h2 className="section-label">PROOF CERTIFICATE</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+          <p className="text-secondary text-md mb-md">
             Generate a machine-checkable compliance certificate:
           </p>
           <pre className="code-block">
@@ -2821,7 +2647,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
           </pre>
 
           <h2 className="section-label mt-2xl">AUDITOR VERIFICATION</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+          <p className="text-secondary text-md mb-md">
             Auditors can independently verify certificates — zero trust:
           </p>
           <pre className="code-block">
@@ -2835,7 +2661,7 @@ $ Print Assumptions access_control_enforced.
           </pre>
 
           <h2 className="section-label mt-2xl">PROOF METRICS</h2>
-          <div className="grid-4" style={{ display: 'grid', gap: '24px', marginBottom: '48px' }}>
+          <div className="grid-4 gap-lg mb-2xl">
             {[
               { value: '150', label: 'Compliance Theorems' },
               { value: '15', label: 'Regulations Covered' },
@@ -2843,14 +2669,14 @@ $ Print Assumptions access_control_enforced.
               { value: '0', label: 'Unjustified Axioms' },
             ].map((stat, i) => (
               <div key={i} className="card text-center">
-                <div style={{ fontSize: '36px', fontWeight: 300, fontFamily: 'Georgia, serif' }}>{stat.value}</div>
-                <div style={{ fontSize: '12px', color: '#999', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '8px' }}>{stat.label}</div>
+                <div className="stat-large">{stat.value}</div>
+                <div className="stat-label-xs">{stat.label}</div>
               </div>
             ))}
           </div>
 
           <h2 className="section-label mt-2xl">WHY ENTERPRISE TEAMS CHOOSE RIINA</h2>
-          <div style={{ display: 'grid', gap: '24px' }}>
+          <div className="grid-cols-1 gap-lg">
             {[
               { title: 'Security Auditors', desc: 'RIINA certificates supplement or replace manual code review. The certificate shows which controls are covered, the Coq proof, and all assumptions. Audit cycles go from weeks to minutes.' },
               { title: 'Compliance Officers', desc: 'Include RIINA certificates in compliance packages. Demonstrates that security properties are mathematically guaranteed, not merely tested. Regulators get machine-verifiable evidence.' },
@@ -2860,8 +2686,8 @@ $ Print Assumptions access_control_enforced.
               { title: 'Insurance & Risk Management', desc: 'Formal verification evidence reduces cyber insurance premiums. Machine-checkable proofs demonstrate due diligence beyond industry standard. Quantifiable risk reduction for board-level reporting.' },
             ].map((uc, i) => (
               <div key={i} className="card--padded">
-                <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>{uc.title}</h3>
-                <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>{uc.desc}</p>
+                <h3 className="usecase-card__title">{uc.title}</h3>
+                <p className="usecase-card__desc">{uc.desc}</p>
               </div>
             ))}
           </div>
@@ -2880,49 +2706,30 @@ $ Print Assumptions access_control_enforced.
         subtitle="Download RIINA releases and track changes across versions."
       />
       <section className="section" style={sectionStyle}>
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px',
-            flexWrap: 'wrap',
-          }}>
-            <span style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '24px',
-              fontWeight: 700,
-              color: '#0f172a',
-            }}>
+        <div className="mb-3xl">
+          <div className="release-brand">
+            <span className="release-brand__name">
               v{releases[0]?.version}
             </span>
-            <span style={{
-              backgroundColor: '#000',
-              color: '#fff',
-              padding: '4px 10px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: 600,
-              letterSpacing: '0.5px',
-            }}>
+            <span className="release-brand__badge">
               LATEST
             </span>
           </div>
-          <p style={{ color: '#666', fontSize: '14px', marginTop: '12px' }}>
+          <p className="text-secondary text-md mt-md">
             <a href={`https://github.com/ib823/riina/releases/tag/v${releases[0]?.version}`}
-               style={{ color: '#3b82f6', textDecoration: 'none' }}>
+               className="link-blue">
               Download from GitHub →
             </a>
             {' · '}
             <a href="https://github.com/ib823/riina/blob/main/CHANGELOG.md"
-               style={{ color: '#3b82f6', textDecoration: 'none' }}>
+               className="link-blue">
               Full Changelog →
             </a>
           </p>
         </div>
 
         <div className="code-block mb-2xl">
-          <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+          <pre className="m-0 whitespace-pre-wrap">
 {`# Install RIINA
 curl -fsSL https://ib823.github.io/riina/install.sh | bash
 
@@ -2977,8 +2784,8 @@ nix run github:ib823/riina`}
       <div className="page-top">
         <PageHeader title="Reach Us" subtitle="Send a message directly. It goes straight to Telegram." />
 
-        <section style={{ ...sectionStyle, maxWidth: '560px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <section className="contact-section">
+          <div className="contact-form">
             <div>
               <label style={labelStyle}>NAMA (pilihan)</label>
               <input type="text" value={bName} onChange={(e) => setBName(e.target.value)} placeholder="Nama anda" style={inputStyle} />
@@ -2992,17 +2799,11 @@ nix run github:ib823/riina`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => { if (!bMsg.trim()) e.preventDefault(); }}
-              style={{
-                display: 'block', textAlign: 'center',
-                padding: '14px 32px', backgroundColor: '#000', color: '#fff',
-                textDecoration: 'none', fontSize: '14px', letterSpacing: '0.05em',
-                opacity: !bMsg.trim() ? 0.4 : 1,
-                cursor: !bMsg.trim() ? 'default' : 'pointer',
-              }}
+              className={`form-submit-link${!bMsg.trim() ? ' form-submit-link--disabled' : ''}`}
             >
               Hantar via Telegram &rarr;
             </a>
-            <p style={{ fontSize: '12px', color: '#999', textAlign: 'center' }}>
+            <p className="contact-note">
               Opens Telegram with your message pre-filled. Nothing is stored on this site.
             </p>
           </div>
@@ -3023,55 +2824,32 @@ nix run github:ib823/riina`}
     ];
 
     return (
-      <footer className="site-footer" style={{
-        borderTop: '1px solid #eee',
-        padding: '64px 32px',
-        backgroundColor: '#fafafa'
-      }}>
-        <div className="grid-footer" style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'grid',
-          gap: '48px'
-        }}>
+      <footer className="site-footer-full">
+        <div className="footer-grid-full">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div className="footer-brand">
               <Logo size={24} />
-              <span style={{ fontWeight: 600, letterSpacing: '0.1em' }}>RIINA</span>
+              <span className="footer-brand__name">RIINA</span>
             </div>
-            <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6 }}>
+            <p className="text-secondary text-md lh-relaxed">
               Rigorous Immutable Invariant,<br/>No Assumptions
             </p>
-            <p style={{
-              color: '#999',
-              fontSize: '12px',
-              fontStyle: 'italic',
-              marginTop: '16px'
-            }}>
+            <p className="footer-motto-text">
               Bertampuk Bertangkai
             </p>
           </div>
 
           {footerSections.map((col, i) => (
             <div key={i}>
-              <h4 style={{
-                fontSize: '12px',
-                letterSpacing: '0.1em',
-                color: '#999',
-                marginBottom: '16px'
-              }}>{col.title}</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h4 className="footer-section-title">{col.title}</h4>
+              <div className="footer-links-col">
                 {col.links.map((link, j) => {
                   const ext = externalLinks[link];
                   const page = footerNav(link);
 
                   if (ext) {
                     return (
-                      <a key={j} href={ext} style={{
-                        color: '#666',
-                        fontSize: '14px',
-                        textDecoration: 'none'
-                      }}>
+                      <a key={j} href={ext} className="footer-ext-link-alt">
                         {link}
                       </a>
                     );
@@ -3080,16 +2858,7 @@ nix run github:ib823/riina`}
                   return (
                     <button key={j}
                       onClick={() => setCurrentPage(page)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#666',
-                        fontSize: '14px',
-                        textDecoration: 'none',
-                        textAlign: 'left',
-                        padding: 0
-                      }}
+                      className="footer-nav-btn"
                     >
                       {link}
                     </button>
@@ -3100,41 +2869,18 @@ nix run github:ib823/riina`}
           ))}
         </div>
 
-        <div className="footer-bottom" style={{
-          maxWidth: '1200px',
-          margin: '48px auto 0',
-          paddingTop: '24px',
-          borderTop: '1px solid #eee',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <p style={{ color: '#999', fontSize: '12px' }}>
+        <div className="footer-bottom-full">
+          <p className="text-muted text-sm">
             © 2026 RIINA. All rights reserved.
           </p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '12px',
-            color: '#666',
-          }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}>
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: '#22c55e',
-              }} />
+          <div className="footer-status">
+            <span className="footer-status__indicator">
+              <span className="footer-status__dot" />
               Build passing
             </span>
-            <span style={{ color: '#ddd' }}>·</span>
-            <span style={{ fontFamily: 'monospace' }}>v0.2.0</span>
-            <span style={{ color: '#ddd' }}>·</span>
+            <span className="footer-meta__sep">·</span>
+            <span className="footer-meta__mono">v0.2.0</span>
+            <span className="footer-meta__sep">·</span>
             <span>MPL-2.0</span>
           </div>
         </div>
@@ -3172,13 +2918,9 @@ nix run github:ib823/riina`}
   };
 
   return (
-    <div style={{
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: '#000',
-      lineHeight: 1.5
-    }}>
+    <div className="app-shell-root">
       <Header />
-      <main style={{ paddingTop: '65px' }}>
+      <main className="main-content">
         {renderPage()}
       </main>
       <Footer />

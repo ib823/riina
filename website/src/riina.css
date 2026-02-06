@@ -2731,3 +2731,843 @@ main, section, div {
   font-size: 14px;
   line-height: 1.8;
 }
+
+/* ============================================================================
+   CODE LABELS — Language Page Comparisons
+   ============================================================================ */
+
+.code-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.code-label--error {
+  color: var(--c-red);
+}
+
+.code-label--success {
+  color: var(--c-green);
+}
+
+.code-label__icon {
+  font-size: 18px;
+}
+
+/* ============================================================================
+   PROVEN ITEMS — Dark Section Lists
+   ============================================================================ */
+
+.proven-item {
+  padding: 20px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.proven-item__check {
+  color: #0f0;
+}
+
+/* ============================================================================
+   CONTAINER UTILITIES — Max Width + Auto Margin
+   ============================================================================ */
+
+.container-sm { max-width: 560px; margin-left: auto; margin-right: auto; }
+.container-md { max-width: 800px; margin-left: auto; margin-right: auto; }
+.container-lg { max-width: 900px; margin-left: auto; margin-right: auto; }
+.container-xl { max-width: 1100px; margin-left: auto; margin-right: auto; }
+
+/* ============================================================================
+   HEADING UTILITIES
+   ============================================================================ */
+
+.heading-xl { font-size: 48px; font-weight: 300; }
+.heading-lg { font-size: 32px; font-weight: 300; }
+.heading-md { font-size: 28px; font-weight: 300; }
+.heading-sm { font-size: 24px; font-weight: 400; }
+.heading-xs { font-size: 20px; font-weight: 400; }
+.subheading { font-size: 16px; font-weight: 500; }
+.subheading-sm { font-size: 14px; font-weight: 600; }
+
+/* ============================================================================
+   CARD UTILITIES — Structured Containers
+   ============================================================================ */
+
+.card-item {
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg);
+  border: 1px solid var(--c-border);
+}
+
+.install-card {
+  padding: var(--space-lg);
+  background-color: var(--c-bg-light);
+}
+
+.license-list {
+  list-style: none;
+  padding: 0;
+}
+
+.license-list__item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-text-secondary);
+  font-size: 14px;
+}
+
+.license-list__item::before {
+  content: "✓ ";
+  color: var(--c-green);
+}
+
+/* ============================================================================
+   SECTION LABEL UTILITIES
+   ============================================================================ */
+
+.section-label-sm {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--c-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+.section-label-success { color: var(--c-green); }
+.section-label-warning { color: #e65100; }
+.section-label-error { color: var(--c-red); }
+
+/* ============================================================================
+   FLOW UTILITIES — Arrow Separators
+   ============================================================================ */
+
+.flow-sep {
+  color: #ccc;
+  font-size: 18px;
+}
+
+/* ============================================================================
+   STAT DISPLAY UTILITIES
+   ============================================================================ */
+
+.stat-large {
+  font-size: 36px;
+  font-weight: 300;
+  font-family: Georgia, serif;
+}
+
+.stat-label-sm {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stat-label-xs {
+  font-size: 11px;
+  color: var(--c-text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: var(--space-sm);
+}
+
+/* ============================================================================
+   LINK UTILITIES
+   ============================================================================ */
+
+.link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  color: var(--c-black);
+  font-size: 14px;
+  padding: 0;
+}
+
+.link-blue {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.link-blue:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   INDUSTRY CARD
+   ============================================================================ */
+
+.industry-card {
+  padding: var(--space-lg);
+  background-color: var(--c-white);
+  border: 1px solid var(--c-border);
+}
+
+.industry-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-sm);
+}
+
+.industry-card__regs {
+  font-size: 11px;
+  color: var(--c-text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.industry-card__desc {
+  color: var(--c-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ============================================================================
+   REG ROW — Regulation List Items
+   ============================================================================ */
+
+.reg-row {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.reg-row__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-xs);
+}
+
+.reg-row__jurisdiction {
+  color: var(--c-text-muted);
+  font-size: 11px;
+}
+
+.reg-row__coverage {
+  color: var(--c-text-secondary);
+  font-size: 12px;
+  margin: 0;
+}
+
+/* ============================================================================
+   DEMO SECTION
+   ============================================================================ */
+
+.demo-block {
+  margin-bottom: var(--space-3xl);
+}
+
+.demo-header {
+  margin-bottom: var(--space-sm);
+}
+
+.demo-desc {
+  color: var(--c-text-muted);
+  font-size: 14px;
+  margin-left: 12px;
+}
+
+.demo-section {
+  margin-bottom: var(--space-3xl);
+}
+
+.demo-section__title {
+  font-size: 20px;
+  font-weight: 400;
+  margin-bottom: var(--space-sm);
+}
+
+.demo-section__desc {
+  color: var(--c-text-secondary);
+  font-size: 14px;
+  margin-bottom: var(--space-md);
+}
+
+/* ============================================================================
+   CONTACT FORM
+   ============================================================================ */
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.contact-note {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  text-align: center;
+}
+
+/* ============================================================================
+   FOOTER EXTENDED
+   ============================================================================ */
+
+.footer-links-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-ext-link {
+  color: var(--c-text-secondary);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.footer-meta__item {
+  color: var(--c-text-muted);
+  font-size: 12px;
+}
+
+.footer-meta__sep {
+  color: #ddd;
+}
+
+.footer-meta__mono {
+  font-family: var(--font-mono);
+}
+
+/* ============================================================================
+   MISC LAYOUT PATTERNS
+   ============================================================================ */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.main-content {
+  padding-top: 65px;
+}
+
+.cta-center {
+  text-align: center;
+  margin-top: var(--space-3xl);
+}
+
+/* Code display */
+.code-display {
+  font-size: 14px;
+  line-height: 2;
+  display: block;
+}
+
+/* Paper item hover */
+.paper-item {
+  padding: var(--space-lg);
+  border: 1px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.paper-item:hover {
+  border-color: var(--c-border-dark);
+}
+
+.paper-item__pdf {
+  color: var(--c-green);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Research domain grid */
+.domain-grid {
+  display: grid;
+  gap: var(--space-sm);
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--c-border);
+  padding: var(--space-md);
+}
+
+/* Axiom display */
+.axiom-display {
+  margin-bottom: var(--space-xl);
+}
+
+/* Use case card */
+.usecase-card {
+  padding: var(--space-lg);
+  border: 1px solid var(--c-border);
+}
+
+.usecase-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.usecase-card__desc {
+  color: var(--c-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================================================
+   SECURITY LATTICE
+   ============================================================================ */
+
+.lattice-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background-color: var(--c-bg-light);
+  margin-bottom: var(--space-4xl);
+  overflow-x: auto;
+}
+
+.lattice-level {
+  padding: 12px 16px;
+  border: 1px solid var(--c-border);
+  background-color: var(--c-white);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   KEYWORD DISPLAY
+   ============================================================================ */
+
+.keyword-display {
+  padding: 20px;
+  border: 1px solid var(--c-border);
+  text-align: center;
+}
+
+/* ============================================================================
+   HOW STEP (Timeline)
+   ============================================================================ */
+
+.how-step-alt {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: var(--space-3xl);
+  padding: var(--space-3xl) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.how-step__num {
+  font-size: 48px;
+  font-weight: 200;
+  color: #ddd;
+  font-family: Georgia, serif;
+}
+
+.how-step__code {
+  white-space: pre-wrap;
+  font-family: inherit;
+  color: var(--c-text-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* ============================================================================
+   STAT DISPLAY CARDS
+   ============================================================================ */
+
+.stat-card {
+  text-align: center;
+  padding: var(--space-lg);
+  border: 1px solid var(--c-border);
+}
+
+.stat-card--dark {
+  border-color: #333;
+}
+
+/* ============================================================================
+   PAPER ITEM (Research)
+   ============================================================================ */
+
+.paper-row {
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid var(--c-border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-lg);
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.paper-badge {
+  font-size: 12px;
+  padding: 4px 12px;
+  background-color: #e8f5e9;
+  color: var(--c-green);
+  font-weight: 600;
+}
+
+/* ============================================================================
+   DOMAIN GRID
+   ============================================================================ */
+
+.domain-grid-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: var(--space-4xl);
+}
+
+.domain-card-alt {
+  padding: 16px 20px;
+  background-color: var(--c-bg-light);
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+/* ============================================================================
+   INDUSTRY BUTTONS GRID
+   ============================================================================ */
+
+.industry-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: var(--space-3xl);
+}
+
+@media (max-width: 767px) {
+  .industry-btn-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.industry-btn-alt {
+  padding: 12px 16px;
+  background-color: var(--c-white);
+  border: 1px solid var(--c-border);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* ============================================================================
+   STAT ROW (Proof page)
+   ============================================================================ */
+
+.stat-row-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-4xl);
+}
+
+@media (max-width: 767px) {
+  .stat-row-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   AXIOM ROW
+   ============================================================================ */
+
+.axiom-row {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--c-border);
+  font-size: 14px;
+}
+
+/* ============================================================================
+   DARK CTA SECTION
+   ============================================================================ */
+
+.section--dark-cta {
+  padding: 80px 32px;
+  background-color: var(--c-black);
+  color: var(--c-white);
+  text-align: center;
+}
+
+.btn--outline-light {
+  display: inline-block;
+  padding: 16px 32px;
+  border: 1px solid var(--c-white);
+  background: none;
+  color: var(--c-white);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.btn--outline-dark {
+  display: inline-block;
+  padding: 14px 28px;
+  border: 1px solid var(--c-black);
+  background: none;
+  color: var(--c-black);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+/* ============================================================================
+   DOC SECTION CARD
+   ============================================================================ */
+
+.doc-section-card {
+  padding: var(--space-xl);
+  border: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.doc-section-card:hover {
+  border-color: var(--c-border-dark);
+}
+
+.doc-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--c-black);
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   STDLIB FN
+   ============================================================================ */
+
+.stdlib-fn-alt {
+  font-size: 12px;
+  padding: 4px 8px;
+  background-color: var(--c-bg-light);
+  border: 1px solid var(--c-border);
+}
+
+/* ============================================================================
+   TECH BADGE
+   ============================================================================ */
+
+.tech-badge {
+  padding: 8px 16px;
+  background-color: var(--c-bg-light);
+  border: 1px solid var(--c-border);
+  font-size: 13px;
+}
+
+/* ============================================================================
+   INDUSTRY CARD ALT
+   ============================================================================ */
+
+.industry-card-alt {
+  padding: var(--space-lg);
+  border: 1px solid var(--c-border);
+  transition: border-color 0.2s;
+}
+
+/* ============================================================================
+   ENTERPRISE DARK BOX
+   ============================================================================ */
+
+.enterprise-dark-box {
+  background-color: var(--c-black);
+  color: var(--c-white);
+  padding: var(--space-3xl);
+  margin-bottom: var(--space-4xl);
+  text-align: center;
+}
+
+/* ============================================================================
+   RELEASE BRAND
+   ============================================================================ */
+
+.release-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--space-3xl);
+}
+
+.release-brand__name {
+  font-family: JetBrains Mono, monospace;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.release-brand__badge {
+  background-color: var(--c-black);
+  color: var(--c-white);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================================
+   CONTACT SECTION
+   ============================================================================ */
+
+.contact-section {
+  max-width: 560px;
+  padding: var(--space-4xl) var(--gutter);
+}
+
+.form-submit-link {
+  display: block;
+  text-align: center;
+  padding: 14px 32px;
+  background-color: var(--c-black);
+  color: var(--c-white);
+  text-decoration: none;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.form-submit-link--disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ============================================================================
+   SITE FOOTER (Full)
+   ============================================================================ */
+
+.site-footer-full {
+  border-top: 1px solid var(--c-border);
+  padding: var(--space-4xl) var(--gutter);
+  background-color: #fafafa;
+}
+
+.footer-grid-full {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--space-3xl);
+}
+
+@media (min-width: 768px) {
+  .footer-grid-full {
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  }
+}
+
+.footer-motto-text {
+  color: var(--c-text-muted);
+  font-size: 12px;
+  font-style: italic;
+  margin-top: var(--space-md);
+}
+
+.footer-section-title {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--c-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+.footer-ext-link-alt {
+  color: var(--c-text-secondary);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.footer-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-text-secondary);
+  font-size: 14px;
+  text-decoration: none;
+  text-align: left;
+  padding: 0;
+}
+
+.footer-bottom-full {
+  max-width: 1200px;
+  margin: var(--space-3xl) auto 0;
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .footer-bottom-full {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+
+.footer-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .footer-status {
+    justify-content: flex-end;
+  }
+}
+
+.footer-status__indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+.footer-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--c-green);
+}
+
+/* ============================================================================
+   APP SHELL
+   ============================================================================ */
+
+.app-shell-root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--c-black);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
