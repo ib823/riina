@@ -11,6 +11,7 @@ import PlaygroundPage from './playground/Playground.jsx';
 const RiinaWebsite = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null); // null = show all, or 'developer'|'security'|'executive'|'researcher'
 
   // Scroll to top on page change
   useEffect(() => {
@@ -263,6 +264,209 @@ const RiinaWebsite = () => {
           <p className="hero-build-date">Last updated: 06 Feb 2026</p>
         </div>
       </section>
+
+      {/* Audience Selector */}
+      <section className="py-3xl px-gutter section--bg-light">
+        <div className="text-center mb-xl">
+          <p className="section-label section-label--sm">I AM A</p>
+        </div>
+        <div className="role-selector">
+          {[
+            { id: 'developer', label: 'Developer', icon: '⌨' },
+            { id: 'security', label: 'Security Professional', icon: '🛡' },
+            { id: 'executive', label: 'Executive / Decision Maker', icon: '📊' },
+            { id: 'researcher', label: 'Researcher', icon: '📚' },
+          ].map(role => (
+            <button
+              key={role.id}
+              onClick={() => setSelectedRole(selectedRole === role.id ? null : role.id)}
+              className={`role-btn${selectedRole === role.id ? ' role-btn--active' : ''}`}
+            >
+              <span className="role-btn__icon">{role.icon}</span> {role.label}
+            </button>
+          ))}
+        </div>
+        {selectedRole && (
+          <p className="text-center text-muted text-sm mt-md">
+            Showing content tailored for {selectedRole === 'developer' ? 'developers' : selectedRole === 'security' ? 'security professionals' : selectedRole === 'executive' ? 'executives' : 'researchers'}.
+            <button onClick={() => setSelectedRole(null)} className="link-btn ml-sm">Show all</button>
+          </p>
+        )}
+      </section>
+
+      {/* Role-Specific Quick Paths */}
+      {selectedRole === 'developer' && (
+        <section className="py-3xl px-gutter">
+          <div className="container-lg">
+            <div className="role-badge role-badge--developer">FOR DEVELOPERS</div>
+            <h2 className="heading-lg mb-lg">Start building in 5 minutes</h2>
+            <div className="grid-3">
+              <div className="card card--hover" onClick={() => setCurrentPage('quickStart')}>
+                <h3 className="text-lg fw-600 mb-sm">Quick Start</h3>
+                <p className="text-secondary text-md">Install RIINA and compile your first .rii file</p>
+                <span className="text-sm text-muted mt-md">→ 5 min read</span>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('syntax')}>
+                <h3 className="text-lg fw-600 mb-sm">Bahasa Melayu Syntax</h3>
+                <p className="text-secondary text-md">Learn the Malaysian-language keywords and type system</p>
+                <span className="text-sm text-muted mt-md">→ Language Guide</span>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('playground')}>
+                <h3 className="text-lg fw-600 mb-sm">Try in Browser</h3>
+                <p className="text-secondary text-md">Run RIINA code instantly — no installation required</p>
+                <span className="text-sm text-muted mt-md">→ Playground</span>
+              </div>
+            </div>
+            <div className="mt-2xl">
+              <pre className="code-block">
+{`# Install RIINA
+curl -fsSL https://ib823.github.io/riina/install.sh | bash
+
+# Create hello.rii
+echo 'fungsi utama() { cetak("Selamat datang!"); }' > hello.rii
+
+# Compile and run
+riinac run hello.rii`}
+              </pre>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {selectedRole === 'security' && (
+        <section className="py-3xl px-gutter">
+          <div className="container-lg">
+            <div className="role-badge role-badge--security">FOR SECURITY PROFESSIONALS</div>
+            <h2 className="heading-lg mb-lg">Formal verification you can trust</h2>
+            <div className="grid-3">
+              <div className="card card--hover" onClick={() => setCurrentPage('research')}>
+                <h3 className="text-lg fw-600 mb-sm">6,194 Proven Theorems</h3>
+                <p className="text-secondary text-md">Every security property proven in Coq — type safety, non-interference, memory safety</p>
+                <span className="text-sm text-muted mt-md">→ View Proofs</span>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('how')}>
+                <h3 className="text-lg fw-600 mb-sm">Threat Model Coverage</h3>
+                <p className="text-secondary text-md">1,231+ threats made obsolete — timing attacks, injection, data leaks eliminated by construction</p>
+                <span className="text-sm text-muted mt-md">→ How It Works</span>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('securityTypes')}>
+                <h3 className="text-lg fw-600 mb-sm">Security Type System</h3>
+                <p className="text-secondary text-md">Rahsia&lt;T&gt;, kesan, masa_tetap — security encoded in types, not comments</p>
+                <span className="text-sm text-muted mt-md">→ Type Reference</span>
+              </div>
+            </div>
+            <div className="mt-2xl grid-2">
+              <div className="card bg-light">
+                <h4 className="section-label-sm section-label-success mb-md">PROVEN PROPERTIES</h4>
+                <ul className="list-none p-0">
+                  {['Type Safety (Progress + Preservation)', 'Non-Interference (Logical Relations)', 'Memory Safety (Separation Logic)', 'Constant-Time Execution (masa_tetap)', 'Effect Isolation (Algebraic Effects)'].map((p, i) => (
+                    <li key={i} className="py-xs text-md">⊢ {p}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="card bg-light">
+                <h4 className="section-label-sm mb-md">PROOF STACK</h4>
+                <ul className="list-none p-0">
+                  {['Coq 8.20.1 — 283 verified files', '4 justified axioms (all documented)', '0 admits in active build', 'Multi-prover cross-verification', 'Full audit trail in repository'].map((p, i) => (
+                    <li key={i} className="py-xs text-md text-secondary">• {p}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {selectedRole === 'executive' && (
+        <section className="py-3xl px-gutter">
+          <div className="container-lg">
+            <div className="role-badge role-badge--executive">FOR EXECUTIVES</div>
+            <h2 className="heading-lg mb-lg">The business case for mathematical proof</h2>
+            <div className="grid-3">
+              <div className="card card--hover" onClick={() => setCurrentPage('whyProof')}>
+                <h3 className="text-lg fw-600 mb-sm">Why Proof Matters</h3>
+                <p className="text-secondary text-md">$4.45M average breach cost. Mathematical proof eliminates entire vulnerability classes.</p>
+                <span className="text-sm text-muted mt-md">→ Executive Summary</span>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('enterprise')}>
+                <h3 className="text-lg fw-600 mb-sm">Enterprise Solutions</h3>
+                <p className="text-secondary text-md">15 industry verticals, compliance frameworks, certification paths</p>
+                <span className="text-sm text-muted mt-md">→ Enterprise</span>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('license')}>
+                <h3 className="text-lg fw-600 mb-sm">Licensing & Support</h3>
+                <p className="text-secondary text-md">MPL-2.0 open source. Enterprise support available.</p>
+                <span className="text-sm text-muted mt-md">→ License</span>
+              </div>
+            </div>
+            <div className="mt-2xl enterprise-dark-box">
+              <h3 className="heading-md text-white mb-lg">ROI at a Glance</h3>
+              <div className="grid-4">
+                {[
+                  { value: '$4.45M', label: 'Average breach cost avoided' },
+                  { value: '287 days', label: 'Breach lifecycle eliminated' },
+                  { value: '100%', label: 'Audit evidence coverage' },
+                  { value: '15', label: 'Industry compliance packages' },
+                ].map((stat, i) => (
+                  <div key={i} className="text-center">
+                    <div className="stat-large text-white">{stat.value}</div>
+                    <div className="stat-label-xs text-dark-muted">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {selectedRole === 'researcher' && (
+        <section className="py-3xl px-gutter">
+          <div className="container-lg">
+            <div className="role-badge role-badge--researcher">FOR RESEARCHERS</div>
+            <h2 className="heading-lg mb-lg">Academic foundations and open research</h2>
+            <div className="grid-3">
+              <div className="card card--hover" onClick={() => setCurrentPage('research')}>
+                <h3 className="text-lg fw-600 mb-sm">26 Research Domains</h3>
+                <p className="text-secondary text-md">From core type theory to hardware contracts, termination guarantees, and verified memory</p>
+                <span className="text-sm text-muted mt-md">→ Research Overview</span>
+              </div>
+              <div className="card card--hover">
+                <a href="https://github.com/ib823/riina/tree/main/02_FORMAL/coq" className="no-underline text-inherit">
+                  <h3 className="text-lg fw-600 mb-sm">Coq Proof Repository</h3>
+                  <p className="text-secondary text-md">283 verified files, 6,194 theorems — browse the complete formalization</p>
+                  <span className="text-sm text-muted mt-md">→ GitHub</span>
+                </a>
+              </div>
+              <div className="card card--hover" onClick={() => setCurrentPage('how')}>
+                <h3 className="text-lg fw-600 mb-sm">Logical Relations Approach</h3>
+                <p className="text-secondary text-md">Non-interference proven via step-indexed logical relations</p>
+                <span className="text-sm text-muted mt-md">→ Technical Details</span>
+              </div>
+            </div>
+            <div className="mt-2xl">
+              <h4 className="section-label-sm mb-md">KEY RESEARCH TRACKS</h4>
+              <div className="grid-2">
+                {[
+                  { id: 'A', name: 'Core Type Theory', desc: 'Type safety, progress, preservation, logical relations' },
+                  { id: 'R', name: 'Certified Compilation', desc: 'Translation validation, verified code generation' },
+                  { id: 'V', name: 'Termination Guarantees', desc: 'Sized types, strong normalization' },
+                  { id: 'W', name: 'Verified Memory', desc: 'Separation logic, verified allocator' },
+                  { id: 'X', name: 'Concurrency Model', desc: 'Session types, data-race freedom' },
+                  { id: 'Z', name: 'Declassification Policy', desc: 'Robust declassification with budgets' },
+                ].map((track, i) => (
+                  <div key={i} className="domain-card-alt">
+                    <span className="domain-card__id">{track.id}</span>
+                    <div>
+                      <div className="domain-card__name">{track.name}</div>
+                      <div className="domain-card__desc">{track.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Core Insight */}
       <section className="section--bg-dark section--center py-4xl px-gutter">

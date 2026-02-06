@@ -625,6 +625,16 @@ html, body {
   border: 1px solid var(--c-border);
 }
 
+.card--hover {
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card--hover:hover {
+  border-color: var(--c-border-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .card--padded {
   padding: var(--space-xl);
 }
@@ -2190,19 +2200,24 @@ main, section, div {
   color: #1565c0;
 }
 
-.role-badge--enterprise {
-  background: #fce4ec;
-  color: #c2185b;
+.role-badge--security {
+  background: #fff3e0;
+  color: #e65100;
 }
 
-.role-badge--academic {
-  background: #f3e5f5;
-  color: #7b1fa2;
+.role-badge--executive {
+  background: #fce4ec;
+  color: #c2185b;
 }
 
 .role-badge--researcher {
   background: #e8f5e9;
   color: #2e7d32;
+}
+
+/* Role button icon */
+.role-btn__icon {
+  margin-right: var(--space-xs);
 }
 
 /* Quick action cards for each role */
