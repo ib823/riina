@@ -458,6 +458,7 @@ const RiinaWebsite = () => {
             color: '#9ca3af',
             marginTop: '24px',
             fontFamily: 'monospace',
+            textAlign: 'center',
           }}>
             Verified with Coq 8.20.1 · Session 73
           </p>

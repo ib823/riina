@@ -146,27 +146,21 @@ const PlaygroundPage = ({ onNavigate }) => {
   const tabs = ['Type Check', 'C Output', 'Verified IR'];
 
   return (
-    <div style={{ padding: '0 40px 40px' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>
-          Playground
-        </h1>
-        <p style={{
-          fontSize: 13, color: '#666', marginBottom: 12,
-          fontFamily: 'monospace',
-        }}>
-          6,194 theorems · 0 admits · 283 verified files · Browser-only
+    <div style={{ paddingTop: '0' }}>
+      {/* Page Header - consistent with other pages */}
+      <section style={{ padding: '80px 32px 40px', maxWidth: '800px', margin: '0 auto' }}>
+        <h1 style={{ fontSize: '48px', fontWeight: 300, marginBottom: '24px' }}>Playground</h1>
+        <p style={{ fontSize: '20px', color: '#666', lineHeight: 1.8, marginBottom: '16px' }}>
+          Write RIINA code in your browser. Every program that type-checks inherits
+          mathematically proven security guarantees.
         </p>
-        <p style={{ color: '#555', fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}>
-          This is the RIINA compiler running entirely in your browser via WebAssembly.
-          Every program that type-checks inherits mathematically proven security
-          guarantees — no information leaks, no unauthorized effects, no runtime type
-          errors. These guarantees are backed by 6,194 machine-checked proofs in Coq,
-          with zero admits.
-          {!wasmReady && !wasmError && ' Loading WASM compiler...'}
-          {wasmError && <span style={{ color: '#c00' }}> {wasmError}</span>}
+        <p style={{ fontSize: '14px', color: '#999' }}>
+          {wasmReady ? '✓ WASM compiler loaded' : wasmError ? `✗ ${wasmError}` : 'Loading WASM compiler...'}
         </p>
-      </div>
+      </section>
+
+      {/* Editor section */}
+      <div style={{ padding: '0 32px 40px', maxWidth: '1200px', margin: '0 auto' }}>
 
       {/* Example selector */}
       <div style={{ marginBottom: 12 }}>
@@ -263,12 +257,9 @@ const PlaygroundPage = ({ onNavigate }) => {
       </div>
 
       {/* Footer info */}
-      <div style={{ marginTop: 16, fontSize: 12, color: '#999' }}>
-        RIINA Compiler v0.2.0 · Backed by 6,720 machine-checked proofs · Zero external dependencies · MPL-2.0 licensed ·{' '}
-        <span style={{ cursor: 'pointer', textDecoration: 'underline' }}
-              onClick={() => onNavigate && onNavigate('docs')}>
-          Documentation
-        </span>
+      <div style={{ marginTop: 24, fontSize: 12, color: '#999', textAlign: 'center' }}>
+        RIINA Compiler v0.2.0 · 6,194 theorems proven · Zero external dependencies · MPL-2.0
+      </div>
       </div>
     </div>
   );
