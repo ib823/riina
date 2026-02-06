@@ -172,6 +172,7 @@ if git diff --cached --quiet && git diff --quiet; then
 fi
 
 # Step 9: Commit on public
+# Get original message, stripping any Co-Authored-By lines
 ORIGINAL_MSG=$(git log --format=%B -n 1 "$COMMIT_ARG" 2>/dev/null | head -1)
 git add -A
 # Final cleanup: force-remove any internal files that git add -A may have re-added
@@ -186,8 +187,6 @@ $ORIGINAL_MSG
 
 Cherry-picked from main ($(echo $COMMIT_ARG | cut -c1-7)).
 Internal files excluded.
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 EOF
 )" --quiet
 
