@@ -14,7 +14,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,929 Qed proofs in Coq + 7928 Lean + 8072 Isabelle', 'Triple-prover verification: 86 theorems across 3 independent provers', 'Standard library: 88 builtins across 9 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,929 Qed proofs in Coq + 7,928 Lean + 8,072 Isabelle', '10-prover verification: 82,982 items across Coq, Lean, Isabelle, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, TV', 'Standard library: ~38 unique builtins across 10 modules'] },
   ];
 
   const nav = (page) => { setCurrentPage(page); setMobileMenuOpen(false); };
@@ -73,7 +73,7 @@ const RiinaWebsite = () => {
       {/* Act 1: Hero */}
       <section className="hero">
         <p className="hero-stat-line">
-          <span>82,982</span> proofs &middot; <span>3</span> provers &middot; <span>0</span> admits &middot; <span>1</span> axiom &middot; Triple-verified
+          <span>82,982</span> proofs &middot; <span>10</span> provers &middot; <span>0</span> admits &middot; <span>1</span> axiom &middot; Verified
         </p>
         <h1>
           Security<br/><strong>proven at compile time.</strong>
@@ -201,11 +201,11 @@ const RiinaWebsite = () => {
         </div>
 
         <div className="terminal-block">
-          <div><span className="prompt">$ </span><span className="cmd">git clone https://github.com/ib823/riina.git && cd proof</span></div>
+          <div><span className="prompt">$ </span><span className="cmd">git clone https://github.com/ib823/riina.git && cd riina</span></div>
           <div><span className="prompt">$ </span><span className="cmd">cd 02_FORMAL/coq && make</span></div>
           <div style={{color:'var(--text-string)'}}>Compiling 250 files... done. 0 errors.</div>
           <div><span className="prompt">$ </span><span className="cmd">grep -c "Qed\." **/*.v</span></div>
-          <div style={{color:'var(--text-accent)'}}>7928</div>
+          <div style={{color:'var(--text-accent)'}}>7929</div>
           <div><span className="prompt">$ </span><span className="cmd">grep -c "Admitted\." **/*.v</span></div>
           <div style={{color:'var(--text-string)'}}>0</div>
         </div>
@@ -229,16 +229,16 @@ const RiinaWebsite = () => {
         </div>
 
         <div className="triple-prover">
-          <h3 className="triple-prover__title">Three provers. One truth.</h3>
+          <h3 className="triple-prover__title">Ten provers. One truth.</h3>
           <p className="triple-prover__desc">
-            Core theorems independently proved in three proof assistants with different mathematical
+            Core theorems independently verified across ten proof systems with different mathematical
             foundations. A bug in one prover cannot compromise the guarantees.
           </p>
           <div className="triple-prover__grid">
             {[
               { prover: 'Coq 8.20.1', count: '7,929', role: 'Primary', foundation: 'CIC' },
-              { prover: 'Lean 4', count: '6154', role: 'Secondary', foundation: 'DTT' },
-              { prover: 'Isabelle/HOL', count: '6227', role: 'Tertiary', foundation: 'HOL' },
+              { prover: 'Lean 4', count: '7,928', role: 'Secondary', foundation: 'DTT' },
+              { prover: 'Isabelle/HOL', count: '8,072', role: 'Tertiary', foundation: 'HOL' },
             ].map((p, i) => (
               <div key={i} className="triple-prover__card">
                 <div className="triple-prover__prover">{p.prover}</div>
@@ -248,7 +248,7 @@ const RiinaWebsite = () => {
             ))}
           </div>
           <p className="triple-prover__note">
-            86 triple-prover theorems &middot; 0 sorry &middot; 1 justified axiom &middot; N-version verification
+            7,229 triple-prover theorems &middot; 0 sorry &middot; 1 justified axiom &middot; 10 provers
           </p>
         </div>
       </section>
@@ -503,7 +503,7 @@ fungsi muat_dan_nyahsulit(
                 <h2 style={{fontSize:20,fontWeight:500,marginBottom:16}}>Install</h2>
                 <pre className="code-block" style={{marginBottom:32}}>{`# From source
 git clone https://github.com/ib823/riina.git
-cd proof/03_PROTO
+cd riina/03_PROTO
 cargo build --release
 
 # Docker
@@ -577,7 +577,7 @@ riinac build hello.rii    # Compile to native binary`}</pre>
                   RIINA is open source under MPL-2.0. Contributions to the compiler, proofs, standard library, and documentation are welcome.
                 </p>
                 <pre className="code-block" style={{marginBottom:24}}>{`# Setup
-git clone https://github.com/ib823/riina.git && cd proof
+git clone https://github.com/ib823/riina.git && cd riina
 cd 00_SETUP/scripts
 ./install_rust.sh && ./install_coq.sh && ./verify_setup.sh
 
@@ -720,7 +720,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
             { num: '01', title: 'Security as Types', desc: 'Rahsia<T> wraps sensitive data. kesan Kripto marks crypto functions. masa_tetap ensures constant-time execution. These are compiler-enforced, not annotations.' },
             { num: '02', title: 'Effects Track Side Effects', desc: 'Every function declares its effects: kesan Baca + Kripto. The compiler tracks what your code can do. Security-critical code is restricted to specific effects.' },
             { num: '03', title: 'The Compiler Proves Security', desc: 'When you compile, the compiler proves: no information leakage (non-interference), effects are tracked (effect safety), timing-sensitive code runs in constant time, and secrets are zeroed.' },
-            { num: '04', title: 'Verified End-to-End', desc: 'RIINA\'s compiler itself is verified with riinac verify. The formal proofs (284 Coq files, 12 Lean files, 10 Isabelle files) ship with the compiler. Triple-prover verification across Coq, Lean 4, and Isabelle/HOL.' },
+            { num: '04', title: 'Verified End-to-End', desc: 'RIINA\'s compiler itself is verified with riinac verify. The formal proofs (250 Coq files, 255 Lean files, 260 Isabelle files) ship with the compiler. 10-prover verification across Coq, Lean 4, Isabelle/HOL, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, and Translation Validation.' },
           ].map((step, i) => (
             <div key={i} className="pipeline-step">
               <div className="pipeline-step__num">{step.num}</div>
@@ -735,11 +735,11 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
 
       <section className="section--alt" style={{padding:'80px 24px'}}>
         <div style={{maxWidth:'var(--max-w-text)',margin:'0 auto'}}>
-          <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>Triple-Prover Verification</h2>
+          <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>10-Prover Verification</h2>
           <p style={{color:'var(--text-secondary)',marginBottom:32}}>
-            86 core theorems independently proved in three proof assistants using different mathematical
-            foundations (CIC, DTT, HOL). 0 sorry. 0 admitted. 1 justified policy axiom. If the same theorem
-            is proved in three independent systems, the probability of a shared prover bug is virtually zero.
+            7,229 core theorems independently proved across ten verification tools using different mathematical
+            foundations. 0 sorry. 0 admitted. 1 justified policy axiom. If the same theorem
+            is proved in multiple independent systems, the probability of a shared prover bug is virtually zero.
           </p>
           {[
             { prover: 'Coq 8.20.1', theorems: '7,929 Qed', role: 'Primary — authoritative proofs (CIC)' },
@@ -760,7 +760,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
           <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>26 Research Domains</h2>
           {[
             { id: 'A', name: 'Core Type Theory', desc: 'Type safety, non-interference, logical relations' },
-            { id: 'B', name: 'Compiler & Prototype', desc: '15 Rust crates, 839 tests' },
+            { id: 'B', name: 'Compiler & Prototype', desc: '15 Rust crates, 856 tests' },
             { id: 'C', name: 'Language Specifications', desc: 'Grammar, AST, type system spec' },
             { id: 'D-Q', name: 'Attack Surface Research', desc: '14 domains, 1,231+ threats enumerated' },
             { id: 'R', name: 'Certified Compilation', desc: 'Translation validation' },
