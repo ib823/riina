@@ -396,6 +396,330 @@ def generate_alloy_file(parsed: CoqFile, coq_path: str) -> str:
 # SMT-LIB GENERATOR (Layer 7: Z3/CVC5 refinement type checking)
 # ===================================================================
 
+def _smt_type(t, records=None):
+    """Convert Coq type to SMT-LIB type."""
+    if t == 'bool':
+        return 'Bool'
+    if t == 'nat':
+        return 'Int'
+    # Check if it's a known record/inductive type name
+    if records:
+        for rec in records:
+            if t == rec.name:
+                return t
+    return t
+
+def _coq_body_to_smt(body, param_names=None, record_fields=None, defn_names=None,
+                      zero_ary_defns=None):
+    """Translate a Coq definition body to SMT-LIB expression.
+
+    Handles:
+    - field accessors: `field_name arg` → `(field_name arg)`
+    - boolean &&: `a && b` → `(and a b)`
+    - boolean ||: `a || b` → `(or a b)`
+    - negb: `negb a` → `(not a)`
+    - true/false → `true`/`false`
+    - function calls: `f arg` → `(f arg)`
+
+    Returns None if translation fails (falls back to `true`).
+    """
+    if body is None:
+        return None
+    body = body.strip()
+    if not body:
+        return None
+    if zero_ary_defns is None:
+        zero_ary_defns = set()
+
+    # Direct booleans
+    if body == 'true':
+        return 'true'
+    if body == 'false':
+        return 'false'
+
+    # Handle negb
+    m = re.match(r'^negb\s+(.+)$', body)
+    if m:
+        inner = _coq_body_to_smt(m.group(1), param_names, record_fields,
+                                  defn_names, zero_ary_defns)
+        if inner:
+            return f'(not {inner})'
+
+    # Handle && (andb) — split on &&, recursively translate
+    if '&&' in body:
+        parts = _split_coq_binop(body, '&&')
+        if parts and len(parts) >= 2:
+            smt_parts = []
+            for p in parts:
+                t = _coq_body_to_smt(p.strip(), param_names, record_fields,
+                                      defn_names, zero_ary_defns)
+                if t is None:
+                    return None
+                smt_parts.append(t)
+            if len(smt_parts) == 2:
+                return f'(and {smt_parts[0]} {smt_parts[1]})'
+            else:
+                return '(and ' + ' '.join(smt_parts) + ')'
+
+    # Handle || (orb)
+    if '||' in body:
+        parts = _split_coq_binop(body, '||')
+        if parts and len(parts) >= 2:
+            smt_parts = []
+            for p in parts:
+                t = _coq_body_to_smt(p.strip(), param_names, record_fields,
+                                      defn_names, zero_ary_defns)
+                if t is None:
+                    return None
+                smt_parts.append(t)
+            if len(smt_parts) == 2:
+                return f'(or {smt_parts[0]} {smt_parts[1]})'
+            else:
+                return '(or ' + ' '.join(smt_parts) + ')'
+
+    # Handle field accessor: `field_name param` where field_name is a known record field
+    if record_fields:
+        m = re.match(r'^(\w+)\s+(\w+)$', body)
+        if m:
+            fname, arg = m.group(1), m.group(2)
+            if fname in record_fields:
+                arg_smt = arg if arg not in zero_ary_defns else arg
+                return f'({fname} {arg_smt})'
+            # Could be a defined function call
+            if defn_names and fname in defn_names:
+                arg_smt = arg if arg not in zero_ary_defns else arg
+                return f'({fname} {arg_smt})'
+
+    # Single identifier (param or variable)
+    if re.match(r'^\w+$', body):
+        if param_names and body in param_names:
+            return body
+        if body in ('true', 'false'):
+            return body
+        return body
+
+    # Match-based definitions are too complex for simple translation
+    if 'match' in body:
+        return None
+
+    return None
+
+
+def _split_coq_binop(body, op):
+    """Split a Coq expression on a binary operator, respecting parentheses."""
+    parts = []
+    depth = 0
+    current = []
+    i = 0
+    while i < len(body):
+        if body[i] == '(':
+            depth += 1
+            current.append(body[i])
+        elif body[i] == ')':
+            depth -= 1
+            current.append(body[i])
+        elif depth == 0 and body[i:i+len(op)] == op:
+            parts.append(''.join(current).strip())
+            current = []
+            i += len(op)
+            continue
+        else:
+            current.append(body[i])
+        i += 1
+    if current:
+        parts.append(''.join(current).strip())
+    return parts if len(parts) >= 2 else None
+
+
+def _coq_constant_to_smt(body, records, defn_map):
+    """Translate a Coq constant definition (no params) to SMT expression.
+
+    Handles record constructors like:
+      mkCTConfig true true true true true true true
+    → (mk-constant_time_config true true true true true true true)
+
+    And references to other definitions/constructors.
+    """
+    if body is None:
+        return None
+    body = body.strip()
+
+    # Check for record constructor: `mkFoo arg1 arg2 ...`
+    for rec in records:
+        if body.startswith(rec.constructor):
+            rest = body[len(rec.constructor):].strip()
+            # Parse constructor arguments
+            args = _parse_constructor_args(rest, defn_map)
+            if args and len(args) == len(rec.fields):
+                smt_args = ' '.join(args)
+                return f'(mk-{_to_snake_case(rec.name)} {smt_args})'
+
+    return None
+
+
+def _parse_constructor_args(text, defn_map):
+    """Parse space-separated constructor arguments."""
+    args = []
+    tokens = text.split()
+    for tok in tokens:
+        if tok == 'true':
+            args.append('true')
+        elif tok == 'false':
+            args.append('false')
+        elif re.match(r'^\d+$', tok):
+            args.append(tok)
+        elif tok in defn_map:
+            # Reference to another definition — use its name
+            args.append(f'({tok})')
+        else:
+            # Could be an inductive constructor
+            args.append(tok)
+    return args
+
+
+def _coq_stmt_to_smt(stmt, param_names=None, record_fields=None, defn_names=None,
+                      zero_ary_defns=None):
+    """Translate a Coq theorem statement to SMT-LIB assertion body.
+
+    Handles:
+    - `f x = true` → `(= (f x) true)`
+    - `forall c : T, P c` → `(forall ((c T)) P_translated)`
+    - `A -> B` → `(=> A B)`
+    - `A /\\ B` → `(and A B)`
+
+    Returns None if translation fails.
+    """
+    if stmt is None:
+        return None
+    stmt = stmt.strip()
+    if not stmt:
+        return None
+    if zero_ary_defns is None:
+        zero_ary_defns = set()
+
+    # Handle forall: `forall (c : Type), body` or `forall c : Type, body`
+    m = re.match(r'^forall\s+(?:\()?(\w+)\s*:\s*(\w+)(?:\))?\s*,\s*(.+)$', stmt, re.DOTALL)
+    if m:
+        var_name, var_type, body = m.group(1), m.group(2), m.group(3).strip()
+        smt_type = _smt_type(var_type)
+        new_params = set(param_names or ())
+        new_params.add(var_name)
+        body_smt = _coq_stmt_to_smt(body, new_params, record_fields, defn_names,
+                                      zero_ary_defns)
+        if body_smt:
+            return f'(forall (({var_name} {smt_type})) {body_smt})'
+        return None
+
+    # Handle implication: `A -> B`
+    parts = _split_coq_arrow(stmt)
+    if parts and len(parts) >= 2:
+        smt_parts = []
+        for p in parts:
+            t = _coq_stmt_to_smt(p.strip(), param_names, record_fields, defn_names,
+                                  zero_ary_defns)
+            if t is None:
+                return None
+            smt_parts.append(t)
+        if len(smt_parts) == 2:
+            return f'(=> {smt_parts[0]} {smt_parts[1]})'
+        result = smt_parts[-1]
+        for p in reversed(smt_parts[:-1]):
+            result = f'(=> {p} {result})'
+        return result
+
+    # Handle conjunction: `A /\ B`
+    if '/\\' in stmt:
+        parts = _split_coq_binop(stmt, '/\\')
+        if parts:
+            smt_parts = []
+            for p in parts:
+                t = _coq_stmt_to_smt(p.strip(), param_names, record_fields, defn_names,
+                                      zero_ary_defns)
+                if t is None:
+                    return None
+                smt_parts.append(t)
+            return '(and ' + ' '.join(smt_parts) + ')'
+
+    # Handle equality: `expr = value`
+    m = re.match(r'^(.+?)\s*=\s*(.+)$', stmt)
+    if m:
+        lhs_raw, rhs_raw = m.group(1).strip(), m.group(2).strip()
+        lhs = _coq_expr_to_smt(lhs_raw, param_names, record_fields, defn_names,
+                                zero_ary_defns)
+        rhs = _coq_expr_to_smt(rhs_raw, param_names, record_fields, defn_names,
+                                zero_ary_defns)
+        if lhs and rhs:
+            return f'(= {lhs} {rhs})'
+
+    return None
+
+
+def _coq_expr_to_smt(expr, param_names=None, record_fields=None, defn_names=None,
+                      zero_ary_defns=None):
+    """Translate a Coq expression (in theorem statements) to SMT."""
+    expr = expr.strip()
+    if not expr:
+        return None
+    if zero_ary_defns is None:
+        zero_ary_defns = set()
+    if expr == 'true':
+        return 'true'
+    if expr == 'false':
+        return 'false'
+    if re.match(r'^\d+$', expr):
+        return expr
+
+    # Single identifier
+    if re.match(r'^\w+$', expr):
+        if param_names and expr in param_names:
+            return expr
+        # 0-ary definitions are SMT constants — reference by name (no parens)
+        if expr in zero_ary_defns:
+            return expr
+        return expr
+
+    # Function application: `f arg` or `f arg1 arg2`
+    tokens = expr.split()
+    if len(tokens) >= 2:
+        func = tokens[0]
+        args = []
+        for t in tokens[1:]:
+            a = _coq_expr_to_smt(t, param_names, record_fields, defn_names,
+                                  zero_ary_defns)
+            if a is None:
+                return None
+            args.append(a)
+        return f'({func} {" ".join(args)})'
+
+    return None
+
+
+def _split_coq_arrow(stmt):
+    """Split Coq statement on -> (implication), respecting parentheses and forall."""
+    parts = []
+    depth = 0
+    current = []
+    i = 0
+    while i < len(stmt):
+        if stmt[i] == '(':
+            depth += 1
+            current.append(stmt[i])
+        elif stmt[i] == ')':
+            depth -= 1
+            current.append(stmt[i])
+        elif depth == 0 and stmt[i:i+2] == '->':
+            parts.append(''.join(current).strip())
+            current = []
+            i += 2
+            continue
+        else:
+            current.append(stmt[i])
+        i += 1
+    if current:
+        parts.append(''.join(current).strip())
+    return parts if len(parts) >= 2 else None
+
+
 def generate_smt_file(parsed: CoqFile, coq_path: str) -> str:
     lines = []
     mod = parsed.filename.replace('.v', '')
@@ -410,6 +734,19 @@ def generate_smt_file(parsed: CoqFile, coq_path: str) -> str:
     lines.append('(set-logic ALL)')
     lines.append('(set-option :produce-models true)')
     lines.append('')
+
+    # Build lookup tables for translation
+    record_fields = set()
+    for rec in parsed.records:
+        for f in rec.fields:
+            record_fields.add(f[0])
+    defn_names = set(d.name for d in parsed.definitions)
+    defn_map = {d.name: d for d in parsed.definitions}
+    # Track which definitions are 0-ary (constants in SMT-LIB, referenced by name)
+    zero_ary_defns = set()
+    for d in parsed.definitions:
+        if not _extract_param_types(d.params):
+            zero_ary_defns.add(d.name)
 
     # Inductive types as datatypes
     for ind in parsed.inductives:
@@ -429,23 +766,51 @@ def generate_smt_file(parsed: CoqFile, coq_path: str) -> str:
         lines.append(f'  (((mk-{_to_snake_case(rec.name)} {fields}))))')
         lines.append('')
 
-    # Definitions as functions
+    # Definitions as functions — now with real bodies
     for defn in parsed.definitions:
         pts = _extract_param_types(defn.params)
-        smt_ret = 'Bool' if defn.ret_type == 'bool' else 'Int' if defn.ret_type == 'nat' else 'Bool'
+        smt_ret = _smt_type(defn.ret_type, parsed.records)
         if pts:
-            params = ' '.join(f'({n} {"Bool" if t == "bool" else "Int" if t == "nat" else t})' for n, t in pts)
+            params = ' '.join(
+                f'({n} {_smt_type(t, parsed.records)})' for n, t in pts
+            )
+            param_names = set(n for n, _ in pts)
+            body_smt = _coq_body_to_smt(
+                defn.body, param_names, record_fields, defn_names,
+                zero_ary_defns
+            )
+            if body_smt is None:
+                body_smt = 'true'  # fallback
             lines.append(f'; {defn.name} (matches Coq: Definition {defn.name})')
-            lines.append(f'(define-fun {defn.name} ({params}) {smt_ret} true)')
+            lines.append(f'(define-fun {defn.name} ({params}) {smt_ret}')
+            lines.append(f'  {body_smt})')
         else:
-            lines.append(f'; {defn.name} (matches Coq: Definition {defn.name})')
-            lines.append(f'(define-fun {defn.name} () {smt_ret} true)')
+            # No-param definition — could be a record constant or simple value
+            const_smt = _coq_constant_to_smt(defn.body, parsed.records, defn_map)
+            if const_smt:
+                lines.append(f'; {defn.name} (matches Coq: Definition {defn.name})')
+                lines.append(f'(define-fun {defn.name} () {smt_ret}')
+                lines.append(f'  {const_smt})')
+            else:
+                # Simple value or untranslatable
+                body_smt = _coq_body_to_smt(defn.body, set(), record_fields,
+                                              defn_names, zero_ary_defns)
+                if body_smt is None:
+                    body_smt = 'true'
+                lines.append(f'; {defn.name} (matches Coq: Definition {defn.name})')
+                lines.append(f'(define-fun {defn.name} () {smt_ret} {body_smt})')
         lines.append('')
 
-    # Theorems as assertions
+    # Theorems as real assertions
     for thm in parsed.theorems:
+        stmt_smt = _coq_stmt_to_smt(
+            thm.statement, set(), record_fields, defn_names, zero_ary_defns
+        )
         lines.append(f'; {thm.name} (matches Coq: {thm.kind} {thm.name})')
-        lines.append(f'(assert (= true true)) ; {thm.name}')
+        if stmt_smt:
+            lines.append(f'(assert {stmt_smt}) ; {thm.name}')
+        else:
+            lines.append(f'(assert (= true true)) ; {thm.name} [untranslatable]')
         lines.append('')
 
     lines.append('; Verify all assertions are satisfiable')

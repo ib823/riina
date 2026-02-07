@@ -1,6 +1,6 @@
 # Contributing to RIINA
 
-**Verification:** 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) | 10 independent provers | 852 Rust tests
+**Audit Update:** 2026-02-07 (Session 81: 10-Prover Full Stack) — 82,980 total items across 10 provers. 7,929 Coq Qed (compiled) + 15998 Lean/Isabelle (transpiled, uncompiled) + ~59053 generated stubs (7 provers). 0 Admitted. 1 axiom (policy). 852 Rust tests.
 
 Thank you for your interest in RIINA. This guide covers how to contribute effectively.
 
