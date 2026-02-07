@@ -1,6 +1,6 @@
 # RIINA DEFINITIVE SCOPE DOCUMENT
 
-**Audit Update:** 2026-02-07 (Full re-audit) — Active build: 0 Admitted, 4 axioms, 249 active .v files, 6,574 Qed (active), 902 Rust tests. Previous: 2026-02-04.
+**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
 
 ## Version 1.0.0 — The Single Source of Truth
 
@@ -19,7 +19,7 @@
 ║                                                                                                      ║
 ║  Classification: ULTRA KIASU | ZERO TRUST | INFINITE TIMELINE                                       ║
 ║  Date: 2026-01-19                                                                                    ║
-║  Repository: github.com/ib823/proof                                                                  ║
+║  Repository: github.com/ib823/riina                                                                  ║
 ║                                                                                                      ║
 ║  RIINA: Rigorous Immutable Invariant — Normalized Axiom                                              ║
 ║                                                                                                      ║
@@ -61,7 +61,7 @@
 ║  A formally verified programming language where security properties                                  ║
 ║  are mathematically guaranteed at compile time.                                                     ║
 ║                                                                                                      ║
-║  Single Codebase: github.com/ib823/proof                                                            ║
+║  Single Codebase: github.com/ib823/riina                                                            ║
 ║                                                                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -302,43 +302,34 @@ Everything else = Programs TO BE WRITTEN in RIINA (future, separate codebases)
 ## 5.1 Single Authoritative Repository
 
 ```
-Repository: github.com/ib823/proof
+Repository: github.com/ib823/riina
 ─────────────────────────────────
 
 This repository contains EVERYTHING that IS RIINA:
 
-/workspaces/proof/
-├── CLAUDE.md                    ← Master instructions
-├── PROGRESS.md                  ← Current status tracker
-├── SESSION_LOG.md               ← Session continuity
+riina/
+├── README.md                    ← Project overview
+├── CONTRIBUTING.md              ← Contribution guide
+├── CHANGELOG.md                 ← Release history
 │
 ├── 00_SETUP/                    ← Setup scripts
-├── 01_RESEARCH/                 ← Research archive (read-only)
 ├── 02_FORMAL/                   ← Formal proofs (Track A)
 ├── 03_PROTO/                    ← Prototype (Track B)
 ├── 04_SPECS/                    ← Specifications (Track C)
 ├── 05_TOOLING/                  ← Tools (Track F)
-├── 06_COORDINATION/             ← Cross-track coordination
 └── 07_EXAMPLES/                 ← Example .rii files
 ```
 
-## 5.2 Current Codebase Status (Updated 2026-02-07)
+## 5.2 Current Codebase Status
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Axioms** | 4 | Target: 0 (down from 18 at scope creation) |
-| **Admitted** | 0 | 100% Qed rate (down from 45 at scope creation) |
-| **Qed Proofs** | 6,574 | Active build, machine-verified |
-| **Coq Files** | 249 | All in `_CoqProject` (up from 33 at scope creation) |
-| **Rust Tests** | 902 | 750 (03_PROTO) + 152 (05_TOOLING), all passing |
-| **Rust Crates** | 15 | Active workspace members |
+| **Axioms** | 18 | Target: 0 |
+| **Admitted** | 45 | 92.9% Qed rate |
+| **Coq Files** | 33 | All compiling |
+| **Rust Tests** | 503 | All passing |
 | **Research Tracks** | 218 | Defined |
-| **Example .rii** | 121 | In `07_EXAMPLES/` |
-| **Phase** | 7 | Complete through platform universality |
-
-Note: Section 5.2 was written during Phase 0 (2026-01-19) when the codebase had
-33 Coq files, 18 axioms, and 45 Admitted proofs. All of these have been dramatically
-improved — axioms reduced from 18 to 4, Admitted eliminated entirely.
+| **Phase 0** | 85% | Foundation |
 
 ---
 
@@ -528,25 +519,24 @@ improved — axioms reduced from 18 to 4, Admitted eliminated entirely.
 
 ## 9.1 What Must Be Proven
 
-| Property | Proof Requirement | Current Status (2026-02-07) |
-|----------|-------------------|----------------------------|
-| **Type Safety** | Progress + Preservation | ✅ Proved (Progress.v, Preservation.v, TypeSafety.v) |
-| **Non-Interference** | TINI + TSNI | 🟡 Proved with 4 axioms remaining |
-| **Effect Soundness** | Effect tracking sound | ✅ Proved (EffectSystem.v, EffectAlgebra.v) |
-| **Linear Resource Safety** | No UAF/DF/DR | ✅ Proved (MemorySafety.v, OwnershipTypes.v) |
-| **Memory Safety** | Spatial + temporal | ✅ Proved (MemorySafety.v — 139 Qed) |
-| **Constant-Time** | No timing leaks | ✅ Proved (TimingSecurity.v — 67 Qed) |
-| **Capability Safety** | No capability forgery | ✅ Proved (CapabilitySecurity.v — 108 Qed) |
+| Property | Proof Requirement | Current Status |
+|----------|-------------------|----------------|
+| **Type Safety** | Progress + Preservation | 🟡 18 axioms remain |
+| **Non-Interference** | TINI + TSNI | 🟡 In progress |
+| **Effect Soundness** | Effect tracking sound | 🟡 Axioms needed |
+| **Linear Resource Safety** | No UAF/DF/DR | 🟡 Axioms needed |
+| **Memory Safety** | Spatial + temporal | 🟡 Axioms needed |
+| **Constant-Time** | No timing leaks | 📋 Defined |
+| **Capability Safety** | No capability forgery | 📋 Defined |
 
 ## 9.2 Verification Targets
 
-| Target | At Scope Creation (Jan 19) | Current (Feb 7) | Goal |
-|--------|---------------------------|-----------------|------|
-| **Axioms** | 18 | 4 | 0 |
-| **Admitted** | 45 | 0 | 0 ✅ |
-| **Qed Rate** | 92.9% | 100% | 100% ✅ |
-| **Proof Assistants** | 1 (Coq) | 3 (Coq + Lean + Isabelle) | 3 ✅ |
-| **Triple-Prover Theorems** | 0 | 84 | 84+ |
+| Target | Current | Goal |
+|--------|---------|------|
+| **Axioms** | 18 | 0 |
+| **Admitted** | 45 | 0 |
+| **Qed Rate** | 92.9% | 100% |
+| **Proof Assistants** | 1 (Coq) | 3 (Coq + Lean + Isabelle) |
 
 ---
 
@@ -574,7 +564,7 @@ improved — axioms reduced from 18 to 4, Admitted eliminated entirely.
 | TERAS-LANG-LEXER-SPEC_v1_0_0.md | Lexer specification | Syntax details |
 | TERAS-LANG-AST_v1_0_0.md | AST specification | AST node definitions |
 | TERAS_DEFINITIVE_PLAN_v1_0_0.md | Execution plan | Research session details |
-| PROGRESS.md | Current status | Live status tracking |
+| CHANGELOG.md | Release history | Public release notes |
 
 ---
 

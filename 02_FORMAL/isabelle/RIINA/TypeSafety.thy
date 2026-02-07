@@ -20,7 +20,7 @@
  *)
 
 theory TypeSafety
-  imports Main Syntax Semantics Typing Progress
+  imports Main Syntax Semantics Typing Progress Preservation
 begin
 
 section \<open>Stuck Configuration\<close>
@@ -40,7 +40,7 @@ text \<open>Type safety: well-typed programs don't get stuck
       (matches Coq: Theorem type_safety)\<close>
 
 theorem type_safety:
-  assumes "has_type [] \<Sigma> Public e T \<epsilon>"
+  assumes "has_type [] \<Sigma> LPublic e T \<epsilon>"
       and "store_wf \<Sigma> st"
   shows "\<not> stuck (e, st, ctx)"
 proof -
@@ -60,7 +60,7 @@ text \<open>Multi-step safety: well-typed terms stay well-typed after any steps
       The core type_safety theorem is the key result.\<close>
 
 theorem multi_step_safety:
-  assumes "has_type [] \<Sigma> Public e T \<epsilon>"
+  assumes "has_type [] \<Sigma> LPublic e T \<epsilon>"
       and "store_wf \<Sigma> st"
       and "(e, st, ctx) \<longrightarrow>* (e', st', ctx')"
   shows "\<exists>\<Sigma>'. store_wf \<Sigma>' st' \<and> \<not> stuck (e', st', ctx')"
@@ -72,9 +72,21 @@ proof (induction "(e, st, ctx)" "(e', st', ctx')" arbitrary: e st ctx e' st' ctx
     using type_safety by auto
 next
   case (MS_Step cfg1 cfg2 cfg3)
-  (* Would need preservation to continue - placeholder *)
-  then show ?case
-    sorry
+  (* cfg1 = (e, st, ctx), cfg3 = (e', st', ctx') *)
+  (* MS_Step.hyps(1): step cfg1 cfg2 *)
+  (* MS_Step.prems: has_type, store_wf *)
+  obtain e2 st2 ctx2 where cfg2_eq: "cfg2 = (e2, st2, ctx2)"
+    by (metis surjective_pairing)
+  have hstep: "(e, st, ctx) \<longrightarrow> (e2, st2, ctx2)"
+    using MS_Step.hyps(1) cfg2_eq by simp
+  (* Apply preservation to get typing and store_wf for intermediate state *)
+  from preservation[OF MS_Step.prems(1) MS_Step.prems(2) hstep]
+  obtain \<Sigma>' \<epsilon>' where
+    hwf': "store_wf \<Sigma>' st2" and
+    hty': "has_type [] \<Sigma>' LPublic e2 T \<epsilon>'"
+    by auto
+  (* Apply IH on the remaining multi-step *)
+  show ?case using MS_Step.IH[OF cfg2_eq hty' hwf'] by auto
 qed
 
 
@@ -86,13 +98,12 @@ text \<open>
   | Coq Theorem                | Isabelle Lemma             | Status   |
   |----------------------------|----------------------------|----------|
   | type_safety                | type_safety                | Proved   |
-  | multi_step_safety          | multi_step_safety          | Partial  |
+  | multi_step_safety          | multi_step_safety          | Proved   |
 
-  Total: 2 lemmas ported (1 complete, 1 partial)
+  Total: 2 lemmas ported — ALL PROVED (0 unfinished)
 
-  Note: multi_step_safety requires the full Preservation theorem which has
-  ~16 auxiliary lemmas totaling 1200+ lines. The core type_safety theorem
-  is fully proved using Progress.
+  multi_step_safety proved using Preservation theorem (all 20 auxiliary lemmas
+  in Preservation.thy are fully proved).
 \<close>
 
 end

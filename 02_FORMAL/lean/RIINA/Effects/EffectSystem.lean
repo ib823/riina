@@ -163,9 +163,56 @@ theorem coreEffectsWithin (Γ : TypeEnv) (Σ : StoreTy) (D : SecurityLevel)
     (e : Expr) (T : Ty) (ε : Effect)
     (hty : HasType Γ Σ D e T ε) :
     performsWithin e ε := by
-  -- Full proof requires extensive case analysis on all 28 typing rules
-  -- Each case shows the expression performs effects within its declared bound
-  sorry
+  induction hty with
+  -- Category A: Trivially true (values, vars, lambdas)
+  | unit | bool _ | int _ | string _ | loc _ | var _ | lam _ =>
+      simp [performsWithin]
+  -- Category B: Single subexpression, same effect
+  | fst _ ih | snd _ ih | inl _ ih | inr _ ih
+  | ref _ ih | deref _ ih | classify _ ih | prove _ ih
+  | require _ ih | grant _ ih =>
+      simp [performsWithin]; exact ih
+  -- Category C: Two subexpressions joined with effect_join
+  | app h1 h2 ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectJoin_ub_r _ _) ih2⟩
+  | pair h1 h2 ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectJoin_ub_r _ _) ih2⟩
+  | let_ h1 h2 ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectJoin_ub_r _ _) ih2⟩
+  | handle h1 h2 ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectJoin_ub_r _ _) ih2⟩
+  | assign h1 h2 _ ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectJoin_ub_r _ _) ih2⟩
+  | declassify h1 h2 _ ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectJoin_ub_r _ _) ih2⟩
+  -- Category D: Perform — effect_leq check + subexpression
+  | perform h ih =>
+      simp [performsWithin]
+      exact ⟨effectJoin_ub_r _ _,
+             performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih⟩
+  -- Category E: Three subexpressions with nested join
+  | case_ h0 h1 h2 ih0 ih1 ih2 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih0,
+             performsWithin_mono _ _ _ (effectLeq_join_ub_l_trans _ _ _) ih1,
+             performsWithin_mono _ _ _ (effectLeq_join_ub_r_trans _ _ _) ih2⟩
+  | ite h1 h2 h3 ih1 ih2 ih3 =>
+      simp [performsWithin]
+      exact ⟨performsWithin_mono _ _ _ (effectJoin_ub_l _ _) ih1,
+             performsWithin_mono _ _ _ (effectLeq_join_ub_l_trans _ _ _) ih2,
+             performsWithin_mono _ _ _ (effectLeq_join_ub_r_trans _ _ _) ih3⟩
 
 /-! ## Extended Typing with Full Effect Operations -/
 
@@ -281,9 +328,12 @@ This file ports EffectSystem.v (325 lines Coq) to Lean 4.
 | performs_within_mono | performsWithin_mono | ✅ Proved |
 | effect_leq_join_ub_l_trans | effectLeq_join_ub_l_trans | ✅ Proved |
 | effect_leq_join_ub_r_trans | effectLeq_join_ub_r_trans | ✅ Proved |
-| core_effects_within | coreEffectsWithin | ⚠️ Stated (sorry) |
+| core_effects_within | coreEffectsWithin | ✅ Proved |
 | has_type_full | HasTypeFull | ✅ Defined |
-| effect_safety | effectSafety | ✅ Proved (modulo coreEffectsWithin) |
+| effect_safety | effectSafety | ✅ Proved |
 
-Total: 7 definitions/theorems ported (1 partial: coreEffectsWithin needs 28-case induction)
+Total: 7 definitions/theorems ported — ALL PROVED (0 unfinished)
+
+coreEffectsWithin proved by 26-case induction on HasType using
+performsWithin_mono and effectJoin upper bound lemmas.
 -/

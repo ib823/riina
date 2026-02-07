@@ -1,6 +1,6 @@
 # Changelog
 
-**Audit Update:** 2026-02-06 (Session 77: Triple-Prover Complete) — 7,682 Coq Qed + 91 Lean theorems + 102 Isabelle lemmas = 7,875 total proofs. 0 Admitted/sorry. 1 axiom (policy). 284 .v files, 12 .lean files, 10 .thy files. 839 Rust tests.
+**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
 
 All notable changes to RIINA will be documented in this file.
 
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coq 8.20.1 compatibility: migrated from Rocq 9.1, fixed all import paths (`Stdlib.*` → `Coq.*`), fixed API changes (`filter_length` → `filter_length_le`), fixed recursive definitions, updated proofs for new semantics
 - Eliminated all 7 previously-tracked Admitted proofs (DELTA001, Platform/WASM/Mobile stubs, ValRelStepLimit)
 - Eliminated 3 of 4 axioms (logical_relation_ref, logical_relation_assign, fundamental_theorem_step_0) — 1 policy axiom remains
-- Active Coq build now at 7,682 Qed proofs
+- Active Coq build now at 7,929 Qed proofs
 
 ### Added (Phase 7)
 - Phase 7: Platform Universality — modular backend trait architecture (`Backend` trait, `Target` enum)

@@ -23,6 +23,7 @@ import RIINA.Foundations.Syntax
 import RIINA.Foundations.Semantics
 import RIINA.TypeSystem.Typing
 import RIINA.TypeSystem.Progress
+import RIINA.TypeSystem.Preservation
 
 namespace RIINA
 
@@ -64,10 +65,11 @@ theorem multiStepSafety (e e' : Expr) (T : Ty) (ε : Effect)
   induction hmulti with
   | refl =>
       exact ⟨Σ, hwf, typeSafety e T ε st ctx Σ hty hwf⟩
-  | step hstep _ ih =>
-      -- Would need preservation to get typing for intermediate state
-      -- For now, we use sorry as placeholder for the preservation-dependent step
-      sorry
+  | step hstep hmulti ih =>
+      -- Apply preservation to the first step
+      obtain ⟨Σ', ε', hext, hwf', hty'⟩ := preservation _ _ T ε _ _ _ _ Σ hty hwf hstep
+      -- Apply IH on the remaining multi-step with the new typing and store_wf
+      exact ih hty' hwf'
 
 end RIINA
 
@@ -79,11 +81,10 @@ This file ports TypeSafety.v (91 lines Coq) to Lean 4.
 | Coq Theorem | Lean Theorem | Status |
 |-------------|--------------|--------|
 | type_safety | typeSafety | ✅ Proved |
-| multi_step_safety | multiStepSafety | ⚠️ Partial (needs Preservation) |
+| multi_step_safety | multiStepSafety | ✅ Proved |
 
-Total: 2 theorems ported (1 complete, 1 partial)
+Total: 2 theorems ported — ALL PROVED (0 unfinished)
 
-Note: multiStepSafety requires the full Preservation theorem which has
-~16 auxiliary lemmas totaling 1200+ lines. The core type_safety theorem
-is fully proved using Progress.
+multiStepSafety proved using Preservation theorem (all 20 auxiliary lemmas
+in Preservation.lean are fully proved).
 -/

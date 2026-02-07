@@ -1,6 +1,6 @@
 # RIINA Syntax Improvement Specification v2.0.0
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
 
 **Document ID:** `SYNTAX_IMPROVEMENT_SPEC_v2_0_0`
 **Date:** 2026-01-30
@@ -912,13 +912,13 @@ PHASE 2+ (after core proofs complete):
 Before merging any Tier 0 change:
 
 ```bash
-cd /workspaces/proof/03_PROTO
+cd riina/03_PROTO
 cargo build --all            # Must pass
 cargo test --all             # Must pass
 cargo clippy -- -D warnings  # Must pass
 cargo fmt --check            # Must pass
 
-cd /workspaces/proof/02_FORMAL/coq
+cd riina/02_FORMAL/coq
 make                         # Must pass (unchanged)
 grep -r "Admitted" *.v       # Must be ≤ 18 (unchanged)
 ```
@@ -932,7 +932,7 @@ grep -r "Admitted" *.v       # Must be ≤ 18 (unchanged)
 | Add `EffConstantTime` / `EffSpecSafe` to `effect` | Category error: CT/SS are verification properties, not computational effects. Would break all 17 effect matches across 25+ Coq files. |
 | Change `TFn` to take `effect_row` (list effect) | Would break every `TFn` match in all 222 .v files. `effect_join` lattice is already sound. |
 | Add `EFor` / `EWhile` / `ELoop` to core `expr` | `ELoop` (infinite loop) directly contradicts `well_typed_SN` (strong normalization theorem). Loops must be bounded or effectful. |
-| Add 6 new `expr` constructors + admit downstream | Explicitly violates CLAUDE.md: "NO `admit.` — No tactical admits allowed." |
+| Add 6 new `expr` constructors + admit downstream | Explicitly violates project policy: "NO `admit.` — No tactical admits allowed." |
 | Add `TFloat` / `TChar` to Coq `ty` | These already exist in the BM syntax spec as desired types, but adding them to Coq now would break all `ty` matches across 222 files for no proof benefit. Defer until Phase 2. |
 | Security level 2→6 in Coq | Already done — Coq has 6 levels since initial implementation. |
 | Effect 6→18 in Coq | Already done — Coq has 17 effects. The v1 spec was counting stale data. |

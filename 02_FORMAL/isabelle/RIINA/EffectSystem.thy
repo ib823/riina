@@ -191,8 +191,129 @@ text \<open>
 theorem core_effects_within:
   assumes "has_type G S D e T eff"
   shows "performs_within e eff"
-  (* Full proof requires extensive case analysis on all 28 typing rules *)
-  sorry
+  using assms
+proof (induction rule: has_type.induct)
+  (* === Category A: Trivially true (performs_within returns True for values/vars) === *)
+  case (T_Unit \<Gamma> \<Sigma> \<Delta>) thus ?case by simp
+next
+  case (T_Bool \<Gamma> \<Sigma> \<Delta> b) thus ?case by simp
+next
+  case (T_Int \<Gamma> \<Sigma> \<Delta> n) thus ?case by simp
+next
+  case (T_String \<Gamma> \<Sigma> \<Delta> s) thus ?case by simp
+next
+  case (T_Loc l \<Sigma> T sl \<Gamma> \<Delta>) thus ?case by simp
+next
+  case (T_Var x \<Gamma> T \<Sigma> \<Delta>) thus ?case by simp
+next
+  case (T_Lam x T1 \<Gamma> \<Sigma> \<Delta> e T2 \<epsilon>) thus ?case by simp
+next
+  (* === Category B: Single subexpression, same effect === *)
+  case (T_Fst \<Gamma> \<Sigma> \<Delta> e T1 T2 \<epsilon>)
+  thus ?case by simp
+next
+  case (T_Snd \<Gamma> \<Sigma> \<Delta> e T1 T2 \<epsilon>)
+  thus ?case by simp
+next
+  case (T_Inl \<Gamma> \<Sigma> \<Delta> e T1 \<epsilon> T2)
+  thus ?case by simp
+next
+  case (T_Inr \<Gamma> \<Sigma> \<Delta> e T2 \<epsilon> T1)
+  thus ?case by simp
+next
+  case (T_Ref \<Gamma> \<Sigma> \<Delta> e T \<epsilon> l)
+  thus ?case by simp
+next
+  case (T_Deref \<Gamma> \<Sigma> \<Delta> e T l \<epsilon>)
+  thus ?case by simp
+next
+  case (T_Classify \<Gamma> \<Sigma> \<Delta> e T \<epsilon>)
+  thus ?case by simp
+next
+  case (T_Prove \<Gamma> \<Sigma> \<Delta> e T \<epsilon>)
+  thus ?case by simp
+next
+  case (T_Require \<Gamma> \<Sigma> \<Delta> e T \<epsilon> eff)
+  thus ?case by simp
+next
+  case (T_Grant \<Gamma> \<Sigma> \<Delta> e T \<epsilon> eff)
+  thus ?case by simp
+next
+  (* === Category C: Two subexpressions joined with effect_join === *)
+  case (T_App \<Gamma> \<Sigma> \<Delta> e1 T1 T2 \<epsilon>_fn \<epsilon>1 e2 \<epsilon>2)
+  (* IH: pw(e1, \<epsilon>1) and pw(e2, \<epsilon>2) *)
+  (* Need: pw(e1, join(\<epsilon>1, \<epsilon>2)) and pw(e2, join(\<epsilon>1, \<epsilon>2)) *)
+  have "performs_within e1 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_App.IH(1) performs_within_mono effect_join_ub_l by blast
+  moreover have "performs_within e2 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_App.IH(2) performs_within_mono effect_join_ub_r by blast
+  ultimately show ?case by simp
+next
+  case (T_Pair \<Gamma> \<Sigma> \<Delta> e1 T1 \<epsilon>1 e2 T2 \<epsilon>2)
+  have "performs_within e1 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Pair.IH(1) performs_within_mono effect_join_ub_l by blast
+  moreover have "performs_within e2 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Pair.IH(2) performs_within_mono effect_join_ub_r by blast
+  ultimately show ?case by simp
+next
+  case (T_Let \<Gamma> \<Sigma> \<Delta> e1 T1 \<epsilon>1 x e2 T2 \<epsilon>2)
+  have "performs_within e1 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Let.IH(1) performs_within_mono effect_join_ub_l by blast
+  moreover have "performs_within e2 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Let.IH(2) performs_within_mono effect_join_ub_r by blast
+  ultimately show ?case by simp
+next
+  case (T_Handle \<Gamma> \<Sigma> \<Delta> e T1 \<epsilon>1 x h T2 \<epsilon>2)
+  have "performs_within e (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Handle.IH(1) performs_within_mono effect_join_ub_l by blast
+  moreover have "performs_within h (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Handle.IH(2) performs_within_mono effect_join_ub_r by blast
+  ultimately show ?case by simp
+next
+  case (T_Assign \<Gamma> \<Sigma> \<Delta> e1 T l \<epsilon>1 e2 \<epsilon>2)
+  have "performs_within e1 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Assign.IH(1) performs_within_mono effect_join_ub_l by blast
+  moreover have "performs_within e2 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Assign.IH(2) performs_within_mono effect_join_ub_r by blast
+  ultimately show ?case by simp
+next
+  case (T_Declassify \<Gamma> \<Sigma> \<Delta> e1 T \<epsilon>1 e2 \<epsilon>2 ok)
+  have "performs_within e1 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Declassify.IH(1) performs_within_mono effect_join_ub_l by blast
+  moreover have "performs_within e2 (effect_join \<epsilon>1 \<epsilon>2)"
+    using T_Declassify.IH(2) performs_within_mono effect_join_ub_r by blast
+  ultimately show ?case by simp
+next
+  (* === Category D: Perform — effect_leq check + subexpression === *)
+  case (T_Perform \<Gamma> \<Sigma> \<Delta> e T \<epsilon> eff)
+  (* performs_within (EPerform eff e) (effect_join \<epsilon> eff) =
+     effect_leq eff (effect_join \<epsilon> eff) \<and> performs_within e (effect_join \<epsilon> eff) *)
+  have "effect_leq eff (effect_join \<epsilon> eff)" by (rule effect_join_ub_r)
+  moreover have "performs_within e (effect_join \<epsilon> eff)"
+    using T_Perform.IH performs_within_mono effect_join_ub_l by blast
+  ultimately show ?case by simp
+next
+  (* === Category E: Three subexpressions with nested join === *)
+  case (T_Case \<Gamma> \<Sigma> \<Delta> e T1 T2 \<epsilon> x1 e1 T \<epsilon>1 x2 e2 \<epsilon>2)
+  (* Effect is effect_join \<epsilon> (effect_join \<epsilon>1 \<epsilon>2) *)
+  have pw0: "performs_within e (effect_join \<epsilon> (effect_join \<epsilon>1 \<epsilon>2))"
+    using T_Case.IH(1) performs_within_mono effect_join_ub_l by blast
+  have pw1: "performs_within e1 (effect_join \<epsilon> (effect_join \<epsilon>1 \<epsilon>2))"
+    using T_Case.IH(2) performs_within_mono effect_leq_join_ub_l_trans by blast
+  have pw2: "performs_within e2 (effect_join \<epsilon> (effect_join \<epsilon>1 \<epsilon>2))"
+    using T_Case.IH(3) performs_within_mono effect_leq_join_ub_r_trans by blast
+  from pw0 pw1 pw2 show ?case by simp
+next
+  case (T_If \<Gamma> \<Sigma> \<Delta> e1 \<epsilon>1 e2 T \<epsilon>2 e3 \<epsilon>3)
+  (* Effect is effect_join \<epsilon>1 (effect_join \<epsilon>2 \<epsilon>3) *)
+  have pw1: "performs_within e1 (effect_join \<epsilon>1 (effect_join \<epsilon>2 \<epsilon>3))"
+    using T_If.IH(1) performs_within_mono effect_join_ub_l by blast
+  have pw2: "performs_within e2 (effect_join \<epsilon>1 (effect_join \<epsilon>2 \<epsilon>3))"
+    using T_If.IH(2) performs_within_mono effect_leq_join_ub_l_trans by blast
+  have pw3: "performs_within e3 (effect_join \<epsilon>1 (effect_join \<epsilon>2 \<epsilon>3))"
+    using T_If.IH(3) performs_within_mono effect_leq_join_ub_r_trans by blast
+  from pw1 pw2 pw3 show ?case by simp
+qed
 
 
 section \<open>Extended Typing with Full Effect Operations\<close>
@@ -306,11 +427,14 @@ text \<open>
   | performs_within_mono         | performs_within_mono         | Proved |
   | effect_leq_join_ub_l_trans   | effect_leq_join_ub_l_trans   | Proved |
   | effect_leq_join_ub_r_trans   | effect_leq_join_ub_r_trans   | Proved |
-  | core_effects_within          | core_effects_within          | Stated |
+  | core_effects_within          | core_effects_within          | Proved |
   | has_type_full                | has_type_full                | Def    |
   | effect_safety                | effect_safety                | Proved |
 
-  Total: 7 definitions/theorems ported (1 partial: core_effects_within needs 28-case induction)
+  Total: 7 definitions/theorems ported — ALL PROVED (0 unfinished)
+
+  core_effects_within proved by 26-case induction on has_type using
+  performs_within_mono and effect_join upper bound lemmas.
 \<close>
 
 end

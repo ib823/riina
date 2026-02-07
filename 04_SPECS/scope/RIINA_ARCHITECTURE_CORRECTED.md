@@ -1,6 +1,6 @@
 # RIINA ARCHITECTURE CORRECTED
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
 
 ## Version 1.0.0 — Proper Framing of Language vs Applications
 
@@ -65,7 +65,7 @@ Previous documents incorrectly portrayed RIINA as having 12 layers of pre-built 
 ║  RIINA = A Programming Language                                                       ║
 ║  ═══════════════════════════════                                                      ║
 ║                                                                                       ║
-║  Contains (single codebase github.com/ib823/proof):                                   ║
+║  Contains (single codebase github.com/ib823/riina):                                   ║
 ║  • Syntax & Grammar (Bahasa Melayu)                                                   ║
 ║  • Type System (Linear + Effect + IFC + Security)                                     ║
 ║  • Compiler (riinac)                                                                  ║
@@ -96,7 +96,7 @@ Previous documents incorrectly portrayed RIINA as having 12 layers of pre-built 
 ║                          │         RIINA (The Language)            │                                ║
 ║                          │         ════════════════════            │                                ║
 ║                          │                                         │                                ║
-║                          │    Single Codebase: ib823/proof         │                                ║
+║                          │    Single Codebase: ib823/riina         │                                ║
 ║                          │                                         │                                ║
 ║                          │    ┌─────────────────────────────────┐  │                                ║
 ║                          │    │ Syntax (Bahasa Melayu)          │  │                                ║
@@ -195,7 +195,7 @@ Previous documents incorrectly portrayed RIINA as having 12 layers of pre-built 
                     │              RIINA                      │
                     │         (The Language)                  │
                     │                                         │
-                    │    github.com/ib823/proof               │
+                    │    github.com/ib823/riina               │
                     │                                         │
                     └─────────────────────────────────────────┘
                                         ▲
@@ -219,7 +219,7 @@ Previous documents incorrectly portrayed RIINA as having 12 layers of pre-built 
 
 | Aspect | Language (RIINA) | Applications (MENARA, etc.) |
 |--------|------------------|----------------------------|
-| **Codebase** | github.com/ib823/proof | Separate repositories |
+| **Codebase** | github.com/ib823/riina | Separate repositories |
 | **Release Cycle** | Language releases | Independent releases |
 | **Dependency** | None (foundational) | Depends on RIINA |
 | **Team** | Core language team | Product teams |
