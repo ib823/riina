@@ -1,10 +1,10 @@
 {
-  "generated": "2026-02-07T08:08:55Z",
-  "generatedHuman": "February 07, 2026 at 08:08 UTC",
+  "generated": "2026-02-07T08:37:28Z",
+  "generatedHuman": "February 07, 2026 at 08:37 UTC",
   "version": "0.2.0",
   "session": 78,
   "git": {
-    "commit": "738761c",
+    "commit": "7278393",
     "branch": "main"
   },
   "proofs": {
@@ -22,24 +22,24 @@
     "prover": "Coq 8.20.1"
   },
   "lean": {
-    "theorems": 91,
+    "theorems": 6154,
     "sorry": 0,
     "axioms": 2,
-    "files": 11,
-    "lines": 4490,
+    "files": 178,
+    "lines": 69004,
     "prover": "Lean 4"
   },
   "isabelle": {
-    "lemmas": 102,
+    "lemmas": 6227,
     "sorry": 0,
     "axioms": 1,
-    "files": 10,
-    "lines": 5266,
+    "files": 175,
+    "lines": 68290,
     "prover": "Isabelle/HOL"
   },
   "multiProver": {
-    "tripleProverTheorems": 86,
-    "totalProofsAllProvers": 8122,
+    "tripleProverTheorems": 6149,
+    "totalProofsAllProvers": 20310,
     "sorry": 0,
     "status": "ALL COMPLETE"
   },

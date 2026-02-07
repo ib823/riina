@@ -1,20 +1,20 @@
 # Contributing to RIINA
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
 
 Thank you for your interest in RIINA. This guide covers how to contribute effectively.
 
 ## Prerequisites
 
 - **Rust** 1.84.0+ — `rustup install stable`
-- **Rocq 9.1 / Coq 8.21** — Only needed for formal proof work
+- **Coq 8.20.1** — Only needed for formal proof work
 - No external dependencies required
 
 ## Getting Started
 
 ```bash
-git clone https://github.com/ib823/proof.git
-cd proof
+git clone https://github.com/ib823/riina.git
+cd riina
 
 # Verify environment
 bash 00_SETUP/scripts/verify_setup.sh
@@ -22,7 +22,7 @@ bash 00_SETUP/scripts/verify_setup.sh
 # Build the compiler
 cd 03_PROTO && cargo build --release -p riinac && cd ..
 
-# Run all tests (should show 679 passing)
+# Run all tests (should show 845 passing)
 cd 03_PROTO && cargo test --all && cd ..
 
 # Try it out
@@ -33,7 +33,7 @@ cd 03_PROTO && cargo test --all && cd ..
 
 | Directory | What | Language |
 |-----------|------|---------|
-| `02_FORMAL/coq/` | Formal proofs (4,885 theorems) | Coq |
+| `02_FORMAL/coq/` | Formal proofs (8,121 theorems, 3 provers) | Coq/Lean/Isabelle |
 | `03_PROTO/crates/` | Compiler (15 crates) | Rust |
 | `04_SPECS/` | Language specifications | Markdown |
 | `05_TOOLING/` | Crypto primitives, build tools | Rust |
@@ -45,7 +45,7 @@ cd 03_PROTO && cargo test --all && cd ..
 
 ### Bug Reports
 
-Use the [Bug Report template](https://github.com/ib823/proof/issues/new?template=bug_report.md). Include:
+Use the [Bug Report template](https://github.com/ib823/riina/issues/new?template=bug_report.md). Include:
 - Steps to reproduce
 - Expected vs actual behavior
 - `riinac` version (`riinac --version`)
@@ -53,7 +53,7 @@ Use the [Bug Report template](https://github.com/ib823/proof/issues/new?template
 
 ### Feature Requests
 
-Use the [Feature Request template](https://github.com/ib823/proof/issues/new?template=feature_request.md). Describe:
+Use the [Feature Request template](https://github.com/ib823/riina/issues/new?template=feature_request.md). Describe:
 - The problem you're solving
 - Your proposed solution
 - How it fits with RIINA's security model
@@ -127,8 +127,8 @@ Before submitting a PR, run the verification gate:
 
 ## Communication
 
-- **Issues** — [github.com/ib823/proof/issues](https://github.com/ib823/proof/issues)
-- **Discussions** — [github.com/ib823/proof/discussions](https://github.com/ib823/proof/discussions)
+- **Issues** — [github.com/ib823/riina/issues](https://github.com/ib823/riina/issues)
+- **Discussions** — [github.com/ib823/riina/discussions](https://github.com/ib823/riina/discussions)
 
 ## License
 

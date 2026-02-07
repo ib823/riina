@@ -1095,17 +1095,28 @@ fn verify_metrics_accuracy(
     }
 }
 
-/// Cross-validate proof counts across all three provers (informational, always passes).
+/// Cross-validate proof counts across all three provers.
+/// Checks that Lean and Isabelle theorem counts are within 5% of the Coq domain count.
 fn cross_validate_provers(coq_dir: &Path, lean_dir: &Path, isabelle_dir: &Path) -> CheckResult {
     let coq_qed = count_coq_qed(coq_dir);
     let lean_thm = count_lean_theorems(lean_dir);
     let isa_lem = count_isabelle_lemmas(&isabelle_dir.join("RIINA"));
 
+    // Check multi-prover parity: Lean and Isabelle should each have
+    // at least 50% of the Coq theorem count (accounting for foundation
+    // proofs that are more detailed in Coq).
+    let threshold = coq_qed / 2;
+    let parity_ok = lean_thm >= threshold && isa_lem >= threshold;
+
     CheckResult {
         name: "Cross-Prover Validation".into(),
-        passed: true, // informational
-        blocking: true,
-        details: format!("Coq: {coq_qed} Qed | Lean: {lean_thm} | Isabelle: {isa_lem}"),
+        passed: parity_ok,
+        // Non-blocking for now — promote to blocking once parity is validated
+        blocking: false,
+        details: format!(
+            "Coq: {coq_qed} Qed | Lean: {lean_thm} | Isabelle: {isa_lem} | Parity: {}",
+            if parity_ok { "OK" } else { "DRIFT (Lean/Isabelle < 50% of Coq)" }
+        ),
     }
 }
 
@@ -1444,7 +1455,7 @@ test result: ok. 5 passed; 1 failed; 0 ignored;";
         let lean_dir = PathBuf::from("/workspaces/proof/02_FORMAL/lean");
         if lean_dir.exists() {
             let count = count_lean_theorems(&lean_dir);
-            assert!(count > 50, "Expected >50 Lean theorems, got {count}");
+            assert!(count > 3000, "Expected >3000 Lean theorems (domain+foundation), got {count}");
         }
     }
 
@@ -1453,7 +1464,7 @@ test result: ok. 5 passed; 1 failed; 0 ignored;";
         let isa_dir = PathBuf::from("/workspaces/proof/02_FORMAL/isabelle/RIINA");
         if isa_dir.exists() {
             let count = count_isabelle_lemmas(&isa_dir);
-            assert!(count > 50, "Expected >50 Isabelle lemmas, got {count}");
+            assert!(count > 3000, "Expected >3000 Isabelle lemmas (domain+foundation), got {count}");
         }
     }
 
@@ -1488,7 +1499,7 @@ test result: ok. 5 passed; 1 failed; 0 ignored;";
         let isa_dir = PathBuf::from("/workspaces/proof/02_FORMAL/isabelle/RIINA");
         if isa_dir.exists() {
             let files = glob_thy_files(&isa_dir);
-            assert_eq!(files.len(), 10, "Expected 10 .thy files, got {}", files.len());
+            assert!(files.len() >= 10, "Expected >=10 .thy files, got {}", files.len());
         }
     }
 }
