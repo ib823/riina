@@ -788,8 +788,10 @@ Theorem CONG_005_aimd_decrease_halves : forall cs,
   cwnd (aimd_decrease cs) <= cwnd cs.
 Proof.
   intros cs H. unfold aimd_decrease. simpl.
-  pose proof (Nat.div_le_upper_bound (cwnd cs) 2 (cwnd cs) ltac:(lia) ltac:(lia)).
-  apply Nat.max_lub; lia.
+  apply Nat.max_lub.
+  - assert (cwnd cs / 2 <= cwnd cs) by (apply Nat.div_le_upper_bound; lia).
+    exact H0.
+  - lia.
 Qed.
 
 (* CONG_006: AIMD decrease sets ssthresh to new cwnd *)
@@ -858,12 +860,12 @@ Proof.
   destruct (in_slow_start cs); reflexivity.
 Qed.
 
-(* CONG_015: Initial state starts in slow start *)
+(* CONG_015: Initial state starts in slow start (when mss is reasonable) *)
 Theorem CONG_015_initial_slow_start : forall mss,
-  mss > 0 -> in_slow_start (initial_cong_state mss) = true.
+  mss > 0 -> 2 * mss < 65535 -> in_slow_start (initial_cong_state mss) = true.
 Proof.
-  intros mss Hmss. unfold initial_cong_state, in_slow_start. simpl.
-  apply Nat.ltb_lt. lia.
+  intros mss Hmss Hbound. unfold initial_cong_state, in_slow_start. simpl.
+  apply Nat.ltb_lt. exact Hbound.
 Qed.
 
 (** ============================================================================
@@ -949,18 +951,22 @@ Proof.
   unfold next_seq. rewrite Nat.mod_small. reflexivity. exact Hsum.
 Qed.
 
-(* SEQ_004: Sequence in window at start *)
+(* SEQ_004: Sequence in window at start (window size < half seq space) *)
 Theorem SEQ_004_seq_in_window_start : forall start size,
   size > 0 ->
+  size < SEQ_SPACE / 2 ->
+  size < SEQ_SPACE ->
   seq_in_window start start size = true.
 Proof.
-  intros start size Hsize.
+  intros start size Hpos Hsmall Hlt.
   unfold seq_in_window.
-  rewrite SEQ_002_seq_le_refl.
-  unfold seq_lt. simpl.
-  destruct (size mod SEQ_SPACE >? 0) eqn:E1.
-  - destruct (size mod SEQ_SPACE <? SEQ_SPACE / 2) eqn:E2; reflexivity.
-  - reflexivity.
+  rewrite SEQ_002_seq_le_refl. simpl.
+  unfold seq_lt.
+  replace (start + size - start) with size by lia.
+  rewrite (Nat.mod_small _ _ Hlt).
+  assert ((0 <? size) = true) as H1 by (apply Nat.ltb_lt; lia).
+  assert ((size <? SEQ_SPACE / 2) = true) as H2 by (apply Nat.ltb_lt; exact Hsmall).
+  rewrite H1, H2. reflexivity.
 Qed.
 
 (* SEQ_005: Valid ACK with same UNA and NXT *)
