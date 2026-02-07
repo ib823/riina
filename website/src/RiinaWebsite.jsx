@@ -241,6 +241,13 @@ const RiinaWebsite = () => {
               { prover: metrics.coq.prover, count: fmt(metrics.proofs.qedActive), role: 'Primary', foundation: 'CIC' },
               { prover: metrics.lean.prover, count: fmt(metrics.lean.theorems), role: 'Secondary', foundation: 'DTT' },
               { prover: metrics.isabelle.prover, count: fmt(metrics.isabelle.lemmas), role: 'Tertiary', foundation: 'HOL' },
+              { prover: (metrics.fstar || {}).prover || 'F*', count: fmt((metrics.fstar || {}).lemmas || 0), role: 'Dependent types', foundation: 'DTT' },
+              { prover: (metrics.tlaplus || {}).prover || 'TLA+', count: fmt((metrics.tlaplus || {}).theorems || 0), role: 'Model checking', foundation: 'TLA' },
+              { prover: (metrics.alloy || {}).prover || 'Alloy 6', count: fmt((metrics.alloy || {}).assertions || 0), role: 'Relational logic', foundation: 'FOL' },
+              { prover: (metrics.smt || {}).prover || 'Z3/CVC5', count: fmt((metrics.smt || {}).assertions || 0), role: 'SMT solving', foundation: 'SMT-LIB' },
+              { prover: (metrics.verus || {}).prover || 'Verus', count: fmt((metrics.verus || {}).proofs || 0), role: 'Rust verification', foundation: 'VIR' },
+              { prover: (metrics.kani || {}).prover || 'Kani', count: fmt((metrics.kani || {}).harnesses || 0), role: 'Model checking', foundation: 'CBMC' },
+              { prover: (metrics.tv || {}).prover || 'Translation Validation', count: fmt((metrics.tv || {}).validations || 0), role: 'Binary equivalence', foundation: 'TV' },
             ].map((p, i) => (
               <div key={i} className="triple-prover__card">
                 <div className="triple-prover__prover">{p.prover}</div>
@@ -747,6 +754,13 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
             { prover: metrics.coq.prover, theorems: `${fmt(metrics.proofs.qedActive)} Qed`, role: 'Primary — authoritative proofs (CIC)' },
             { prover: metrics.lean.prover, theorems: `${fmt(metrics.lean.theorems)} theorems`, role: 'Secondary — independent port (DTT)' },
             { prover: metrics.isabelle.prover, theorems: `${fmt(metrics.isabelle.lemmas)} lemmas`, role: 'Tertiary — third verification (HOL)' },
+            { prover: (metrics.fstar || {}).prover || 'F*', theorems: `${fmt((metrics.fstar || {}).lemmas || 0)} lemmas`, role: 'Dependent types (DTT)' },
+            { prover: (metrics.tlaplus || {}).prover || 'TLA+', theorems: `${fmt((metrics.tlaplus || {}).theorems || 0)} theorems`, role: 'Model checking (TLA)' },
+            { prover: (metrics.alloy || {}).prover || 'Alloy 6', theorems: `${fmt((metrics.alloy || {}).assertions || 0)} assertions`, role: 'Relational logic (FOL)' },
+            { prover: (metrics.smt || {}).prover || 'Z3/CVC5', theorems: `${fmt((metrics.smt || {}).assertions || 0)} assertions`, role: 'SMT solving (SMT-LIB)' },
+            { prover: (metrics.verus || {}).prover || 'Verus', theorems: `${fmt((metrics.verus || {}).proofs || 0)} proofs`, role: 'Rust verification (VIR)' },
+            { prover: (metrics.kani || {}).prover || 'Kani', theorems: `${fmt((metrics.kani || {}).harnesses || 0)} harnesses`, role: 'Model checking (CBMC)' },
+            { prover: (metrics.tv || {}).prover || 'Translation Validation', theorems: `${fmt((metrics.tv || {}).validations || 0)} validations`, role: 'Binary equivalence (TV)' },
           ].map((p, i) => (
             <div key={i} className="cli-row">
               <code style={{minWidth:140}}>{p.prover}</code>
