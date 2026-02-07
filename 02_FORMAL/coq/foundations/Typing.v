@@ -6,7 +6,7 @@
 
     Reference: CTSS_v1_0_1.md, Section 4
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 Require Import Coq.Strings.String.
@@ -480,7 +480,7 @@ Qed.
     a specific syntactic form. These are essential for proving progress
     and for the exp_rel_step1_* axioms in NonInterference.v.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 (** Unit type: only EUnit is a value of type TUnit *)

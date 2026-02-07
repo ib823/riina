@@ -3,7 +3,7 @@
 (* VerifiedProtocols.v - RIINA Verified Cryptographic Protocols *)
 (* Spec: 01_RESEARCH/53_DOMAIN_AH_VERIFIED_PROTOCOLS/RESEARCH_AH01_FOUNDATION.md *)
 (* Layer: Protocol Layer *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

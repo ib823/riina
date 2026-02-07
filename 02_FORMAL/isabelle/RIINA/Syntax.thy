@@ -7,7 +7,7 @@
  *
  * Reference: RIINA-AST_v1_0_0.md
  *
- * Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+ * Mode: Comprehensive Verification | Zero Trust
  *
  * Correspondence Table:
  *

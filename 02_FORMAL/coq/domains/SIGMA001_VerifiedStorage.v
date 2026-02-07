@@ -3,7 +3,7 @@
 (* VerifiedStorage.v - RIINA Verified Database *)
 (* Spec: 01_RESEARCH/27_DOMAIN_SIGMA_VERIFIED_STORAGE/RESEARCH_SIGMA01_FOUNDATION.md *)
 (* Layer: Persistent Storage *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

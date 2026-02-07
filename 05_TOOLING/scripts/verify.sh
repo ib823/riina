@@ -4,7 +4,7 @@
 # Track F Deliverable: TRACK_F-TOOL-BUILD_v1_0_0
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+# Mode: Comprehensive | Zero Trust | Full Verification
 #
 # This script verifies the entire RIINA build:
 # - Reproducibility
@@ -422,7 +422,7 @@ verify_level_6() {
 main() {
     log_header "RIINA BUILD VERIFICATION - LEVEL $LEVEL"
     
-    echo "Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS"
+    echo "Mode: Comprehensive | Zero Trust | Full Verification"
     echo ""
     
     # Check required tools

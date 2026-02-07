@@ -4,7 +4,7 @@
 
     Substitution environment definitions and SAFE lemmas.
     
-    Mode: ULTRA KIASU | ZERO ADMITS
+    Mode: Comprehensive Verification | Zero Admits
 *)
 
 Require Import String.

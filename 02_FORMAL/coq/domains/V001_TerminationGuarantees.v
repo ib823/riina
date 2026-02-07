@@ -3,7 +3,7 @@
 (* TerminationGuarantees.v - RIINA Termination Verification *)
 (* Spec: 01_RESEARCH/22_DOMAIN_V_TERMINATION_GUARANTEES/RESEARCH_V01_FOUNDATION.md *)
 (* Layer: Type System Extension *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

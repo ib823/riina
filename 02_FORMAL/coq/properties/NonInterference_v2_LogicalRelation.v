@@ -8,7 +8,7 @@
     logical_relation + non_interference_stmt theorems from the legacy
     development, but uses the v2 step-indexed relations.
 
-    Mode: ULTRA KIASU | ZERO TRUST | ZERO LAZINESS
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 Require Export RIINA.properties.NonInterference_v2.

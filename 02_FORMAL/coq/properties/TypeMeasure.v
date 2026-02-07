@@ -11,7 +11,7 @@
     For TFn T1 T2, both T1 and T2 are strictly smaller than TFn T1 T2.
     This enables proving properties by induction on type structure.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_α (Alpha)
     Phase: 1 (Foundation)

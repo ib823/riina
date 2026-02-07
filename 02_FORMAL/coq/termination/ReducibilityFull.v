@@ -14,7 +14,7 @@
     - SN_app: applications of SN functions to SN arguments are SN
     - TFn step-up in NonInterference_v2.v
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
     Date: 2026-01-19
 *)
 

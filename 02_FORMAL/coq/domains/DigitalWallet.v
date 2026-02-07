@@ -3,7 +3,7 @@
 (* DigitalWallet.v - RIINA-WALLET Digital Wallet Verification *)
 (* Spec: 01_RESEARCH/35_DOMAIN_RIINA_WALLET/RESEARCH_WALLET01_FOUNDATION.md *)
 (* Layer: Financial Infrastructure *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

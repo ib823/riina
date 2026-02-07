@@ -3,7 +3,7 @@
 (* VerifiedRuntime.v - RIINA-RUNTIME Execution Environment Verification *)
 (* Spec: 01_RESEARCH/30_DOMAIN_RIINA_RUNTIME/RESEARCH_RUNTIME01_FOUNDATION.md *)
 (* Layer: L5 Runtime *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

@@ -6,7 +6,7 @@
 
     Key theorem: If values are related at step n, they are related at any m ≤ n.
 
-    Mode: ULTRA KIASU | ZERO ADMITS
+    Mode: Comprehensive Verification | Zero Admits
 *)
 
 Require Import Nat.

@@ -7,7 +7,7 @@
  *
  * Reference: CTSS_v1_0_1.md, Section 5 (Effects)
  *
- * Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+ * Mode: Comprehensive Verification | Zero Trust
  *
  * Correspondence Table:
  *

@@ -3,7 +3,7 @@
 (* DeclassificationPolicy.v - RIINA Declassification Policy Verification *)
 (* Spec: 01_RESEARCH/26_DOMAIN_Z_DECLASSIFICATION_POLICY/RESEARCH_Z01_FOUNDATION.md *)
 (* Layer: Information Flow Control *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

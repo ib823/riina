@@ -7,7 +7,7 @@
     This file provides the foundation for proving termination properties
     needed to eliminate the exp_rel_step1_* axioms.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_β (Beta)
     Phase: 3 (Termination)

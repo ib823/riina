@@ -3,7 +3,7 @@
 (* VerifiedHardware.v - RIINA-V Verified Processor *)
 (* Spec: 01_RESEARCH/39_DOMAIN_PHI_VERIFIED_HARDWARE/RESEARCH_PHI01_FOUNDATION.md *)
 (* Layer: Hardware *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

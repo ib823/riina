@@ -15,7 +15,7 @@
 
     These properties enable direct proofs without Kripke world reasoning.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_α (Alpha)
     Phase: 1 (Foundation)

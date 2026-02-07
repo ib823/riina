@@ -9,7 +9,7 @@
     - Store extension monotonicity (fully proven)
     - Combined monotonicity
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_α (Alpha)
     Phase: 2 (Cumulative Relation)

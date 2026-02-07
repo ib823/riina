@@ -3,7 +3,7 @@
 (* HealthcareIS.v - RIINA-HIS Healthcare Information System Verification *)
 (* Spec: 01_RESEARCH/37_DOMAIN_RIINA_HIS/RESEARCH_HIS01_FOUNDATION.md *)
 (* Layer: Healthcare Infrastructure *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

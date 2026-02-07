@@ -14,7 +14,7 @@
     2. Step rules: elimination forms step when applied to canonical forms
     3. Type preservation: results maintain typing
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_β (Beta)
     Phase: 3 (Termination)

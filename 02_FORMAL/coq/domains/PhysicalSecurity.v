@@ -3,7 +3,7 @@
 (* PhysicalSecurity.v - RIINA-PHYSICS Physical Security Verification *)
 (* Spec: 01_RESEARCH/32_DOMAIN_RIINA_PHYSICS/RESEARCH_PHYSICS01_FOUNDATION.md *)
 (* Layer: L0 Physical *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

@@ -3,7 +3,7 @@
 (* ConcurrencyModel.v - RIINA Concurrency Verification *)
 (* Spec: 01_RESEARCH/24_DOMAIN_X_CONCURRENCY_MODEL/RESEARCH_X01_FOUNDATION.md *)
 (* Layer: Concurrency Primitives *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

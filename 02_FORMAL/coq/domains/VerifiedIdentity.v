@@ -3,7 +3,7 @@
 (* VerifiedIdentity.v - RIINA Verified Identity and Authentication *)
 (* Spec: 01_RESEARCH/46_DOMAIN_AA_VERIFIED_IDENTITY/RESEARCH_AA01_FOUNDATION.md *)
 (* Layer: Authentication *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Arith.Arith.
 Require Import Coq.Bool.Bool.

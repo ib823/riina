@@ -6,7 +6,7 @@
 
     Reference: CTSS_v1_0_1.md, Section 6
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 Require Import RIINA.foundations.Syntax.

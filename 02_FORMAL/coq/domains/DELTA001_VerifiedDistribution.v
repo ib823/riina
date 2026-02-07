@@ -3,7 +3,7 @@
 (* DELTA001_VerifiedDistribution.v - RIINA Verified Distribution *)
 (* Spec: 01_RESEARCH/29_DOMAIN_DELTA_VERIFIED_DISTRIBUTION/RESEARCH_DELTA01_FOUNDATION.md *)
 (* Layer: Distributed Consensus & Replication *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

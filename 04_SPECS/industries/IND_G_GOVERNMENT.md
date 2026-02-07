@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-G — GOVERNMENT AND PUBLIC SECTOR
 
-## Version 1.0.0 — ULTRA KIASU Compliance | National Security
+## Version 1.0.0 — Comprehensive Compliance | National Security
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,7 +27,7 @@
 ║  • FIPS 199/200 (Security Categorization)                                                           ║
 ║  • CJIS Security Policy (Criminal Justice)                                                          ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | SOVEREIGN SECURITY                                      ║
+║  Classification: Comprehensive | Zero Trust | Sovereign Security                                      ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Protecting the nation. Serving the public."                                                        ║
@@ -668,7 +668,7 @@
 ║  Total Estimated Effort: 750-1,200 hours                                                            ║
 ║                                                                                                      ║
 ║  This document defines the research tracks for Government industry support.                         ║
-║  Each track requires full execution per ULTRA KIASU standards.                                      ║
+║  Each track requires full execution per comprehensive standards.                                      ║
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║

@@ -14,7 +14,7 @@ Maintains formal correspondence with Coq specification.
 RIINA = Rigorous Immutable Invariant — Normalized Axiom
 
 Architecture: Custom IR → Reference Interpreter / C Emission
-Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
+Mode: Comprehensive Verification | Zero Trust
 """
 
 [dependencies]

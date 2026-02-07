@@ -10,7 +10,7 @@
 
     PHASE 5: Store Semantics & Semantic Typing Axioms
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_ζ (Zeta)
     Phase: 5 (Semantic Typing)

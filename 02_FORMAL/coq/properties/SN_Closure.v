@@ -9,7 +9,7 @@
     The main technique is: if all immediate subterms are SN, and
     all one-step reducts are SN, then the compound term is SN.
     
-    Mode: ULTRA KIASU | ZERO ADMITS TARGET
+    Mode: Comprehensive Verification | Zero Admits Target
     Date: 2026-01-18
 *)
 
@@ -763,7 +763,7 @@ Proof. intros. exact (SN_handle_aux (e, st, ctx) x h H H0). Qed.
     - SN_handle - effect handling (with store-polymorphic handler premise)
 
     ZERO Admitted. All proofs verified.
-    Mode: ULTRA KIASU | EXTREME RIGOUR
+    Mode: Comprehensive Verification | Rigorous
 
     These lemmas form the backbone of the fundamental theorem proof.
     With these, we can show that well-typed terms are SN by induction

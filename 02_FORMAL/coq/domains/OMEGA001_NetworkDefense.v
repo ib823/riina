@@ -3,7 +3,7 @@
 (* OMEGA001_NetworkDefense.v - RIINA Network Defense *)
 (* Spec: 01_RESEARCH/30_DOMAIN_OMEGA_NETWORK_DEFENSE/RESEARCH_OMEGA01_FOUNDATION.md *)
 (* Layer: Network Security & DDoS Mitigation *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

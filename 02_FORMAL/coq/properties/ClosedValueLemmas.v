@@ -6,7 +6,7 @@
 
     Key theorem: Values typed in empty context have no free variables.
 
-    Mode: ULTRA KIASU | ZERO ADMITS
+    Mode: Comprehensive Verification | Zero Admits
 *)
 
 Require Import String.

@@ -11,7 +11,7 @@
     PHASE 5: Store Semantics & Semantic Typing Axioms
     TARGET: 1 admit → 0 admits
 
-    Mode: ULTRA KIASU | ZERO TRUST | QED ETERNUM
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 Require Import String.

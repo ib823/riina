@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-J — RETAIL AND E-COMMERCE
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Consumer-Facing Security
+## Version 1.0.0 — Comprehensive Compliance | Consumer-Facing Security
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -30,7 +30,7 @@
 ║  • ISO 27001 (Information Security Management)                                                      ║
 ║  • NIST Cybersecurity Framework                                                                     ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | CONSUMER PROTECTION | PAYMENT SECURITY                               ║
+║  Classification: Comprehensive | Consumer Protection | Payment Security                               ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Trusted transactions. Protected customers. Unbreakable commerce."                                  ║
@@ -1870,7 +1870,7 @@
 ║  Document: RIINA_IND_J_RETAIL_FULL_v1_0_0.md                                                        ║
 ║  Version: 1.0.0                                                                                      ║
 ║  Date: 2026-01-19                                                                                    ║
-║  Status: COMPLETE - ULTRA KIASU COMPLIANT                                                           ║
+║  Status: COMPLETE - COMPLIANT                                                           ║
 ║                                                                                                      ║
 ║  Summary:                                                                                           ║
 ║  • 12 research tracks defined with full specifications                                              ║
@@ -1881,7 +1881,7 @@
 ║  • POS malware family analysis (13 families)                                                        ║
 ║  • Comprehensive type system for consumer data and transactions                                     ║
 ║                                                                                                      ║
-║  ULTRA KIASU VERIFICATION:                                                                          ║
+║  VERIFICATION:                                                                          ║
 ║  • No shortcuts taken                                                                               ║
 ║  • Full depth matching Tier 1/2 industries                                                          ║
 ║  • All threats cataloged with RIINA defenses                                                        ║

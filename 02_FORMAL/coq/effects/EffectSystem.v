@@ -12,7 +12,7 @@
     Note: The core TypeSafety proof uses the restricted 'has_type' from
     foundations/Typing.v. This module defines the complete specification.
     
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 Require Import RIINA.foundations.Syntax.

@@ -1,6 +1,6 @@
 # RIINA Syntax Improvement Specification v2.0.0
 
-**Audit Update:** 2026-02-07 (Session 81: 10-Prover Full Stack) — 82,978 total items across 10 provers. 7,929 Coq Qed (compiled) + 15996 Lean/Isabelle (transpiled, uncompiled) + ~59053 generated stubs (7 provers). 0 Admitted. 1 axiom (policy). 852 Rust tests.
+**Verification:** 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) | 10 independent provers | 852 Rust tests
 
 **Document ID:** `SYNTAX_IMPROVEMENT_SPEC_v2_0_0`
 **Date:** 2026-01-30
@@ -961,4 +961,4 @@ grep -r "Admitted" *.v       # Must be ≤ 18 (unchanged)
 *Document ID: SYNTAX_IMPROVEMENT_SPEC_v2_0_0*
 *Status: AUTHORITATIVE*
 *Approved: 2026-01-30*
-*Mode: ULTRA KIASU | ZERO TRUST | ZERO ADMITS*
+*Mode: Comprehensive | Zero Trust | Zero Admits*

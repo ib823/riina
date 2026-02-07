@@ -7,7 +7,7 @@
     The Effect Gate ensures that high-privilege effects cannot leak
     into low-privilege contexts without explicit handling/granting.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
+    Mode: Comprehensive Verification | Zero Trust
 *)
 
 Require Import RIINA.foundations.Syntax.

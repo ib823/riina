@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-I — MANUFACTURING AND INDUSTRIAL
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Critical Infrastructure
+## Version 1.0.0 — Comprehensive Compliance | Critical Infrastructure
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,7 +27,7 @@
 ║  • IEC 61508 (Functional Safety of E/E/PE Systems)                                                  ║
 ║  • ISO 27001/27002 (Information Security)                                                           ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | OPERATIONAL TECHNOLOGY                                  ║
+║  Classification: Comprehensive | Zero Trust | Operational Technology                                  ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Producing securely. Operating safely."                                                             ║

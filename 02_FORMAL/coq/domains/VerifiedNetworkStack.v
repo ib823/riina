@@ -961,7 +961,7 @@ Proof.
   rewrite SEQ_002_seq_le_refl. simpl.
   unfold seq_lt.
   replace (start + size - start) with size by lia.
-  destruct (0 <? size mod SEQ_SPACE) eqn:E1.
+  destruct (size mod SEQ_SPACE >? 0) eqn:E1.
   - destruct (size mod SEQ_SPACE <? SEQ_SPACE / 2) eqn:E2; reflexivity.
   - reflexivity.
 Qed.

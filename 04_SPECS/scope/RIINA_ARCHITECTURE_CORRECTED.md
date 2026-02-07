@@ -1,6 +1,6 @@
 # RIINA ARCHITECTURE CORRECTED
 
-**Audit Update:** 2026-02-07 (Session 81: 10-Prover Full Stack) — 82,978 total items across 10 provers. 7,929 Coq Qed (compiled) + 15996 Lean/Isabelle (transpiled, uncompiled) + ~59053 generated stubs (7 provers). 0 Admitted. 1 axiom (policy). 852 Rust tests.
+**Verification:** 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) | 10 independent provers | 852 Rust tests
 
 ## Version 1.0.0 — Proper Framing of Language vs Applications
 
@@ -12,7 +12,7 @@
 ║  This document CORRECTS previous "12-Layer Vertical Integration" documents                          ║
 ║  that incorrectly portrayed RIINA as a platform with pre-built components.                          ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | INFINITE TIMELINE                                       ║
+║  Classification: Comprehensive | Zero Trust                                       ║
 ║  Date: 2026-01-19                                                                                    ║
 ║  Supersedes: RIINA_FULLSTACK_VERTICAL_INTEGRATION_v1_0_0.md (DEPRECATED)                            ║
 ║              RIINA_SYNERGY_MATRIX_v1_0_0.md (DEPRECATED)                                            ║

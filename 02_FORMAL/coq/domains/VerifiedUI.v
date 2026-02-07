@@ -3,7 +3,7 @@
 (* VerifiedUI.v - RIINA-UX Human Interface Verification *)
 (* Spec: 01_RESEARCH/31_DOMAIN_RIINA_UX/RESEARCH_UX01_FOUNDATION.md *)
 (* Layer: L7 User Interface *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 (* 
    SECURITY GUARANTEE: These proofs establish that a well-formed RIINA-UX
    interface CANNOT be weaponized against users. Clickjacking, phishing,

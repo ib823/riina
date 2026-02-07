@@ -1,43 +1,49 @@
 # Security Policy
 
-## Reporting a Vulnerability
+## Reporting
 
-If you discover a security vulnerability in RIINA, please report it responsibly.
+If you discover a security issue in RIINA, please report it responsibly.
 
-**Contact:** Telegram [@AqilAziz823](https://t.me/AqilAziz823)
+**Telegram:** [@ib823](https://t.me/ib823)
 
-Please include:
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+Please do **not** open a public GitHub issue for security reports.
 
 ## Response Timeline
 
-- **Acknowledgment**: Within 48 hours
-- **Initial Assessment**: Within 7 days
-- **Fix Release**: Depends on severity
+- **72 hours** — Acknowledgment of your report
+- **7 days** — Initial assessment and severity classification
+- **30 days** — Target for fix or mitigation (critical issues prioritized)
 
 ## Scope
 
-The following are in scope:
-- RIINA compiler (`riinac`)
-- Type checker and effect system
-- Code generation backends (C, WASM, mobile)
-- Formal proof soundness
+The following components are in scope:
 
-The following are out of scope:
-- Third-party tools or services
-- Social engineering
+- **Compiler** (`riinac`) — All compiler passes, code generation, and verification
+- **Formal proofs** (`02_FORMAL/`) — Coq, Lean, and Isabelle proof files
+- **Tooling** (`05_TOOLING/`) — Cryptographic primitives and build tools
+- **Website** (`website/`) — Project website
+- **VS Code extension** (`riina-vscode/`) — Language support extension
 
-## Security Guarantees
+## Out of Scope
 
-RIINA provides mathematically proven security guarantees:
-- **Non-interference**: Proven in Coq (7,929 Qed proofs, 0 Admitted)
-- **Type safety**: Progress + Preservation formally verified
-- **Effect safety**: Effect system soundness proven
-- **Zero dependencies**: No third-party runtime dependencies
+- Example programs in `07_EXAMPLES/` (educational, not production)
+- Documentation content (unless it leaks secrets)
+
+## Responsible Disclosure
+
+We follow a coordinated disclosure process:
+
+1. Reporter sends details via the contact above
+2. We acknowledge receipt within 72 hours
+3. We work with the reporter to understand and reproduce the issue
+4. We develop and test a fix
+5. We release the fix and credit the reporter (unless anonymity is requested)
+6. We publish an advisory after the fix is available
+
+## Recognition
+
+We gratefully acknowledge security researchers who report issues responsibly. With your permission, we will credit you in our CHANGELOG and security advisories.
 
 ---
 
-*RIINA — Rigorous Immutable Invariant, No Assumptions*
+*RIINA takes security seriously. Our formal verification approach means many classes of bugs are mathematically impossible — but we remain vigilant about the components that fall outside our proof coverage.*

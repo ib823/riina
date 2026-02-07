@@ -3,7 +3,7 @@
 (* CoreBanking.v - RIINA-BANK Core Banking Verification *)
 (* Spec: 01_RESEARCH/34_DOMAIN_RIINA_BANK/RESEARCH_BANK01_FOUNDATION.md *)
 (* Layer: Financial Infrastructure *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

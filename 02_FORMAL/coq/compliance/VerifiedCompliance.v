@@ -3,7 +3,7 @@
 (* VerifiedCompliance.v - RIINA Verified Compliance Framework *)
 (* Spec: 01_RESEARCH/55_DOMAIN_AJ_VERIFIED_COMPLIANCE/RESEARCH_AJ01_FOUNDATION.md *)
 (* Layer: Compliance Layer *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

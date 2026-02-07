@@ -377,12 +377,13 @@ cat > "$OUTPUT_FILE" << EOF
     "threats": "1231+"
   },
   "milestones": [
-    { "date": "2026-02-07", "event": "Session 80: 10-prover full stack (55,000+ items across Coq, Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV)" },
-    { "date": "2026-02-06", "event": "Session 78: Proof Depth 20+ across all 250 domain files (+246 Qed)" },
-    { "date": "2026-02-06", "event": "Session 77: Triple-prover 100% complete (0 sorry across all provers)" },
-    { "date": "2026-02-06", "event": "Session 76: Axiom Elimination 4→1 (3 axioms eliminated)" },
-    { "date": "2026-02-05", "event": "Session 73: Proof Depth Expansion (+1,830 Qed)" },
-    { "date": "2026-02-01", "event": "Phase 7 Complete: Platform Universality" }
+    { "date": "2026-02-07", "event": "10-prover full stack verification (Coq, Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV)" },
+    { "date": "2026-02-07", "event": "Lean 4 compilation: Syntax + Semantics + Typing (0 sorry)" },
+    { "date": "2026-02-07", "event": "SMT real assertions: 1,187 verified (Z3 sat)" },
+    { "date": "2026-02-06", "event": "Proof depth 20+ across all 250 domain files" },
+    { "date": "2026-02-06", "event": "Triple-prover 100% complete (0 sorry across all provers)" },
+    { "date": "2026-02-06", "event": "Axiom elimination: 4 → 1 (3 axioms proved)" },
+    { "date": "2026-02-01", "event": "Phase 7 complete: Platform Universality" }
   ]
 }
 EOF

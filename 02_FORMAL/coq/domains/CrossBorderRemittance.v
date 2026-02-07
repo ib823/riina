@@ -3,7 +3,7 @@
 (* CrossBorderRemittance.v - RIINA-REMIT Cross-Border Verification *)
 (* Spec: 01_RESEARCH/36_DOMAIN_RIINA_REMIT/RESEARCH_REMIT01_FOUNDATION.md *)
 (* Layer: Financial Infrastructure *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

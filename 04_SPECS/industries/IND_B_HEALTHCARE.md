@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-B — HEALTHCARE
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Life-Critical Domain
+## Version 1.0.0 — Comprehensive Compliance | Life-Critical Domain
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -29,7 +29,7 @@
 ║  • HL7 FHIR Security                                                                                ║
 ║  • DICOM Security                                                                                   ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | PATIENT SAFETY | PHI PROTECTION                                      ║
+║  Classification: Comprehensive | Patient Safety | PHI Protection                                      ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Security proven. Lives protected."                                                                 ║
@@ -633,7 +633,7 @@
 ║  Total Estimated Effort: 700-1,100 hours                                                            ║
 ║                                                                                                      ║
 ║  This document defines the research tracks for Healthcare industry support.                         ║
-║  Each track requires full execution per ULTRA KIASU standards.                                      ║
+║  Each track requires full execution per comprehensive standards.                                      ║
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║

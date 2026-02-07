@@ -6,7 +6,7 @@
 
     Key lemma: store_wf implies store lookups return values.
 
-    Mode: ULTRA KIASU | ZERO ADMITS
+    Mode: Comprehensive Verification | Zero Admits
 *)
 
 Require Import String.

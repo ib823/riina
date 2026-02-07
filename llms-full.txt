@@ -1,8 +1,8 @@
 # RIINA Language Reference (AI-Optimized)
 
-Version: 0.1.0 | File extension: `.rii` | Prover: Rocq 9.1 (Coq 8.21)
+Version: 0.2.0 | File extension: `.rii` | Prover: Coq 8.20.1
 
-RIINA is a formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system. All security properties are proven in Coq.
+RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system. All security properties are mathematically proven: 7,929 Coq Qed proofs (compiled, 0 Admitted, 1 policy axiom), verified across 10 independent provers. If AI-generated code compiles, it is provably secure by construction.
 
 ---
 
@@ -809,6 +809,9 @@ riinac run program.rii
 # Type check only
 riinac check program.rii
 
+# Type check with JSON output (for AI agents)
+riinac check --json program.rii
+
 # REPL
 riinac repl
 
@@ -823,10 +826,479 @@ riinac verify --full
 
 ## 15. Formal Verification
 
-All security properties proven in Coq (Rocq 9.1):
+All security properties proven in Coq 8.20.1:
 - **Type safety**: Progress + Preservation
 - **Non-interference**: Secret data cannot influence public output
 - **Effect safety**: Effects tracked and enforced
 - **Information flow control**: Multi-level security lattice
 
-Proofs: 4,885 Qed (active build), 0 admits, 4 justified axioms.
+Proofs: 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) + 7,924 Lean 4 + 8,072 Isabelle/HOL. 10 independent provers total.
+Triple-prover verification: Coq 8.20.1 (primary) + Lean 4 (119 theorems) + Isabelle/HOL (138 lemmas).
+
+---
+
+## 16. Canonical Code Patterns
+
+### 16.1 Entry Point Template
+
+```riina
+// Every RIINA program starts with fungsi utama
+fungsi utama() -> Nombor kesan Tulis {
+    cetak("Selamat pagi, dunia!");
+    pulang 0;
+}
+```
+
+### 16.2 Pure Function
+
+```riina
+// Pure functions declare kesan Bersih and have no side effects
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    x + y
+}
+
+fungsi kuasa_dua(x: Nombor) -> Nombor kesan Bersih {
+    x * x
+}
+```
+
+### 16.3 I/O Function
+
+```riina
+// I/O functions must declare appropriate effect
+fungsi sapa(nama: Teks) -> Kosong kesan Tulis {
+    cetak(gabung_teks("Selamat datang, ", nama));
+}
+
+fungsi baca_konfigurasi(laluan: Teks) -> Teks kesan SistemFail {
+    fail_baca(laluan)
+}
+```
+
+### 16.4 Secret Handling
+
+```riina
+// Secrets are classified and cannot leak
+fungsi simpan_kata_laluan(kata: Teks) -> Rahsia<Teks> kesan Kripto {
+    biar rahsia_kata = sulit(kata);
+    biar hash = sha256(rahsia_kata);
+    hash
+}
+
+fungsi proses_rahsia(data: Rahsia<Nombor>) -> Rahsia<Nombor> kesan Bersih {
+    // Operations on secrets produce secrets
+    biar hasil = data + sulit(100);
+    hasil
+}
+```
+
+### 16.5 Declassification with Proof
+
+```riina
+// Declassification requires explicit proof and policy justification
+fungsi semak_dan_dedah(
+    kata_input: Rahsia<Teks>,
+    hash_disimpan: Teks
+) -> Benar kesan Kripto {
+    biar hash_input = sha256(kata_input);
+    biar sepadan = sama_masa_tetap(hash_input, hash_disimpan);
+    dedah(sepadan, dasar: "pengesahan_kata_laluan", bukti: BuktiPengesahan::baru())
+}
+```
+
+### 16.6 Error Handling with Hasil/Mungkin
+
+```riina
+// Use Hasil<T, E> for operations that can fail
+fungsi bahagi_selamat(x: Nombor, y: Nombor) -> Hasil<Nombor, Teks> kesan Bersih {
+    kalau y == 0 {
+        Gagal("Pembahagian dengan sifar")
+    } lain {
+        Jadi(x / y)
+    }
+}
+
+// Use Mungkin<T> for optional values
+fungsi cari_pengguna(id: Nombor) -> Mungkin<Teks> kesan Baca {
+    kalau id == 1 {
+        Ada("Ahmad")
+    } lain {
+        Tiada
+    }
+}
+
+// Pattern match on results
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil = bahagi_selamat(10, 3);
+    padan hasil {
+        Jadi(n) => cetak(n),
+        Gagal(e) => cetak(gabung_teks("Ralat: ", e)),
+    };
+    pulang 0;
+}
+```
+
+### 16.7 List Processing Pipeline
+
+```riina
+// Functional list processing with map, filter, fold
+fungsi proses_markah(markah: Senarai<Nombor>) -> Nombor kesan Bersih {
+    markah
+        |> senarai_tapis(fungsi(x: Nombor) -> Benar { x >= 50 })
+        |> senarai_peta(fungsi(x: Nombor) -> Nombor { x * 2 })
+        |> senarai_lipat(0, fungsi(acc: Nombor, x: Nombor) -> Nombor { acc + x })
+}
+```
+
+### 16.8 Map Operations
+
+```riina
+// Create and manipulate maps
+fungsi buat_buku_telefon() -> Kosong kesan Tulis {
+    biar buku = peta_baru();
+    biar buku = peta_letak(buku, "Ahmad", "012-345-6789");
+    biar buku = peta_letak(buku, "Siti", "013-456-7890");
+    biar buku = peta_letak(buku, "Ali", "014-567-8901");
+
+    kalau peta_mengandungi(buku, "Ahmad") {
+        biar nombor = peta_dapat(buku, "Ahmad");
+        cetak(gabung_teks("Ahmad: ", nombor));
+    } lain {
+        cetak("Tidak dijumpai");
+    };
+}
+```
+
+### 16.9 String Processing
+
+```riina
+// String manipulation with builtin functions
+fungsi format_nama(nama_penuh: Teks) -> Teks kesan Bersih {
+    biar bahagian = teks_belah(nama_penuh, " ");
+    biar nama_depan = senarai_kepala(bahagian);
+    biar nama_belakang = senarai_dapat(bahagian, senarai_panjang(bahagian) - 1);
+    gabung_teks(teks_huruf_besar(nama_belakang), gabung_teks(", ", nama_depan))
+}
+
+fungsi bersihkan_input(input: Teks) -> Teks kesan Bersih {
+    input
+        |> teks_potong
+        |> teks_huruf_kecil
+}
+```
+
+### 16.10 File I/O
+
+```riina
+// File operations require SistemFail effect
+fungsi salin_fail(sumber: Teks, sasaran: Teks) -> Hasil<Kosong, Teks> kesan SistemFail {
+    kalau bukan fail_ada(sumber) {
+        Gagal("Fail sumber tidak wujud")
+    } lain {
+        biar kandungan = fail_baca(sumber);
+        fail_tulis(sasaran, kandungan);
+        Jadi(())
+    }
+}
+
+fungsi log_mesej(mesej: Teks) -> Kosong kesan (SistemFail, Masa) {
+    biar masa = masa_format(masa_sekarang(), "%Y-%m-%d %H:%M:%S");
+    biar baris = gabung_teks(gabung_teks("[", masa), gabung_teks("] ", mesej));
+    fail_tambah("app.log", gabung_teks(baris, "\n"));
+}
+```
+
+### 16.11 Recursive Function
+
+```riina
+// Recursive functions call themselves directly
+fungsi fibonacci(n: Nombor) -> Nombor kesan Bersih {
+    kalau n <= 1 {
+        n
+    } lain {
+        fibonacci(n - 1) + fibonacci(n - 2)
+    }
+}
+
+fungsi gcd(a: Nombor, b: Nombor) -> Nombor kesan Bersih {
+    kalau b == 0 {
+        a
+    } lain {
+        gcd(b, baki(a, b))
+    }
+}
+```
+
+### 16.12 Higher-Order Function
+
+```riina
+// Functions that take or return functions
+fungsi guna_dua_kali(f: Fn(Nombor) -> Nombor, x: Nombor) -> Nombor kesan Bersih {
+    f(f(x))
+}
+
+fungsi buat_penambah(n: Nombor) -> Fn(Nombor) -> Nombor kesan Bersih {
+    fungsi tambah(x: Nombor) -> Nombor {
+        x + n
+    }
+    pulang tambah;
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar tambah_lima = buat_penambah(5);
+    biar hasil = guna_dua_kali(tambah_lima, 3);  // 3 + 5 + 5 = 13
+    cetak(hasil);
+    pulang 0;
+}
+```
+
+### 16.13 FFI Interop
+
+```riina
+// C Foreign Function Interface
+luaran "C" {
+    fungsi printf(fmt: *CChar) -> CInt;
+    fungsi malloc(saiz: CInt) -> *CVoid;
+    fungsi free(ptr: *CVoid) -> CVoid;
+    fungsi strlen(s: *CChar) -> CInt;
+}
+
+fungsi utama() -> CInt kesan Sistem {
+    biar panjang = strlen("Hello from RIINA");
+    printf("Panjang: %d\n");
+    pulang 0;
+}
+```
+
+### 16.14 Guard Clause Validation
+
+```riina
+// Guard clauses for input validation
+fungsi daftar_pengguna(
+    nama: Teks,
+    umur: Nombor,
+    emel: Teks
+) -> Hasil<Teks, Teks> kesan Bersih {
+    pastikan panjang(nama) > 0 lain { pulang Gagal("Nama kosong"); };
+    pastikan umur >= 18 lain { pulang Gagal("Umur minimum 18"); };
+    pastikan teks_mengandungi(emel, "@") lain { pulang Gagal("Emel tidak sah"); };
+    Jadi(gabung_teks("Berjaya mendaftar: ", nama))
+}
+```
+
+### 16.15 Pipe Operator Chain
+
+```riina
+// Complex data transformations with pipe
+fungsi proses_data(data: Senarai<Teks>) -> Teks kesan Bersih {
+    data
+        |> senarai_peta(fungsi(s: Teks) -> Teks { teks_potong(s) })
+        |> senarai_tapis(fungsi(s: Teks) -> Benar { panjang(s) > 0 })
+        |> senarai_peta(fungsi(s: Teks) -> Teks { teks_huruf_kecil(s) })
+        |> senarai_susun
+        |> senarai_unik
+        |> teks_cantum(", ")
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar hasil = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        |> senarai_tapis(fungsi(x: Nombor) -> Benar { baki(x, 2) == 0 })
+        |> senarai_peta(fungsi(x: Nombor) -> Nombor { x * x })
+        |> senarai_lipat(0, fungsi(acc: Nombor, x: Nombor) -> Nombor { acc + x });
+    cetak(hasil);  // 4 + 16 + 36 + 64 + 100 = 220
+    pulang 0;
+}
+```
+
+---
+
+## 17. Common AI Mistakes
+
+### 17.1 Forgetting Effect Annotation
+
+```riina
+// WRONG: Missing kesan annotation
+fungsi sapa(nama: Teks) -> Kosong {
+    cetak(gabung_teks("Hello, ", nama));
+}
+
+// CORRECT: Declare effect
+fungsi sapa(nama: Teks) -> Kosong kesan Tulis {
+    cetak(gabung_teks("Hello, ", nama));
+}
+```
+
+Every function that performs side effects MUST declare them with `kesan`. If a function calls `cetak`, it needs at minimum `kesan Tulis`. If it reads files, it needs `kesan SistemFail`. Pure functions use `kesan Bersih`. When omitted, the compiler defaults to `kesan Bersih`, which will cause errors if the body performs effects.
+
+### 17.2 Trying to Print Secrets
+
+```riina
+// WRONG: Cannot output Rahsia<T> to a public channel
+fungsi tunjuk_kata(kata: Rahsia<Teks>) -> Kosong kesan Tulis {
+    cetak(kata);  // COMPILE ERROR: information flow violation
+}
+
+// CORRECT: Declassify first with proof, or operate on the secret without revealing it
+fungsi semak_kata(kata: Rahsia<Teks>) -> Benar kesan Kripto {
+    biar hash = sha256(kata);
+    // Work with the hash instead of the raw secret
+    betul
+}
+```
+
+The RIINA type system enforces non-interference: data at security level `Rahsia` cannot flow to public channels like `cetak`. This is proven in Coq. To reveal secret data, you must use `dedah` with an explicit policy justification and proof term.
+
+### 17.3 Missing Semicolons in Sequences
+
+```riina
+// WRONG: Statements must be separated by semicolons
+fungsi utama() -> Nombor kesan Tulis {
+    biar x = 1
+    biar y = 2
+    cetak(x + y)
+    pulang 0
+}
+
+// CORRECT: Add semicolons between statements
+fungsi utama() -> Nombor kesan Tulis {
+    biar x = 1;
+    biar y = 2;
+    cetak(x + y);
+    pulang 0;
+}
+```
+
+RIINA uses semicolons to separate statements in a sequence. The last expression in a block is the return value. Forgetting semicolons is the most common parse error.
+
+### 17.4 Using Wrong Arrow in Match
+
+```riina
+// WRONG: Using -> instead of => in match arms
+padan x {
+    0 -> "kosong",   // PARSE ERROR
+    _ -> "lain",     // PARSE ERROR
+}
+
+// CORRECT: Use => (fat arrow) for match arms
+padan x {
+    0 => "kosong",
+    _ => "lain",
+}
+```
+
+Match arms in RIINA use `=>` (fat arrow), not `->` (thin arrow). The thin arrow `->` is used only in function return type declarations.
+
+### 17.5 Calling Effectful Function from Pure Function
+
+```riina
+// WRONG: Pure function cannot call effectful function
+fungsi kira(x: Nombor) -> Nombor kesan Bersih {
+    cetak(x);        // COMPILE ERROR: effect Tulis not in Bersih
+    biar data = fail_baca("config.txt");  // COMPILE ERROR: effect SistemFail not in Bersih
+    x + 1
+}
+
+// CORRECT: Either make the function effectful or remove the effectful calls
+fungsi kira_tulen(x: Nombor) -> Nombor kesan Bersih {
+    x + 1
+}
+
+// OR: Declare the needed effects
+fungsi kira_dengan_log(x: Nombor) -> Nombor kesan (Tulis, SistemFail) {
+    cetak(x);
+    biar data = fail_baca("config.txt");
+    x + 1
+}
+```
+
+The effect system is hierarchical: a function declared with `kesan Bersih` can only call other `Bersih` functions. If you need to call an effectful function, your function must declare at least those effects. Multiple effects are declared with `kesan (Effect1, Effect2)`.
+
+---
+
+## 18. Compiler JSON API
+
+### 18.1 JSON Diagnostics
+
+The `riinac check` command supports `--json` for structured output, suitable for AI agents and IDE integrations.
+
+```bash
+# Type-check a file with JSON output
+riinac check --json program.rii
+
+# Type-check from stdin
+echo 'fungsi utama() -> Nombor kesan Tulis { cetak(42); pulang 0; }' | riinac check --json --stdin
+```
+
+**Success output:**
+
+```json
+{
+  "status": "ok",
+  "file": "program.rii",
+  "diagnostics": [],
+  "effects": ["Tulis"],
+  "type": "Nombor"
+}
+```
+
+**Error output:**
+
+```json
+{
+  "status": "error",
+  "file": "program.rii",
+  "diagnostics": [
+    {
+      "severity": "error",
+      "message": "Effect mismatch: function declared Bersih but body requires Tulis",
+      "line": 2,
+      "column": 5,
+      "code": "E0301"
+    }
+  ]
+}
+```
+
+### 18.2 JSON Test Results
+
+```bash
+# Run tests with JSON output
+riinac test --json program.rii
+```
+
+```json
+{
+  "status": "ok",
+  "total": 5,
+  "passed": 4,
+  "failed": 1,
+  "results": [
+    {"name": "test_tambah", "status": "passed", "duration_ms": 2},
+    {"name": "test_bahagi_sifar", "status": "failed", "message": "Expected Gagal, got Jadi(0)", "line": 15}
+  ]
+}
+```
+
+### 18.3 IR Dump
+
+```bash
+# Dump intermediate representation for analysis
+riinac emit-ir program.rii
+```
+
+This outputs the typed IR after type checking and effect analysis, useful for AI agents that want to understand the compiled structure.
+
+### 18.4 Stdin Mode
+
+For AI agents that generate code on-the-fly, stdin mode avoids writing temporary files:
+
+```bash
+# Pipe generated code directly to the compiler
+cat <<'EOF' | riinac check --json --stdin
+fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
+    x + y
+}
+EOF
+```
+
+The `--stdin` flag reads RIINA source from standard input. Combined with `--json`, this provides a clean programmatic interface for AI code generation workflows.

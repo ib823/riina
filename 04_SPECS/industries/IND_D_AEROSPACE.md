@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-D — AEROSPACE AND AVIATION
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Life-Critical Infrastructure
+## Version 1.0.0 — Comprehensive Compliance | Life-Critical Infrastructure
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -29,7 +29,7 @@
 ║  • AC 20-115D (FAA Software Guidance)                                                               ║
 ║  • ED-201/DO-355 (Certification Considerations)                                                     ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | SAFETY-CRITICAL                                         ║
+║  Classification: Comprehensive | Zero Trust | Safety-Critical                                         ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Certified safe. Mathematically proven."                                                            ║
@@ -1130,7 +1130,7 @@
 ║  Total Estimated Effort: 910-1,400 hours                                                            ║
 ║                                                                                                      ║
 ║  This document defines the research tracks for Aerospace/Aviation industry support.                 ║
-║  Each track requires full execution per ULTRA KIASU standards.                                      ║
+║  Each track requires full execution per comprehensive standards.                                      ║
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║

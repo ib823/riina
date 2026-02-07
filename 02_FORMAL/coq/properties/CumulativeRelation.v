@@ -13,7 +13,7 @@
     requires axioms because of the contravariant argument position.
     With the cumulative definition, monotonicity follows directly.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_α (Alpha)
     Phase: 2 (Cumulative Relation)

@@ -3,7 +3,7 @@
 (* VerifiedMicrokernel.v - RIINA-OS Microkernel Verification *)
 (* Spec: 01_RESEARCH/28_DOMAIN_RIINA_OS/RESEARCH_OS01_FOUNDATION.md *)
 (* Layer: L4 Operating System *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

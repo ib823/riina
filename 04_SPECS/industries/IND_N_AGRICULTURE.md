@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-N — AGRICULTURE AND FOOD
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Food Security
+## Version 1.0.0 — Comprehensive Compliance | Food Security
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -28,7 +28,7 @@
 ║  • NIST Cybersecurity Framework                                                                     ║
 ║  • GDPR/CCPA (Consumer data)                                                                        ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | FOOD SECURITY | CRITICAL INFRASTRUCTURE                              ║
+║  Classification: Comprehensive | Food Security | Critical Infrastructure                              ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Securing the food supply. Protecting agriculture. Feeding the future."                             ║
@@ -427,7 +427,7 @@
 ║  Document: RIINA_IND_N_AGRICULTURE_FULL_v1_0_0.md                                                   ║
 ║  Version: 1.0.0                                                                                      ║
 ║  Date: 2026-01-19                                                                                    ║
-║  Status: COMPLETE - ULTRA KIASU COMPLIANT                                                           ║
+║  Status: COMPLETE - COMPLIANT                                                           ║
 ║                                                                                                      ║
 ║  Summary:                                                                                           ║
 ║  • 8 research tracks defined with full specifications                                               ║

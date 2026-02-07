@@ -3,7 +3,7 @@
 (* VerifiedIsolation.v - RIINA Verified Process Isolation *)
 (* Spec: 01_RESEARCH/54_DOMAIN_AI_VERIFIED_ISOLATION/RESEARCH_AI01_FOUNDATION.md *)
 (* Layer: Isolation Layer *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

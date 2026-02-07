@@ -3,7 +3,7 @@
 (* VerifiedStdlib.v - RIINA Verified Standard Library *)
 (* Spec: 01_RESEARCH/25_DOMAIN_Y_VERIFIED_STDLIB/RESEARCH_Y01_FOUNDATION.md *)
 (* Layer: Standard Library *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

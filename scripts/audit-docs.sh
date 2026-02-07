@@ -196,7 +196,17 @@ if [ -f "$REPO_ROOT/CLAUDE.md" ]; then
     check_value "Qed proofs (CLAUDE.md)" "$ACTUAL_QED" "$DOC_QED" "CLAUDE.md" || true
     check_value "Lean theorems (CLAUDE.md)" "$ACTUAL_LEAN" "$DOC_LEAN" "CLAUDE.md" || true
     check_value "Isabelle lemmas (CLAUDE.md)" "$ACTUAL_ISABELLE" "$DOC_ISABELLE" "CLAUDE.md" || true
-    check_value "Session number (CLAUDE.md)" "$ACTUAL_SESSION" "$DOC_SESSION" "CLAUDE.md" || true
+    # Session number is internal tracking — warn but don't block
+    if [ "$ACTUAL_SESSION" != "$DOC_SESSION" ]; then
+        if [ "$QUICK_MODE" != "--quick" ]; then
+            echo -e "${YELLOW}[WARN]${NC} Session number (CLAUDE.md): actual=$ACTUAL_SESSION, documented=$DOC_SESSION"
+        fi
+        WARNINGS=$((WARNINGS + 1))
+    else
+        if [ "$QUICK_MODE" != "--quick" ]; then
+            echo -e "${GREEN}[OK]${NC} Session number (CLAUDE.md): $DOC_SESSION"
+        fi
+    fi
 else
     if [ "$QUICK_MODE" != "--quick" ]; then
         echo -e "${RED}[ERROR]${NC} CLAUDE.md not found!"
@@ -290,7 +300,17 @@ if [ -f "$METRICS_FILE" ]; then
     check_value "Website Qed (metrics.json)" "$ACTUAL_QED" "$WEB_QED" "metrics.json" || true
     check_value "Website Lean (metrics.json)" "$ACTUAL_LEAN" "$WEB_LEAN" "metrics.json" || true
     check_value "Website Isabelle (metrics.json)" "$ACTUAL_ISABELLE" "$WEB_ISABELLE" "metrics.json" || true
-    check_value "Website Session (metrics.json)" "$ACTUAL_SESSION" "$WEB_SESSION" "metrics.json" || true
+    # Session number is internal tracking — warn but don't block
+    if [ "$ACTUAL_SESSION" != "$WEB_SESSION" ]; then
+        if [ "$QUICK_MODE" != "--quick" ]; then
+            echo -e "${YELLOW}[WARN]${NC} Website Session (metrics.json): actual=$ACTUAL_SESSION, documented=$WEB_SESSION"
+        fi
+        WARNINGS=$((WARNINGS + 1))
+    else
+        if [ "$QUICK_MODE" != "--quick" ]; then
+            echo -e "${GREEN}[OK]${NC} Website Session (metrics.json): $WEB_SESSION"
+        fi
+    fi
 else
     if [ "$QUICK_MODE" != "--quick" ]; then
         echo -e "${YELLOW}[WARN]${NC} metrics.json not found (run: bash scripts/generate-metrics.sh)"
@@ -388,18 +408,19 @@ if [ "$QUICK_MODE" != "--quick" ]; then
         case "$file" in
             */01_RESEARCH/*|*/99_ARCHIVE/*|*/_archive_deprecated/*|*/CLAUDE_WEB_PROMPT_*|*/CLAUDE_AI_*|*/delegation_prompts/*) continue ;;
         esac
-        banner_line=$(grep "^\*\*Audit Update:\*\*" "$file" | head -1)
-        if ! echo "$banner_line" | grep -q "Session ${ACTUAL_SESSION}" 2>/dev/null; then
+        banner_line=$(grep -E "^\*\*(Audit Update|Verification):\*\*" "$file" | head -1)
+        # Check if banner has current Qed count
+        if ! echo "$banner_line" | grep -q "${ACTUAL_QED_COMMA} Coq Qed" 2>/dev/null; then
             STALE_BANNERS=$((STALE_BANNERS + 1))
         fi
-    done < <(grep -rl "^\*\*Audit Update:\*\*" "$REPO_ROOT" 2>/dev/null || true)
+    done < <(grep -rlE "^\*\*(Audit Update|Verification):\*\*" "$REPO_ROOT" 2>/dev/null || true)
 
     if [ "$STALE_BANNERS" -gt 0 ]; then
-        echo -e "${YELLOW}[WARN]${NC} $STALE_BANNERS files have stale Audit Update banners"
+        echo -e "${YELLOW}[WARN]${NC} $STALE_BANNERS files have stale verification banners"
         echo "         Run: bash scripts/sync-metrics.sh"
         WARNINGS=$((WARNINGS + 1))
     else
-        echo -e "${GREEN}[OK]${NC} All Audit Update banners are current"
+        echo -e "${GREEN}[OK]${NC} All verification banners are current"
     fi
     echo ""
 fi

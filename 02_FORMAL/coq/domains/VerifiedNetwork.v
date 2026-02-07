@@ -3,7 +3,7 @@
 (* VerifiedNetwork.v - RIINA-NET Network Stack Verification *)
 (* Spec: 01_RESEARCH/29_DOMAIN_RIINA_NET/RESEARCH_NET01_FOUNDATION.md *)
 (* Layer: L3 Network *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

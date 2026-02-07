@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-L — EDUCATION
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Student Data Protection
+## Version 1.0.0 — Comprehensive Compliance | Student Data Protection
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -30,7 +30,7 @@
 ║  • HECVAT (Higher Education Cloud Vendor Assessment Tool)                                           ║
 ║  • PCI-DSS (for payment processing)                                                                 ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | STUDENT PRIVACY | MINOR PROTECTION                                   ║
+║  Classification: Comprehensive | Student Privacy | Minor Protection                                   ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Protecting learners. Securing futures. Safeguarding knowledge."                                    ║
@@ -892,7 +892,7 @@
 ║  Document: RIINA_IND_L_EDUCATION_FULL_v1_0_0.md                                                     ║
 ║  Version: 1.0.0                                                                                      ║
 ║  Date: 2026-01-19                                                                                    ║
-║  Status: COMPLETE - ULTRA KIASU COMPLIANT                                                           ║
+║  Status: COMPLETE - COMPLIANT                                                           ║
 ║                                                                                                      ║
 ║  Summary:                                                                                           ║
 ║  • 10 research tracks defined with full specifications                                              ║

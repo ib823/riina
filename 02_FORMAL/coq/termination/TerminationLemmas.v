@@ -15,7 +15,7 @@
     1. The elimination forms can step (canonical forms)
     2. The results are values (termination)
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_β (Beta)
     Phase: 3 (Termination)

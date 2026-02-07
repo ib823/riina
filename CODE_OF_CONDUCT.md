@@ -1,33 +1,60 @@
-# Code of Conduct
+# Contributor Covenant Code of Conduct
 
 ## Our Pledge
 
-We are committed to providing a welcoming and respectful environment for everyone contributing to RIINA, regardless of background, identity, or experience level.
+We as members, contributors, and leaders pledge to make participation in our
+community a welcoming experience for everyone, regardless of age, body
+size, disability, ethnicity, gender identity and expression, level of experience,
+education, socio-economic status, nationality, personal appearance, race,
+religion, or sexual identity and orientation.
+
+We pledge to act and interact in ways that contribute to an open, welcoming,
+diverse, inclusive, and healthy community.
 
 ## Our Standards
 
-**Expected behavior:**
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints and experiences
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the project and community
+Examples of behavior that contributes to a positive environment:
 
-**Unacceptable behavior:**
-- Harassment, intimidation, or discrimination
-- Trolling, insulting, or derogatory comments
-- Publishing others' private information without consent
-- Other conduct which could reasonably be considered inappropriate
+* Using welcoming and inclusive language
+* Being respectful of differing viewpoints and experiences
+* Gracefully accepting constructive criticism
+* Focusing on what is best for the community
+* Showing empathy towards other community members
+
+Examples of unacceptable behavior:
+
+* Trolling, insulting or derogatory comments, and personal attacks
+* Public or private unwanted contact
+* Publishing others' private information without explicit permission
+* Other conduct which could reasonably be considered inappropriate in a
+  professional setting
+
+## Enforcement Responsibilities
+
+Community leaders are responsible for clarifying and enforcing our standards of
+acceptable behavior and will take appropriate and fair corrective action in
+response to any behavior that they deem inappropriate or harmful.
+
+## Scope
+
+This Code of Conduct applies within all community spaces, and also applies when
+an individual is officially representing the community in public spaces.
 
 ## Enforcement
 
-Instances of unacceptable behavior may be reported to the project maintainers via Telegram [@AqilAziz823](https://t.me/AqilAziz823).
+Instances of unacceptable behavior may be reported to the community leaders
+responsible for enforcement at:
 
-All complaints will be reviewed and investigated promptly and fairly.
+**Telegram:** [@ib823](https://t.me/ib823)
+
+All complaints will be reviewed and investigated promptly and fairly. Community
+leaders are obligated to respect the privacy and confidentiality of the reporter.
 
 ## Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.1.
+This Code of Conduct is adapted from the [Contributor Covenant][homepage],
+version 2.1, available at
+[https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
 
----
-
-*RIINA — Rigorous Immutable Invariant, No Assumptions*
+[homepage]: https://www.contributor-covenant.org
+[v2.1]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html

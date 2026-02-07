@@ -3,7 +3,7 @@
 (* HardwareContracts.v - RIINA Hardware/Software Contract Verification *)
 (* Spec: 01_RESEARCH/19_DOMAIN_S_HARDWARE_CONTRACTS/RESEARCH_S01_FOUNDATION.md *)
 (* Layer: Hardware Abstraction *)
-(* Mode: ULTRA KIASU | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 (* Theorems: 30 | Admitted: 0 | admit: 0 | new Axiom: 0 *)
 
 Require Import Coq.Lists.List.

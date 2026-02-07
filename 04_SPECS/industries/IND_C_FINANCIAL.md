@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-C — FINANCIAL SERVICES
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Economic Infrastructure Critical
+## Version 1.0.0 — Comprehensive Compliance | Economic Infrastructure Critical
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -30,7 +30,7 @@
 ║  • NY DFS 23 NYCRR 500 (Cybersecurity)                                                              ║
 ║  • DORA (Digital Operational Resilience Act)                                                        ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | REAL-TIME CRITICAL                                      ║
+║  Classification: Comprehensive | Zero Trust | Real-Time Critical                                      ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Security proven. Wealth protected."                                                                ║
@@ -1182,7 +1182,7 @@
 ║  Total Estimated Effort: 860-1,340 hours                                                            ║
 ║                                                                                                      ║
 ║  This document defines the research tracks for Financial Services industry support.                 ║
-║  Each track requires full execution per ULTRA KIASU standards.                                      ║
+║  Each track requires full execution per comprehensive standards.                                      ║
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║

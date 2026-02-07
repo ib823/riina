@@ -13,7 +13,7 @@
     These properties are essential for proving non-interference
     with stateful computations.
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | INFINITE TIMELINE
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_α (Alpha)
     Phase: 2 (Cumulative Relation)

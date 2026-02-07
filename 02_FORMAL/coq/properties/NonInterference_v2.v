@@ -17,7 +17,7 @@
     For higher-order types (TFn), we handle them separately since they
     require the Kripke property (termination).
 
-    Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO AXIOMS
+    Mode: Comprehensive Verification | Zero Trust
     Date: 2026-01-18
 
     AXIOM COUNT TARGET: 0

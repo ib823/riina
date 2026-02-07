@@ -3,7 +3,7 @@
 (* VerifiedMemory.v - RIINA Verified Memory Allocator *)
 (* Spec: 01_RESEARCH/23_DOMAIN_W_VERIFIED_MEMORY/RESEARCH_W01_FOUNDATION.md *)
 (* Layer: Memory Management *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

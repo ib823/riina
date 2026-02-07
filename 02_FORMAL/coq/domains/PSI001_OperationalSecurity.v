@@ -3,7 +3,7 @@
 (* PSI001_OperationalSecurity.v - RIINA Operational Security *)
 (* Spec: 01_RESEARCH/31_DOMAIN_PSI_OPERATIONAL_SECURITY/RESEARCH_PSI01_FOUNDATION.md *)
 (* Layer: Operational Security & Insider Threat Mitigation *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-A — MILITARY/DEFENSE
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Highest Assurance Level
+## Version 1.0.0 — Comprehensive Compliance | Highest Assurance Level
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,7 +27,7 @@
 ║  • NIST SP 800-53 Rev 5                                                                             ║
 ║  • ITAR/EAR (Export Controls)                                                                       ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | EAL-7 TARGET                                            ║
+║  Classification: Comprehensive | Zero Trust | EAL-7                                            ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Security proven. Nation defended."                                                                 ║
@@ -1141,7 +1141,7 @@
 ║  Total Estimated Effort: 1,130-1,750 hours                                                          ║
 ║                                                                                                      ║
 ║  This document defines the research tracks for Military/Defense industry support.                   ║
-║  Each track requires full execution per ULTRA KIASU standards.                                      ║
+║  Each track requires full execution per comprehensive standards.                                      ║
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║

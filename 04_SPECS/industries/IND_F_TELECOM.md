@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-F — TELECOMMUNICATIONS
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Critical Infrastructure
+## Version 1.0.0 — Comprehensive Compliance | Critical Infrastructure
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -27,7 +27,7 @@
 ║  • ETSI EN 303 645 (Consumer IoT Security)                                                          ║
 ║  • ITU-T X.805 (Telecom Security Framework)                                                         ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | COMMUNICATIONS SECURITY                                 ║
+║  Classification: Comprehensive | Zero Trust | Communications Security                                 ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Every signal secured. Every connection verified."                                                  ║
@@ -754,7 +754,7 @@
 ║  Total Estimated Effort: 820-1,280 hours                                                            ║
 ║                                                                                                      ║
 ║  This document defines the research tracks for Telecommunications industry support.                 ║
-║  Each track requires full execution per ULTRA KIASU standards.                                      ║
+║  Each track requires full execution per comprehensive standards.                                      ║
 ║                                                                                                      ║
 ║  SHA-256: [To be computed on final version]                                                         ║
 ║                                                                                                      ║

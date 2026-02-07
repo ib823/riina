@@ -10,7 +10,7 @@
     PHASE 5: Store Semantics & Semantic Typing Axioms
     TARGET: Eliminate axiom 19 - 1 admit → 0 admits
 
-    Mode: ULTRA KIASU | ZERO TRUST | QED ETERNUM
+    Mode: Comprehensive Verification | Zero Trust
 
     Worker: WORKER_ζ (Zeta)
     Phase: 5 (Semantic Typing)

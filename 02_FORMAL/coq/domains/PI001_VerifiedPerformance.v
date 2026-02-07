@@ -3,7 +3,7 @@
 (* PI001_VerifiedPerformance.v - RIINA Verified Performance *)
 (* Spec: 01_RESEARCH/28_DOMAIN_PI_VERIFIED_PERFORMANCE/RESEARCH_PI01_FOUNDATION.md *)
 (* Layer: Performance & Optimization *)
-(* Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST *)
+(* Mode: Comprehensive Verification | Zero Trust *)
 
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Arith.

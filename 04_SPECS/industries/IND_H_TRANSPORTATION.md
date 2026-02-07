@@ -1,6 +1,6 @@
 # RIINA INDUSTRY TRACKS: IND-H — TRANSPORTATION
 
-## Version 1.0.0 — ULTRA KIASU Compliance | Critical Infrastructure
+## Version 1.0.0 — Comprehensive Compliance | Critical Infrastructure
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -26,7 +26,7 @@
 ║  • IMO MSC-FAL.1/Circ.3 (Maritime Cybersecurity)                                                    ║
 ║  • TSA Security Directives (Surface Transportation)                                                 ║
 ║                                                                                                      ║
-║  Classification: ULTRA KIASU | ZERO TRUST | SAFETY-CRITICAL                                         ║
+║  Classification: Comprehensive | Zero Trust | Safety-Critical                                         ║
 ║  Date: 2026-01-19                                                                                    ║
 ║                                                                                                      ║
 ║  "Moving safely. Secured in motion."                                                                 ║

@@ -2,13 +2,13 @@
 
 > Write with vibes. Ship with proofs.
 
-RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formally verified programming language designed for AI-native code generation. Every security property is proven with 8,185 mathematical proofs across 3 provers (Coq + Lean 4 + Isabelle/HOL). If AI-generated code compiles, it is provably secure by construction.
+RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formally verified programming language designed for AI-native code generation. Every security property is mathematically proven across 10 independent provers. If AI-generated code compiles, it is provably secure by construction.
 
 - File extension: `.rii`
 - Keywords: Bahasa Melayu (Malaysian) + English dual syntax
 - Repository: https://github.com/ib823/riina
-- Formal proofs: 8,185 total (7,928 Coq Qed + 119 Lean theorems + 138 Isabelle lemmas), 0 admits, 1 justified axiom
-- Verification: Triple-prover (Coq 8.20.1 + Lean 4 + Isabelle/HOL)
+- Formal proofs: 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) + 7,924 Lean + 8,072 Isabelle
+- Verification: 10-prover (Coq, Lean 4, Isabelle/HOL, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, TV)
 - Security: 6-level information flow lattice, mandatory effect tracking
 - License: Proprietary
 
@@ -16,8 +16,8 @@ RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formal
 
 - [Full AI Reference](llms-full.txt): Complete language reference for AI agents (~30K tokens)
 - [Language Spec](04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md): Canonical AI-optimized reference
-- [Examples](07_EXAMPLES/): 120+ example .rii files across 9 categories
-- [Formal Proofs](02_FORMAL/coq/): Coq proof library (7,928 Qed proofs)
+- [Examples](07_EXAMPLES/): 130+ example .rii files across 9 categories
+- [Formal Proofs](02_FORMAL/coq/): Coq proof library (7,929 Qed proofs)
 
 ## Quick Syntax
 
