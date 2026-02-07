@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+// Copyright (c) 2026 The RIINA Authors. All rights reserved.
 
 //! Dependency resolver: greedy highest-version with backtracking.
 //! Cycle detection via DFS. Diamond merging via VersionReq::intersect.

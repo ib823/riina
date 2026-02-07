@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedIdentity.v - RIINA Verified Identity and Authentication *)
 (* Spec: 01_RESEARCH/46_DOMAIN_AA_VERIFIED_IDENTITY/RESEARCH_AA01_FOUNDATION.md *)

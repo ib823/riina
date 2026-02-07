@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* RefinementTypes.v - Refinement Types for RIINA *)
 (* Security Property: Compile-time predicate verification *)

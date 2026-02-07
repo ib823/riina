@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* MobileBridgeVerification.v — RIINA JNI + Swift Bridge Correctness Proofs *)
 (* Proves BRIDGE-001 through BRIDGE-005 *)

@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* PI001_VerifiedPerformance.v - RIINA Verified Performance *)
 (* Spec: 01_RESEARCH/28_DOMAIN_PI_VERIFIED_PERFORMANCE/RESEARCH_PI01_FOUNDATION.md *)

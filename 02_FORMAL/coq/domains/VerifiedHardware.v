@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedHardware.v - RIINA-V Verified Processor *)
 (* Spec: 01_RESEARCH/39_DOMAIN_PHI_VERIFIED_HARDWARE/RESEARCH_PHI01_FOUNDATION.md *)

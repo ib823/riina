@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* SpeculativeExecution.v — Effect Types for Speculative Execution Safety *)
 (* Strategic Item #5: Model speculative execution safety via effect types *)

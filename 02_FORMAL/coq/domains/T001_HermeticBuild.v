@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* HermeticBuild.v - RIINA Hermetic Bootstrap Verification *)
 (* Spec: 01_RESEARCH/20_DOMAIN_T_HERMETIC_BUILD/RESEARCH_T01_FOUNDATION.md *)

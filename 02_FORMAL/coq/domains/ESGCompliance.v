@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* ESGCompliance.v - RIINA-ESG Sustainability Compliance Verification *)
 (* Spec: 01_RESEARCH/38_DOMAIN_RIINA_ESG/RESEARCH_ESG01_FOUNDATION.md *)

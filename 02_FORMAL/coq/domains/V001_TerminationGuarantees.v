@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* TerminationGuarantees.v - RIINA Termination Verification *)
 (* Spec: 01_RESEARCH/22_DOMAIN_V_TERMINATION_GUARANTEES/RESEARCH_V01_FOUNDATION.md *)

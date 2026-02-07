@@ -1,6 +1,7 @@
 {
   "name": "riina-website",
   "private": true,
+  "license": "Proprietary",
   "version": "0.2.0",
   "type": "module",
   "scripts": {

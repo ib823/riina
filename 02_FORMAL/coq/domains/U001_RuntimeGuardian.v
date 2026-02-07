@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* RuntimeGuardian.v - RIINA-SENTINEL Micro-Hypervisor Verification *)
 (* Spec: 01_RESEARCH/21_DOMAIN_U_RUNTIME_GUARDIAN/RESEARCH_U01_FOUNDATION.md *)

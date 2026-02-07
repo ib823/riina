@@ -98,7 +98,7 @@ RIINA 使用**马来语**关键字。以下是对照表：
 
 ## 许可证
 
-[Mozilla Public License 2.0](../../LICENSE)
+[RIINA Proprietary License](../../LICENSE)
 
 ---
 

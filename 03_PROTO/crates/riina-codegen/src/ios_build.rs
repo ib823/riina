@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+// Copyright (c) 2026 The RIINA Authors. All rights reserved.
 
 //! iOS build pipeline for RIINA.
 //!
@@ -332,7 +331,7 @@ fn generate_bridging_header(module_name: &str) -> String {
 // {module_name}-Bridging-Header.h
 // RIINA Generated Bridging Header
 //
-// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. All rights reserved.
 //
 
 #ifndef {module_name}_Bridging_Header_h

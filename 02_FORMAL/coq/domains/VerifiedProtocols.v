@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedProtocols.v - RIINA Verified Cryptographic Protocols *)
 (* Spec: 01_RESEARCH/53_DOMAIN_AH_VERIFIED_PROTOCOLS/RESEARCH_AH01_FOUNDATION.md *)

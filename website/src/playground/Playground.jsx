@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. All rights reserved.
 // RIINA Playground — In-Browser Compiler
 // Zero external dependencies (no Monaco, no CodeMirror).
 
@@ -146,120 +146,122 @@ const PlaygroundPage = ({ onNavigate }) => {
   const tabs = ['Type Check', 'C Output', 'Verified IR'];
 
   return (
-    <div style={{ paddingTop: '0' }}>
-      {/* Page Header - consistent with other pages */}
-      <section style={{ padding: '80px 32px 40px', maxWidth: '800px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '48px', fontWeight: 300, marginBottom: '24px' }}>Playground</h1>
-        <p style={{ fontSize: '20px', color: '#666', lineHeight: 1.8, marginBottom: '16px' }}>
-          Write RIINA code in your browser. Every program that type-checks inherits
-          mathematically proven security guarantees.
-        </p>
-        <p style={{ fontSize: '14px', color: '#999' }}>
-          {wasmReady ? '✓ WASM compiler loaded' : wasmError ? `✗ ${wasmError}` : 'Loading WASM compiler...'}
-        </p>
+    <div>
+      <section className="section--sm">
+        <div className="container--narrow">
+          <h1 style={{ fontSize: 40, fontWeight: 300, marginBottom: 16 }}>Playground</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Write RIINA code in your browser. Every program that type-checks inherits
+            mathematically proven security guarantees.
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 12, fontFamily: 'var(--font-mono)' }}>
+            {wasmReady ? 'WASM compiler loaded' : wasmError ? wasmError : 'Loading WASM compiler...'}
+          </p>
+        </div>
       </section>
 
-      {/* Editor section */}
-      <div style={{ padding: '0 32px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-
-      {/* Example selector */}
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ fontSize: 13, marginRight: 8 }}>Example: </label>
-        <select
-          onChange={handleExampleChange}
-          style={{
-            fontFamily: 'monospace',
-            fontSize: 13,
-            padding: '4px 8px',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            background: '#fff',
-          }}
-        >
-          {EXAMPLES.map(ex => (
-            <option key={ex.name} value={ex.name}>{ex.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Split pane */}
-      <div style={{ display: 'flex', gap: 16, minHeight: 400 }}>
-        {/* Editor */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{
-            fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#333',
-            textTransform: 'uppercase', letterSpacing: '0.05em'
-          }}>
-            Source
-          </div>
-          <textarea
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            spellCheck={false}
+      <div style={{ padding: '0 24px 60px', maxWidth: 1100, margin: '0 auto' }}>
+        {/* Example selector */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 13, color: 'var(--text-muted)', marginRight: 8 }}>Example: </label>
+          <select
+            onChange={handleExampleChange}
             style={{
-              flex: 1,
-              fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace',
-              fontSize: 14,
-              lineHeight: 1.6,
-              padding: 16,
-              border: '1px solid #ddd',
-              borderRadius: 6,
-              resize: 'none',
-              outline: 'none',
-              background: '#fafafa',
-              tabSize: 2,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              padding: '4px 8px',
+              border: '1px solid var(--border)',
+              borderRadius: 4,
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
             }}
-          />
-        </div>
-
-        {/* Output */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 0, marginBottom: 4 }}>
-            {tabs.map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: '6px 16px',
-                  fontSize: 12,
-                  fontWeight: activeTab === tab ? 600 : 400,
-                  background: activeTab === tab ? '#333' : '#eee',
-                  color: activeTab === tab ? '#fff' : '#555',
-                  border: 'none',
-                  borderRadius: tab === tabs[0] ? '6px 0 0 0' : tab === tabs[tabs.length - 1] ? '0 6px 0 0' : 0,
-                  cursor: 'pointer',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                {tab}
-              </button>
+          >
+            {EXAMPLES.map(ex => (
+              <option key={ex.name} value={ex.name}>{ex.name}</option>
             ))}
-          </div>
-          <pre style={{
-            flex: 1,
-            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-            fontSize: 13,
-            lineHeight: 1.5,
-            padding: 16,
-            border: '1px solid #ddd',
-            borderRadius: '0 6px 6px 6px',
-            overflow: 'auto',
-            background: '#1e1e1e',
-            color: '#d4d4d4',
-            margin: 0,
-            whiteSpace: 'pre-wrap',
-          }}>
-            {tabContent[activeTab] || (wasmReady ? 'Compiling...' : 'Loading WASM...')}
-          </pre>
+          </select>
         </div>
-      </div>
 
-      {/* Footer info */}
-      <div style={{ marginTop: 24, fontSize: 12, color: '#999', textAlign: 'center' }}>
-        RIINA Compiler v0.2.0 · 6,194 theorems proven · Zero external dependencies · MPL-2.0
-      </div>
+        {/* Split pane */}
+        <div style={{ display: 'flex', gap: 16, minHeight: 400 }}>
+          {/* Editor */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={{
+              fontSize: 11, fontWeight: 500, marginBottom: 4, color: 'var(--text-muted)',
+              textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)'
+            }}>
+              Source
+            </div>
+            <textarea
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              spellCheck={false}
+              style={{
+                flex: 1,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 14,
+                lineHeight: 1.6,
+                padding: 16,
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                resize: 'none',
+                outline: 'none',
+                background: 'var(--bg-code)',
+                color: 'var(--text-primary)',
+                tabSize: 2,
+              }}
+            />
+          </div>
+
+          {/* Output */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', gap: 0, marginBottom: 4 }}>
+              {tabs.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '6px 16px',
+                    fontSize: 11,
+                    fontWeight: activeTab === tab ? 600 : 400,
+                    fontFamily: 'var(--font-mono)',
+                    background: activeTab === tab ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                    color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    borderBottom: activeTab === tab ? '1px solid var(--bg-tertiary)' : '1px solid var(--border)',
+                    borderRadius: tab === tabs[0] ? '6px 0 0 0' : tab === tabs[tabs.length - 1] ? '0 6px 0 0' : 0,
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <pre style={{
+              flex: 1,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 13,
+              lineHeight: 1.5,
+              padding: 16,
+              border: '1px solid var(--border)',
+              borderRadius: '0 6px 6px 6px',
+              overflow: 'auto',
+              background: 'var(--bg-code)',
+              color: 'var(--text-primary)',
+              margin: 0,
+              whiteSpace: 'pre-wrap',
+            }}>
+              {tabContent[activeTab] || (wasmReady ? 'Compiling...' : 'Loading WASM...')}
+            </pre>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div style={{ marginTop: 24, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+          RIINA Compiler v0.2.0 &middot; Proprietary
+        </div>
       </div>
     </div>
   );

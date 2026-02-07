@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* LLMProofPipeline.v — LLM-Assisted Proof Generation Pipeline
    Strategic Item #3: Model a proof-checking pipeline for propositional logic.

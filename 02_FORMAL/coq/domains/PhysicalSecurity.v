@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* PhysicalSecurity.v - RIINA-PHYSICS Physical Security Verification *)
 (* Spec: 01_RESEARCH/32_DOMAIN_RIINA_PHYSICS/RESEARCH_PHYSICS01_FOUNDATION.md *)

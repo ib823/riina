@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* DigitalWallet.v - RIINA-WALLET Digital Wallet Verification *)
 (* Spec: 01_RESEARCH/35_DOMAIN_RIINA_WALLET/RESEARCH_WALLET01_FOUNDATION.md *)

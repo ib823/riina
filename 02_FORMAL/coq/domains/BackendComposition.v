@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* BackendComposition.v — Composing Backend Correctness with Source NI *)
 (* Theorem: ni_secure source + semantics_preserving backend → ni_secure binary *)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 The RIINA Authors. All rights reserved.
 # Build RIINA WASM binary for the playground.
 #
 # Usage: bash scripts/build-wasm.sh

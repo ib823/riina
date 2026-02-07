@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* WasmBackendVerification.v — RIINA WASM Backend Correctness Proofs *)
 (* Proves WASM-001 through WASM-005 *)

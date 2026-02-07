@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* Metaprogramming.v - Metaprogramming and Macros for RIINA *)
 (* Spec: 01_RESEARCH/11_DOMAIN_K_METAPROGRAMMING_AND_EXISTING_SYSTEMS/RESEARCH_DOMAIN_K_COMPLETE.md *)

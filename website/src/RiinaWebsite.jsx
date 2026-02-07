@@ -281,7 +281,7 @@ const RiinaWebsite = () => {
             <div className="start-card__desc">Language guide, CLI reference, examples.</div>
           </div>
         </div>
-        <p className="act-start__footer">Open source &middot; MPL-2.0 &middot; Zero dependencies</p>
+        <p className="act-start__footer">Open source &middot; Proprietary &middot; Zero dependencies</p>
       </section>
     </div>
   );
@@ -583,7 +583,7 @@ riinac build hello.rii    # Compile to native binary`}</pre>
             {tab === 'contributing' && (
               <div style={{maxWidth:'var(--max-w-text)'}}>
                 <p style={{color:'var(--text-secondary)',marginBottom:24}}>
-                  RIINA is open source under MPL-2.0. Contributions to the compiler, proofs, standard library, and documentation are welcome.
+                  RIINA is open source under Proprietary. Contributions to the compiler, proofs, standard library, and documentation are welcome.
                 </p>
                 <pre className="code-block" style={{marginBottom:24}}>{`# Setup
 git clone https://github.com/ib823/riina.git && cd riina
@@ -824,9 +824,9 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
 
             {tab === 'license' && (
               <div>
-                <h2 style={{fontSize:20,fontWeight:500,marginBottom:16}}>MPL-2.0</h2>
+                <h2 style={{fontSize:20,fontWeight:500,marginBottom:16}}>Proprietary</h2>
                 <p style={{color:'var(--text-secondary)',lineHeight:1.8,marginBottom:24}}>
-                  RIINA is licensed under the Mozilla Public License 2.0 with the "Incompatible With Secondary Licenses"
+                  RIINA is licensed under the RIINA Proprietary License with the "Incompatible With Secondary Licenses"
                   notice. This means the code cannot be relicensed under GPL, AGPL, or LGPL.
                 </p>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
@@ -872,7 +872,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
             {tab === 'terms' && (
               <div style={{fontSize:14,color:'var(--text-secondary)',lineHeight:1.8}}>
                 <h2 style={{fontSize:20,fontWeight:500,marginBottom:16,color:'var(--text-primary)'}}>Software License</h2>
-                <p style={{marginBottom:24}}>RIINA is distributed under the Mozilla Public License 2.0 (MPL-2.0).</p>
+                <p style={{marginBottom:24}}>RIINA is distributed under the RIINA Proprietary License (Proprietary).</p>
                 <h2 style={{fontSize:20,fontWeight:500,marginBottom:16,color:'var(--text-primary)'}}>No Warranty</h2>
                 <p style={{marginBottom:24}}>
                   Covered Software is provided under this License on an "as is" basis, without warranty
@@ -924,7 +924,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
       <div className="footer-bottom">
         <span>&copy; 2026 RIINA</span>
         <div className="footer-status">
-          <span className="footer-dot" /> Build passing &middot; v{metrics.version} &middot; MPL-2.0
+          <span className="footer-dot" /> Build passing &middot; v{metrics.version} &middot; Proprietary
         </div>
       </div>
     </footer>

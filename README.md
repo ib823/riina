@@ -437,7 +437,7 @@ Verification is enforced automatically via git hooks installed by `./00_SETUP/sc
 
 ## Contributing
 
-RIINA is open source under the [Mozilla Public License 2.0](LICENSE).
+RIINA is open source under the [RIINA Proprietary License](LICENSE).
 
 ```bash
 # Clone and set up

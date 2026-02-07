@@ -180,7 +180,7 @@ RIINA was constructed in eight phases, each building on the previous:
 | 2 | Standard Library | 88 built-in functions across 9 modules | Done |
 | 3 | Formal Verification | 4,885 machine-verified proofs, 0 incomplete proofs | Stable |
 | 4 | Developer Experience | Formatter, language server, doc generator, VS Code extension, 112 examples | Done |
-| 5 | Ecosystem | Package manager, CI/CD, Docker, Nix, release system, MPL-2.0 license | Done |
+| 5 | Ecosystem | Package manager, CI/CD, Docker, Nix, release system, Proprietary license | Done |
 | 6 | Adoption | C FFI, demo apps, community setup, enterprise compliance, public repository | Done |
 | 7 | Platform Universality | WASM backend, mobile backends, in-browser playground, backend verification | Done |
 | 8 | Long-term Vision | Self-hosting compiler, hardware verification, verified OS | Future |

@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* StandardLibrary.v - Standard Library for RIINA *)
 (* Spec: 01_RESEARCH/16_DOMAIN_P_STANDARD_LIBRARY/RESEARCH_DOMAIN_P_COMPLETE.md *)

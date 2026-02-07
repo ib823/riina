@@ -132,7 +132,7 @@ Before submitting a PR, run the verification gate:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [Mozilla Public License 2.0](LICENSE).
+By contributing, you agree that your contributions will be licensed under the [RIINA Proprietary License](LICENSE).
 
 ---
 

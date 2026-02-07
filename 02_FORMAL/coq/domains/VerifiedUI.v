@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedUI.v - RIINA-UX Human Interface Verification *)
 (* Spec: 01_RESEARCH/31_DOMAIN_RIINA_UX/RESEARCH_UX01_FOUNDATION.md *)

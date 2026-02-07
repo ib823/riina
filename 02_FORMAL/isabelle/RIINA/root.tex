@@ -1,0 +1,51 @@
+% Copyright (c) 2026 The RIINA Authors. All rights reserved.
+% Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+
+\documentclass[11pt,a4paper]{article}
+\usepackage{isabelle,isabellesym}
+\usepackage{amsmath,amssymb}
+\usepackage[english]{babel}
+
+\title{RIINA: Rigorous Immutable Invariant, No Assumptions\\
+       Isabelle/HOL Formal Proofs}
+\author{The RIINA Authors}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document contains the Isabelle/HOL port of RIINA's formal proofs.
+RIINA is a formally verified programming language with Bahasa Melayu syntax
+and mathematical security guarantees.
+
+This port provides independent verification of the original Coq proofs,
+implementing multi-prover validation for absolute confidence in correctness.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+
+RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first
+formally verified programming language with native Bahasa Melayu keywords.
+All security properties are mathematically proven in Coq, and this document
+contains the independent Isabelle/HOL verification.
+
+\subsection{Multi-Prover Validation}
+
+The RIINA project employs multi-prover verification:
+\begin{itemize}
+\item \textbf{Coq 8.20.1} (Primary): Original proofs
+\item \textbf{Lean 4} (Secondary): Independent port
+\item \textbf{Isabelle/HOL} (Tertiary): This document
+\end{itemize}
+
+Agreement across all three provers provides maximum confidence that the
+formalization is correct and not dependent on prover-specific bugs.
+
+\section{Theories}
+
+\input{session}
+
+\end{document}

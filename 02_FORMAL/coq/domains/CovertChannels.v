@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* CovertChannels.v - Covert Channel Analysis for RIINA *)
 (* Spec: 01_RESEARCH/05_DOMAIN_E_COVERT_CHANNELS/ *)

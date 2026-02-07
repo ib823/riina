@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedMemory.v - RIINA Verified Memory Allocator *)
 (* Spec: 01_RESEARCH/23_DOMAIN_W_VERIFIED_MEMORY/RESEARCH_W01_FOUNDATION.md *)

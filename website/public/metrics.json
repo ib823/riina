@@ -1,10 +1,10 @@
 {
-  "generated": "2026-02-07T11:20:49Z",
-  "generatedHuman": "February 07, 2026 at 11:20 UTC",
+  "generated": "2026-02-07T12:53:42Z",
+  "generatedHuman": "February 07, 2026 at 12:53 UTC",
   "version": "0.2.0",
   "session": 78,
   "git": {
-    "commit": "9b99ef7",
+    "commit": "6d30325",
     "branch": "main"
   },
   "proofs": {
@@ -26,7 +26,7 @@
     "sorry": 0,
     "axioms": 2,
     "files": 255,
-    "lines": 86787,
+    "lines": 86532,
     "prover": "Lean 4"
   },
   "isabelle": {
@@ -34,7 +34,7 @@
     "sorry": 0,
     "axioms": 1,
     "files": 260,
-    "lines": 88986,
+    "lines": 88726,
     "prover": "Isabelle/HOL"
   },
   "fstar": {
@@ -81,7 +81,7 @@
     "status": "ALL COMPLETE"
   },
   "rust": {
-    "tests": 856,
+    "tests": 852,
     "crates": 15
   },
   "examples": 130,

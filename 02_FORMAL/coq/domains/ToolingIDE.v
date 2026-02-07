@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* ToolingIDE.v - Tooling and IDE Support for RIINA *)
 (* Spec: 01_RESEARCH/14_DOMAIN_N_TOOLING_IDE/RESEARCH_DOMAIN_N_COMPLETE.md *)

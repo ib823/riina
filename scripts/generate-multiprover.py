@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 The RIINA Authors. All rights reserved.
 # Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
 #
 # generate-multiprover.py — Coq → Lean 4 / Isabelle transpiler
@@ -269,7 +269,7 @@ def generate_lean_file(parsed: CoqFile, coq_path: str) -> str:
     lines = []
 
     # Header
-    lines.append('-- SPDX-License-Identifier: MPL-2.0')
+    lines.append('-- Copyright (c) 2026 The RIINA Authors. All rights reserved.')
     lines.append('-- Copyright (c) 2026 The RIINA Authors. See AUTHORS file.')
     lines.append('')
 
@@ -508,7 +508,7 @@ def generate_isabelle_file(parsed: CoqFile, coq_path: str) -> str:
     theorem_count = len(parsed.theorems)
 
     # Header
-    lines.append('(* SPDX-License-Identifier: MPL-2.0 *)')
+    lines.append('(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)')
     lines.append('(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)')
     lines.append('')
     lines.append('(*')

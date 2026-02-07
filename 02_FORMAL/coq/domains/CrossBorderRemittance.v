@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* CrossBorderRemittance.v - RIINA-REMIT Cross-Border Verification *)
 (* Spec: 01_RESEARCH/36_DOMAIN_RIINA_REMIT/RESEARCH_REMIT01_FOUNDATION.md *)

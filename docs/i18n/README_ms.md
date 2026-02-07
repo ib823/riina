@@ -98,7 +98,7 @@ Lihat [CONTRIBUTING.md](../../CONTRIBUTING.md) untuk panduan sumbangan.
 
 ## Lesen
 
-[Mozilla Public License 2.0](../../LICENSE)
+[RIINA Proprietary License](../../LICENSE)
 
 ---
 

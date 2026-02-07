@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* QuantumTypes.v — Linear type system for quantum resources
    Strategic Item #8: Quantum-Resistant Types / Quantum Computing Ready

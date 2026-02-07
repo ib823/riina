@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* ModuleSystems.v - Module Systems and Namespaces for RIINA *)
 (* Spec: 01_RESEARCH/10_DOMAIN_J_MODULE_SYSTEMS/RESEARCH_DOMAIN_J_COMPLETE.md *)

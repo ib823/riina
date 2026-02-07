@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* DistributedConsensus.v — Verified Distributed Consensus (Strategic Item #9)
    Models a simplified Byzantine fault-tolerant consensus protocol.

@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* AlgebraicEffects.v - Algebraic Effects for RIINA *)
 (* Spec: 01_RESEARCH/02_DOMAIN_B_EFFECTS/ *)

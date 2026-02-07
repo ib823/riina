@@ -1,51 +1,83 @@
 # RIINA
 
-> RIINA (Rigorous Immutable Invariant, No Assumptions) is a formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system where all security properties are mathematically proven in Coq.
+> Write with vibes. Ship with proofs.
 
-## Quick Facts
+RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formally verified programming language designed for AI-native code generation. Every security property is proven with 8,185 mathematical proofs across 3 provers (Coq + Lean 4 + Isabelle/HOL). If AI-generated code compiles, it is provably secure by construction.
 
 - File extension: `.rii`
-- License: MPL-2.0
-- Repository: https://github.com/ib823/proof
-- Full reference: 04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md
+- Keywords: Bahasa Melayu (Malaysian) + English dual syntax
+- Repository: https://github.com/ib823/riina
+- Formal proofs: 8,185 total (7,928 Coq Qed + 119 Lean theorems + 138 Isabelle lemmas), 0 admits, 1 justified axiom
+- Verification: Triple-prover (Coq 8.20.1 + Lean 4 + Isabelle/HOL)
+- Security: 6-level information flow lattice, mandatory effect tracking
+- License: Proprietary
 
-## Key Keywords
+## Docs
 
-| Bahasa Melayu | English | Purpose |
-|---|---|---|
-| `fungsi` | fn | Function declaration |
-| `biar` | let | Variable binding |
-| `kalau` | if | Conditional |
-| `lain` | else | Else branch |
-| `pulang` | return | Return value |
-| `padan` | match | Pattern matching |
-| `untuk` | for | For loop |
-| `kesan` | effect | Effect annotation |
-| `rahsia` | secret | Secret type |
-| `dedah` | declassify | Declassify data |
+- [Full AI Reference](llms-full.txt): Complete language reference for AI agents (~30K tokens)
+- [Language Spec](04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md): Canonical AI-optimized reference
+- [Examples](07_EXAMPLES/): 120+ example .rii files across 9 categories
+- [Formal Proofs](02_FORMAL/coq/): Coq proof library (7,928 Qed proofs)
 
-## Types
-
-Primitives: `Nombor` (Int), `Teks` (String), `Benar` (Bool), `Kosong` (Unit)
-Security: `Rahsia<T>` (Secret), `Bukti<T>` (Proof)
-Effects: `Bersih` (Pure), `Tulis` (Write), `Baca` (Read), `Rangkaian` (Network), `Kripto` (Crypto)
-
-## Minimal Example
+## Quick Syntax
 
 ```riina
+// Function with effect annotation
 fungsi tambah(x: Nombor, y: Nombor) -> Nombor kesan Bersih {
     x + y
 }
 
-fungsi utama() -> Nombor kesan Tulis {
-    biar hasil = tambah(3, 4);
-    cetak(hasil);
-    pulang 0;
+// Secret types — compiler prevents leaks
+fungsi proses(kata: Rahsia<Teks>) -> Benar kesan Kripto {
+    biar hash = sha256(kata);
+    // cetak(kata);  // COMPILE ERROR: cannot output secret
+    betul
+}
+
+// Declassification requires proof
+fungsi dedah_selamat(data: Rahsia<Teks>, bukti: Bukti<Rahsia<Teks>>) -> Teks kesan Bersih {
+    dedah(data, bukti)
+}
+
+// Effect tracking — pure functions cannot perform I/O
+fungsi tulen(x: Nombor) -> Nombor kesan Bersih {
+    x * 2
+    // cetak(x);  // COMPILE ERROR: effect Tulis not in Bersih
 }
 ```
 
-## Docs
+## Key Concepts
 
-- Full AI reference: /04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md
-- Bahasa Melayu syntax spec: /01_RESEARCH/specs/bahasa/RIINA-BAHASA-MELAYU-SYNTAX_v1_0_0.md
-- Examples: /07_EXAMPLES/
+### Security Levels (Lattice)
+`Awam` (Public) < `Dalaman` (Internal) < `Sesi` (Session) < `Pengguna` (User) < `Sistem` (System) < `Rahsia` (Secret)
+
+### Effects (17 tracked effects)
+`Bersih`(Pure) | `Ubah`(Mut) | `Baca`(Read) | `Peruntuk`(Alloc) | `Tulis`(Write) | `SistemFail`(FileSystem) | `Rangkaian`(Network) | `RangkaianSelamat`(NetworkSecure) | `Kripto`(Crypto) | `Rawak`(Random) | `Sistem`(System) | `Masa`(Time) | `Proses`(Process) | `Panel` | `Zirah` | `Benteng` | `Sandi` | `Menara` | `Gapura`
+
+### Core Keywords (Bahasa Melayu | English)
+`fungsi`|fn, `biar`|let, `ubah`|mut, `kalau`|if, `lain`|else, `untuk`|for, `selagi`|while, `pulang`|return, `padan`|match, `rahsia`|secret, `dedah`|declassify, `kesan`|effect, `laku`|perform, `kendali`|handle, `sulit`|classify, `bukti`|prove
+
+### Compiler Commands
+```bash
+riinac check file.rii          # Typecheck
+riinac check --json file.rii   # JSON output for AI agents
+riinac run file.rii             # Interpret
+riinac build file.rii           # Compile to native
+riinac test file.rii            # Run inline tests
+riinac fmt file.rii             # Format
+riinac repl                     # Interactive REPL
+```
+
+## API
+
+- `riinac check --json --stdin`: Pipe source, get structured JSON diagnostics
+- `riinac test --json`: Structured test results
+- `riinac emit-ir`: Dump IR for analysis
+
+## Examples
+
+- [Hello World](07_EXAMPLES/hello_dunia.rii)
+- [Authentication](07_EXAMPLES/pengesahan.rii)
+- [Cryptography](07_EXAMPLES/kripto.rii)
+- [AI Patterns](07_EXAMPLES/07_ai_patterns/)
+- [Training Pairs](07_EXAMPLES/08_ai_training/)

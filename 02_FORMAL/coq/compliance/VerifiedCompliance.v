@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedCompliance.v - RIINA Verified Compliance Framework *)
 (* Spec: 01_RESEARCH/55_DOMAIN_AJ_VERIFIED_COMPLIANCE/RESEARCH_AJ01_FOUNDATION.md *)

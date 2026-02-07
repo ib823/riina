@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 The RIINA Authors. See AUTHORS file.
+// Copyright (c) 2026 The RIINA Authors. All rights reserved.
 
 //! WebAssembly Backend
 //!
@@ -428,7 +427,7 @@ impl WasmBackend {
     /// Generate JavaScript glue code for loading the WASM module.
     fn generate_js_glue(&self) -> Vec<u8> {
         let js = r#"// RIINA WASM Loader — Auto-generated
-// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 The RIINA Authors. All rights reserved.
 
 const RIINA_WASM_IMPORTS = {
   env: {

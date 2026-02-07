@@ -1,5 +1,4 @@
-(* SPDX-License-Identifier: MPL-2.0 *)
-(* Copyright (c) 2026 The RIINA Authors. See AUTHORS file. *)
+(* Copyright (c) 2026 The RIINA Authors. All rights reserved. *)
 
 (* VerifiedIsolation.v - RIINA Verified Process Isolation *)
 (* Spec: 01_RESEARCH/54_DOMAIN_AI_VERIFIED_ISOLATION/RESEARCH_AI01_FOUNDATION.md *)
