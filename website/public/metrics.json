@@ -1,16 +1,16 @@
 {
-  "generated": "2026-02-06T21:42:00Z",
-  "generatedHuman": "February 06, 2026 at 21:42 UTC",
+  "generated": "2026-02-07T08:08:55Z",
+  "generatedHuman": "February 07, 2026 at 08:08 UTC",
   "version": "0.2.0",
   "session": 78,
   "git": {
-    "commit": "dae15f9",
+    "commit": "738761c",
     "branch": "main"
   },
   "proofs": {
-    "qedActive": 7928,
+    "qedActive": 7929,
     "qedDeprecated": 541,
-    "qedTotal": 8469,
+    "qedTotal": 8470,
     "admitted": 0,
     "axioms": 1,
     "axiomsJustified": true
@@ -22,15 +22,15 @@
     "prover": "Coq 8.20.1"
   },
   "lean": {
-    "theorems": 119,
+    "theorems": 91,
     "sorry": 0,
     "axioms": 2,
-    "files": 12,
-    "lines": 4520,
+    "files": 11,
+    "lines": 4490,
     "prover": "Lean 4"
   },
   "isabelle": {
-    "lemmas": 138,
+    "lemmas": 102,
     "sorry": 0,
     "axioms": 1,
     "files": 10,
@@ -39,12 +39,12 @@
   },
   "multiProver": {
     "tripleProverTheorems": 86,
-    "totalProofsAllProvers": 8185,
+    "totalProofsAllProvers": 8122,
     "sorry": 0,
     "status": "ALL COMPLETE"
   },
   "rust": {
-    "tests": 839,
+    "tests": 845,
     "crates": 15
   },
   "examples": 130,
