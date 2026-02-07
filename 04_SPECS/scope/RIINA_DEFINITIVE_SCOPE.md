@@ -1,6 +1,6 @@
 # RIINA DEFINITIVE SCOPE DOCUMENT
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-07 (Full re-audit) — Active build: 0 Admitted, 4 axioms, 249 active .v files, 6,574 Qed (active), 902 Rust tests. Previous: 2026-02-04.
 
 ## Version 1.0.0 — The Single Source of Truth
 
@@ -322,16 +322,23 @@ This repository contains EVERYTHING that IS RIINA:
 └── 07_EXAMPLES/                 ← Example .rii files
 ```
 
-## 5.2 Current Codebase Status
+## 5.2 Current Codebase Status (Updated 2026-02-07)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Axioms** | 18 | Target: 0 |
-| **Admitted** | 45 | 92.9% Qed rate |
-| **Coq Files** | 33 | All compiling |
-| **Rust Tests** | 503 | All passing |
+| **Axioms** | 4 | Target: 0 (down from 18 at scope creation) |
+| **Admitted** | 0 | 100% Qed rate (down from 45 at scope creation) |
+| **Qed Proofs** | 6,574 | Active build, machine-verified |
+| **Coq Files** | 249 | All in `_CoqProject` (up from 33 at scope creation) |
+| **Rust Tests** | 902 | 750 (03_PROTO) + 152 (05_TOOLING), all passing |
+| **Rust Crates** | 15 | Active workspace members |
 | **Research Tracks** | 218 | Defined |
-| **Phase 0** | 85% | Foundation |
+| **Example .rii** | 121 | In `07_EXAMPLES/` |
+| **Phase** | 7 | Complete through platform universality |
+
+Note: Section 5.2 was written during Phase 0 (2026-01-19) when the codebase had
+33 Coq files, 18 axioms, and 45 Admitted proofs. All of these have been dramatically
+improved — axioms reduced from 18 to 4, Admitted eliminated entirely.
 
 ---
 
@@ -521,24 +528,25 @@ This repository contains EVERYTHING that IS RIINA:
 
 ## 9.1 What Must Be Proven
 
-| Property | Proof Requirement | Current Status |
-|----------|-------------------|----------------|
-| **Type Safety** | Progress + Preservation | 🟡 18 axioms remain |
-| **Non-Interference** | TINI + TSNI | 🟡 In progress |
-| **Effect Soundness** | Effect tracking sound | 🟡 Axioms needed |
-| **Linear Resource Safety** | No UAF/DF/DR | 🟡 Axioms needed |
-| **Memory Safety** | Spatial + temporal | 🟡 Axioms needed |
-| **Constant-Time** | No timing leaks | 📋 Defined |
-| **Capability Safety** | No capability forgery | 📋 Defined |
+| Property | Proof Requirement | Current Status (2026-02-07) |
+|----------|-------------------|----------------------------|
+| **Type Safety** | Progress + Preservation | ✅ Proved (Progress.v, Preservation.v, TypeSafety.v) |
+| **Non-Interference** | TINI + TSNI | 🟡 Proved with 4 axioms remaining |
+| **Effect Soundness** | Effect tracking sound | ✅ Proved (EffectSystem.v, EffectAlgebra.v) |
+| **Linear Resource Safety** | No UAF/DF/DR | ✅ Proved (MemorySafety.v, OwnershipTypes.v) |
+| **Memory Safety** | Spatial + temporal | ✅ Proved (MemorySafety.v — 139 Qed) |
+| **Constant-Time** | No timing leaks | ✅ Proved (TimingSecurity.v — 67 Qed) |
+| **Capability Safety** | No capability forgery | ✅ Proved (CapabilitySecurity.v — 108 Qed) |
 
 ## 9.2 Verification Targets
 
-| Target | Current | Goal |
-|--------|---------|------|
-| **Axioms** | 18 | 0 |
-| **Admitted** | 45 | 0 |
-| **Qed Rate** | 92.9% | 100% |
-| **Proof Assistants** | 1 (Coq) | 3 (Coq + Lean + Isabelle) |
+| Target | At Scope Creation (Jan 19) | Current (Feb 7) | Goal |
+|--------|---------------------------|-----------------|------|
+| **Axioms** | 18 | 4 | 0 |
+| **Admitted** | 45 | 0 | 0 ✅ |
+| **Qed Rate** | 92.9% | 100% | 100% ✅ |
+| **Proof Assistants** | 1 (Coq) | 3 (Coq + Lean + Isabelle) | 3 ✅ |
+| **Triple-Prover Theorems** | 0 | 84 | 84+ |
 
 ---
 
