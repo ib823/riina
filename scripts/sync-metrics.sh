@@ -355,47 +355,16 @@ if [ -f "$CONTRIBUTING" ]; then
 fi
 
 # --- RiinaWebsite.jsx ---
-WEBSITE_JSX="$REPO_ROOT/website/src/RiinaWebsite.jsx"
-if [ -f "$WEBSITE_JSX" ]; then
-    echo "  Processing RiinaWebsite.jsx..."
-    if [ "$DRY_RUN" -eq 0 ]; then
-        # Update release highlights: "7,682 Qed proofs in Coq + 91 Lean + 102 Isabelle"
-        sed -i -E "s|[0-9,]+ Qed proofs in Coq \+ [0-9]+ Lean \+ [0-9]+ Isabelle|${QED_COMMA} Qed proofs in Coq + ${LEAN_THEOREMS} Lean + ${ISABELLE_LEMMAS} Isabelle|g" "$WEBSITE_JSX"
-
-        # Update hero terminal output: <div ...>7682</div>
-        sed -i -E "s|>7682<|>${QED}<|g" "$WEBSITE_JSX"
-
-        # Update triple-prover grid: count: '7,682'
-        sed -i -E "s|count: '7,682'|count: '${QED_COMMA}'|g" "$WEBSITE_JSX"
-        sed -i -E "s|count: '[0-9,]+', role: 'Primary'|count: '${QED_COMMA}', role: 'Primary'|g" "$WEBSITE_JSX"
-
-        # Update Lean count in triple-prover grid
-        sed -i -E "s|count: '91', role: 'Secondary'|count: '${LEAN_THEOREMS}', role: 'Secondary'|g" "$WEBSITE_JSX"
-
-        # Update Isabelle count in triple-prover grid
-        sed -i -E "s|count: '102', role: 'Tertiary'|count: '${ISABELLE_LEMMAS}', role: 'Tertiary'|g" "$WEBSITE_JSX"
-
-        # Update How page prover rows: "theorems: '7,682 Qed'"
-        sed -i -E "s|theorems: '[0-9,]+ Qed'|theorems: '${QED_COMMA} Qed'|g" "$WEBSITE_JSX"
-        sed -i -E "s|theorems: '[0-9]+ theorems'|theorems: '${LEAN_THEOREMS} theorems'|g" "$WEBSITE_JSX"
-        sed -i -E "s|theorems: '[0-9]+ lemmas'|theorems: '${ISABELLE_LEMMAS} lemmas'|g" "$WEBSITE_JSX"
-
-        # Update verification banner: "7,875 proofs"
-        sed -i -E "s|<span>[0-9,]+</span> proofs|<span>${TOTAL_PROOFS_COMMA}</span> proofs|g" "$WEBSITE_JSX"
-
-        echo "    [UPDATED] RiinaWebsite.jsx"
-    else
-        echo "    [DRY] Would update RiinaWebsite.jsx"
-    fi
-    CHANGED=$((CHANGED + 1))
-fi
+# SKIPPED: Website now reads metrics.json at runtime via useMetrics hook.
+# No hardcoded numbers to sync.
+echo "  Skipping RiinaWebsite.jsx (reads metrics.json at runtime)"
 
 # --- website/index.html ---
 INDEX_HTML="$REPO_ROOT/website/index.html"
 if [ -f "$INDEX_HTML" ]; then
     echo "  Processing website/index.html..."
     if [ "$DRY_RUN" -eq 0 ]; then
-        # Update meta description total proofs
+        # Update meta description total proofs (static HTML for SEO — the one allowed hardcoded number)
         sed -i -E "s|[0-9,]+ proofs across [0-9]+ independent provers|${TOTAL_PROOFS_COMMA} proofs across ${TOTAL_PROVERS} independent provers|g" "$INDEX_HTML"
 
         echo "    [UPDATED] website/index.html"

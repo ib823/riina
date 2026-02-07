@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PlaygroundPage from './playground/Playground.jsx';
+import { useMetrics, fmt } from './useMetrics.js';
 
 // ============================================================================
 // RIINA WEBSITE — 7-PAGE DARK-MODE REWRITE
@@ -8,13 +9,14 @@ import PlaygroundPage from './playground/Playground.jsx';
 const RiinaWebsite = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { metrics } = useMetrics();
 
   useEffect(() => { window.scrollTo(0, 0); }, [currentPage]);
 
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,929 Qed proofs in Coq + 7,928 Lean + 8,072 Isabelle', '10-prover verification: 82,982 items across Coq, Lean, Isabelle, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, TV', 'Standard library: ~38 unique builtins across 10 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: [`RIINA compiler with Bahasa Melayu syntax`, `Formal verification: ${fmt(metrics.proofs.qedActive)} Qed proofs in Coq + ${fmt(metrics.lean.theorems)} Lean + ${fmt(metrics.isabelle.lemmas)} Isabelle`, `${metrics.multiProver.totalProvers}-prover verification: ${fmt(metrics.multiProver.totalProofsAllProvers)} items across Coq, Lean, Isabelle, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, TV`, 'Standard library: ~38 unique builtins across 10 modules'] },
   ];
 
   const nav = (page) => { setCurrentPage(page); setMobileMenuOpen(false); };
@@ -73,7 +75,7 @@ const RiinaWebsite = () => {
       {/* Act 1: Hero */}
       <section className="hero">
         <p className="hero-stat-line">
-          <span>82,982</span> proofs &middot; <span>10</span> provers &middot; <span>0</span> admits &middot; <span>1</span> axiom &middot; Verified
+          <span>{fmt(metrics.multiProver.totalProofsAllProvers)}</span> proofs &middot; <span>{metrics.multiProver.totalProvers}</span> provers &middot; <span>{metrics.proofs.admitted}</span> admits &middot; <span>{metrics.proofs.axioms}</span> axiom &middot; Verified
         </p>
         <h1>
           Security<br/><strong>proven at compile time.</strong>
@@ -203,11 +205,11 @@ const RiinaWebsite = () => {
         <div className="terminal-block">
           <div><span className="prompt">$ </span><span className="cmd">git clone https://github.com/ib823/riina.git && cd riina</span></div>
           <div><span className="prompt">$ </span><span className="cmd">cd 02_FORMAL/coq && make</span></div>
-          <div style={{color:'var(--text-string)'}}>Compiling 250 files... done. 0 errors.</div>
+          <div style={{color:'var(--text-string)'}}>Compiling {metrics.coq.filesActive} files... done. 0 errors.</div>
           <div><span className="prompt">$ </span><span className="cmd">grep -c "Qed\." **/*.v</span></div>
-          <div style={{color:'var(--text-accent)'}}>7929</div>
+          <div style={{color:'var(--text-accent)'}}>{metrics.proofs.qedActive}</div>
           <div><span className="prompt">$ </span><span className="cmd">grep -c "Admitted\." **/*.v</span></div>
-          <div style={{color:'var(--text-string)'}}>0</div>
+          <div style={{color:'var(--text-string)'}}>{metrics.proofs.admitted}</div>
         </div>
 
         <div className="proof-pillars">
@@ -229,16 +231,16 @@ const RiinaWebsite = () => {
         </div>
 
         <div className="triple-prover">
-          <h3 className="triple-prover__title">Ten provers. One truth.</h3>
+          <h3 className="triple-prover__title">{metrics.multiProver.totalProvers} provers. One truth.</h3>
           <p className="triple-prover__desc">
-            Core theorems independently verified across ten proof systems with different mathematical
+            Core theorems independently verified across {metrics.multiProver.totalProvers} proof systems with different mathematical
             foundations. A bug in one prover cannot compromise the guarantees.
           </p>
           <div className="triple-prover__grid">
             {[
-              { prover: 'Coq 8.20.1', count: '7,929', role: 'Primary', foundation: 'CIC' },
-              { prover: 'Lean 4', count: '7,928', role: 'Secondary', foundation: 'DTT' },
-              { prover: 'Isabelle/HOL', count: '8,072', role: 'Tertiary', foundation: 'HOL' },
+              { prover: metrics.coq.prover, count: fmt(metrics.proofs.qedActive), role: 'Primary', foundation: 'CIC' },
+              { prover: metrics.lean.prover, count: fmt(metrics.lean.theorems), role: 'Secondary', foundation: 'DTT' },
+              { prover: metrics.isabelle.prover, count: fmt(metrics.isabelle.lemmas), role: 'Tertiary', foundation: 'HOL' },
             ].map((p, i) => (
               <div key={i} className="triple-prover__card">
                 <div className="triple-prover__prover">{p.prover}</div>
@@ -248,7 +250,7 @@ const RiinaWebsite = () => {
             ))}
           </div>
           <p className="triple-prover__note">
-            7,229 triple-prover theorems &middot; 0 sorry &middot; 1 justified axiom &middot; 10 provers
+            {fmt(metrics.multiProver.tripleProverTheorems)} triple-prover theorems &middot; {metrics.multiProver.sorry} sorry &middot; {metrics.proofs.axioms} justified axiom &middot; {metrics.multiProver.totalProvers} provers
           </p>
         </div>
       </section>
@@ -720,7 +722,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
             { num: '01', title: 'Security as Types', desc: 'Rahsia<T> wraps sensitive data. kesan Kripto marks crypto functions. masa_tetap ensures constant-time execution. These are compiler-enforced, not annotations.' },
             { num: '02', title: 'Effects Track Side Effects', desc: 'Every function declares its effects: kesan Baca + Kripto. The compiler tracks what your code can do. Security-critical code is restricted to specific effects.' },
             { num: '03', title: 'The Compiler Proves Security', desc: 'When you compile, the compiler proves: no information leakage (non-interference), effects are tracked (effect safety), timing-sensitive code runs in constant time, and secrets are zeroed.' },
-            { num: '04', title: 'Verified End-to-End', desc: 'RIINA\'s compiler itself is verified with riinac verify. The formal proofs (250 Coq files, 255 Lean files, 260 Isabelle files) ship with the compiler. 10-prover verification across Coq, Lean 4, Isabelle/HOL, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, and Translation Validation.' },
+            { num: '04', title: 'Verified End-to-End', desc: `RIINA's compiler itself is verified with riinac verify. The formal proofs (${metrics.coq.filesActive} Coq files, ${metrics.lean.files} Lean files, ${metrics.isabelle.files} Isabelle files) ship with the compiler. ${metrics.multiProver.totalProvers}-prover verification across Coq, Lean 4, Isabelle/HOL, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, and Translation Validation.` },
           ].map((step, i) => (
             <div key={i} className="pipeline-step">
               <div className="pipeline-step__num">{step.num}</div>
@@ -735,16 +737,16 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
 
       <section className="section--alt" style={{padding:'80px 24px'}}>
         <div style={{maxWidth:'var(--max-w-text)',margin:'0 auto'}}>
-          <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>10-Prover Verification</h2>
+          <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>{metrics.multiProver.totalProvers}-Prover Verification</h2>
           <p style={{color:'var(--text-secondary)',marginBottom:32}}>
-            7,229 core theorems independently proved across ten verification tools using different mathematical
-            foundations. 0 sorry. 0 admitted. 1 justified policy axiom. If the same theorem
+            {fmt(metrics.multiProver.tripleProverTheorems)} core theorems independently proved across {metrics.multiProver.totalProvers} verification tools using different mathematical
+            foundations. {metrics.multiProver.sorry} sorry. {metrics.proofs.admitted} admitted. {metrics.proofs.axioms} justified policy axiom. If the same theorem
             is proved in multiple independent systems, the probability of a shared prover bug is virtually zero.
           </p>
           {[
-            { prover: 'Coq 8.20.1', theorems: '7,929 Qed', role: 'Primary — authoritative proofs (CIC)' },
-            { prover: 'Lean 4', theorems: '7928 theorems', role: 'Secondary — independent port (DTT)' },
-            { prover: 'Isabelle/HOL', theorems: '8072 lemmas', role: 'Tertiary — third verification (HOL)' },
+            { prover: metrics.coq.prover, theorems: `${fmt(metrics.proofs.qedActive)} Qed`, role: 'Primary — authoritative proofs (CIC)' },
+            { prover: metrics.lean.prover, theorems: `${fmt(metrics.lean.theorems)} theorems`, role: 'Secondary — independent port (DTT)' },
+            { prover: metrics.isabelle.prover, theorems: `${fmt(metrics.isabelle.lemmas)} lemmas`, role: 'Tertiary — third verification (HOL)' },
           ].map((p, i) => (
             <div key={i} className="cli-row">
               <code style={{minWidth:140}}>{p.prover}</code>
@@ -760,9 +762,9 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
           <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>26 Research Domains</h2>
           {[
             { id: 'A', name: 'Core Type Theory', desc: 'Type safety, non-interference, logical relations' },
-            { id: 'B', name: 'Compiler & Prototype', desc: '15 Rust crates, 856 tests' },
+            { id: 'B', name: 'Compiler & Prototype', desc: `${metrics.rust.crates} Rust crates, ${metrics.rust.tests} tests` },
             { id: 'C', name: 'Language Specifications', desc: 'Grammar, AST, type system spec' },
-            { id: 'D-Q', name: 'Attack Surface Research', desc: '14 domains, 1,231+ threats enumerated' },
+            { id: 'D-Q', name: 'Attack Surface Research', desc: `14 domains, ${metrics.status.threats} threats enumerated` },
             { id: 'R', name: 'Certified Compilation', desc: 'Translation validation' },
             { id: 'S', name: 'Hardware Contracts', desc: 'CPU side-channel models' },
             { id: 'T', name: 'Hermetic Bootstrap', desc: 'Binary bootstrap from hex0' },
@@ -908,7 +910,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
       <div className="footer-bottom">
         <span>&copy; 2026 RIINA</span>
         <div className="footer-status">
-          <span className="footer-dot" /> Build passing &middot; v0.2.0 &middot; MPL-2.0
+          <span className="footer-dot" /> Build passing &middot; v{metrics.version} &middot; MPL-2.0
         </div>
       </div>
     </footer>
