@@ -1,6 +1,6 @@
 # RIINA Cross-Cutting Specifications
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-07 (Full re-audit) — Active build: 0 Admitted, 4 axioms, 249 active .v files, 6,574 Qed (active). Previous audit: 2026-02-04.
 
 This directory contains cross-cutting concerns that span multiple industries and domains.
 
@@ -12,6 +12,7 @@ This directory contains cross-cutting concerns that span multiple industries and
 | `SYNERGY_MATRIX.md` | Cross-industry synergy and reuse matrix |
 | `PERFORMANCE_TEMPLATES.md` | Performance and size constraint templates |
 | `UI_UX_TEMPLATES.md` | User interface and experience security templates |
+| `RESEARCH_COMPONENTS_AUDIT_2026_02_07.md` | Comprehensive audit of all research components (2026-02-07) |
 
 ## Purpose
 

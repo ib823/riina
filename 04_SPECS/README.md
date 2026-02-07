@@ -1,6 +1,6 @@
 # RIINA Specifications (Track C)
 
-**Audit Update:** 2026-02-04 (Codex audit sync) — Active build: 0 admit., 0 Admitted., 4 axioms, 249 active files, 4,044 Qed (active), 283 total .v. Historical counts in this document remain historical.
+**Audit Update:** 2026-02-07 (Full re-audit) — Active build: 0 Admitted, 4 axioms, 249 active .v files, 6,574 Qed (active). Previous: 2026-02-04.
 
 This directory contains formal specifications for RIINA.
 

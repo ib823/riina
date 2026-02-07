@@ -1,7 +1,8 @@
 # Multi-Prover Validation Report
 
-**Version:** 1.5.0
-**Date:** 2026-02-06
+**Version:** 1.6.0
+**Date:** 2026-02-07 (Re-audit)
+**Previous:** 2026-02-06
 **Status:** Active Implementation (Phase 7 Complete)
 
 ---
@@ -25,7 +26,7 @@ RIINA employs multi-prover verification to provide absolute confidence in formal
 ║   ├── 02_FORMAL/coq/foundations/Syntax.v (585 lines, 3 Qed)     ║
 ║   ├── 02_FORMAL/coq/foundations/Semantics.v (590 lines)         ║
 ║   ├── 02_FORMAL/coq/foundations/Typing.v (648 lines)            ║
-║   └── Total: 4,890+ Qed proofs                                  ║
+║   └── Total: 6,574 Qed proofs (verified 2026-02-07)               ║
 ║                                                                  ║
 ║   Lean 4 (Secondary)                                            ║
 ║   ├── 02_FORMAL/lean/RIINA/Foundations/Syntax.lean (✅ Ported)  ║
@@ -38,7 +39,7 @@ RIINA employs multi-prover verification to provide absolute confidence in formal
 ║   ├── 02_FORMAL/lean/RIINA/Effects/EffectSystem.lean (✅ Ported)║
 ║   ├── 02_FORMAL/lean/RIINA/Effects/EffectGate.lean (✅ Ported)  ║
 ║   ├── 02_FORMAL/lean/RIINA/Properties/NonInterference.lean (✅) ║
-║   └── Ported: 84 theorems                                       ║
+║   └── Ported: 84 theorems (99 theorem/lemma references total)    ║
 ║                                                                  ║
 ║   Isabelle/HOL (Tertiary)                                       ║
 ║   ├── 02_FORMAL/isabelle/RIINA/Syntax.thy (✅ Ported)           ║
@@ -51,7 +52,7 @@ RIINA employs multi-prover verification to provide absolute confidence in formal
 ║   ├── 02_FORMAL/isabelle/RIINA/EffectSystem.thy (✅ Ported)     ║
 ║   ├── 02_FORMAL/isabelle/RIINA/EffectGate.thy (✅ Ported)       ║
 ║   ├── 02_FORMAL/isabelle/RIINA/NonInterference.thy (✅ Ported)  ║
-║   └── Ported: 83 lemmas                                         ║
+║   └── Ported: 83 lemmas (103 lemma/theorem references total)     ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
@@ -346,6 +347,18 @@ Note: Includes 76 fully proved theorems + 8 key theorems (preservation, logical_
 non_interference_stmt, and 5 auxiliary lemmas) that are stated with matching signatures
 across all three provers.
 
+### Axiom Dependency (2026-02-07 Audit)
+
+The Coq codebase contains 4 axioms, all in `properties/`:
+- `fundamental_theorem_step_0` (NonInterference_v2.v:1015)
+- `logical_relation_ref` (NonInterference_v2_LogicalRelation.v:782)
+- `logical_relation_assign` (NonInterference_v2_LogicalRelation.v:800)
+- `logical_relation_declassify` (NonInterference_v2_LogicalRelation.v:817)
+
+These axioms are not ported to Lean/Isabelle — they represent the boundary of what
+is currently proved. The first three should eventually be eliminated by completing
+the logical relation proof for reference and assignment cases.
+
 ## File Structure
 
 ```
@@ -437,5 +450,5 @@ For each theorem ported:
 
 ---
 
-*Document generated: 2026-02-06*
+*Document generated: 2026-02-06, re-audited 2026-02-07*
 *Mode: ULTRA KIASU | ABSOLUTE FIDELITY | ZERO TRUST*
