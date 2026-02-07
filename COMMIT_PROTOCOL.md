@@ -1,214 +1,111 @@
-# RIINA COMMIT PROTOCOL — MANDATORY FOR ALL CONTRIBUTORS
+# RIINA COMMIT & DEPLOY PROTOCOL
 
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║  ZERO TRUST COMMIT PROTOCOL                                                  ║
-║                                                                              ║
-║  Trust no one. Trust nothing. Verify everything.                             ║
-║  This protocol is MANDATORY. No exceptions. Ever.                            ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
+**This is law. No exceptions. No shortcuts. No "it's a small change."**
 
-## 0. BEFORE ANYTHING ELSE
-
-**Every session, before ANY work:**
-
-```bash
-# 1. Verify hooks are installed
-ls -la .git/hooks/pre-commit .git/hooks/pre-push
-
-# If they don't exist or are wrong:
-bash 00_SETUP/scripts/install_hooks.sh
-
-# 2. Verify riinac exists and works
-./03_PROTO/target/release/riinac verify --fast
-
-# If riinac doesn't exist:
-cd 03_PROTO && cargo build --release -p riinac && cd ..
-```
-
-**If hooks are not installed, STOP. Install them first. No exceptions.**
+There are exactly TWO instructions a human gives: **"commit"** and **"deploy"**.
+Each has a fixed sequence of steps. Every step must pass before the next runs.
+If any step fails, STOP. Fix it. Restart from step 1.
 
 ---
 
-## 1. DOCUMENTATION AUDIT (MANDATORY BEFORE COMMIT)
+## INSTRUCTION: "COMMIT"
 
-Before ANY commit, you MUST audit ALL documentation files. This is not optional.
+**What it means:** Save this work to main. Verify it. Nothing goes to production.
 
-### 1.1 Core Documents to Audit
-
-| File | What to Check | Update If |
-|------|---------------|-----------|
-| `CLAUDE.md` | Session number, Qed counts, Admitted counts, axiom counts, file counts, test counts | Any metric changed |
-| `PROGRESS.md` | Current session entry, task status, metrics | Any work completed |
-| `SESSION_LOG.md` | Session entry with date, tasks, outcomes | Every session |
-| `README.md` | Hero metrics, comparison table | Metrics changed significantly |
-| `VERSION` | Semver version | Release milestone |
-| `CHANGELOG.md` | Release notes | Any user-facing change |
-| `VERIFICATION_MANIFEST.md` | Auto-generated | Run `riinac verify --full` |
-
-### 1.2 Website Documents to Audit
-
-| File | What to Check | Update If |
-|------|---------------|-----------|
-| `website/src/RiinaWebsite.jsx` | Hero stats, release data | Metrics changed |
-| `website/public/metrics.json` | Auto-generated | Run `scripts/generate-metrics.sh` |
-
-### 1.3 Coordination Documents
-
-| File | What to Check |
-|------|---------------|
-| `06_COORDINATION/COORDINATION_LOG.md` | Version, session, audit date |
-| `06_COORDINATION/DECISIONS.md` | Any architectural decisions made |
-
-### 1.4 Audit Script
-
-Run this before EVERY commit:
-
-```bash
-bash scripts/audit-docs.sh
+```
+Step 1.  git status                          — See what changed
+Step 2.  bash scripts/audit-docs.sh          — Docs match reality?
+Step 3.  git add <specific files>            — Stage only what you changed
+Step 4.  git commit -m "[SCOPE] message"     — Pre-commit hook runs automatically:
+                                                 - audit-docs.sh
+                                                 - riinac verify --fast (856+ tests, clippy)
+Step 5.  git push origin main                — Pre-push hook runs automatically:
+                                                 - riinac verify --full (10-prover scan)
+                                                 - Commit signature verification
+                                                 - Secret scan
+                                                 - Trojan source scan
 ```
 
-This script will:
-1. Count current Qed proofs, admits, axioms
-2. Compare against documented values
-3. Flag any discrepancies
-4. Generate an audit report
+**That's it. 5 steps. "Commit" does NOT touch public, riina, or gh-pages.**
 
 ---
 
-## 2. COMMIT CHECKLIST (MANDATORY)
+## INSTRUCTION: "DEPLOY"
 
-Before running `git commit`, verify ALL of the following:
+**What it means:** Put the current main onto the live website. Full pipeline.
+
+**"Deploy" INCLUDES "commit" first if there are uncommitted changes.**
 
 ```
-[ ] Hooks installed (ls -la .git/hooks/pre-commit .git/hooks/pre-push)
-[ ] riinac verify --fast passes
-[ ] Documentation audit complete (bash scripts/audit-docs.sh)
-[ ] All flagged documents updated OR explicitly marked "no change needed"
-[ ] Commit message follows format: [TRACK_X] TYPE: Description
-[ ] No secrets in staged files
-[ ] No Admitted in active Coq build (unless justified and documented)
+Step 1.  git status                          — Clean? If not, run COMMIT first.
+Step 2.  bash scripts/audit-docs.sh          — Docs match reality?
+Step 3.  bash scripts/sync-public.sh         — Cherry-pick main → public,
+                                                strip internal files,
+                                                push public to origin AND ib823/riina
+Step 4.  bash scripts/deploy-website.sh      — Build website (npm run build),
+                                                push dist/ to gh-pages on ib823/riina
+Step 5.  Hard refresh https://ib823.github.io/riina/ and VISUALLY VERIFY
 ```
+
+**That's it. 5 steps. The website is live after step 4. Step 5 confirms it.**
 
 ---
 
-## 3. PUSH CHECKLIST (MANDATORY)
+## WHAT THE SCRIPTS DO (so you know what's happening)
 
-Before running `git push origin main`:
+### `audit-docs.sh`
+Reads metrics.json (the single source of truth) and checks that every markdown doc quotes the right numbers. Fails if anything is stale.
 
-```
-[ ] All commit checklist items verified
-[ ] riinac verify --full passes (will run automatically via pre-push hook)
-[ ] VERIFICATION_MANIFEST.md updated
-[ ] GPG signing enabled (optional but recommended)
-```
+### Pre-commit hook (automatic on `git commit`)
+1. Runs `audit-docs.sh`
+2. Runs `riinac verify --fast` — compiles Rust, runs all tests, runs clippy
 
----
+### Pre-push hook (automatic on `git push`)
+1. Runs `riinac verify --full` — everything from --fast PLUS scans all 10 prover file sets
+2. Verifies commit signatures (SSH signing)
+3. Scans for accidentally committed secrets
+4. Scans for trojan source attacks (Unicode tricks)
 
-## 4. PUBLIC SYNC CHECKLIST (MANDATORY)
+### `sync-public.sh`
+1. Verifies you're on main and it's pushed
+2. Switches to public branch
+3. Cherry-picks the latest main commit
+4. Deletes internal files (CLAUDE.md, 01_RESEARCH/, 06_COORDINATION/, etc.)
+5. Pushes public to both origin and ib823/riina
+6. Switches back to main
 
-Before running `bash scripts/sync-public.sh`:
-
-```
-[ ] main branch is pushed and verified
-[ ] No internal files will leak to public (script handles this)
-[ ] Website metrics are current
-```
-
----
-
-## 5. WEBSITE DEPLOY CHECKLIST (MANDATORY)
-
-Before running `npm run deploy` in website/:
-
-```
-[ ] Public branch is synced
-[ ] metrics.json regenerated (scripts/generate-metrics.sh)
-[ ] Website builds without errors (npm run build)
-[ ] All hero stats match CLAUDE.md
-[ ] Release information is current
-```
+### `deploy-website.sh`
+1. Builds WASM binary
+2. Regenerates metrics.json from live codebase
+3. Runs `npm run build` (Vite production build)
+4. Copies install.sh into dist/
+5. Creates temp git repo in dist/, force-pushes to gh-pages on ib823/riina
+6. GitHub Pages serves gh-pages → https://ib823.github.io/riina/
 
 ---
 
-## 6. THE CARDINAL RULES
+## THE RULES
 
-1. **NEVER commit without running the audit**
-2. **NEVER push without verification passing**
-3. **NEVER deploy without syncing public first**
-4. **NEVER trust that hooks are installed — verify**
-5. **NEVER trust that documentation is current — audit**
-6. **NEVER skip steps because "it's a small change"**
-7. **NEVER trust external systems (GitHub, CI, AI) — own verification**
-
----
-
-## 7. ENFORCEMENT
-
-This protocol is enforced by:
-
-1. **Pre-commit hook** — Runs `riinac verify --fast`
-2. **Pre-push hook** — Runs `riinac verify --full` + security scans
-3. **sync-public.sh** — Verifies main is pushed before syncing
-4. **deploy-website.sh** — Builds and deploys only if build succeeds
-
-If ANY hook fails, the operation is BLOCKED. Fix the issue, don't bypass the hook.
+1. **"Commit" never touches production.** It only saves to main.
+2. **"Deploy" always includes sync + website build.** No partial deploys.
+3. **If any step fails, STOP.** Fix it. Restart from step 1.
+4. **No skipping steps.** Not even for a typo fix.
+5. **No manual pushes to public.** Only sync-public.sh touches public.
+6. **No manual pushes to gh-pages.** Only deploy-website.sh touches gh-pages.
+7. **Visual verification is mandatory after deploy.** Open the URL. Look at it. Confirm it's right.
+8. **The website reads metrics.json at runtime.** Zero hardcoded numbers in JSX. If you see a number that should come from metrics and it's hardcoded, that's a bug.
 
 ---
 
-## 8. FOR AI ASSISTANTS (THIS IS YOUR JOB, NOT THE USER'S)
+## QUICK REFERENCE
 
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  THE USER DOES NOT RUN THESE COMMANDS. YOU DO.                               ║
-║  IF YOU ASK THE USER TO RUN VERIFICATION, YOU ARE DOING IT WRONG.            ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
-
-If you are an AI assistant (Claude, GPT, Cursor, Copilot, or any other):
-
-**Your responsibilities (YOU execute these, not the user):**
-
-1. **READ THIS FILE FIRST** at the start of every session
-2. **RUN** `ls -la .git/hooks/pre-commit .git/hooks/pre-push` to verify hooks
-3. **RUN** `bash 00_SETUP/scripts/install_hooks.sh` if hooks are missing
-4. **RUN** `bash scripts/audit-docs.sh` before ANY commit
-5. **FIX** all discrepancies in documentation YOURSELF
-6. **COMMIT** with proper message format
-7. **PUSH** and let hooks verify
-8. **SYNC** to public with `bash scripts/sync-public.sh`
-9. **DEPLOY** website with `npm run deploy` in website/
-
-**The user's role:**
-- Tell you what work to do
-- Approve/deny your tool executions
-- Grant permissions (tokens) when needed for protected operations
-
-**Your role:**
-- Execute the ENTIRE protocol automatically
-- Verify EVERYTHING yourself
-- Never ask the user to run verification commands
-- Never skip steps
-- Never assume hooks are installed
-
-The user does not trust you. You do not trust the user. You do not trust GitHub.
-You trust ONLY the verification gates encoded in this repository.
-
----
-
-## 9. RECOVERY
-
-If you discover the protocol was not followed:
-
-1. **STOP** all work immediately
-2. **AUDIT** the current state of all documentation
-3. **FIX** any discrepancies
-4. **VERIFY** with `riinac verify --full`
-5. **DOCUMENT** what was missed in SESSION_LOG.md
-6. **COMMIT** the fixes with message: `[RECOVERY] Fix protocol violation: <description>`
+| Human says | You do |
+|------------|--------|
+| "commit" | Steps 1-5 of COMMIT |
+| "deploy" | COMMIT (if needed) + Steps 1-5 of DEPLOY |
+| "deploy to prod" | Same as "deploy" |
+| "push to public" | Same as "deploy" |
+| "push to riina" | Same as "deploy" |
 
 ---
 
