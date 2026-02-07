@@ -16,7 +16,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: [`RIINA compiler with Bahasa Melayu syntax`, `Formal verification: ${fmt(metrics.proofs.qedActive)} Qed proofs in Coq + ${fmt(metrics.lean.theorems)} Lean + ${fmt(metrics.isabelle.lemmas)} Isabelle`, `${metrics.multiProver.totalProvers}-prover verification: ${fmt(metrics.multiProver.totalProofsAllProvers)} items across Coq, Lean, Isabelle, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, TV`, 'Standard library: ~38 unique builtins across 10 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,683 Qed proofs in Coq + 7,928 Lean + 8,072 Isabelle', '3-prover verification: 23,683 items across Coq, Lean 4, Isabelle/HOL', 'Standard library: ~38 unique builtins across 10 modules'] },
   ];
 
   const nav = (page) => { setCurrentPage(page); setMobileMenuOpen(false); };
