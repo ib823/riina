@@ -59,7 +59,7 @@ done
 
 # ── 4. No Co-Authored-By in scripts ──────────────────────────────────
 echo "[4/8] Checking for Co-Authored-By in scripts..."
-if grep -ri 'Co-Authored-By.*anthropic' "$REPO_ROOT/scripts/" 2>/dev/null; then
+if grep -ri 'Co-Authored-By.*anthropic' "$REPO_ROOT/scripts/" 2>/dev/null | grep -v 'verify-public.sh'; then
     echo -e "${RED}FAIL: Co-Authored-By in scripts${NC}"
     FAIL=1
 else

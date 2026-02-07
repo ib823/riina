@@ -655,14 +655,14 @@ See Appendix A for the complete 460-track enumeration.
 ║                                                                                                      ║
 ║  CODEBASE INTEGRATION PLAN                                                                          ║
 ║                                                                                                      ║
-║  Repository: github.com/ib823/proof                                                                  ║
+║  Repository: github.com/ib823/riina                                                                  ║
 ║                                                                                                      ║
 ╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                                      ║
 ║  STEP 1: Create Documentation Directory Structure                                                   ║
 ║  ═══════════════════════════════════════════════                                                    ║
 ║                                                                                                      ║
-║  /workspaces/proof/                                                                                  ║
+║  <repo-root>/                                                                                        ║
 ║  ├── 00_SETUP/                                                                                       ║
 ║  ├── 01_RESEARCH/                                                                                    ║
 ║  │   ├── 00_SCOPE/                           ← NEW: Add scope documents here                        ║

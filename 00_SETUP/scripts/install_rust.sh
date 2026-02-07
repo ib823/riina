@@ -1,17 +1,19 @@
 #!/bin/bash
-# TERAS Rust Installation Script
+# RIINA Rust Installation Script
 
 set -euo pipefail
 
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║              TERAS Rust Installation Script                  ║"
-echo "╚══════════════════════════════════════════════════════════════╝"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+
+echo "========================================================"
+echo "  RIINA Rust Installation Script"
+echo "========================================================"
 
 # Check if already installed
 if command -v rustc &> /dev/null; then
     VERSION=$(rustc --version)
     echo "Rust already installed: $VERSION"
-    
+
     # Check if correct version
     if [[ "$VERSION" == *"1.84"* ]] || [[ "$VERSION" == *"1.85"* ]] || [[ "$VERSION" == *"1.86"* ]]; then
         echo "Version is compatible"
@@ -28,8 +30,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source "$HOME/.cargo/env"
 
 # Install specific version (from rust-toolchain.toml)
-if [ -f "/workspaces/proof/05_TOOLING/rust-toolchain.toml" ]; then
-    cd /workspaces/proof/05_TOOLING
+if [ -f "$REPO_ROOT/05_TOOLING/rust-toolchain.toml" ]; then
+    cd "$REPO_ROOT/05_TOOLING"
     rustup show
 else
     rustup default stable
@@ -46,4 +48,4 @@ cargo --version
 clippy-driver --version
 
 echo ""
-echo "✅ Rust installation complete"
+echo "[OK] Rust installation complete"
