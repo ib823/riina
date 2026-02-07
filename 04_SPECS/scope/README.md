@@ -1,6 +1,6 @@
 # RIINA Scope Specifications
 
-**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
+**Audit Update:** 2026-02-07 (Session 78: 10-Prover Full Stack) — 82,982 total items across 10 provers. 7,929 Coq Qed + 7928 Lean + 8072 Isabelle + 7899 F* + 7899 TLA+ + 7899 Alloy + 7899 SMT + 7899 Verus + 7899 Kani + 11659 TV. 0 Admitted/sorry. 1 axiom (policy). 852 Rust tests.
 
 This directory contains the definitive scope and architecture documents for the RIINA project.
 

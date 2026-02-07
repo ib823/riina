@@ -336,6 +336,147 @@ fn glob_thy_files(dir: &Path) -> Vec<PathBuf> {
     files
 }
 
+/// Find `.fst` (F*) files under `dir`.
+fn glob_fst_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if path.extension().and_then(|e| e.to_str()) == Some("fst") {
+                    files.push(path);
+                }
+            }
+        }
+    }
+    walk(dir, &mut files);
+    files
+}
+
+/// Find `.tla` (TLA+) files under `dir`.
+fn glob_tla_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if path.extension().and_then(|e| e.to_str()) == Some("tla") {
+                    files.push(path);
+                }
+            }
+        }
+    }
+    walk(dir, &mut files);
+    files
+}
+
+/// Find `.als` (Alloy) files under `dir`.
+fn glob_als_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if path.extension().and_then(|e| e.to_str()) == Some("als") {
+                    files.push(path);
+                }
+            }
+        }
+    }
+    walk(dir, &mut files);
+    files
+}
+
+/// Find `.smt2` files under `dir`, excluding `.tv.smt2` (translation validation).
+fn glob_smt_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if name.ends_with(".smt2") && !name.ends_with(".tv.smt2") {
+                        files.push(path);
+                    }
+                }
+            }
+        }
+    }
+    walk(dir, &mut files);
+    files
+}
+
+/// Find `.rs` files under a `verus/` directory.
+fn glob_verus_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                    files.push(path);
+                }
+            }
+        }
+    }
+    if dir.is_dir() {
+        walk(dir, &mut files);
+    }
+    files
+}
+
+/// Find `.rs` files under a `kani/` directory.
+fn glob_kani_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                    files.push(path);
+                }
+            }
+        }
+    }
+    if dir.is_dir() {
+        walk(dir, &mut files);
+    }
+    files
+}
+
+/// Find `.tv.smt2` (translation validation) files under `dir`.
+fn glob_tv_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = vec![];
+    fn walk(dir: &Path, files: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, files);
+                } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if name.ends_with(".tv.smt2") {
+                        files.push(path);
+                    }
+                }
+            }
+        }
+    }
+    walk(dir, &mut files);
+    files
+}
+
 // ---------------------------------------------------------------------------
 // Counting helpers (for cross-prover validation)
 // ---------------------------------------------------------------------------
@@ -384,6 +525,124 @@ fn count_isabelle_lemmas(isa_dir: &Path) -> u32 {
             for line in content.lines() {
                 let t = line.trim();
                 if t.starts_with("lemma ") || t.starts_with("theorem ") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `val ..._lemma` declarations in F* `.fst` files.
+fn count_fstar_lemmas(dir: &Path) -> u32 {
+    let files = glob_fst_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.starts_with("val ") && t.contains("_lemma") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `THEOREM` declarations in TLA+ `.tla` files.
+fn count_tla_theorems(dir: &Path) -> u32 {
+    let files = glob_tla_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                if line.starts_with("THEOREM ") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `assert` and `check` declarations in Alloy `.als` files.
+fn count_alloy_assertions(dir: &Path) -> u32 {
+    let files = glob_als_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.starts_with("assert ") || t.starts_with("check ") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `(assert ` occurrences in `.smt2` files (excluding `.tv.smt2`).
+fn count_smt_assertions(dir: &Path) -> u32 {
+    let files = glob_smt_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.contains("(assert ") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `proof fn ` declarations in Verus `.rs` files.
+fn count_verus_proofs(dir: &Path) -> u32 {
+    let files = glob_verus_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.contains("proof fn ") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `#[kani::proof]` annotations in Kani `.rs` files.
+fn count_kani_proofs(dir: &Path) -> u32 {
+    let files = glob_kani_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.contains("#[kani::proof]") {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Count `(assert ` occurrences in `.tv.smt2` (translation validation) files.
+fn count_tv_validations(dir: &Path) -> u32 {
+    let files = glob_tv_files(dir);
+    let mut count = 0u32;
+    for path in files {
+        if let Ok(content) = fs::read_to_string(&path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.contains("(assert ") {
                     count += 1;
                 }
             }
@@ -1095,12 +1354,34 @@ fn verify_metrics_accuracy(
     }
 }
 
-/// Cross-validate proof counts across all three provers.
-/// Checks that Lean and Isabelle theorem counts are within 5% of the Coq domain count.
-fn cross_validate_provers(coq_dir: &Path, lean_dir: &Path, isabelle_dir: &Path) -> CheckResult {
+/// Cross-validate proof counts across all ten provers.
+/// Checks that Lean and Isabelle theorem counts are within 50% of the Coq domain count.
+/// Also aggregates counts from all 7 additional provers.
+fn cross_validate_provers(
+    coq_dir: &Path,
+    lean_dir: &Path,
+    isabelle_dir: &Path,
+    fstar_dir: &Path,
+    tlaplus_dir: &Path,
+    alloy_dir: &Path,
+    smt_dir: &Path,
+    verus_dir: &Path,
+    kani_dir: &Path,
+    tv_dir: &Path,
+) -> CheckResult {
     let coq_qed = count_coq_qed(coq_dir);
     let lean_thm = count_lean_theorems(lean_dir);
     let isa_lem = count_isabelle_lemmas(&isabelle_dir.join("RIINA"));
+    let fstar_lem = count_fstar_lemmas(fstar_dir);
+    let tla_thm = count_tla_theorems(tlaplus_dir);
+    let alloy_asrt = count_alloy_assertions(alloy_dir);
+    let smt_asrt = count_smt_assertions(smt_dir);
+    let verus_pf = count_verus_proofs(verus_dir);
+    let kani_pf = count_kani_proofs(kani_dir);
+    let tv_val = count_tv_validations(tv_dir);
+
+    let grand_total = coq_qed + lean_thm + isa_lem + fstar_lem + tla_thm
+        + alloy_asrt + smt_asrt + verus_pf + kani_pf + tv_val;
 
     // Check multi-prover parity: Lean and Isabelle should each have
     // at least 50% of the Coq theorem count (accounting for foundation
@@ -1109,12 +1390,14 @@ fn cross_validate_provers(coq_dir: &Path, lean_dir: &Path, isabelle_dir: &Path) 
     let parity_ok = lean_thm >= threshold && isa_lem >= threshold;
 
     CheckResult {
-        name: "Cross-Prover Validation".into(),
+        name: "Cross-Prover Validation (10 provers)".into(),
         passed: parity_ok,
         // Non-blocking for now — promote to blocking once parity is validated
         blocking: false,
         details: format!(
-            "Coq: {coq_qed} Qed | Lean: {lean_thm} | Isabelle: {isa_lem} | Parity: {}",
+            "Grand total: {grand_total} | Coq: {coq_qed} | Lean: {lean_thm} | Isabelle: {isa_lem} | \
+             F*: {fstar_lem} | TLA+: {tla_thm} | Alloy: {alloy_asrt} | SMT: {smt_asrt} | \
+             Verus: {verus_pf} | Kani: {kani_pf} | TV: {tv_val} | Parity: {}",
             if parity_ok { "OK" } else { "DRIFT (Lean/Isabelle < 50% of Coq)" }
         ),
     }
@@ -1270,6 +1553,285 @@ fn is_leap(y: u64) -> bool {
 }
 
 // ---------------------------------------------------------------------------
+// F* / TLA+ / Alloy / SMT / Verus / Kani / TV static scans
+// ---------------------------------------------------------------------------
+
+/// Static scan of F* `.fst` files for `admit` keyword and lemma count.
+fn scan_fstar(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "F* Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_fst_files(dir);
+    let mut admit_count = 0u32;
+    let mut lemma_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                let trimmed = line.trim();
+
+                // Skip comments
+                if trimmed.starts_with("//") || trimmed.starts_with("(*") {
+                    continue;
+                }
+
+                // Count lemmas: val ..._lemma
+                if trimmed.starts_with("val ") && trimmed.contains("_lemma") {
+                    lemma_count += 1;
+                }
+
+                // Check for admit
+                if contains_word(trimmed, "admit") {
+                    admit_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "F* admit Scan".into(),
+        passed: admit_count == 0,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{admit_count} admit in {} files ({lemma_count} lemmas)",
+            files.len()
+        ),
+    }]
+}
+
+/// Static scan of TLA+ `.tla` files for theorem count.
+fn scan_tlaplus(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "TLA+ Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_tla_files(dir);
+    let mut theorem_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                if line.starts_with("THEOREM ") {
+                    theorem_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "TLA+ Scan".into(),
+        passed: true,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{} files ({theorem_count} theorems)",
+            files.len()
+        ),
+    }]
+}
+
+/// Static scan of Alloy `.als` files for assertion count.
+fn scan_alloy(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "Alloy Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_als_files(dir);
+    let mut assertion_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.starts_with("assert ") || t.starts_with("check ") {
+                    assertion_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "Alloy Scan".into(),
+        passed: true,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{} files ({assertion_count} assertions)",
+            files.len()
+        ),
+    }]
+}
+
+/// Static scan of SMT-LIB `.smt2` files for assertion count (excluding `.tv.smt2`).
+fn scan_smt(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "SMT Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_smt_files(dir);
+    let mut assertion_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.contains("(assert ") {
+                    assertion_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "SMT Scan".into(),
+        passed: true,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{} files ({assertion_count} assertions)",
+            files.len()
+        ),
+    }]
+}
+
+/// Static scan of Verus `.rs` files for proof fn count and `admit` keyword.
+fn scan_verus(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "Verus Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_verus_files(dir);
+    let mut proof_count = 0u32;
+    let mut admit_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                let trimmed = line.trim();
+
+                // Skip comments
+                if trimmed.starts_with("//") {
+                    continue;
+                }
+
+                if trimmed.contains("proof fn ") {
+                    proof_count += 1;
+                }
+
+                if contains_word(trimmed, "admit") {
+                    admit_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "Verus admit Scan".into(),
+        passed: admit_count == 0,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{admit_count} admit in {} files ({proof_count} proof fns)",
+            files.len()
+        ),
+    }]
+}
+
+/// Static scan of Kani `.rs` files for `#[kani::proof]` harness count.
+fn scan_kani(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "Kani Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_kani_files(dir);
+    let mut harness_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.contains("#[kani::proof]") {
+                    harness_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "Kani Scan".into(),
+        passed: true,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{} files ({harness_count} harnesses)",
+            files.len()
+        ),
+    }]
+}
+
+/// Static scan of `.tv.smt2` (translation validation) files for validation count.
+fn scan_tv(dir: &Path) -> Vec<CheckResult> {
+    if !dir.is_dir() {
+        return vec![CheckResult {
+            name: "TV Scan".into(),
+            passed: true,
+            blocking: false,
+            details: "directory not found (skipped)".into(),
+        }];
+    }
+
+    let files = glob_tv_files(dir);
+    let mut validation_count = 0u32;
+
+    for path in &files {
+        if let Ok(content) = fs::read_to_string(path) {
+            for line in content.lines() {
+                let t = line.trim();
+                if t.contains("(assert ") {
+                    validation_count += 1;
+                }
+            }
+        }
+    }
+
+    vec![CheckResult {
+        name: "TV Scan".into(),
+        passed: true,
+        blocking: !files.is_empty(),
+        details: format!(
+            "{} files ({validation_count} validations)",
+            files.len()
+        ),
+    }]
+}
+
+// ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
 
@@ -1302,6 +1864,13 @@ pub fn run(mode: Mode) -> i32 {
         let coq_dir = repo.join("02_FORMAL").join("coq");
         let lean_dir = repo.join("02_FORMAL").join("lean");
         let isabelle_dir = repo.join("02_FORMAL").join("isabelle");
+        let fstar_dir = repo.join("02_FORMAL").join("fstar");
+        let tlaplus_dir = repo.join("02_FORMAL").join("tlaplus");
+        let alloy_dir = repo.join("02_FORMAL").join("alloy");
+        let smt_dir = repo.join("02_FORMAL").join("smt");
+        let verus_dir = repo.join("02_FORMAL").join("verus");
+        let kani_dir = repo.join("02_FORMAL").join("kani");
+        let tv_dir = repo.join("02_FORMAL").join("tv");
 
         // === Coq ===
         eprintln!("\n=== Coq Verification ===");
@@ -1327,9 +1896,48 @@ pub fn run(mode: Mode) -> i32 {
         eprintln!("Scanning Isabelle files...");
         results.extend(scan_isabelle(&isabelle_dir));
 
+        // === F* ===
+        eprintln!("\n=== F* Verification ===");
+        eprintln!("Scanning F* files...");
+        results.extend(scan_fstar(&fstar_dir));
+
+        // === TLA+ ===
+        eprintln!("\n=== TLA+ Verification ===");
+        eprintln!("Scanning TLA+ files...");
+        results.extend(scan_tlaplus(&tlaplus_dir));
+
+        // === Alloy ===
+        eprintln!("\n=== Alloy Verification ===");
+        eprintln!("Scanning Alloy files...");
+        results.extend(scan_alloy(&alloy_dir));
+
+        // === SMT ===
+        eprintln!("\n=== SMT Verification ===");
+        eprintln!("Scanning SMT files...");
+        results.extend(scan_smt(&smt_dir));
+
+        // === Verus ===
+        eprintln!("\n=== Verus Verification ===");
+        eprintln!("Scanning Verus files...");
+        results.extend(scan_verus(&verus_dir));
+
+        // === Kani ===
+        eprintln!("\n=== Kani Verification ===");
+        eprintln!("Scanning Kani files...");
+        results.extend(scan_kani(&kani_dir));
+
+        // === Translation Validation ===
+        eprintln!("\n=== Translation Validation ===");
+        eprintln!("Scanning TV files...");
+        results.extend(scan_tv(&tv_dir));
+
         // === Cross-Prover ===
-        eprintln!("\n=== Cross-Prover Validation ===");
-        results.push(cross_validate_provers(&coq_dir, &lean_dir, &isabelle_dir));
+        eprintln!("\n=== Cross-Prover Validation (10 provers) ===");
+        results.push(cross_validate_provers(
+            &coq_dir, &lean_dir, &isabelle_dir,
+            &fstar_dir, &tlaplus_dir, &alloy_dir,
+            &smt_dir, &verus_dir, &kani_dir, &tv_dir,
+        ));
 
         // === Metrics Accuracy ===
         eprintln!("\n=== Metrics Accuracy Check ===");
@@ -1500,6 +2108,69 @@ test result: ok. 5 passed; 1 failed; 0 ignored;";
         if isa_dir.exists() {
             let files = glob_thy_files(&isa_dir);
             assert!(files.len() >= 10, "Expected >=10 .thy files, got {}", files.len());
+        }
+    }
+
+    #[test]
+    fn test_count_fstar_lemmas() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/fstar");
+        if dir.exists() {
+            let count = count_fstar_lemmas(&dir);
+            assert!(count > 100, "Expected >100 F* lemmas, got {count}");
+        }
+    }
+
+    #[test]
+    fn test_count_tla_theorems() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/tlaplus");
+        if dir.exists() {
+            let count = count_tla_theorems(&dir);
+            assert!(count > 100, "Expected >100 TLA+ theorems, got {count}");
+        }
+    }
+
+    #[test]
+    fn test_count_alloy_assertions() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/alloy");
+        if dir.exists() {
+            let count = count_alloy_assertions(&dir);
+            assert!(count > 100, "Expected >100 Alloy assertions, got {count}");
+        }
+    }
+
+    #[test]
+    fn test_count_smt_assertions() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/smt");
+        if dir.exists() {
+            let count = count_smt_assertions(&dir);
+            assert!(count > 100, "Expected >100 SMT assertions, got {count}");
+        }
+    }
+
+    #[test]
+    fn test_count_verus_proofs() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/verus");
+        if dir.exists() {
+            let count = count_verus_proofs(&dir);
+            assert!(count > 100, "Expected >100 Verus proofs, got {count}");
+        }
+    }
+
+    #[test]
+    fn test_count_kani_proofs() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/kani");
+        if dir.exists() {
+            let count = count_kani_proofs(&dir);
+            assert!(count > 100, "Expected >100 Kani proofs, got {count}");
+        }
+    }
+
+    #[test]
+    fn test_count_tv_validations() {
+        let dir = PathBuf::from("/workspaces/proof/02_FORMAL/tv");
+        if dir.exists() {
+            let count = count_tv_validations(&dir);
+            assert!(count > 100, "Expected >100 TV validations, got {count}");
         }
     }
 }

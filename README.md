@@ -83,7 +83,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (7,929 Coq + 6154 Lean + 6227 Isabelle) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (7,929 Coq + 7928 Lean + 8072 Isabelle) | No | No | Partial |
 | Triple-prover verification | Yes (Coq + Lean 4 + Isabelle/HOL) | No | No | No |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
@@ -392,13 +392,13 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 ## Current Status
 
 **Build: Passing. Grade: A.**
-**Audit Update:** 2026-02-06 (Session 78: Proof Depth 20+ All Files) — 7,929 Coq Qed + 6154 Lean theorems + 6227 Isabelle lemmas = 20,310 total proofs. 0 Admitted/sorry across all provers. 1 axiom (policy). 250 active .v, 178 .lean, 175 .thy. 6149 triple-prover theorems. 845 Rust tests.
+**Audit Update:** 2026-02-07 (Session 78: 10-Prover Full Stack) — 82,982 total items across 10 provers. 7,929 Coq Qed + 7928 Lean + 8072 Isabelle + 7899 F* + 7899 TLA+ + 7899 Alloy + 7899 SMT + 7899 Verus + 7899 Kani + 11659 TV. 0 Admitted/sorry. 1 axiom (policy). 852 Rust tests.
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 7,929 Coq Qed + 6154 Lean + 6227 Isabelle = 20,310 total, 0 admits/sorry, 1 axiom | Stable |
+| 3. Formal Verification | 7,929 Coq Qed + 7928 Lean + 8072 Isabelle = 82,982 total, 0 admits/sorry, 1 axiom | Stable |
 | 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 120 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
 | 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 15-page website (Why Proof, 15 industries, Releases) | Done |

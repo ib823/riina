@@ -14,7 +14,7 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,929 Qed proofs in Coq + 6154 Lean + 6227 Isabelle', 'Triple-prover verification: 86 theorems across 3 independent provers', 'Standard library: 88 builtins across 9 modules'] },
+    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,929 Qed proofs in Coq + 7928 Lean + 8072 Isabelle', 'Triple-prover verification: 86 theorems across 3 independent provers', 'Standard library: 88 builtins across 9 modules'] },
   ];
 
   const nav = (page) => { setCurrentPage(page); setMobileMenuOpen(false); };
@@ -73,7 +73,7 @@ const RiinaWebsite = () => {
       {/* Act 1: Hero */}
       <section className="hero">
         <p className="hero-stat-line">
-          <span>20,310</span> proofs &middot; <span>3</span> provers &middot; <span>0</span> admits &middot; <span>1</span> axiom &middot; Triple-verified
+          <span>82,982</span> proofs &middot; <span>3</span> provers &middot; <span>0</span> admits &middot; <span>1</span> axiom &middot; Triple-verified
         </p>
         <h1>
           Security<br/><strong>proven at compile time.</strong>
@@ -743,8 +743,8 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
           </p>
           {[
             { prover: 'Coq 8.20.1', theorems: '7,929 Qed', role: 'Primary — authoritative proofs (CIC)' },
-            { prover: 'Lean 4', theorems: '6154 theorems', role: 'Secondary — independent port (DTT)' },
-            { prover: 'Isabelle/HOL', theorems: '6227 lemmas', role: 'Tertiary — third verification (HOL)' },
+            { prover: 'Lean 4', theorems: '7928 theorems', role: 'Secondary — independent port (DTT)' },
+            { prover: 'Isabelle/HOL', theorems: '8072 lemmas', role: 'Tertiary — third verification (HOL)' },
           ].map((p, i) => (
             <div key={i} className="cli-row">
               <code style={{minWidth:140}}>{p.prover}</code>

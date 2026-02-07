@@ -784,29 +784,35 @@ def main():
     total_stats = {'files': 0, 'lean_theorems': 0, 'isa_lemmas': 0, 'errors': []}
 
     if args.all or (not args.input):
-        # Process domains
-        print('\n=== Processing domains/ ===')
-        s = process_directory(
-            str(coq_dir / 'domains'),
-            str(lean_base / 'Domains'),
-            str(isa_base / 'Domains'),
-            rel_prefix='domains'
-        )
-        for k in ('files', 'lean_theorems', 'isa_lemmas'):
-            total_stats[k] += s[k]
-        total_stats['errors'].extend(s['errors'])
+        # ALL Coq subdirectories — no file left behind
+        coq_subdirs = [
+            ('foundations',                'Foundations'),
+            ('type_system',                'TypeSystem'),
+            ('effects',                    'Effects'),
+            ('properties',                 'Properties'),
+            ('domains',                    'Domains'),
+            ('domains/mobile_os',          'Domains/MobileOS'),
+            ('domains/security_foundation','Domains/SecurityFoundation'),
+            ('domains/uiux',              'Domains/UIUX'),
+            ('Industries',                 'Industries'),
+            ('compliance',                 'Compliance'),
+            ('termination',                'Termination'),
+        ]
 
-        # Process Industries
-        print('\n=== Processing Industries/ ===')
-        s = process_directory(
-            str(coq_dir / 'Industries'),
-            str(lean_base / 'Industries'),
-            str(isa_base / 'Industries'),
-            rel_prefix='Industries'
-        )
-        for k in ('files', 'lean_theorems', 'isa_lemmas'):
-            total_stats[k] += s[k]
-        total_stats['errors'].extend(s['errors'])
+        for coq_sub, out_sub in coq_subdirs:
+            sub_path = coq_dir / coq_sub
+            if not sub_path.exists():
+                continue
+            print(f'\n=== Processing {coq_sub}/ ===')
+            s = process_directory(
+                str(sub_path),
+                str(lean_base / out_sub),
+                str(isa_base / out_sub),
+                rel_prefix=coq_sub
+            )
+            for k in ('files', 'lean_theorems', 'isa_lemmas'):
+                total_stats[k] += s[k]
+            total_stats['errors'].extend(s['errors'])
     else:
         # Process single directory
         lean_out = args.lean_out or str(lean_base / 'Generated')
