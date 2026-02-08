@@ -121,7 +121,12 @@ Proof.
     + repeat split; try assumption.
       * apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
       * apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
-      * apply val_rel_at_type_mono_store with Σ; assumption.
+      * (* val_rel_at_type_n n' — need to case split on n' *)
+        destruct n' as [| n''].
+        -- (* n' = 0: val_rel_at_type_n 0 = True *)
+           simpl. exact I.
+        -- (* n' = S n'': val_rel_at_type_n (S n'') = val_rel_at_type *)
+           apply val_rel_at_type_mono_store with Σ; assumption.
 Qed.
 
 (** Store-typing monotonicity (Kripke strengthening) *)
@@ -145,5 +150,7 @@ Proof.
     + repeat split; try assumption.
       * apply (has_type_store_weakening nil Σ Σ' Public v1 T EffectPure Hext Ht1).
       * apply (has_type_store_weakening nil Σ Σ' Public v2 T EffectPure Hext Ht2).
-      * apply val_rel_at_type_mono_store with Σ; assumption.
+      * destruct n' as [| n''].
+        -- simpl. exact I.
+        -- apply val_rel_at_type_mono_store with Σ; assumption.
 Qed.

@@ -332,8 +332,7 @@ Theorem barrier_synchronization_complete :
     barrier_released b = true.
 Proof.
   intros b Hwf Hcount.
-  destruct Hwf as [_ [_ [Hrel_iff _]]].
-  destruct Hrel_iff as [_ Hback].
+  destruct Hwf as [_ [_ [_ Hback]]].
   apply Hback. exact Hcount.
 Qed.
 

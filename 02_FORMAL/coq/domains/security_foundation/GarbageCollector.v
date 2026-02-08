@@ -348,8 +348,8 @@ Proof.
   intros [n].
   unfold ObjectId_eq_dec.
   destruct (Nat.eq_dec n n) as [e | Hneq].
-  - f_equal. apply eq_proofs_unicity.
-    intros x y. destruct (Nat.eq_dec x y); [left | right]; assumption.
+  - f_equal. apply Eqdep_dec.eq_proofs_unicity.
+    intros x y. destruct (ObjectId_eq_dec x y); [left | right]; assumption.
   - contradiction Hneq. reflexivity.
 Qed.
 

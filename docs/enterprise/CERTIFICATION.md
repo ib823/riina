@@ -1,6 +1,6 @@
 # RIINA Certification Output
 
-**Verification:** 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) | 10 independent provers | 852 Rust tests
+**Verification:** 7,934 Coq Qed (compiled, 0 Admitted, 2 policy axiom) | 10 independent provers | 852 Rust tests
 
 ## What RIINA Certifies
 

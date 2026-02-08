@@ -277,8 +277,8 @@ Theorem render_pipeline_has_all_stages :
   In Compositing render_pipeline /\
   In Display render_pipeline.
 Proof.
-  unfold render_pipeline.
-  repeat split; simpl; auto.
+  unfold render_pipeline; simpl.
+  intuition.
 Qed.
 
 (* Spec: RESEARCH_MOBILEOS02 Section 2.1 - Shader compilation validated *)

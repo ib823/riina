@@ -194,7 +194,8 @@ Definition is_terminal_state (s : TCPState) : bool :=
     ============================================================================ *)
 
 (* 32-bit sequence number space (modeled as nat with mod) *)
-Definition SEQ_SPACE : nat := 4294967296. (* 2^32 *)
+(* Defined as S pred to make positivity structurally immediate *)
+Definition SEQ_SPACE : nat := S 4294967295. (* 2^32 *)
 
 (* Sequence number comparison with wraparound *)
 Definition seq_lt (a b : nat) : bool :=
@@ -928,9 +929,19 @@ Proof. intros isn. reflexivity. Qed.
     SECTION 14: SEQUENCE NUMBER HANDLING (SEQ_001 - SEQ_010)
     ============================================================================ *)
 
-(* SEQ_001: SEQ_SPACE is 2^32 *)
-Theorem SEQ_001_seq_space : SEQ_SPACE = 4294967296.
+(* SEQ_001: SEQ_SPACE is 2^32 — defined as S 4294967295 for structural positivity *)
+Theorem SEQ_001_seq_space : SEQ_SPACE = S 4294967295.
 Proof. reflexivity. Qed.
+
+(* Structural positivity — no computation needed *)
+Lemma SEQ_SPACE_neq_0 : SEQ_SPACE <> 0.
+Proof. unfold SEQ_SPACE. discriminate. Qed.
+
+Lemma SEQ_SPACE_pos : SEQ_SPACE > 0.
+Proof. unfold SEQ_SPACE. apply Nat.lt_0_succ. Qed.
+
+(* Make SEQ_SPACE opaque to prevent Coq from trying to compute with 2^32 as Peano nat *)
+Global Opaque SEQ_SPACE.
 
 (* SEQ_002: Sequence number is reflexively <= *)
 Theorem SEQ_002_seq_le_refl : forall n,
@@ -951,19 +962,22 @@ Proof.
   unfold next_seq. rewrite Nat.mod_small. reflexivity. exact Hsum.
 Qed.
 
-(* SEQ_004: Sequence in window at start *)
+(* SEQ_004: Sequence in window at start (window size < half seq space) *)
 Theorem SEQ_004_seq_in_window_start : forall start size,
   size > 0 ->
+  size < SEQ_SPACE / 2 ->
+  size < SEQ_SPACE ->
   seq_in_window start start size = true.
 Proof.
-  intros start size Hsize.
+  intros start size Hpos Hsmall Hlt.
   unfold seq_in_window.
   rewrite SEQ_002_seq_le_refl. simpl.
   unfold seq_lt.
   replace (start + size - start) with size by lia.
-  destruct (size mod SEQ_SPACE >? 0) eqn:E1.
-  - destruct (size mod SEQ_SPACE <? SEQ_SPACE / 2) eqn:E2; reflexivity.
-  - reflexivity.
+  rewrite (Nat.mod_small _ _ Hlt).
+  assert ((0 <? size) = true) as H1 by (apply Nat.ltb_lt; lia).
+  assert ((size <? SEQ_SPACE / 2) = true) as H2 by (apply Nat.ltb_lt; exact Hsmall).
+  rewrite H1, H2. reflexivity.
 Qed.
 
 (* SEQ_005: Valid ACK with same UNA and NXT *)
@@ -971,7 +985,8 @@ Theorem SEQ_005_valid_ack_equal : forall ack,
   valid_ack ack ack ack = true.
 Proof.
   intros ack. unfold valid_ack.
-  rewrite SEQ_002_seq_le_refl. rewrite SEQ_002_seq_le_refl. reflexivity.
+  assert (H: seq_le ack ack = true) by (apply SEQ_002_seq_le_refl).
+  rewrite H. reflexivity.
 Qed.
 
 (* SEQ_006: seq_gt is complement of seq_le for distinct values *)
@@ -1001,12 +1016,13 @@ Qed.
 Theorem SEQ_009_seq_mod : forall n,
   n mod SEQ_SPACE < SEQ_SPACE.
 Proof.
-  intros n. apply Nat.mod_upper_bound. unfold SEQ_SPACE. lia.
+  intros n. apply Nat.mod_upper_bound.
+  exact SEQ_SPACE_neq_0.
 Qed.
 
 (* SEQ_010: Sequence comparison handles zero *)
 Theorem SEQ_010_seq_le_zero : seq_le 0 0 = true.
-Proof. unfold seq_le. reflexivity. Qed.
+Proof. apply SEQ_002_seq_le_refl. Qed.
 
 (** ============================================================================
     SECTION 15: SOCKET API CORRECTNESS (SOCK_001 - SOCK_010)
@@ -1247,9 +1263,9 @@ Proof.
   intros n.
   rewrite Nat.add_mod. rewrite Nat.mod_same. rewrite Nat.add_0_r.
   rewrite Nat.mod_mod. reflexivity.
-  unfold SEQ_SPACE. lia.
-  unfold SEQ_SPACE. lia.
-  unfold SEQ_SPACE. lia.
+  exact SEQ_SPACE_neq_0.
+  exact SEQ_SPACE_neq_0.
+  exact SEQ_SPACE_neq_0.
 Qed.
 
 (** End of VerifiedNetworkStack.v - 90+ Qed proofs, zero admits, zero axioms *)
