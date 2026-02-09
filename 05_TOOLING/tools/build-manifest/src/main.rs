@@ -150,7 +150,11 @@ impl BuildManifest {
         // Environment
         json.push_str("  \"environment\": {\n");
         for (i, (key, value)) in self.environment.iter().enumerate() {
-            let comma = if i < self.environment.len() - 1 { "," } else { "" };
+            let comma = if i < self.environment.len() - 1 {
+                ","
+            } else {
+                ""
+            };
             json.push_str(&format!("    \"{key}\": \"{value}\"{comma}\n"));
         }
         json.push_str("  },\n");
@@ -188,11 +192,17 @@ impl BuildManifest {
         // Verification
         json.push_str("  \"verification\": {\n");
         json.push_str(&format!("    \"level\": {},\n", self.verification.level));
-        json.push_str(&format!("    \"tests_passed\": {},\n", self.verification.tests_passed));
+        json.push_str(&format!(
+            "    \"tests_passed\": {},\n",
+            self.verification.tests_passed
+        ));
         if let Some(cov) = self.verification.coverage {
             json.push_str(&format!("    \"coverage\": {cov:.2},\n"));
         }
-        json.push_str(&format!("    \"formal_verified\": {}\n", self.verification.formal_verified));
+        json.push_str(&format!(
+            "    \"formal_verified\": {}\n",
+            self.verification.formal_verified
+        ));
         json.push_str("  }\n");
 
         json.push_str("}\n");
@@ -397,7 +407,10 @@ fn hash_directory(
                 continue;
             }
             hash_directory(&path, root, entries, verbose)?;
-        } else if path.extension().is_some_and(|ext| ext == "rs" || ext == "toml") {
+        } else if path
+            .extension()
+            .is_some_and(|ext| ext == "rs" || ext == "toml")
+        {
             let relative = path
                 .strip_prefix(root)
                 .map(|p| p.display().to_string())
@@ -490,36 +503,36 @@ fn main() -> ExitCode {
             output,
             profile,
             include_sources,
-        } => {
-            match generate_manifest(&root, profile, *include_sources, cli.verbose) {
-                Ok(manifest) => {
-                    let output_path = root.join(output);
-                    match fs::write(&output_path, manifest.to_json()) {
-                        Ok(()) => {
-                            println!("✓ Manifest written to {}", output_path.display());
-                            println!();
-                            println!("Inputs:  {} files", manifest.inputs.len());
-                            println!("Outputs: {} files", manifest.outputs.len());
-                            println!("Tools:   {} detected", manifest.tools.len());
-                            Ok(())
-                        }
-                        Err(e) => Err(e),
+        } => match generate_manifest(&root, profile, *include_sources, cli.verbose) {
+            Ok(manifest) => {
+                let output_path = root.join(output);
+                match fs::write(&output_path, manifest.to_json()) {
+                    Ok(()) => {
+                        println!("✓ Manifest written to {}", output_path.display());
+                        println!();
+                        println!("Inputs:  {} files", manifest.inputs.len());
+                        println!("Outputs: {} files", manifest.outputs.len());
+                        println!("Tools:   {} detected", manifest.tools.len());
+                        Ok(())
                     }
+                    Err(e) => Err(e),
                 }
-                Err(e) => Err(e),
             }
-        }
-        Commands::Verify { manifest, strict } => {
-            verify_manifest(manifest, *strict, cli.verbose).map(|passed| {
+            Err(e) => Err(e),
+        },
+        Commands::Verify { manifest, strict } => verify_manifest(manifest, *strict, cli.verbose)
+            .map(|passed| {
                 if passed {
                     println!("✓ Verification passed");
                 } else {
                     println!("✗ Verification failed");
                 }
-            })
-        }
+            }),
         Commands::Show { manifest, format } => show_manifest(manifest, format),
-        Commands::Diff { manifest1, manifest2 } => diff_manifests(manifest1, manifest2),
+        Commands::Diff {
+            manifest1,
+            manifest2,
+        } => diff_manifests(manifest1, manifest2),
     };
 
     match result {

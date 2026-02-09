@@ -167,7 +167,7 @@ mod tests {
     fn test_secret_clone() {
         let original = Secret::new([0xFFu8; 8]);
         let cloned = original.clone();
-        
+
         assert_eq!(original.expose_secret(), cloned.expose_secret());
     }
 }

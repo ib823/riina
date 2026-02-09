@@ -24,22 +24,22 @@
 //! ALL implementations are from scratch. No external crates.
 
 pub mod aes;
-pub mod sha2;
-pub mod hmac;
-pub mod hkdf;
-pub mod ghash;
 pub mod gcm;
+pub mod ghash;
+pub mod hkdf;
+pub mod hmac;
 pub mod keccak;
+pub mod sha2;
 
 // Field arithmetic (foundation for elliptic curve cryptography)
 pub mod field25519;
 pub mod montgomery;
 
 // Post-quantum and classical asymmetric primitives
-pub mod x25519;
 pub mod ed25519;
-pub mod ml_kem;
 pub mod ml_dsa;
+pub mod ml_kem;
+pub mod x25519;
 
 // Hybrid schemes (Law 2: ML-KEM-768 + X25519, ML-DSA-65 + Ed25519)
 // TODO: Re-enable once ML-KEM and ML-DSA are fully implemented
@@ -316,7 +316,13 @@ mod tests {
 
     #[test]
     fn test_crypto_error_display() {
-        assert_eq!(format!("{}", CryptoError::InvalidKeyLength), "invalid key length");
-        assert_eq!(format!("{}", CryptoError::AuthenticationFailed), "authentication failed");
+        assert_eq!(
+            format!("{}", CryptoError::InvalidKeyLength),
+            "invalid key length"
+        );
+        assert_eq!(
+            format!("{}", CryptoError::AuthenticationFailed),
+            "authentication failed"
+        );
     }
 }

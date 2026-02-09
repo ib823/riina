@@ -46,11 +46,11 @@ impl Aes256Gcm {
     #[must_use]
     pub fn new(key: &[u8; KEY_SIZE]) -> Self {
         let cipher = Aes256::new(key);
-        
+
         // Compute H = AES_K(0^128)
         let mut h = [0u8; BLOCK_SIZE];
         cipher.encrypt_block(&mut h);
-        
+
         Self { cipher, h }
     }
 
@@ -88,7 +88,12 @@ impl Aes256Gcm {
         // Encrypt plaintext using GCTR with J0 incremented by 1
         let mut counter = j0;
         inc32(&mut counter);
-        gctr(&self.cipher, &counter, plaintext, &mut output[..plaintext.len()]);
+        gctr(
+            &self.cipher,
+            &counter,
+            plaintext,
+            &mut output[..plaintext.len()],
+        );
 
         // Compute authentication tag
         let ciphertext = &output[..plaintext.len()];
@@ -156,12 +161,7 @@ impl Aes256Gcm {
     }
 
     /// Compute the GCM authentication tag
-    fn compute_tag(
-        &self,
-        aad: &[u8],
-        ciphertext: &[u8],
-        j0: &[u8; BLOCK_SIZE],
-    ) -> [u8; TAG_SIZE] {
+    fn compute_tag(&self, aad: &[u8], ciphertext: &[u8], j0: &[u8; BLOCK_SIZE]) -> [u8; TAG_SIZE] {
         // S = GHASH_H(A || 0^s || C || 0^u || [len(A)]_64 || [len(C)]_64)
         let s = Ghash::compute(&self.h, aad, ciphertext);
 
@@ -364,12 +364,12 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     if a.len() != b.len() {
         return false;
     }
-    
+
     let mut diff = 0u8;
     for (x, y) in a.iter().zip(b.iter()) {
         diff |= x ^ y;
     }
-    
+
     diff == 0
 }
 
@@ -384,16 +384,20 @@ mod tests {
         let nonce: [u8; 12] = [0u8; 12];
         let aad: &[u8] = &[];
         let plaintext: &[u8] = &[];
-        
+
         let cipher = Aes256Gcm::new(&key);
         let mut ciphertext = [0u8; 16]; // Just the tag
-        
-        let len = cipher.encrypt(&nonce, aad, plaintext, &mut ciphertext).unwrap();
+
+        let len = cipher
+            .encrypt(&nonce, aad, plaintext, &mut ciphertext)
+            .unwrap();
         assert_eq!(len, 16);
-        
+
         // Verify decryption
         let mut decrypted = [0u8; 0];
-        let dec_len = cipher.decrypt(&nonce, aad, &ciphertext, &mut decrypted).unwrap();
+        let dec_len = cipher
+            .decrypt(&nonce, aad, &ciphertext, &mut decrypted)
+            .unwrap();
         assert_eq!(dec_len, 0);
     }
 
@@ -404,16 +408,20 @@ mod tests {
         let nonce: [u8; 12] = [0u8; 12];
         let aad: &[u8] = &[];
         let plaintext: [u8; 16] = [0u8; 16];
-        
+
         let cipher = Aes256Gcm::new(&key);
         let mut ciphertext = [0u8; 32]; // 16 CT + 16 tag
-        
-        let len = cipher.encrypt(&nonce, aad, &plaintext, &mut ciphertext).unwrap();
+
+        let len = cipher
+            .encrypt(&nonce, aad, &plaintext, &mut ciphertext)
+            .unwrap();
         assert_eq!(len, 32);
-        
+
         // Verify decryption
         let mut decrypted = [0u8; 16];
-        let dec_len = cipher.decrypt(&nonce, aad, &ciphertext[..32], &mut decrypted).unwrap();
+        let dec_len = cipher
+            .decrypt(&nonce, aad, &ciphertext[..32], &mut decrypted)
+            .unwrap();
         assert_eq!(dec_len, 16);
         assert_eq!(decrypted, plaintext);
     }
@@ -422,24 +430,29 @@ mod tests {
     #[test]
     fn test_aes256_gcm_with_aad() {
         let key: [u8; 32] = [
-            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-            0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
-            0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-            0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+            0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
+            0x1d, 0x1e, 0x1f, 0x20,
         ];
-        let nonce: [u8; 12] = [0xca, 0xfe, 0xba, 0xbe, 0xfa, 0xce, 0xdb, 0xad, 0xde, 0xca, 0xf8, 0x88];
+        let nonce: [u8; 12] = [
+            0xca, 0xfe, 0xba, 0xbe, 0xfa, 0xce, 0xdb, 0xad, 0xde, 0xca, 0xf8, 0x88,
+        ];
         let aad = b"Additional Authenticated Data";
         let plaintext = b"Plaintext message to encrypt";
-        
+
         let cipher = Aes256Gcm::new(&key);
         let mut ciphertext = vec![0u8; plaintext.len() + 16];
-        
-        let len = cipher.encrypt(&nonce, aad, plaintext, &mut ciphertext).unwrap();
+
+        let len = cipher
+            .encrypt(&nonce, aad, plaintext, &mut ciphertext)
+            .unwrap();
         assert_eq!(len, plaintext.len() + 16);
-        
+
         // Verify decryption
         let mut decrypted = vec![0u8; plaintext.len()];
-        let dec_len = cipher.decrypt(&nonce, aad, &ciphertext, &mut decrypted).unwrap();
+        let dec_len = cipher
+            .decrypt(&nonce, aad, &ciphertext, &mut decrypted)
+            .unwrap();
         assert_eq!(dec_len, plaintext.len());
         assert_eq!(decrypted.as_slice(), plaintext);
     }
@@ -451,11 +464,13 @@ mod tests {
         let nonce: [u8; 12] = [0x24; 12];
         let aad = b"correct AAD";
         let plaintext = b"secret message";
-        
+
         let cipher = Aes256Gcm::new(&key);
         let mut ciphertext = vec![0u8; plaintext.len() + 16];
-        cipher.encrypt(&nonce, aad, plaintext, &mut ciphertext).unwrap();
-        
+        cipher
+            .encrypt(&nonce, aad, plaintext, &mut ciphertext)
+            .unwrap();
+
         // Decrypt with wrong AAD
         let mut decrypted = vec![0u8; plaintext.len()];
         let result = cipher.decrypt(&nonce, b"wrong AAD", &ciphertext, &mut decrypted);
@@ -469,14 +484,16 @@ mod tests {
         let nonce: [u8; 12] = [0x24; 12];
         let aad = b"AAD";
         let plaintext = b"secret message";
-        
+
         let cipher = Aes256Gcm::new(&key);
         let mut ciphertext = vec![0u8; plaintext.len() + 16];
-        cipher.encrypt(&nonce, aad, plaintext, &mut ciphertext).unwrap();
-        
+        cipher
+            .encrypt(&nonce, aad, plaintext, &mut ciphertext)
+            .unwrap();
+
         // Modify ciphertext
         ciphertext[0] ^= 0xff;
-        
+
         let mut decrypted = vec![0u8; plaintext.len()];
         let result = cipher.decrypt(&nonce, aad, &ciphertext, &mut decrypted);
         assert!(matches!(result, Err(CryptoError::AuthenticationFailed)));
@@ -489,15 +506,17 @@ mod tests {
         let nonce: [u8; 12] = [0xad; 12];
         let aad = b"header";
         let plaintext = b"message to encrypt in place";
-        
+
         let cipher = Aes256Gcm::new(&key);
-        
+
         // Encrypt in place
         let mut buffer = vec![0u8; plaintext.len() + 16];
         buffer[..plaintext.len()].copy_from_slice(plaintext);
-        let len = cipher.encrypt_in_place(&nonce, aad, &mut buffer, plaintext.len()).unwrap();
+        let len = cipher
+            .encrypt_in_place(&nonce, aad, &mut buffer, plaintext.len())
+            .unwrap();
         assert_eq!(len, plaintext.len() + 16);
-        
+
         // Decrypt in place
         let dec_len = cipher.decrypt_in_place(&nonce, aad, &mut buffer).unwrap();
         assert_eq!(dec_len, plaintext.len());
@@ -509,13 +528,13 @@ mod tests {
     fn test_aes256_gcm_invalid_nonce() {
         let key: [u8; 32] = [0u8; 32];
         let cipher = Aes256Gcm::new(&key);
-        
+
         let mut output = [0u8; 32];
-        
+
         // Too short
         let result = cipher.encrypt(&[0u8; 8], &[], &[0u8; 16], &mut output);
         assert!(matches!(result, Err(CryptoError::InvalidNonceLength)));
-        
+
         // Too long
         let result = cipher.encrypt(&[0u8; 16], &[], &[0u8; 16], &mut output);
         assert!(matches!(result, Err(CryptoError::InvalidNonceLength)));
@@ -529,9 +548,9 @@ mod tests {
         counter[14] = 0xff;
         counter[13] = 0xff;
         counter[12] = 0xff;
-        
+
         inc32(&mut counter);
-        
+
         // Should wrap to 0
         assert_eq!(counter[12..16], [0, 0, 0, 0]);
     }
@@ -543,15 +562,19 @@ mod tests {
         let nonce: [u8; 12] = [0xcd; 12];
         let aad = b"large message test";
         let plaintext = vec![0x42u8; 1024 * 10]; // 10 KB
-        
+
         let cipher = Aes256Gcm::new(&key);
         let mut ciphertext = vec![0u8; plaintext.len() + 16];
-        
-        let len = cipher.encrypt(&nonce, aad, &plaintext, &mut ciphertext).unwrap();
+
+        let len = cipher
+            .encrypt(&nonce, aad, &plaintext, &mut ciphertext)
+            .unwrap();
         assert_eq!(len, plaintext.len() + 16);
-        
+
         let mut decrypted = vec![0u8; plaintext.len()];
-        let dec_len = cipher.decrypt(&nonce, aad, &ciphertext, &mut decrypted).unwrap();
+        let dec_len = cipher
+            .decrypt(&nonce, aad, &ciphertext, &mut decrypted)
+            .unwrap();
         assert_eq!(dec_len, plaintext.len());
         assert_eq!(decrypted, plaintext);
     }

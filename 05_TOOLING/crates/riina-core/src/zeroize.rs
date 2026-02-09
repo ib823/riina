@@ -51,7 +51,7 @@ pub fn zeroize_slice(slice: &mut [u8]) {
             ptr::write_volatile(ptr::from_mut(byte), 0);
         }
     }
-    
+
     // Memory barrier to ensure writes are not reordered
     compiler_fence(Ordering::SeqCst);
 }

@@ -2,6 +2,6 @@
 
 //! RIINA Effect System Runtime
 #![forbid(unsafe_code)]
-pub mod effect_gate;
 pub mod capability;
+pub mod effect_gate;
 pub mod proof_bundle;

@@ -94,22 +94,14 @@ pub const SHARED_SECRET_SIZE: usize = 32;
 ///
 /// Source: pq-crystals/kyber reference implementation
 const ZETAS: [i16; 128] = [
-    -1044,  -758,  -359, -1517,  1493,  1422,   287,   202,
-     -171,   622,  1577,   182,   962, -1202, -1474,  1468,
-      573, -1325,   264,   383,  -829,  1458, -1602,  -130,
-     -681,  1017,   732,   608, -1542,   411,  -205, -1571,
-     1223,   652,  -552,  1015, -1293,  1491,  -282, -1544,
-      516,    -8,  -320,  -666, -1618, -1162,   126,  1469,
-     -853,   -90,  -271,   830,   107, -1421,  -247,  -951,
-     -398,   961, -1508,  -725,   448, -1065,   677, -1275,
-    -1103,   430,   555,   843, -1251,   871,  1550,   105,
-      422,   587,   177,  -235,  -291,  -460,  1574,  1653,
-     -246,   778,  1159,  -147,  -777,  1483,  -602,  1119,
-    -1590,   644,  -872,   349,   418,   329,  -156,   -75,
-      817,  1097,   603,   610,  1322, -1285, -1465,   384,
-    -1215,  -136,  1218, -1335,  -874,   220, -1187, -1659,
-    -1185, -1530, -1278,   794, -1510,  -854,  -870,   478,
-     -108,  -308,   996,   991,   958, -1460,  1522,  1628,
+    -1044, -758, -359, -1517, 1493, 1422, 287, 202, -171, 622, 1577, 182, 962, -1202, -1474, 1468,
+    573, -1325, 264, 383, -829, 1458, -1602, -130, -681, 1017, 732, 608, -1542, 411, -205, -1571,
+    1223, 652, -552, 1015, -1293, 1491, -282, -1544, 516, -8, -320, -666, -1618, -1162, 126, 1469,
+    -853, -90, -271, 830, 107, -1421, -247, -951, -398, 961, -1508, -725, 448, -1065, 677, -1275,
+    -1103, 430, 555, 843, -1251, 871, 1550, 105, 422, 587, 177, -235, -291, -460, 1574, 1653, -246,
+    778, 1159, -147, -777, 1483, -602, 1119, -1590, 644, -872, 349, 418, 329, -156, -75, 817, 1097,
+    603, 610, 1322, -1285, -1465, 384, -1215, -136, 1218, -1335, -874, 220, -1187, -1659, -1185,
+    -1530, -1278, 794, -1510, -854, -870, 478, -108, -308, 996, 991, 958, -1460, 1522, 1628,
 ];
 
 /// NTT scaling factor for inverse NTT
@@ -206,7 +198,9 @@ impl Poly {
     /// Create a zero polynomial
     #[inline]
     pub fn zero() -> Self {
-        Self { coeffs: [0; params::N] }
+        Self {
+            coeffs: [0; params::N],
+        }
     }
 
     /// Reduce all coefficients to [0, q)
@@ -748,11 +742,7 @@ fn sample_noise(poly: &mut Poly, seed: &[u8; 32], nonce: u8, eta: usize) {
 /// K-PKE key generation (internal, deterministic)
 ///
 /// Algorithm 12 from FIPS 203
-fn k_pke_keygen(
-    d: &[u8; 32],
-    ek: &mut [u8; PUBLIC_KEY_SIZE],
-    dk: &mut [u8; 1152],
-) {
+fn k_pke_keygen(d: &[u8; 32], ek: &mut [u8; PUBLIC_KEY_SIZE], dk: &mut [u8; 1152]) {
     // (ρ, σ) = G(d)
     let g_output = Sha3_512::hash(d);
     let rho: [u8; 32] = g_output[..32].try_into().unwrap();
@@ -847,11 +837,7 @@ fn k_pke_encrypt(
 /// K-PKE decryption (internal)
 ///
 /// Algorithm 14 from FIPS 203
-fn k_pke_decrypt(
-    dk: &[u8; 1152],
-    ct: &[u8; CIPHERTEXT_SIZE],
-    m: &mut [u8; 32],
-) {
+fn k_pke_decrypt(dk: &[u8; 1152], ct: &[u8; CIPHERTEXT_SIZE], m: &mut [u8; 32]) {
     // Decode secret key
     let mut s_hat = PolyVec::zero();
     s_hat.from_bytes(dk);
@@ -973,7 +959,10 @@ impl MlKem768DecapsulationKey {
     ///
     /// Algorithm 17 from FIPS 203 (ML-KEM.Decaps)
     /// Implements implicit rejection for IND-CCA2 security
-    pub fn decapsulate(&self, ciphertext: &[u8; CIPHERTEXT_SIZE]) -> CryptoResult<[u8; SHARED_SECRET_SIZE]> {
+    pub fn decapsulate(
+        &self,
+        ciphertext: &[u8; CIPHERTEXT_SIZE],
+    ) -> CryptoResult<[u8; SHARED_SECRET_SIZE]> {
         let mut ss = [0u8; SHARED_SECRET_SIZE];
 
         // Parse secret key components
@@ -1118,7 +1107,10 @@ impl MlKem768KeyPair {
     }
 
     /// Decapsulate using the secret key
-    pub fn decapsulate(&self, ciphertext: &[u8; CIPHERTEXT_SIZE]) -> CryptoResult<[u8; SHARED_SECRET_SIZE]> {
+    pub fn decapsulate(
+        &self,
+        ciphertext: &[u8; CIPHERTEXT_SIZE],
+    ) -> CryptoResult<[u8; SHARED_SECRET_SIZE]> {
         self.decapsulation_key.decapsulate(ciphertext)
     }
 }
@@ -1260,7 +1252,10 @@ mod tests {
         let ss2 = keypair.decapsulate(&ct).unwrap();
 
         // Shared secrets must match
-        assert_eq!(ss1, ss2, "Encapsulated and decapsulated shared secrets don't match");
+        assert_eq!(
+            ss1, ss2,
+            "Encapsulated and decapsulated shared secrets don't match"
+        );
     }
 
     #[test]
@@ -1280,7 +1275,10 @@ mod tests {
         let ss2 = keypair.decapsulate(&ct).unwrap();
 
         // Shared secrets must NOT match (implicit rejection)
-        assert_ne!(ss1, ss2, "Should get different shared secret on corrupted ciphertext");
+        assert_ne!(
+            ss1, ss2,
+            "Should get different shared secret on corrupted ciphertext"
+        );
     }
 
     #[test]
@@ -1329,11 +1327,7 @@ mod tests {
         // All other coefficients should be 0 or reduce to 0
         for i in 1..params::N {
             let ci = to_positive(c.coeffs[i]);
-            assert!(
-                ci == 0,
-                "Expected 0 at index {}, got {}",
-                i, ci
-            );
+            assert!(ci == 0, "Expected 0 at index {}, got {}", i, ci);
         }
     }
 
@@ -1357,7 +1351,13 @@ mod tests {
             let decomp = decompressed.coeffs[i] as i32;
             let diff = (orig - decomp).abs();
             // After compression to 10 bits, error should be < q/2^10 ≈ 3.25
-            assert!(diff < 50, "Compression error too large at {}: {} vs {}", i, orig, decomp);
+            assert!(
+                diff < 50,
+                "Compression error too large at {}: {} vs {}",
+                i,
+                orig,
+                decomp
+            );
         }
     }
 
@@ -1369,8 +1369,11 @@ mod tests {
 
         // All coefficients should be in [-2, 2]
         for i in 0..params::N {
-            assert!(poly.coeffs[i] >= -2 && poly.coeffs[i] <= 2,
-                "CBD_2 coefficient out of range: {}", poly.coeffs[i]);
+            assert!(
+                poly.coeffs[i] >= -2 && poly.coeffs[i] <= 2,
+                "CBD_2 coefficient out of range: {}",
+                poly.coeffs[i]
+            );
         }
     }
 
@@ -1379,7 +1382,10 @@ mod tests {
         // Test values near boundaries using to_positive for normalization
         // (barrett_reduce with Kyber formula can return negative values)
         assert_eq!(to_positive(barrett_reduce(0)), 0);
-        assert_eq!(to_positive(barrett_reduce(params::Q as i16 - 1)), params::Q as u16 - 1);
+        assert_eq!(
+            to_positive(barrett_reduce(params::Q as i16 - 1)),
+            params::Q as u16 - 1
+        );
         assert_eq!(to_positive(barrett_reduce(params::Q as i16)), 0);
         assert_eq!(to_positive(barrett_reduce(params::Q as i16 + 1)), 1);
         // Test negative values
@@ -1401,8 +1407,11 @@ mod tests {
         decoded.from_bytes_12(&bytes);
 
         for i in 0..params::N {
-            assert_eq!(decoded.coeffs[i], poly.coeffs[i],
-                "Encode/decode 12 failed at {}", i);
+            assert_eq!(
+                decoded.coeffs[i], poly.coeffs[i],
+                "Encode/decode 12 failed at {}",
+                i
+            );
         }
     }
 

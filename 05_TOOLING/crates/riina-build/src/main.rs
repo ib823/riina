@@ -232,7 +232,10 @@ impl BuildContext {
 #[derive(Debug)]
 enum BuildError {
     NotRiinaProject(PathBuf),
-    CommandFailed { command: String, exit_code: i32 },
+    CommandFailed {
+        command: String,
+        exit_code: i32,
+    },
     CommandNotFound(String),
     IoError(io::Error),
     #[allow(dead_code)]
@@ -314,7 +317,11 @@ fn run_command(ctx: &BuildContext, cmd: &str, args: &[&str]) -> Result<(), Build
     }
 }
 
-fn build_rust(ctx: &BuildContext, package: Option<&str>, all_targets: bool) -> Result<(), BuildError> {
+fn build_rust(
+    ctx: &BuildContext,
+    package: Option<&str>,
+    all_targets: bool,
+) -> Result<(), BuildError> {
     ctx.log("Building Rust workspace...");
 
     let mut args: Vec<&str> = vec!["build"];
@@ -396,30 +403,23 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
         0 => {
             // Stage 0: Build bootstrap compiler (Rust implementation)
             ctx.log("Stage 0: Building Rust bootstrap compiler...");
-            run_command(
-                ctx,
-                "cargo",
-                &["build", "--release", "--package", "riinac"],
-            )?;
+            run_command(ctx, "cargo", &["build", "--release", "--package", "riinac"])?;
         }
         1 => {
             // Stage 1: Self-hosted compiler (compiled by stage 0)
             ctx.log("Stage 1: Building self-hosted compiler...");
-            
+
             let stage0 = ctx.root.join("target/release/riinac");
             if !stage0.exists() {
                 return Err(BuildError::InvalidConfiguration(
-                    "Stage 0 compiler not found. Run `riina-build bootstrap --stage 0` first.".to_string()
+                    "Stage 0 compiler not found. Run `riina-build bootstrap --stage 0` first."
+                        .to_string(),
                 ));
             }
 
             // TODO: Actually compile with stage 0 when RIINA is ready
             ctx.log("Stage 1: (using Rust compiler until self-hosting ready)");
-            run_command(
-                ctx,
-                "cargo",
-                &["build", "--release", "--package", "riinac"],
-            )?;
+            run_command(ctx, "cargo", &["build", "--release", "--package", "riinac"])?;
         }
         2 => {
             // Stage 2: Verification build (must match stage 1)
@@ -428,17 +428,14 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
             let stage1 = ctx.root.join("target/release/riinac");
             if !stage1.exists() {
                 return Err(BuildError::InvalidConfiguration(
-                    "Stage 1 compiler not found. Run `riina-build bootstrap --stage 1` first.".to_string()
+                    "Stage 1 compiler not found. Run `riina-build bootstrap --stage 1` first."
+                        .to_string(),
                 ));
             }
 
             // TODO: Actually compile with stage 1 when self-hosting ready
             ctx.log("Stage 2: (using Rust compiler until self-hosting ready)");
-            run_command(
-                ctx,
-                "cargo",
-                &["build", "--release", "--package", "riinac"],
-            )?;
+            run_command(ctx, "cargo", &["build", "--release", "--package", "riinac"])?;
 
             if verify {
                 ctx.log("Verifying stage 1 == stage 2...");
@@ -471,10 +468,7 @@ fn build_hdl(ctx: &BuildContext, target: Option<&str>) -> Result<(), BuildError>
     }
 
     // TODO: Integrate with actual HDL toolchain
-    ctx.log(&format!(
-        "HDL target: {}",
-        target.unwrap_or("simulation")
-    ));
+    ctx.log(&format!("HDL target: {}", target.unwrap_or("simulation")));
     ctx.log("HDL build not yet implemented");
 
     Ok(())
@@ -553,10 +547,7 @@ fn generate_manifest(ctx: &BuildContext, output: &Path) -> Result<(), BuildError
     let output_path = ctx.root.join(output);
     fs::write(&output_path, manifest)?;
 
-    ctx.log(&format!(
-        "✓ Manifest written to {}",
-        output_path.display()
-    ));
+    ctx.log(&format!("✓ Manifest written to {}", output_path.display()));
 
     Ok(())
 }
@@ -632,12 +623,14 @@ fn main() -> ExitCode {
 
     let result = match &cli.command {
         Commands::All { level } => build_all(&ctx, *level),
-        Commands::Rust { package, all_targets } => {
-            build_rust(&ctx, package.as_deref(), *all_targets)
-        }
-        Commands::Ada { project, proof_level } => {
-            build_ada(&ctx, project.as_deref(), *proof_level)
-        }
+        Commands::Rust {
+            package,
+            all_targets,
+        } => build_rust(&ctx, package.as_deref(), *all_targets),
+        Commands::Ada {
+            project,
+            proof_level,
+        } => build_ada(&ctx, project.as_deref(), *proof_level),
         Commands::Bootstrap { stage, verify } => build_bootstrap(&ctx, *stage, *verify),
         Commands::Hdl { target } => build_hdl(&ctx, target.as_deref()),
         Commands::Manifest { output } => generate_manifest(&ctx, output),

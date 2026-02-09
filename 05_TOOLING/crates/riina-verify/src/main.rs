@@ -285,10 +285,7 @@ fn check_tool(name: &str) -> bool {
         .is_ok_and(|s| s.success())
 }
 
-fn run_cargo(
-    ctx: &VerifyContext,
-    args: &[&str],
-) -> Result<bool, VerifyError> {
+fn run_cargo(ctx: &VerifyContext, args: &[&str]) -> Result<bool, VerifyError> {
     ctx.log_verbose(&format!("Running: cargo {}", args.join(" ")));
 
     let status = Command::new("cargo")
@@ -322,14 +319,21 @@ fn verify_level_0(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
 
     let passed = run_cargo(ctx, &["build", "--all-targets", "--all-features"])?;
 
-    ctx.record("compilation", passed, start.elapsed(), if passed {
-        "Build successful"
-    } else {
-        "Build failed"
-    });
+    ctx.record(
+        "compilation",
+        passed,
+        start.elapsed(),
+        if passed {
+            "Build successful"
+        } else {
+            "Build failed"
+        },
+    );
 
     if !passed && ctx.fail_fast {
-        return Err(VerifyError::VerificationFailed("Compilation failed".to_string()));
+        return Err(VerifyError::VerificationFailed(
+            "Compilation failed".to_string(),
+        ));
     }
 
     ctx.log("✓ Level 0 complete");
@@ -342,14 +346,21 @@ fn verify_level_1(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     // Format check
     let start = Instant::now();
     let passed = run_cargo(ctx, &["fmt", "--all", "--", "--check"])?;
-    ctx.record("rustfmt", passed, start.elapsed(), if passed {
-        "Formatting correct"
-    } else {
-        "Formatting issues found"
-    });
+    ctx.record(
+        "rustfmt",
+        passed,
+        start.elapsed(),
+        if passed {
+            "Formatting correct"
+        } else {
+            "Formatting issues found"
+        },
+    );
 
     if !passed && ctx.fail_fast {
-        return Err(VerifyError::VerificationFailed("Formatting check failed".to_string()));
+        return Err(VerifyError::VerificationFailed(
+            "Formatting check failed".to_string(),
+        ));
     }
 
     // Clippy
@@ -371,14 +382,21 @@ fn verify_level_1(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
             "clippy::nursery",
         ],
     )?;
-    ctx.record("clippy", passed, start.elapsed(), if passed {
-        "No clippy warnings"
-    } else {
-        "Clippy warnings found"
-    });
+    ctx.record(
+        "clippy",
+        passed,
+        start.elapsed(),
+        if passed {
+            "No clippy warnings"
+        } else {
+            "Clippy warnings found"
+        },
+    );
 
     if !passed && ctx.fail_fast {
-        return Err(VerifyError::VerificationFailed("Clippy check failed".to_string()));
+        return Err(VerifyError::VerificationFailed(
+            "Clippy check failed".to_string(),
+        ));
     }
 
     ctx.log("✓ Level 1 complete");
@@ -391,11 +409,16 @@ fn verify_level_2(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     // Unit tests
     let start = Instant::now();
     let passed = run_cargo(ctx, &["test", "--all-features"])?;
-    ctx.record("tests", passed, start.elapsed(), if passed {
-        "All tests passed"
-    } else {
-        "Test failures"
-    });
+    ctx.record(
+        "tests",
+        passed,
+        start.elapsed(),
+        if passed {
+            "All tests passed"
+        } else {
+            "Test failures"
+        },
+    );
 
     if !passed && ctx.fail_fast {
         return Err(VerifyError::VerificationFailed("Tests failed".to_string()));
@@ -404,15 +427,17 @@ fn verify_level_2(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     // Miri (memory safety)
     if check_tool("cargo-miri") || check_tool("miri") {
         let start = Instant::now();
-        let passed = run_cargo(
-            ctx,
-            &["+nightly", "miri", "test", "-p", "riina-core"],
-        )?;
-        ctx.record("miri", passed, start.elapsed(), if passed {
-            "No undefined behavior"
-        } else {
-            "Miri found issues"
-        });
+        let passed = run_cargo(ctx, &["+nightly", "miri", "test", "-p", "riina-core"])?;
+        ctx.record(
+            "miri",
+            passed,
+            start.elapsed(),
+            if passed {
+                "No undefined behavior"
+            } else {
+                "Miri found issues"
+            },
+        );
     } else {
         ctx.log("⚠ Miri not available, skipping");
     }
@@ -434,11 +459,16 @@ fn verify_level_3(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
         ctx.log("Running Kani model checking...");
         let start = Instant::now();
         let passed = run_cargo(ctx, &["kani", "--tests", "-p", "riina-core"])?;
-        ctx.record("kani", passed, start.elapsed(), if passed {
-            "Model checking passed"
-        } else {
-            "Kani found issues"
-        });
+        ctx.record(
+            "kani",
+            passed,
+            start.elapsed(),
+            if passed {
+                "Model checking passed"
+            } else {
+                "Kani found issues"
+            },
+        );
     } else {
         ctx.log("⚠ Kani not available, skipping");
     }
@@ -453,25 +483,37 @@ fn verify_level_4(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     // Full test suite
     let start = Instant::now();
     let passed = run_cargo(ctx, &["test", "--all-features", "--workspace"])?;
-    ctx.record("integration", passed, start.elapsed(), if passed {
-        "Integration tests passed"
-    } else {
-        "Integration test failures"
-    });
+    ctx.record(
+        "integration",
+        passed,
+        start.elapsed(),
+        if passed {
+            "Integration tests passed"
+        } else {
+            "Integration test failures"
+        },
+    );
 
     if !passed && ctx.fail_fast {
-        return Err(VerifyError::VerificationFailed("Integration tests failed".to_string()));
+        return Err(VerifyError::VerificationFailed(
+            "Integration tests failed".to_string(),
+        ));
     }
 
     // Security audit
     if check_tool("cargo-audit") {
         let start = Instant::now();
         let passed = run_cargo(ctx, &["audit"])?;
-        ctx.record("audit", passed, start.elapsed(), if passed {
-            "No known vulnerabilities"
-        } else {
-            "Vulnerabilities found"
-        });
+        ctx.record(
+            "audit",
+            passed,
+            start.elapsed(),
+            if passed {
+                "No known vulnerabilities"
+            } else {
+                "Vulnerabilities found"
+            },
+        );
     } else {
         ctx.log("⚠ cargo-audit not available, skipping");
     }
@@ -496,7 +538,12 @@ fn verify_level_5(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     if check_tool("creusot") {
         ctx.log("Running Creusot verification...");
         let start = Instant::now();
-        ctx.record("creusot", true, start.elapsed(), "Creusot harnesses pending");
+        ctx.record(
+            "creusot",
+            true,
+            start.elapsed(),
+            "Creusot harnesses pending",
+        );
     } else {
         ctx.log("⚠ Creusot not available, skipping");
     }
@@ -525,7 +572,12 @@ fn verify_level_6(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     let _ = run_cargo(ctx, &["build", "--release"]);
     // TODO: Actually compare builds
 
-    ctx.record("reproducibility", true, start.elapsed(), "Reproducibility pending");
+    ctx.record(
+        "reproducibility",
+        true,
+        start.elapsed(),
+        "Reproducibility pending",
+    );
 
     // Mutation testing
     if check_tool("cargo-mutants") {
@@ -535,11 +587,16 @@ fn verify_level_6(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
             ctx,
             &["mutants", "--package", "riina-core", "--timeout", "600"],
         )?;
-        ctx.record("mutation", passed, start.elapsed(), if passed {
-            "Mutation testing complete"
-        } else {
-            "Some mutants survived"
-        });
+        ctx.record(
+            "mutation",
+            passed,
+            start.elapsed(),
+            if passed {
+                "Mutation testing complete"
+            } else {
+                "Some mutants survived"
+            },
+        );
     } else {
         ctx.log("⚠ cargo-mutants not available, skipping");
     }
@@ -584,11 +641,7 @@ fn verify_rust_tool(
     let tools: Vec<RustTool> = if let Some(t) = tool {
         vec![t]
     } else {
-        vec![
-            RustTool::Clippy,
-            RustTool::Miri,
-            RustTool::Kani,
-        ]
+        vec![RustTool::Clippy, RustTool::Miri, RustTool::Kani]
     };
 
     for t in tools {
@@ -656,7 +709,11 @@ fn verify_coverage(ctx: &mut VerifyContext, minimum: u8, html: bool) -> Result<(
     Ok(())
 }
 
-fn run_fuzzing(ctx: &mut VerifyContext, target: Option<&str>, duration: u64) -> Result<(), VerifyError> {
+fn run_fuzzing(
+    ctx: &mut VerifyContext,
+    target: Option<&str>,
+    duration: u64,
+) -> Result<(), VerifyError> {
     ctx.log(&format!("Running fuzzing for {duration} seconds"));
 
     if !check_tool("cargo-fuzz") {
@@ -693,17 +750,7 @@ fn run_fuzzing(ctx: &mut VerifyContext, target: Option<&str>, duration: u64) -> 
         let duration_str = duration.to_string();
         let max_time = format!("-max_total_time={duration}");
 
-        let passed = run_cargo(
-            ctx,
-            &[
-                "+nightly",
-                "fuzz",
-                "run",
-                target,
-                "--",
-                &max_time,
-            ],
-        )?;
+        let passed = run_cargo(ctx, &["+nightly", "fuzz", "run", target, "--", &max_time])?;
 
         ctx.record(&format!("fuzz:{target}"), passed, start.elapsed(), "");
     }
@@ -721,11 +768,16 @@ fn run_audit(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     let start = Instant::now();
     let passed = run_cargo(ctx, &["audit"])?;
 
-    ctx.record("audit", passed, start.elapsed(), if passed {
-        "No vulnerabilities"
-    } else {
-        "Vulnerabilities found"
-    });
+    ctx.record(
+        "audit",
+        passed,
+        start.elapsed(),
+        if passed {
+            "No vulnerabilities"
+        } else {
+            "Vulnerabilities found"
+        },
+    );
 
     // Also run cargo-deny if available
     if check_tool("cargo-deny") {
@@ -757,10 +809,7 @@ fn generate_report(ctx: &VerifyContext, output: &Path) -> Result<(), VerifyError
     }
 
     report.push_str("\n  ],\n");
-    report.push_str(&format!(
-        "  \"all_passed\": {},\n",
-        ctx.all_passed()
-    ));
+    report.push_str(&format!("  \"all_passed\": {},\n", ctx.all_passed()));
     report.push_str(&format!(
         "  \"total_duration_ms\": {}\n",
         ctx.elapsed().as_millis()
@@ -824,22 +873,14 @@ fn main() -> ExitCode {
 
     let result = match &cli.command {
         Commands::Full { level } => verify_full(&mut ctx, *level),
-        Commands::Rust { tool, package } => {
-            verify_rust_tool(&mut ctx, *tool, package.as_deref())
-        }
+        Commands::Rust { tool, package } => verify_rust_tool(&mut ctx, *tool, package.as_deref()),
         Commands::Ada { level, package } => {
-            ctx.log(&format!(
-                "Ada/SPARK verification at level {level}"
-            ));
+            ctx.log(&format!("Ada/SPARK verification at level {level}"));
             // TODO: Integrate GNATprove
             Ok(())
         }
-        Commands::Coverage { minimum, html } => {
-            verify_coverage(&mut ctx, *minimum, *html)
-        }
-        Commands::Fuzz { target, duration } => {
-            run_fuzzing(&mut ctx, target.as_deref(), *duration)
-        }
+        Commands::Coverage { minimum, html } => verify_coverage(&mut ctx, *minimum, *html),
+        Commands::Fuzz { target, duration } => run_fuzzing(&mut ctx, target.as_deref(), *duration),
         Commands::Mutate { package, timeout } => {
             ctx.log("Mutation testing...");
             // TODO: Implement mutation testing

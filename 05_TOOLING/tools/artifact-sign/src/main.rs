@@ -253,8 +253,7 @@ impl Signature {
 
         // Timestamp
         let timestamp = u64::from_be_bytes([
-            bytes[44], bytes[45], bytes[46], bytes[47],
-            bytes[48], bytes[49], bytes[50], bytes[51],
+            bytes[44], bytes[45], bytes[46], bytes[47], bytes[48], bytes[49], bytes[50], bytes[51],
         ]);
 
         // File hash
@@ -263,9 +262,7 @@ impl Signature {
         let file_hash = String::from_utf8_lossy(&hash_bytes[..hash_end]).to_string();
 
         // Signature length
-        let sig_len = u32::from_be_bytes([
-            bytes[116], bytes[117], bytes[118], bytes[119],
-        ]) as usize;
+        let sig_len = u32::from_be_bytes([bytes[116], bytes[117], bytes[118], bytes[119]]) as usize;
 
         if bytes.len() < 120 + sig_len {
             return None;
@@ -309,7 +306,12 @@ fn hash_file(path: &Path) -> io::Result<String> {
 // COMMANDS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-fn generate_keypair(name: &str, algorithm: SigningAlgorithm, output: &Path, verbose: bool) -> io::Result<()> {
+fn generate_keypair(
+    name: &str,
+    algorithm: SigningAlgorithm,
+    output: &Path,
+    verbose: bool,
+) -> io::Result<()> {
     println!("Generating {} key pair...", algorithm.name());
 
     let keypair = KeyPair::generate(algorithm);
@@ -369,7 +371,10 @@ fn sign_file(file: &Path, key: &Path, output: Option<&Path>, verbose: bool) -> i
     // Read private key (placeholder - just check it exists)
     let key_contents = fs::read_to_string(key)?;
     if !key_contents.contains("RIINA PRIVATE KEY") {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid private key"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid private key",
+        ));
     }
 
     let timestamp = SystemTime::now()
@@ -417,7 +422,10 @@ fn verify_signature(file: &Path, sig_path: &Path, key: &Path, verbose: bool) -> 
     // Read public key
     let key_contents = fs::read_to_string(key)?;
     if !key_contents.contains("RIINA PUBLIC KEY") {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid public key"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid public key",
+        ));
     }
 
     // Compute current file hash
@@ -437,7 +445,12 @@ fn verify_signature(file: &Path, sig_path: &Path, key: &Path, verbose: bool) -> 
     Ok(true)
 }
 
-fn generate_sbom(project: &Path, output: &Path, format: SbomFormat, verbose: bool) -> io::Result<()> {
+fn generate_sbom(
+    project: &Path,
+    output: &Path,
+    format: SbomFormat,
+    verbose: bool,
+) -> io::Result<()> {
     println!("Generating SBOM for: {}", project.display());
 
     let timestamp = SystemTime::now()
@@ -455,9 +468,7 @@ fn generate_sbom(project: &Path, output: &Path, format: SbomFormat, verbose: boo
         // Simple parsing (would use actual TOML parser in production)
         for line in lock_contents.lines() {
             if line.starts_with("name = \"") {
-                let name = line
-                    .trim_start_matches("name = \"")
-                    .trim_end_matches('"');
+                let name = line.trim_start_matches("name = \"").trim_end_matches('"');
                 components.push(name.to_string());
             }
         }
@@ -480,7 +491,9 @@ fn generate_cyclonedx(components: &[String], timestamp: u64) -> String {
     let mut json = String::from("{\n");
     json.push_str("  \"bomFormat\": \"CycloneDX\",\n");
     json.push_str("  \"specVersion\": \"1.5\",\n");
-    json.push_str(&format!("  \"serialNumber\": \"urn:uuid:riina-{timestamp}\",\n"));
+    json.push_str(&format!(
+        "  \"serialNumber\": \"urn:uuid:riina-{timestamp}\",\n"
+    ));
     json.push_str("  \"version\": 1,\n");
     json.push_str("  \"metadata\": {\n");
     json.push_str(&format!("    \"timestamp\": \"{timestamp}\",\n"));
@@ -511,7 +524,9 @@ fn generate_spdx(components: &[String], timestamp: u64) -> String {
     let mut json = String::from("{\n");
     json.push_str("  \"spdxVersion\": \"SPDX-2.3\",\n");
     json.push_str("  \"dataLicense\": \"CC0-1.0\",\n");
-    json.push_str(&format!("  \"SPDXID\": \"SPDXRef-DOCUMENT-riina-{timestamp}\",\n"));
+    json.push_str(&format!(
+        "  \"SPDXID\": \"SPDXRef-DOCUMENT-riina-{timestamp}\",\n"
+    ));
     json.push_str("  \"name\": \"RIINA SBOM\",\n");
     json.push_str("  \"documentNamespace\": \"https://riina.io/sbom\",\n");
     json.push_str("  \"creationInfo\": {\n");
@@ -547,22 +562,28 @@ fn main() -> ExitCode {
     println!();
 
     let result = match &cli.command {
-        Commands::Keygen { name, algorithm, output } => {
-            generate_keypair(name, *algorithm, output, cli.verbose)
-        }
+        Commands::Keygen {
+            name,
+            algorithm,
+            output,
+        } => generate_keypair(name, *algorithm, output, cli.verbose),
         Commands::Sign { file, key, output } => {
             sign_file(file, key, output.as_deref(), cli.verbose)
         }
-        Commands::Verify { file, signature, key } => {
-            verify_signature(file, signature, key, cli.verbose).map(|valid| {
-                if !valid {
-                    std::process::exit(1);
-                }
-            })
-        }
-        Commands::Sbom { project, output, format } => {
-            generate_sbom(project, output, *format, cli.verbose)
-        }
+        Commands::Verify {
+            file,
+            signature,
+            key,
+        } => verify_signature(file, signature, key, cli.verbose).map(|valid| {
+            if !valid {
+                std::process::exit(1);
+            }
+        }),
+        Commands::Sbom {
+            project,
+            output,
+            format,
+        } => generate_sbom(project, output, *format, cli.verbose),
         Commands::SignManifest { manifest, key } => {
             println!("Signing manifest and artifacts...");
             println!("Not yet implemented - would sign manifest + all referenced files");

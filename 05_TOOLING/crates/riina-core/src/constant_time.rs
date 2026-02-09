@@ -53,17 +53,17 @@ pub fn ct_eq_slices(a: &[u8], b: &[u8]) -> bool {
     if a.len() != b.len() {
         return false;
     }
-    
+
     // XOR all bytes together, accumulating differences
     let mut diff: u8 = 0;
-    
+
     for (byte_a, byte_b) in a.iter().zip(b.iter()) {
         diff |= byte_a ^ byte_b;
     }
-    
+
     // Prevent compiler from optimizing
     compiler_fence(Ordering::SeqCst);
-    
+
     // If any bit is set, the values are different
     diff == 0
 }
@@ -82,20 +82,24 @@ where
 {
     // Convert bool to all-ones or all-zeros mask
     let _mask = if choice {
-        !T::default()  // All ones
+        !T::default() // All ones
     } else {
-        T::default()   // All zeros
+        T::default() // All zeros
     };
-    
+
     // Select using bitwise operations
     // (a & mask) | (b & !mask)
     // When mask is all-ones: a | 0 = a
     // When mask is all-zeros: 0 | b = b
     compiler_fence(Ordering::SeqCst);
-    
+
     // For now, just return based on choice
     // TODO: Implement proper bitwise selection
-    if choice { a } else { b }
+    if choice {
+        a
+    } else {
+        b
+    }
 }
 
 /// Constant-time less-than comparison for u8
@@ -170,7 +174,7 @@ mod tests {
         let a = [0xDEu8, 0xAD, 0xBE, 0xEF];
         let b = [0xDEu8, 0xAD, 0xBE, 0xEF];
         let c = [0xDEu8, 0xAD, 0xBE, 0x00];
-        
+
         assert!(a.ct_eq(&b));
         assert!(!a.ct_eq(&c));
     }
@@ -180,7 +184,7 @@ mod tests {
         let a: u64 = 0xDEAD_BEEF_CAFE_BABE;
         let b: u64 = 0xDEAD_BEEF_CAFE_BABE;
         let c: u64 = 0xDEAD_BEEF_CAFE_BABA;
-        
+
         assert!(a.ct_eq(&b));
         assert!(!a.ct_eq(&c));
     }

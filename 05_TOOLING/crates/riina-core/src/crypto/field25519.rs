@@ -31,7 +31,7 @@
 //! - DJB's Curve25519 paper: https://cr.yp.to/ecdh.html
 //! - Adam Langley's curve25519-donna
 
-use core::ops::{Add, Sub, Mul};
+use core::ops::{Add, Mul, Sub};
 
 /// A field element in GF(2^255-19), represented in radix 2^51.
 ///
@@ -62,10 +62,14 @@ pub struct FieldElement {
 
 impl FieldElement {
     /// The zero element (additive identity)
-    pub const ZERO: Self = Self { limbs: [0, 0, 0, 0, 0] };
+    pub const ZERO: Self = Self {
+        limbs: [0, 0, 0, 0, 0],
+    };
 
     /// The one element (multiplicative identity)
-    pub const ONE: Self = Self { limbs: [1, 0, 0, 0, 0] };
+    pub const ONE: Self = Self {
+        limbs: [1, 0, 0, 0, 0],
+    };
 
     /// The modulus p = 2^255 - 19 in radix-2^51 representation
     ///
@@ -388,59 +392,59 @@ impl FieldElement {
         // Use the well-known addition chain for (p-2):
         // 1, 2, 3, 4, 5, 10, 20, 40, 50, 100, 200, 250, 255
 
-        let z2 = self.square();              // x^2
+        let z2 = self.square(); // x^2
         let z9 = z2.square().square() * self; // x^8 * x = x^9
-        let z11 = z9 * z2;                   // x^9 * x^2 = x^11
-        let z2_5_0 = z11.square() * z9;      // x^22 * x^9 = x^31 = x^(2^5-1)
+        let z11 = z9 * z2; // x^9 * x^2 = x^11
+        let z2_5_0 = z11.square() * z9; // x^22 * x^9 = x^31 = x^(2^5-1)
 
         let mut t = z2_5_0;
         for _ in 0..5 {
             t = t.square();
         }
-        let z2_10_0 = t * z2_5_0;        // 2^10 - 2^0
+        let z2_10_0 = t * z2_5_0; // 2^10 - 2^0
 
         t = z2_10_0;
         for _ in 0..10 {
             t = t.square();
         }
-        let z2_20_0 = t * z2_10_0;       // 2^20 - 2^0
+        let z2_20_0 = t * z2_10_0; // 2^20 - 2^0
 
         t = z2_20_0;
         for _ in 0..20 {
             t = t.square();
         }
-        let z2_40_0 = t * z2_20_0;       // 2^40 - 2^0
+        let z2_40_0 = t * z2_20_0; // 2^40 - 2^0
 
         t = z2_40_0;
         for _ in 0..10 {
             t = t.square();
         }
-        let z2_50_0 = t * z2_10_0;       // 2^50 - 2^0
+        let z2_50_0 = t * z2_10_0; // 2^50 - 2^0
 
         t = z2_50_0;
         for _ in 0..50 {
             t = t.square();
         }
-        let z2_100_0 = t * z2_50_0;      // 2^100 - 2^0
+        let z2_100_0 = t * z2_50_0; // 2^100 - 2^0
 
         t = z2_100_0;
         for _ in 0..100 {
             t = t.square();
         }
-        let z2_200_0 = t * z2_100_0;     // 2^200 - 2^0
+        let z2_200_0 = t * z2_100_0; // 2^200 - 2^0
 
         t = z2_200_0;
         for _ in 0..50 {
             t = t.square();
         }
-        let z2_250_0 = t * z2_50_0;      // 2^250 - 2^0
+        let z2_250_0 = t * z2_50_0; // 2^250 - 2^0
 
         // Final 5 bits: 2^255 - 21 = 2^255 - 2^4 - 2^2 - 2^0
         t = z2_250_0;
         for _ in 0..5 {
             t = t.square();
         }
-        t = t * z11;                     // 2^255 - 2^5 + 11 = 2^255 - 21
+        t = t * z11; // 2^255 - 2^5 + 11 = 2^255 - 21
 
         t
     }
@@ -515,8 +519,8 @@ impl Mul for FieldElement {
         let mut carry: i128 = 0;
         for i in 0..5 {
             c[i] += carry;
-            carry = c[i] >> 51;           // Extract bits above 51
-            c[i] &= 0x7ffffffffffff;      // Keep only bottom 51 bits
+            carry = c[i] >> 51; // Extract bits above 51
+            c[i] &= 0x7ffffffffffff; // Keep only bottom 51 bits
         }
         // Wrap final carry to limb 0 (multiply by 19 for mod p reduction)
         c[0] += carry * 19;

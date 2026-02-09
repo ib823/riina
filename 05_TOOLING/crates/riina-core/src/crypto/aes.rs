@@ -142,10 +142,10 @@ impl Aes256 {
     /// Encrypt a single 16-byte block in place
     pub fn encrypt_block(&self, block: &mut [u8; BLOCK_SIZE]) {
         let mut state = block_to_state(block);
-        
+
         // Initial round key addition
         add_round_key(&mut state, &self.round_keys[0..NB]);
-        
+
         // Main rounds (1 to NR-1)
         for round in 1..NR {
             sub_bytes(&mut state);
@@ -153,22 +153,22 @@ impl Aes256 {
             mix_columns(&mut state);
             add_round_key(&mut state, &self.round_keys[round * NB..(round + 1) * NB]);
         }
-        
+
         // Final round (no MixColumns)
         sub_bytes(&mut state);
         shift_rows(&mut state);
         add_round_key(&mut state, &self.round_keys[NR * NB..(NR + 1) * NB]);
-        
+
         state_to_block(&state, block);
     }
 
     /// Decrypt a single 16-byte block in place
     pub fn decrypt_block(&self, block: &mut [u8; BLOCK_SIZE]) {
         let mut state = block_to_state(block);
-        
+
         // Initial round key addition (last round key)
         add_round_key(&mut state, &self.round_keys[NR * NB..(NR + 1) * NB]);
-        
+
         // Main rounds (NR-1 down to 1)
         for round in (1..NR).rev() {
             inv_shift_rows(&mut state);
@@ -176,12 +176,12 @@ impl Aes256 {
             add_round_key(&mut state, &self.round_keys[round * NB..(round + 1) * NB]);
             inv_mix_columns(&mut state);
         }
-        
+
         // Final round (no InvMixColumns)
         inv_shift_rows(&mut state);
         inv_sub_bytes(&mut state);
         add_round_key(&mut state, &self.round_keys[0..NB]);
-        
+
         state_to_block(&state, block);
     }
 }
@@ -197,18 +197,13 @@ impl Drop for Aes256 {
 fn key_expansion(key: &[u8; KEY_SIZE], w: &mut [u32; EXPANDED_KEY_WORDS]) {
     // First NK words are the key itself
     for i in 0..NK {
-        w[i] = u32::from_be_bytes([
-            key[4 * i],
-            key[4 * i + 1],
-            key[4 * i + 2],
-            key[4 * i + 3],
-        ]);
+        w[i] = u32::from_be_bytes([key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3]]);
     }
 
     // Generate remaining words
     for i in NK..EXPANDED_KEY_WORDS {
         let mut temp = w[i - 1];
-        
+
         if i % NK == 0 {
             // RotWord + SubWord + Rcon
             temp = sub_word(rot_word(temp)) ^ (u32::from(RCON[i / NK]) << 24);
@@ -216,7 +211,7 @@ fn key_expansion(key: &[u8; KEY_SIZE], w: &mut [u32; EXPANDED_KEY_WORDS]) {
             // AES-256 has an extra SubWord step
             temp = sub_word(temp);
         }
-        
+
         w[i] = w[i - NK] ^ temp;
     }
 }
@@ -258,7 +253,7 @@ fn state_to_block(state: &[u32; 4], block: &mut [u8; BLOCK_SIZE]) {
     let b1 = state[1].to_be_bytes();
     let b2 = state[2].to_be_bytes();
     let b3 = state[3].to_be_bytes();
-    
+
     block[0..4].copy_from_slice(&b0);
     block[4..8].copy_from_slice(&b1);
     block[8..12].copy_from_slice(&b2);
@@ -410,14 +405,14 @@ fn gf_mul(a: u8, b: u8) -> u8 {
     let mut result = 0u8;
     let mut aa = a;
     let mut bb = b;
-    
+
     for _ in 0..8 {
         // If low bit of bb is set, XOR aa into result
         result ^= aa & (0u8.wrapping_sub(bb & 1));
         aa = xtime(aa);
         bb >>= 1;
     }
-    
+
     result
 }
 
@@ -429,18 +424,18 @@ fn mix_columns(state: &mut [u32; 4]) {
         let s1 = bytes[1];
         let s2 = bytes[2];
         let s3 = bytes[3];
-        
+
         // Matrix multiplication in GF(2^8):
         // [02 03 01 01]   [s0]
         // [01 02 03 01] * [s1]
         // [01 01 02 03]   [s2]
         // [03 01 01 02]   [s3]
-        
+
         let r0 = gf_mul(0x02, s0) ^ gf_mul(0x03, s1) ^ s2 ^ s3;
         let r1 = s0 ^ gf_mul(0x02, s1) ^ gf_mul(0x03, s2) ^ s3;
         let r2 = s0 ^ s1 ^ gf_mul(0x02, s2) ^ gf_mul(0x03, s3);
         let r3 = gf_mul(0x03, s0) ^ s1 ^ s2 ^ gf_mul(0x02, s3);
-        
+
         *col = u32::from_be_bytes([r0, r1, r2, r3]);
     }
 }
@@ -453,18 +448,18 @@ fn inv_mix_columns(state: &mut [u32; 4]) {
         let s1 = bytes[1];
         let s2 = bytes[2];
         let s3 = bytes[3];
-        
+
         // Inverse matrix multiplication in GF(2^8):
         // [0e 0b 0d 09]   [s0]
         // [09 0e 0b 0d] * [s1]
         // [0d 09 0e 0b]   [s2]
         // [0b 0d 09 0e]   [s3]
-        
+
         let r0 = gf_mul(0x0e, s0) ^ gf_mul(0x0b, s1) ^ gf_mul(0x0d, s2) ^ gf_mul(0x09, s3);
         let r1 = gf_mul(0x09, s0) ^ gf_mul(0x0e, s1) ^ gf_mul(0x0b, s2) ^ gf_mul(0x0d, s3);
         let r2 = gf_mul(0x0d, s0) ^ gf_mul(0x09, s1) ^ gf_mul(0x0e, s2) ^ gf_mul(0x0b, s3);
         let r3 = gf_mul(0x0b, s0) ^ gf_mul(0x0d, s1) ^ gf_mul(0x09, s2) ^ gf_mul(0x0e, s3);
-        
+
         *col = u32::from_be_bytes([r0, r1, r2, r3]);
     }
 }
@@ -477,28 +472,27 @@ mod tests {
     #[test]
     fn test_aes256_fips197() {
         let key: [u8; 32] = [
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-            0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+            0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
+            0x1c, 0x1d, 0x1e, 0x1f,
         ];
-        
+
         let plaintext: [u8; 16] = [
-            0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-            0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+            0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
+            0xee, 0xff,
         ];
-        
+
         let expected_ciphertext: [u8; 16] = [
-            0x8e, 0xa2, 0xb7, 0xca, 0x51, 0x67, 0x45, 0xbf,
-            0xea, 0xfc, 0x49, 0x90, 0x4b, 0x49, 0x60, 0x89,
+            0x8e, 0xa2, 0xb7, 0xca, 0x51, 0x67, 0x45, 0xbf, 0xea, 0xfc, 0x49, 0x90, 0x4b, 0x49,
+            0x60, 0x89,
         ];
-        
+
         let cipher = Aes256::new(&key);
         let mut block = plaintext;
         cipher.encrypt_block(&mut block);
-        
+
         assert_eq!(block, expected_ciphertext, "Encryption failed");
-        
+
         cipher.decrypt_block(&mut block);
         assert_eq!(block, plaintext, "Decryption failed");
     }
@@ -507,23 +501,22 @@ mod tests {
     #[test]
     fn test_aes256_roundtrip() {
         let key: [u8; 32] = [
-            0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe,
-            0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
-            0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
-            0x0f, 0x1e, 0x2d, 0x3c, 0x4b, 0x5a, 0x69, 0x78,
+            0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab,
+            0xcd, 0xef, 0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x0f, 0x1e, 0x2d, 0x3c,
+            0x4b, 0x5a, 0x69, 0x78,
         ];
-        
+
         let plaintext: [u8; 16] = [
-            0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20,
-            0x61, 0x20, 0x74, 0x65, 0x73, 0x74, 0x21, 0x00,
+            0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x74, 0x65, 0x73, 0x74,
+            0x21, 0x00,
         ]; // "This is a test!"
-        
+
         let cipher = Aes256::new(&key);
         let mut block = plaintext;
-        
+
         cipher.encrypt_block(&mut block);
         assert_ne!(block, plaintext, "Encryption should change plaintext");
-        
+
         cipher.decrypt_block(&mut block);
         assert_eq!(block, plaintext, "Round-trip failed");
     }
@@ -532,20 +525,19 @@ mod tests {
     #[test]
     fn test_key_expansion() {
         let key: [u8; 32] = [
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-            0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+            0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
+            0x1c, 0x1d, 0x1e, 0x1f,
         ];
-        
+
         let mut round_keys = [0u32; EXPANDED_KEY_WORDS];
         key_expansion(&key, &mut round_keys);
-        
+
         // First 8 words should be the key
         assert_eq!(round_keys[0], 0x00010203);
         assert_eq!(round_keys[1], 0x04050607);
         assert_eq!(round_keys[7], 0x1c1d1e1f);
-        
+
         // Verify we have all 60 words
         assert_eq!(round_keys.len(), 60);
     }
@@ -557,7 +549,7 @@ mod tests {
         assert_eq!(ct_lookup(&SBOX, 0x00), 0x63);
         assert_eq!(ct_lookup(&SBOX, 0x01), 0x7c);
         assert_eq!(ct_lookup(&SBOX, 0xff), 0x16);
-        
+
         // Test inverse
         assert_eq!(ct_lookup(&INV_SBOX, 0x63), 0x00);
         assert_eq!(ct_lookup(&INV_SBOX, 0x7c), 0x01);

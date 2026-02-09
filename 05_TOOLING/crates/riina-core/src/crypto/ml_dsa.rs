@@ -30,8 +30,8 @@
 //! - SHAKE128/SHAKE256 for PRF, XOF, and hashing
 //! - Key generation, signing, and verification
 
-use crate::crypto::{CryptoError, CryptoResult, Signature};
 use crate::crypto::keccak::{Shake128, Shake256};
+use crate::crypto::{CryptoError, CryptoResult, Signature};
 use crate::zeroize::Zeroize;
 
 /// ML-DSA-65 parameters (FIPS 204, Table 1)
@@ -70,38 +70,32 @@ pub mod params {
 
 /// Zetas for NTT in Montgomery domain
 const ZETAS: [i32; 256] = [
-         0,    25847, -2608894,  -518909,   237124,  -777960,  -876248,   466468,
-   1826347,  2353451,  -359251, -2091905,  3119733, -2884855,  3111497,  2680103,
-   2725464,  1024112, -1079900,  3585928,  -549488, -1119584,  2619752, -2108549,
-  -2118186, -3859737, -1399561, -3277672,  1757237,   -19422,  4010497,   280005,
-   2706023,    95776,  3077325,  3530437, -1661693, -3592148, -2537516,  3915439,
-  -3861115, -3043716,  3574422, -2867647,  3539968,  -300467,  2348700,  -539299,
-  -1699267, -1643818,  3505694, -3821735,  3507263, -2140649, -1600420,  3699596,
-    811944,   531354,   954230,  3881043,  3900724, -2556880,  2071892, -2797779,
-  -3930395, -1528703, -3677745, -3041255, -1452451,  3475950,  2176455, -1585221,
-  -1257611,  1939314, -4083598, -1000202, -3190144, -3157330, -3632928,   126922,
-   3412210,  -983419,  2147896,  2715295, -2967645, -3693493,  -411027, -2477047,
-   -671102, -1228525,   -22981, -1308169,  -381987,  1349076,  1852771, -1430430,
-  -3343383,   264944,   508951,  3097992,    44288, -1100098,   904516,  3958618,
-  -3724342,    -8578,  1653064, -3249728,  2389356,  -210977,   759969, -1316856,
-    189548, -3553272,  3159746, -1851402, -2409325,  -177440,  1315589,  1341330,
-   1285669, -1584928,  -812732, -1439742, -3019102, -3881060, -3628969,  3839961,
-   2091667,  3407706,  2316500,  3817976, -3342478,  2244091, -2446433, -3562462,
-    266997,  2434439, -1235728,  3513181, -3520352, -3759364, -1197226, -3193378,
-    900702,  1859098,   909542,   819034,   495491, -1613174,   -43260,  -522500,
-   -655327, -3122442,  2031748,  3207046, -3556995,  -525098,  -768622, -3595838,
-    342297,   286988, -2437823,  4108315,  3437287, -3342277,  1735879,   203044,
-   2842341,  2691481, -2590150,  1265009,  4055324,  1247620,  2486353,  1595974,
-  -3767016,  1250494,  2635921, -3548272, -2994039,  1869119,  1903435, -1050970,
-  -1333058,  1237275, -3318210, -1430225,  -451100,  1312455,  3306115, -1962642,
-  -1279661,  1917081, -2546312, -1374803,  1500165,   777191,  2235880,  3406031,
-   -542412, -2831860, -1671176, -1846953, -2584293, -3724270,   594136, -3776993,
-  -2013608,  2432395,  2454455,  -164721,  1957272,  3369112,   185531, -1207385,
-  -3183426,   162844,  1616392,  3014001,   810149,  1652634, -3694233, -1799107,
-  -3038916,  3523897,  3866901,   269760,  2213111,  -975884,  1717735,   472078,
-   -426683,  1723600, -1803090,  1910376, -1667432, -1104333,  -260646, -3833893,
-  -2939036, -2235985,  -420899, -2286327,   183443,  -976891,  1612842, -3545687,
-   -554416,  3919660,   -48306, -1362209,  3937738,  1400424,  -846154,  1976782,
+    0, 25847, -2608894, -518909, 237124, -777960, -876248, 466468, 1826347, 2353451, -359251,
+    -2091905, 3119733, -2884855, 3111497, 2680103, 2725464, 1024112, -1079900, 3585928, -549488,
+    -1119584, 2619752, -2108549, -2118186, -3859737, -1399561, -3277672, 1757237, -19422, 4010497,
+    280005, 2706023, 95776, 3077325, 3530437, -1661693, -3592148, -2537516, 3915439, -3861115,
+    -3043716, 3574422, -2867647, 3539968, -300467, 2348700, -539299, -1699267, -1643818, 3505694,
+    -3821735, 3507263, -2140649, -1600420, 3699596, 811944, 531354, 954230, 3881043, 3900724,
+    -2556880, 2071892, -2797779, -3930395, -1528703, -3677745, -3041255, -1452451, 3475950,
+    2176455, -1585221, -1257611, 1939314, -4083598, -1000202, -3190144, -3157330, -3632928, 126922,
+    3412210, -983419, 2147896, 2715295, -2967645, -3693493, -411027, -2477047, -671102, -1228525,
+    -22981, -1308169, -381987, 1349076, 1852771, -1430430, -3343383, 264944, 508951, 3097992,
+    44288, -1100098, 904516, 3958618, -3724342, -8578, 1653064, -3249728, 2389356, -210977, 759969,
+    -1316856, 189548, -3553272, 3159746, -1851402, -2409325, -177440, 1315589, 1341330, 1285669,
+    -1584928, -812732, -1439742, -3019102, -3881060, -3628969, 3839961, 2091667, 3407706, 2316500,
+    3817976, -3342478, 2244091, -2446433, -3562462, 266997, 2434439, -1235728, 3513181, -3520352,
+    -3759364, -1197226, -3193378, 900702, 1859098, 909542, 819034, 495491, -1613174, -43260,
+    -522500, -655327, -3122442, 2031748, 3207046, -3556995, -525098, -768622, -3595838, 342297,
+    286988, -2437823, 4108315, 3437287, -3342277, 1735879, 203044, 2842341, 2691481, -2590150,
+    1265009, 4055324, 1247620, 2486353, 1595974, -3767016, 1250494, 2635921, -3548272, -2994039,
+    1869119, 1903435, -1050970, -1333058, 1237275, -3318210, -1430225, -451100, 1312455, 3306115,
+    -1962642, -1279661, 1917081, -2546312, -1374803, 1500165, 777191, 2235880, 3406031, -542412,
+    -2831860, -1671176, -1846953, -2584293, -3724270, 594136, -3776993, -2013608, 2432395, 2454455,
+    -164721, 1957272, 3369112, 185531, -1207385, -3183426, 162844, 1616392, 3014001, 810149,
+    1652634, -3694233, -1799107, -3038916, 3523897, 3866901, 269760, 2213111, -975884, 1717735,
+    472078, -426683, 1723600, -1803090, 1910376, -1667432, -1104333, -260646, -3833893, -2939036,
+    -2235985, -420899, -2286327, 183443, -976891, 1612842, -3545687, -554416, 3919660, -48306,
+    -1362209, 3937738, 1400424, -846154, 1976782,
 ];
 
 /// Montgomery constant: -Q^(-1) mod 2^32
@@ -163,7 +157,9 @@ struct Poly {
 
 impl Poly {
     fn zero() -> Self {
-        Self { coeffs: [0; params::N] }
+        Self {
+            coeffs: [0; params::N],
+        }
     }
 
     fn reduce(&mut self) {
@@ -186,9 +182,13 @@ impl Poly {
             // center around 0
             let mut t = c;
             t = reduce32(t);
-            if t < 0 { t = -t; }
+            if t < 0 {
+                t = -t;
+            }
             // also handle case where t > Q/2
-            if t > (q - 1) / 2 { t = q - t; }
+            if t > (q - 1) / 2 {
+                t = q - t;
+            }
             if t >= bound {
                 return false;
             }
@@ -290,31 +290,45 @@ struct PolyVecK {
 
 impl PolyVecK {
     fn zero() -> Self {
-        Self { polys: core::array::from_fn(|_| Poly::zero()) }
+        Self {
+            polys: core::array::from_fn(|_| Poly::zero()),
+        }
     }
 
     fn ntt(&mut self) {
-        for p in &mut self.polys { p.ntt(); }
+        for p in &mut self.polys {
+            p.ntt();
+        }
     }
 
     fn inv_ntt(&mut self) {
-        for p in &mut self.polys { p.inv_ntt(); }
+        for p in &mut self.polys {
+            p.inv_ntt();
+        }
     }
 
     fn reduce(&mut self) {
-        for p in &mut self.polys { p.reduce(); }
+        for p in &mut self.polys {
+            p.reduce();
+        }
     }
 
     fn caddq(&mut self) {
-        for p in &mut self.polys { p.caddq(); }
+        for p in &mut self.polys {
+            p.caddq();
+        }
     }
 
     fn add(&mut self, other: &PolyVecK) {
-        for i in 0..params::K { self.polys[i].add(&other.polys[i]); }
+        for i in 0..params::K {
+            self.polys[i].add(&other.polys[i]);
+        }
     }
 
     fn sub(&mut self, other: &PolyVecK) {
-        for i in 0..params::K { self.polys[i].sub(&other.polys[i]); }
+        for i in 0..params::K {
+            self.polys[i].sub(&other.polys[i]);
+        }
     }
 
     fn check_norm(&self, bound: u32) -> bool {
@@ -322,7 +336,9 @@ impl PolyVecK {
     }
 
     fn shift_left_d(&mut self) {
-        for p in &mut self.polys { p.shift_left_d(); }
+        for p in &mut self.polys {
+            p.shift_left_d();
+        }
     }
 }
 
@@ -334,27 +350,39 @@ struct PolyVecL {
 
 impl PolyVecL {
     fn zero() -> Self {
-        Self { polys: core::array::from_fn(|_| Poly::zero()) }
+        Self {
+            polys: core::array::from_fn(|_| Poly::zero()),
+        }
     }
 
     fn ntt(&mut self) {
-        for p in &mut self.polys { p.ntt(); }
+        for p in &mut self.polys {
+            p.ntt();
+        }
     }
 
     fn inv_ntt(&mut self) {
-        for p in &mut self.polys { p.inv_ntt(); }
+        for p in &mut self.polys {
+            p.inv_ntt();
+        }
     }
 
     fn reduce(&mut self) {
-        for p in &mut self.polys { p.reduce(); }
+        for p in &mut self.polys {
+            p.reduce();
+        }
     }
 
     fn caddq(&mut self) {
-        for p in &mut self.polys { p.caddq(); }
+        for p in &mut self.polys {
+            p.caddq();
+        }
     }
 
     fn add(&mut self, other: &PolyVecL) {
-        for i in 0..params::L { self.polys[i].add(&other.polys[i]); }
+        for i in 0..params::L {
+            self.polys[i].add(&other.polys[i]);
+        }
     }
 
     fn check_norm(&self, bound: u32) -> bool {
@@ -369,7 +397,9 @@ struct PolyMatKL {
 
 impl PolyMatKL {
     fn zero() -> Self {
-        Self { rows: core::array::from_fn(|_| PolyVecL::zero()) }
+        Self {
+            rows: core::array::from_fn(|_| PolyVecL::zero()),
+        }
     }
 
     /// Matrix * vector (in NTT domain): result_k = sum_j(mat[k][j] * v[j])
@@ -399,7 +429,11 @@ fn power2round(r: i32) -> (i32, i32) {
     let r0 = (r_pos % d) as i32;
     let r1 = (r_pos / d) as i32;
     // center r0 in [-(d/2), d/2)
-    let r0 = if r0 > (d / 2) as i32 { r0 - d as i32 } else { r0 };
+    let r0 = if r0 > (d / 2) as i32 {
+        r0 - d as i32
+    } else {
+        r0
+    };
     let r1_adj = if r0 < 0 { r1 + 1 } else { r1 };
     // r = r1_adj * 2^D + r0 (mod Q)
     (r1_adj, r0)
@@ -440,7 +474,11 @@ fn low_bits(r: i32) -> i32 {
 fn make_hint(z: i32, r: i32) -> i32 {
     let r1 = high_bits(r);
     let v1 = high_bits(freeze(r + z));
-    if r1 != v1 { 1 } else { 0 }
+    if r1 != v1 {
+        1
+    } else {
+        0
+    }
 }
 
 /// UseHint: adjust high bits based on hint
@@ -454,9 +492,17 @@ fn use_hint(hint: i32, r: i32) -> i32 {
     }
 
     if r0 > 0 {
-        if r1 + 1 >= m { 0 } else { r1 + 1 }
+        if r1 + 1 >= m {
+            0
+        } else {
+            r1 + 1
+        }
     } else {
-        if r1 == 0 { m - 1 } else { r1 - 1 }
+        if r1 == 0 {
+            m - 1
+        } else {
+            r1 - 1
+        }
     }
 }
 
@@ -513,10 +559,10 @@ fn expand_matrix(mat: &mut PolyMatKL, rho: &[u8; 32]) {
 fn sample_eta(poly: &mut Poly, seed: &[u8; 64], nonce: u16) {
     let eta = params::ETA;
     let prf_len = if eta == 2 { 128 } else { 192 }; // n/4 * eta bytes for eta=4 -> n*eta/2 = 512. Actually eta=4 uses 128+256...
-    // For Dilithium eta=4: 256 * 4 / 4 = 256 bytes, but ref uses SHAKE256(seed||nonce) with 136*2 = 272 bytes
-    // Actually: each coefficient uses 2*eta bits. For eta=4: 8 bits per coeff, 256 bytes total.
-    // But the reference uses STREAM256_BLOCKBYTES = 136. We need ceil(256*eta/2 / 8) bytes.
-    // For eta=4: 256 coeffs, each needs 4+4=8 bits, so 256 bytes.
+                                                    // For Dilithium eta=4: 256 * 4 / 4 = 256 bytes, but ref uses SHAKE256(seed||nonce) with 136*2 = 272 bytes
+                                                    // Actually: each coefficient uses 2*eta bits. For eta=4: 8 bits per coeff, 256 bytes total.
+                                                    // But the reference uses STREAM256_BLOCKBYTES = 136. We need ceil(256*eta/2 / 8) bytes.
+                                                    // For eta=4: 256 coeffs, each needs 4+4=8 bits, so 256 bytes.
     let needed = params::N; // For eta=4, we need 256 bytes (1 byte per coefficient)
 
     let mut buf = [0u8; 512]; // enough
@@ -551,9 +597,13 @@ fn sample_eta(poly: &mut Poly, seed: &[u8; 64], nonce: u16) {
         for i in 0..params::N {
             let byte = buf[i];
             let a_bits = byte & 0x0F; // first 4 bits
-            let b_bits = byte >> 4;   // next 4 bits
-            let a: i32 = ((a_bits & 1) + ((a_bits >> 1) & 1) + ((a_bits >> 2) & 1) + ((a_bits >> 3) & 1)) as i32;
-            let b: i32 = ((b_bits & 1) + ((b_bits >> 1) & 1) + ((b_bits >> 2) & 1) + ((b_bits >> 3) & 1)) as i32;
+            let b_bits = byte >> 4; // next 4 bits
+            let a: i32 =
+                ((a_bits & 1) + ((a_bits >> 1) & 1) + ((a_bits >> 2) & 1) + ((a_bits >> 3) & 1))
+                    as i32;
+            let b: i32 =
+                ((b_bits & 1) + ((b_bits >> 1) & 1) + ((b_bits >> 2) & 1) + ((b_bits >> 3) & 1))
+                    as i32;
             poly.coeffs[i] = a - b;
         }
     } else if eta == 2 {
@@ -598,7 +648,9 @@ fn sample_gamma1(poly: &mut Poly, seed: &[u8; 64], nonce: u16) {
         // Hmm, let me reconsider. 20 bits per coeff, 256 coeffs = 5120 bits = 640 bytes.
         // Pack: 4 coefficients from 10 bytes (80 bits = 4*20)
         let base = i * 10;
-        if base + 10 > needed { break; }
+        if base + 10 > needed {
+            break;
+        }
         // More straightforward: read individual 20-bit values
         // coeff[4i+j] from 20 bits at bit position (4i+j)*20
         let bit_offset = 4 * i * 20;
@@ -607,7 +659,10 @@ fn sample_gamma1(poly: &mut Poly, seed: &[u8; 64], nonce: u16) {
             let byte_idx = bo / 8;
             let bit_idx = bo % 8;
             let val = if byte_idx + 2 < needed {
-                ((buf[byte_idx] as u32) | ((buf[byte_idx + 1] as u32) << 8) | ((buf[byte_idx + 2] as u32) << 16)) >> bit_idx
+                ((buf[byte_idx] as u32)
+                    | ((buf[byte_idx + 1] as u32) << 8)
+                    | ((buf[byte_idx + 2] as u32) << 16))
+                    >> bit_idx
             } else {
                 0
             };
@@ -940,18 +995,30 @@ impl MlDsa65SigningKey {
     /// Sign a message (deterministic, FIPS 204 Algorithm 2)
     pub fn sign(&self, message: &[u8]) -> CryptoResult<[u8; SIGNATURE_SIZE]> {
         // Parse secret key
-        let rho: [u8; 32] = self.bytes[SK_RHO_OFFSET..SK_RHO_OFFSET + 32].try_into().unwrap();
-        let key_k: [u8; 32] = self.bytes[SK_K_OFFSET..SK_K_OFFSET + 32].try_into().unwrap();
-        let tr: [u8; 64] = self.bytes[SK_TR_OFFSET..SK_TR_OFFSET + 64].try_into().unwrap();
+        let rho: [u8; 32] = self.bytes[SK_RHO_OFFSET..SK_RHO_OFFSET + 32]
+            .try_into()
+            .unwrap();
+        let key_k: [u8; 32] = self.bytes[SK_K_OFFSET..SK_K_OFFSET + 32]
+            .try_into()
+            .unwrap();
+        let tr: [u8; 64] = self.bytes[SK_TR_OFFSET..SK_TR_OFFSET + 64]
+            .try_into()
+            .unwrap();
 
         // Unpack s1, s2, t0
         let mut s1 = PolyVecL::zero();
         for i in 0..params::L {
-            unpack_eta(&self.bytes[SK_S1_OFFSET + i * 128..SK_S1_OFFSET + (i + 1) * 128], &mut s1.polys[i]);
+            unpack_eta(
+                &self.bytes[SK_S1_OFFSET + i * 128..SK_S1_OFFSET + (i + 1) * 128],
+                &mut s1.polys[i],
+            );
         }
         let mut s2 = PolyVecK::zero();
         for i in 0..params::K {
-            unpack_eta(&self.bytes[SK_S2_OFFSET + i * 128..SK_S2_OFFSET + (i + 1) * 128], &mut s2.polys[i]);
+            unpack_eta(
+                &self.bytes[SK_S2_OFFSET + i * 128..SK_S2_OFFSET + (i + 1) * 128],
+                &mut s2.polys[i],
+            );
         }
         let mut t0 = PolyVecK::zero();
         unpack_t0(&self.bytes[SK_T0_OFFSET..], &mut t0);
@@ -1076,7 +1143,9 @@ impl MlDsa65SigningKey {
                         break;
                     }
                 }
-                if !low_norm_ok { break; }
+                if !low_norm_ok {
+                    break;
+                }
             }
             if !low_norm_ok {
                 continue;
@@ -1113,9 +1182,13 @@ impl MlDsa65SigningKey {
 
             // Pack signature: (c_tilde, z, h)
             let mut sig = [0u8; SIGNATURE_SIZE];
-            sig[SIG_CTILDE_OFFSET..SIG_CTILDE_OFFSET + params::CTILDE_BYTES].copy_from_slice(&c_tilde);
+            sig[SIG_CTILDE_OFFSET..SIG_CTILDE_OFFSET + params::CTILDE_BYTES]
+                .copy_from_slice(&c_tilde);
             for i in 0..params::L {
-                pack_z(&z.polys[i], &mut sig[SIG_Z_OFFSET + i * 640..SIG_Z_OFFSET + (i + 1) * 640]);
+                pack_z(
+                    &z.polys[i],
+                    &mut sig[SIG_Z_OFFSET + i * 640..SIG_Z_OFFSET + (i + 1) * 640],
+                );
             }
             pack_hint(&hint, &mut sig[SIG_H_OFFSET..]);
 
@@ -1124,7 +1197,11 @@ impl MlDsa65SigningKey {
     }
 
     /// Sign with hedged randomness
-    pub fn sign_hedged(&self, message: &[u8], random: &[u8; 32]) -> CryptoResult<[u8; SIGNATURE_SIZE]> {
+    pub fn sign_hedged(
+        &self,
+        message: &[u8],
+        random: &[u8; 32],
+    ) -> CryptoResult<[u8; SIGNATURE_SIZE]> {
         // In hedged mode, replace K with H(K || random) in rho' computation
         // For now, use deterministic signing (the hedged variant just provides
         // side-channel protection by mixing in randomness)
@@ -1136,7 +1213,9 @@ impl MlDsa65SigningKey {
     #[must_use]
     pub fn verifying_key(&self) -> MlDsa65VerifyingKey {
         // Reconstruct public key from secret key components
-        let rho: [u8; 32] = self.bytes[SK_RHO_OFFSET..SK_RHO_OFFSET + 32].try_into().unwrap();
+        let rho: [u8; 32] = self.bytes[SK_RHO_OFFSET..SK_RHO_OFFSET + 32]
+            .try_into()
+            .unwrap();
 
         // We need t1 which is stored in the public key format.
         // Since we store (rho, K, tr, s1, s2, t0) in sk, we need to recompute t1.
@@ -1146,11 +1225,17 @@ impl MlDsa65SigningKey {
 
         let mut s1 = PolyVecL::zero();
         for i in 0..params::L {
-            unpack_eta(&self.bytes[SK_S1_OFFSET + i * 128..SK_S1_OFFSET + (i + 1) * 128], &mut s1.polys[i]);
+            unpack_eta(
+                &self.bytes[SK_S1_OFFSET + i * 128..SK_S1_OFFSET + (i + 1) * 128],
+                &mut s1.polys[i],
+            );
         }
         let mut s2 = PolyVecK::zero();
         for i in 0..params::K {
-            unpack_eta(&self.bytes[SK_S2_OFFSET + i * 128..SK_S2_OFFSET + (i + 1) * 128], &mut s2.polys[i]);
+            unpack_eta(
+                &self.bytes[SK_S2_OFFSET + i * 128..SK_S2_OFFSET + (i + 1) * 128],
+                &mut s2.polys[i],
+            );
         }
 
         let mut a_hat = PolyMatKL::zero();
@@ -1206,7 +1291,9 @@ impl MlDsa65VerifyingKey {
 
     /// Verify a signature (FIPS 204 Algorithm 3)
     pub fn verify(&self, message: &[u8], signature: &[u8; SIGNATURE_SIZE]) -> CryptoResult<()> {
-        let rho: [u8; 32] = self.bytes[PK_RHO_OFFSET..PK_RHO_OFFSET + 32].try_into().unwrap();
+        let rho: [u8; 32] = self.bytes[PK_RHO_OFFSET..PK_RHO_OFFSET + 32]
+            .try_into()
+            .unwrap();
 
         // Unpack t1
         let mut t1 = PolyVecK::zero();
@@ -1216,7 +1303,10 @@ impl MlDsa65VerifyingKey {
         let c_tilde = &signature[SIG_CTILDE_OFFSET..SIG_CTILDE_OFFSET + params::CTILDE_BYTES];
         let mut z = PolyVecL::zero();
         for i in 0..params::L {
-            unpack_z(&signature[SIG_Z_OFFSET + i * 640..SIG_Z_OFFSET + (i + 1) * 640], &mut z.polys[i]);
+            unpack_z(
+                &signature[SIG_Z_OFFSET + i * 640..SIG_Z_OFFSET + (i + 1) * 640],
+                &mut z.polys[i],
+            );
         }
         let mut h = PolyVecK::zero();
         if !unpack_hint(&signature[SIG_H_OFFSET..], &mut h) {
@@ -1383,10 +1473,16 @@ impl MlDsa65KeyPair {
         sk[SK_K_OFFSET..SK_K_OFFSET + 32].copy_from_slice(&key_k);
         sk[SK_TR_OFFSET..SK_TR_OFFSET + 64].copy_from_slice(&tr);
         for i in 0..params::L {
-            pack_eta(&s1.polys[i], &mut sk[SK_S1_OFFSET + i * 128..SK_S1_OFFSET + (i + 1) * 128]);
+            pack_eta(
+                &s1.polys[i],
+                &mut sk[SK_S1_OFFSET + i * 128..SK_S1_OFFSET + (i + 1) * 128],
+            );
         }
         for i in 0..params::K {
-            pack_eta(&s2.polys[i], &mut sk[SK_S2_OFFSET + i * 128..SK_S2_OFFSET + (i + 1) * 128]);
+            pack_eta(
+                &s2.polys[i],
+                &mut sk[SK_S2_OFFSET + i * 128..SK_S2_OFFSET + (i + 1) * 128],
+            );
         }
         pack_t0(&t0, &mut sk[SK_T0_OFFSET..]);
 
@@ -1527,7 +1623,11 @@ mod tests {
         assert_eq!(signature.len(), SIGNATURE_SIZE);
 
         let result = keypair.verify(message, &signature);
-        assert!(result.is_ok(), "Signature verification failed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Signature verification failed: {:?}",
+            result
+        );
     }
 
     #[test]
@@ -1558,9 +1658,13 @@ mod tests {
             let reconstructed = r1 * (1 << params::D) + r0;
             let original = freeze(val);
             assert_eq!(
-                freeze(reconstructed), original,
+                freeze(reconstructed),
+                original,
                 "Power2Round roundtrip failed for {}: ({}, {}) -> {}",
-                val, r1, r0, reconstructed
+                val,
+                r1,
+                r0,
+                reconstructed
             );
         }
     }
@@ -1591,7 +1695,11 @@ mod tests {
         let mut unpacked = Poly::zero();
         unpack_eta(&buf, &mut unpacked);
         for i in 0..params::N {
-            assert_eq!(poly.coeffs[i], unpacked.coeffs[i], "eta pack/unpack mismatch at {}", i);
+            assert_eq!(
+                poly.coeffs[i], unpacked.coeffs[i],
+                "eta pack/unpack mismatch at {}",
+                i
+            );
         }
     }
 
@@ -1617,7 +1725,11 @@ mod tests {
         for i in 0..params::N {
             let expected = freeze(((original.coeffs[i] as i64 * mont) % params::Q as i64) as i32);
             let got = freeze(p.coeffs[i]);
-            assert_eq!(expected, got, "NTT roundtrip failed at index {}: expected {}, got {}", i, expected, got);
+            assert_eq!(
+                expected, got,
+                "NTT roundtrip failed at index {}: expected {}, got {}",
+                i, expected, got
+            );
         }
     }
 

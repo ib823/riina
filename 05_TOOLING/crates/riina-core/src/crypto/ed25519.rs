@@ -59,10 +59,9 @@ pub const SIGNATURE_SIZE: usize = 64;
 fn curve_d() -> FieldElement {
     // Little-endian encoding of d
     FieldElement::from_bytes(&[
-        0xa3, 0x78, 0x59, 0x13, 0xca, 0x4d, 0xeb, 0x75,
-        0xab, 0xd8, 0x41, 0x41, 0x4d, 0x0a, 0x70, 0x00,
-        0x98, 0xe8, 0x79, 0x77, 0x79, 0x40, 0xc7, 0x8c,
-        0x73, 0xfe, 0x6f, 0x2b, 0xee, 0x6c, 0x03, 0x52,
+        0xa3, 0x78, 0x59, 0x13, 0xca, 0x4d, 0xeb, 0x75, 0xab, 0xd8, 0x41, 0x41, 0x4d, 0x0a, 0x70,
+        0x00, 0x98, 0xe8, 0x79, 0x77, 0x79, 0x40, 0xc7, 0x8c, 0x73, 0xfe, 0x6f, 0x2b, 0xee, 0x6c,
+        0x03, 0x52,
     ])
 }
 
@@ -79,20 +78,18 @@ fn basepoint() -> EdwardsPoint {
     // Basepoint y-coordinate (4/5 mod p) in little-endian
     // y = 0x6666666666666666666666666666666666666666666666666666666666666658
     let by = FieldElement::from_bytes(&[
-        0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+        0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+        0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+        0x66, 0x66,
     ]);
 
     // Basepoint x-coordinate in little-endian
     // x = 0x216936d3cd6e53fec0a4e231fdd6dc5c692cc7609525a7b2c9562d608f25d51a
     // In little-endian bytes:
     let bx = FieldElement::from_bytes(&[
-        0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9,
-        0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7, 0x2c, 0x69,
-        0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0,
-        0xfe, 0x53, 0x6e, 0xcd, 0xd3, 0x36, 0x69, 0x21,
+        0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9, 0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7, 0x2c,
+        0x69, 0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0, 0xfe, 0x53, 0x6e, 0xcd, 0xd3, 0x36,
+        0x69, 0x21,
     ]);
 
     EdwardsPoint {
@@ -156,27 +153,27 @@ impl EdwardsPoint {
         // https://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html
         // add-2008-hwcd-4
 
-        let ypy = self.y + self.x;    // Y1 + X1
-        let ymy = self.y - self.x;    // Y1 - X1
-        let opy = other.y + other.x;  // Y2 + X2
-        let omy = other.y - other.x;  // Y2 - X2
+        let ypy = self.y + self.x; // Y1 + X1
+        let ymy = self.y - self.x; // Y1 - X1
+        let opy = other.y + other.x; // Y2 + X2
+        let omy = other.y - other.x; // Y2 - X2
 
-        let a = ymy * omy;            // A = (Y1-X1)*(Y2-X2)
-        let b = ypy * opy;            // B = (Y1+X1)*(Y2+X2)
-        let c = self.t * curve_2d() * other.t;  // C = T1 * 2*d * T2
-        let d = self.z * other.z;     // D = Z1 * Z2
-        let d2 = d + d;               // 2*D
+        let a = ymy * omy; // A = (Y1-X1)*(Y2-X2)
+        let b = ypy * opy; // B = (Y1+X1)*(Y2+X2)
+        let c = self.t * curve_2d() * other.t; // C = T1 * 2*d * T2
+        let d = self.z * other.z; // D = Z1 * Z2
+        let d2 = d + d; // 2*D
 
-        let e = b - a;                // E = B - A
-        let f = d2 - c;               // F = 2*D - C
-        let g = d2 + c;               // G = 2*D + C
-        let h = b + a;                // H = B + A
+        let e = b - a; // E = B - A
+        let f = d2 - c; // F = 2*D - C
+        let g = d2 + c; // G = 2*D + C
+        let h = b + a; // H = B + A
 
         Self {
-            x: e * f,                 // X3 = E * F
-            y: g * h,                 // Y3 = G * H
-            z: f * g,                 // Z3 = F * G
-            t: e * h,                 // T3 = E * H
+            x: e * f, // X3 = E * F
+            y: g * h, // Y3 = G * H
+            z: f * g, // Z3 = F * G
+            t: e * h, // T3 = E * H
         }
     }
 
@@ -189,23 +186,23 @@ impl EdwardsPoint {
         // https://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html
         // dbl-2008-hwcd
 
-        let a = self.x.square();      // A = X1²
-        let b = self.y.square();      // B = Y1²
+        let a = self.x.square(); // A = X1²
+        let b = self.y.square(); // B = Y1²
         let c = self.z.square();
-        let c = c + c;                // C = 2 * Z1²
-        let d = a.negate();           // D = a*A = -A (since a = -1)
+        let c = c + c; // C = 2 * Z1²
+        let d = a.negate(); // D = a*A = -A (since a = -1)
 
         let xpy = self.x + self.y;
         let e = xpy.square() - a - b; // E = (X1+Y1)² - A - B
-        let g = d + b;                // G = D + B
-        let f = g - c;                // F = G - C
-        let h = d - b;                // H = D - B
+        let g = d + b; // G = D + B
+        let f = g - c; // F = G - C
+        let h = d - b; // H = D - B
 
         Self {
-            x: e * f,                 // X3 = E * F
-            y: g * h,                 // Y3 = G * H
-            z: f * g,                 // Z3 = F * G
-            t: e * h,                 // T3 = E * H
+            x: e * f, // X3 = E * F
+            y: g * h, // Y3 = G * H
+            z: f * g, // Z3 = F * G
+            t: e * h, // T3 = E * H
         }
     }
 
@@ -298,8 +295,8 @@ impl EdwardsPoint {
 
         // Compute x² = (y² - 1) / (d*y² + 1)
         let y2 = y.square();
-        let u = y2 - FieldElement::ONE;         // u = y² - 1
-        let v = curve_d() * y2 + FieldElement::ONE;  // v = d*y² + 1
+        let u = y2 - FieldElement::ONE; // u = y² - 1
+        let v = curve_d() * y2 + FieldElement::ONE; // v = d*y² + 1
 
         // x = sqrt(u/v) = u * v³ * (u * v⁷)^((p-5)/8)
         let (x, is_valid) = sqrt_ratio_i(&u, &v);
@@ -374,7 +371,11 @@ fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (FieldElement, u8) {
     let sqrt_minus_one = get_sqrt_minus_one();
 
     // If vx² == -u, multiply x by sqrt(-1)
-    let x_corrected = if correct_neg == 1 { x * sqrt_minus_one } else { x };
+    let x_corrected = if correct_neg == 1 {
+        x * sqrt_minus_one
+    } else {
+        x
+    };
 
     let is_valid = correct | correct_neg;
 
@@ -392,49 +393,49 @@ fn pow_p_minus_5_over_8(x: &FieldElement) -> FieldElement {
     let z9 = z8 * *x;
     let z11 = z9 * z2;
     let z22 = z11.square();
-    let z2_5_0 = z22 * z9;  // x^31 = x^(2^5 - 1)
+    let z2_5_0 = z22 * z9; // x^31 = x^(2^5 - 1)
 
     let mut t = z2_5_0;
     for _ in 0..5 {
         t = t.square();
     }
-    let z2_10_0 = t * z2_5_0;  // x^(2^10 - 1)
+    let z2_10_0 = t * z2_5_0; // x^(2^10 - 1)
 
     t = z2_10_0;
     for _ in 0..10 {
         t = t.square();
     }
-    let z2_20_0 = t * z2_10_0;  // x^(2^20 - 1)
+    let z2_20_0 = t * z2_10_0; // x^(2^20 - 1)
 
     t = z2_20_0;
     for _ in 0..20 {
         t = t.square();
     }
-    let z2_40_0 = t * z2_20_0;  // x^(2^40 - 1)
+    let z2_40_0 = t * z2_20_0; // x^(2^40 - 1)
 
     t = z2_40_0;
     for _ in 0..10 {
         t = t.square();
     }
-    let z2_50_0 = t * z2_10_0;  // x^(2^50 - 1)
+    let z2_50_0 = t * z2_10_0; // x^(2^50 - 1)
 
     t = z2_50_0;
     for _ in 0..50 {
         t = t.square();
     }
-    let z2_100_0 = t * z2_50_0;  // x^(2^100 - 1)
+    let z2_100_0 = t * z2_50_0; // x^(2^100 - 1)
 
     t = z2_100_0;
     for _ in 0..100 {
         t = t.square();
     }
-    let z2_200_0 = t * z2_100_0;  // x^(2^200 - 1)
+    let z2_200_0 = t * z2_100_0; // x^(2^200 - 1)
 
     t = z2_200_0;
     for _ in 0..50 {
         t = t.square();
     }
-    let z2_250_0 = t * z2_50_0;  // x^(2^250 - 1)
+    let z2_250_0 = t * z2_50_0; // x^(2^250 - 1)
 
     // Now we need x^(2^252 - 3)
     // z2_250_0 = x^(2^250 - 1)
@@ -442,8 +443,8 @@ fn pow_p_minus_5_over_8(x: &FieldElement) -> FieldElement {
     // z2_250_0^4 * x = x^(2^252 - 3)
 
     t = z2_250_0;
-    t = t.square().square();  // t = x^(2^252 - 4)
-    t * *x                    // t = x^(2^252 - 3)
+    t = t.square().square(); // t = x^(2^252 - 4)
+    t * *x // t = x^(2^252 - 3)
 }
 
 /// Get sqrt(-1) mod p
@@ -452,10 +453,9 @@ fn get_sqrt_minus_one() -> FieldElement {
     // Precomputed: sqrt(-1) mod (2^255 - 19)
     // = 0x2b8324804fc1df0b2b4d00993dfbd7a72f431806ad2fe478c4ee1b274a0ea0b0
     FieldElement::from_bytes(&[
-        0xb0, 0xa0, 0x0e, 0x4a, 0x27, 0x1b, 0xee, 0xc4,
-        0x78, 0xe4, 0x2f, 0xad, 0x06, 0x18, 0x43, 0x2f,
-        0xa7, 0xd7, 0xfb, 0x3d, 0x99, 0x00, 0x4d, 0x2b,
-        0x0b, 0xdf, 0xc1, 0x4f, 0x80, 0x24, 0x83, 0x2b,
+        0xb0, 0xa0, 0x0e, 0x4a, 0x27, 0x1b, 0xee, 0xc4, 0x78, 0xe4, 0x2f, 0xad, 0x06, 0x18, 0x43,
+        0x2f, 0xa7, 0xd7, 0xfb, 0x3d, 0x99, 0x00, 0x4d, 0x2b, 0x0b, 0xdf, 0xc1, 0x4f, 0x80, 0x24,
+        0x83, 0x2b,
     ])
 }
 
@@ -514,10 +514,8 @@ impl Scalar {
 
 /// The group order L in little-endian bytes
 const L_BYTES: [u8; 32] = [
-    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
 ];
 
 /// Reduce a 512-bit scalar modulo L
@@ -633,17 +631,39 @@ fn reduce_scalar_wide(bytes: &[u8; 64]) -> Scalar {
 
     // Carry propagation
     let mut carry: i64;
-    carry = (s6 + (1 << 20)) >> 21; s7 += carry; s6 -= carry << 21;
-    carry = (s8 + (1 << 20)) >> 21; s9 += carry; s8 -= carry << 21;
-    carry = (s10 + (1 << 20)) >> 21; s11 += carry; s10 -= carry << 21;
-    carry = (s12 + (1 << 20)) >> 21; s13 += carry; s12 -= carry << 21;
-    carry = (s14 + (1 << 20)) >> 21; s15 += carry; s14 -= carry << 21;
-    carry = (s16 + (1 << 20)) >> 21; s17 += carry; s16 -= carry << 21;
-    carry = (s7 + (1 << 20)) >> 21; s8 += carry; s7 -= carry << 21;
-    carry = (s9 + (1 << 20)) >> 21; s10 += carry; s9 -= carry << 21;
-    carry = (s11 + (1 << 20)) >> 21; s12 += carry; s11 -= carry << 21;
-    carry = (s13 + (1 << 20)) >> 21; s14 += carry; s13 -= carry << 21;
-    carry = (s15 + (1 << 20)) >> 21; s16 += carry; s15 -= carry << 21;
+    carry = (s6 + (1 << 20)) >> 21;
+    s7 += carry;
+    s6 -= carry << 21;
+    carry = (s8 + (1 << 20)) >> 21;
+    s9 += carry;
+    s8 -= carry << 21;
+    carry = (s10 + (1 << 20)) >> 21;
+    s11 += carry;
+    s10 -= carry << 21;
+    carry = (s12 + (1 << 20)) >> 21;
+    s13 += carry;
+    s12 -= carry << 21;
+    carry = (s14 + (1 << 20)) >> 21;
+    s15 += carry;
+    s14 -= carry << 21;
+    carry = (s16 + (1 << 20)) >> 21;
+    s17 += carry;
+    s16 -= carry << 21;
+    carry = (s7 + (1 << 20)) >> 21;
+    s8 += carry;
+    s7 -= carry << 21;
+    carry = (s9 + (1 << 20)) >> 21;
+    s10 += carry;
+    s9 -= carry << 21;
+    carry = (s11 + (1 << 20)) >> 21;
+    s12 += carry;
+    s11 -= carry << 21;
+    carry = (s13 + (1 << 20)) >> 21;
+    s14 += carry;
+    s13 -= carry << 21;
+    carry = (s15 + (1 << 20)) >> 21;
+    s16 += carry;
+    s15 -= carry << 21;
 
     // Second reduction pass
     s5 += s17 * 666643;
@@ -695,18 +715,42 @@ fn reduce_scalar_wide(bytes: &[u8; 64]) -> Scalar {
     s12 = 0;
 
     // Final carry propagation
-    carry = (s0 + (1 << 20)) >> 21; s1 += carry; s0 -= carry << 21;
-    carry = (s2 + (1 << 20)) >> 21; s3 += carry; s2 -= carry << 21;
-    carry = (s4 + (1 << 20)) >> 21; s5 += carry; s4 -= carry << 21;
-    carry = (s6 + (1 << 20)) >> 21; s7 += carry; s6 -= carry << 21;
-    carry = (s8 + (1 << 20)) >> 21; s9 += carry; s8 -= carry << 21;
-    carry = (s10 + (1 << 20)) >> 21; s11 += carry; s10 -= carry << 21;
-    carry = (s1 + (1 << 20)) >> 21; s2 += carry; s1 -= carry << 21;
-    carry = (s3 + (1 << 20)) >> 21; s4 += carry; s3 -= carry << 21;
-    carry = (s5 + (1 << 20)) >> 21; s6 += carry; s5 -= carry << 21;
-    carry = (s7 + (1 << 20)) >> 21; s8 += carry; s7 -= carry << 21;
-    carry = (s9 + (1 << 20)) >> 21; s10 += carry; s9 -= carry << 21;
-    carry = (s11 + (1 << 20)) >> 21; s12 += carry; s11 -= carry << 21;
+    carry = (s0 + (1 << 20)) >> 21;
+    s1 += carry;
+    s0 -= carry << 21;
+    carry = (s2 + (1 << 20)) >> 21;
+    s3 += carry;
+    s2 -= carry << 21;
+    carry = (s4 + (1 << 20)) >> 21;
+    s5 += carry;
+    s4 -= carry << 21;
+    carry = (s6 + (1 << 20)) >> 21;
+    s7 += carry;
+    s6 -= carry << 21;
+    carry = (s8 + (1 << 20)) >> 21;
+    s9 += carry;
+    s8 -= carry << 21;
+    carry = (s10 + (1 << 20)) >> 21;
+    s11 += carry;
+    s10 -= carry << 21;
+    carry = (s1 + (1 << 20)) >> 21;
+    s2 += carry;
+    s1 -= carry << 21;
+    carry = (s3 + (1 << 20)) >> 21;
+    s4 += carry;
+    s3 -= carry << 21;
+    carry = (s5 + (1 << 20)) >> 21;
+    s6 += carry;
+    s5 -= carry << 21;
+    carry = (s7 + (1 << 20)) >> 21;
+    s8 += carry;
+    s7 -= carry << 21;
+    carry = (s9 + (1 << 20)) >> 21;
+    s10 += carry;
+    s9 -= carry << 21;
+    carry = (s11 + (1 << 20)) >> 21;
+    s12 += carry;
+    s11 -= carry << 21;
 
     // Reduce s12 one more time
     s0 += s12 * 666643;
@@ -718,18 +762,42 @@ fn reduce_scalar_wide(bytes: &[u8; 64]) -> Scalar {
     s12 = 0;
 
     // Final carries
-    carry = s0 >> 21; s1 += carry; s0 -= carry << 21;
-    carry = s1 >> 21; s2 += carry; s1 -= carry << 21;
-    carry = s2 >> 21; s3 += carry; s2 -= carry << 21;
-    carry = s3 >> 21; s4 += carry; s3 -= carry << 21;
-    carry = s4 >> 21; s5 += carry; s4 -= carry << 21;
-    carry = s5 >> 21; s6 += carry; s5 -= carry << 21;
-    carry = s6 >> 21; s7 += carry; s6 -= carry << 21;
-    carry = s7 >> 21; s8 += carry; s7 -= carry << 21;
-    carry = s8 >> 21; s9 += carry; s8 -= carry << 21;
-    carry = s9 >> 21; s10 += carry; s9 -= carry << 21;
-    carry = s10 >> 21; s11 += carry; s10 -= carry << 21;
-    carry = s11 >> 21; s12 += carry; s11 -= carry << 21;
+    carry = s0 >> 21;
+    s1 += carry;
+    s0 -= carry << 21;
+    carry = s1 >> 21;
+    s2 += carry;
+    s1 -= carry << 21;
+    carry = s2 >> 21;
+    s3 += carry;
+    s2 -= carry << 21;
+    carry = s3 >> 21;
+    s4 += carry;
+    s3 -= carry << 21;
+    carry = s4 >> 21;
+    s5 += carry;
+    s4 -= carry << 21;
+    carry = s5 >> 21;
+    s6 += carry;
+    s5 -= carry << 21;
+    carry = s6 >> 21;
+    s7 += carry;
+    s6 -= carry << 21;
+    carry = s7 >> 21;
+    s8 += carry;
+    s7 -= carry << 21;
+    carry = s8 >> 21;
+    s9 += carry;
+    s8 -= carry << 21;
+    carry = s9 >> 21;
+    s10 += carry;
+    s9 -= carry << 21;
+    carry = s10 >> 21;
+    s11 += carry;
+    s10 -= carry << 21;
+    carry = s11 >> 21;
+    s12 += carry;
+    s11 -= carry << 21;
 
     // One more reduction for s12
     s0 += s12 * 666643;
@@ -739,17 +807,39 @@ fn reduce_scalar_wide(bytes: &[u8; 64]) -> Scalar {
     s4 += s12 * 136657;
     s5 -= s12 * 683901;
 
-    carry = s0 >> 21; s1 += carry; s0 -= carry << 21;
-    carry = s1 >> 21; s2 += carry; s1 -= carry << 21;
-    carry = s2 >> 21; s3 += carry; s2 -= carry << 21;
-    carry = s3 >> 21; s4 += carry; s3 -= carry << 21;
-    carry = s4 >> 21; s5 += carry; s4 -= carry << 21;
-    carry = s5 >> 21; s6 += carry; s5 -= carry << 21;
-    carry = s6 >> 21; s7 += carry; s6 -= carry << 21;
-    carry = s7 >> 21; s8 += carry; s7 -= carry << 21;
-    carry = s8 >> 21; s9 += carry; s8 -= carry << 21;
-    carry = s9 >> 21; s10 += carry; s9 -= carry << 21;
-    carry = s10 >> 21; s11 += carry; s10 -= carry << 21;
+    carry = s0 >> 21;
+    s1 += carry;
+    s0 -= carry << 21;
+    carry = s1 >> 21;
+    s2 += carry;
+    s1 -= carry << 21;
+    carry = s2 >> 21;
+    s3 += carry;
+    s2 -= carry << 21;
+    carry = s3 >> 21;
+    s4 += carry;
+    s3 -= carry << 21;
+    carry = s4 >> 21;
+    s5 += carry;
+    s4 -= carry << 21;
+    carry = s5 >> 21;
+    s6 += carry;
+    s5 -= carry << 21;
+    carry = s6 >> 21;
+    s7 += carry;
+    s6 -= carry << 21;
+    carry = s7 >> 21;
+    s8 += carry;
+    s7 -= carry << 21;
+    carry = s8 >> 21;
+    s9 += carry;
+    s8 -= carry << 21;
+    carry = s9 >> 21;
+    s10 += carry;
+    s9 -= carry << 21;
+    carry = s10 >> 21;
+    s11 += carry;
+    s10 -= carry << 21;
 
     // Pack into bytes
     let mut result = [0u8; 32];
@@ -796,7 +886,10 @@ fn load_3(bytes: &[u8]) -> i64 {
 
 /// Load 4 bytes as little-endian integer
 fn load_4(bytes: &[u8]) -> i64 {
-    i64::from(bytes[0]) | (i64::from(bytes[1]) << 8) | (i64::from(bytes[2]) << 16) | (i64::from(bytes[3]) << 24)
+    i64::from(bytes[0])
+        | (i64::from(bytes[1]) << 8)
+        | (i64::from(bytes[2]) << 16)
+        | (i64::from(bytes[3]) << 24)
 }
 
 /// Add two scalars modulo L
@@ -826,7 +919,9 @@ fn scalar_mul(a: &Scalar, b: &Scalar) -> Scalar {
         let mut carry: u32 = 0;
         for j in 0..32 {
             if i + j < 64 {
-                let p = u32::from(a.bytes[i]) * u32::from(b.bytes[j]) + u32::from(product[i + j]) + carry;
+                let p = u32::from(a.bytes[i]) * u32::from(b.bytes[j])
+                    + u32::from(product[i + j])
+                    + carry;
                 product[i + j] = p as u8;
                 carry = p >> 8;
             }
@@ -867,8 +962,8 @@ fn scalar_reduce(bytes: &mut [u8; 32]) {
     // If borrow == 0, bytes >= L, so use diff
     // If borrow == -1, bytes < L, so keep bytes
     // Create mask: 0xff when borrow == -1 (keep bytes), 0x00 when borrow == 0 (use diff)
-    let keep_original = (borrow != 0) as u8;  // 1 if borrow == -1, 0 if borrow == 0
-    let mask = keep_original.wrapping_neg();  // 0xff if keep, 0x00 if use diff
+    let keep_original = (borrow != 0) as u8; // 1 if borrow == -1, 0 if borrow == 0
+    let mask = keep_original.wrapping_neg(); // 0xff if keep, 0x00 if use diff
 
     for i in 0..32 {
         bytes[i] = (bytes[i] & mask) | (diff[i] & !mask);
@@ -905,9 +1000,9 @@ impl Ed25519SigningKey {
         // 2. Clamp the first 32 bytes to form the scalar
         let mut clamped = [0u8; 32];
         clamped.copy_from_slice(&expanded[..32]);
-        clamped[0] &= 248;   // Clear lowest 3 bits
-        clamped[31] &= 127;  // Clear highest bit
-        clamped[31] |= 64;   // Set second-highest bit
+        clamped[0] &= 248; // Clear lowest 3 bits
+        clamped[31] &= 127; // Clear highest bit
+        clamped[31] |= 64; // Set second-highest bit
 
         // 3. Compute public key: A = s * B
         let scalar = Scalar::from_bytes_mod_order(&clamped);
@@ -1207,7 +1302,11 @@ mod tests {
 
         // Verification should succeed
         let result = keypair.public_key().verify(message, &signature);
-        assert!(result.is_ok(), "Signature verification failed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Signature verification failed: {:?}",
+            result
+        );
     }
 
     #[test]
@@ -1218,7 +1317,9 @@ mod tests {
         let signature = keypair.sign(b"Original message");
 
         // Verification with different message should fail
-        let result = keypair.public_key().verify(b"Different message", &signature);
+        let result = keypair
+            .public_key()
+            .verify(b"Different message", &signature);
         assert!(result.is_err());
     }
 
@@ -1280,10 +1381,9 @@ mod tests {
 
         // y = 4/5 mod p
         let by = FieldElement::from_bytes(&[
-            0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+            0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+            0x66, 0x66, 0x66, 0x66,
         ]);
 
         let d = curve_d();
@@ -1316,10 +1416,9 @@ mod tests {
 
         // Expected x
         let bx = FieldElement::from_bytes(&[
-            0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9,
-            0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7, 0x2c, 0x69,
-            0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0,
-            0xfe, 0x53, 0x6e, 0xcd, 0xd3, 0x36, 0x69, 0x21,
+            0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9, 0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7,
+            0x2c, 0x69, 0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0, 0xfe, 0x53, 0x6e, 0xcd,
+            0xd3, 0x36, 0x69, 0x21,
         ]);
         let x2_expected = bx.square();
 
@@ -1376,17 +1475,15 @@ mod tests {
     fn test_ed25519_rfc8032_test1() {
         // Test vector 1 from RFC 8032
         let seed: [u8; 32] = [
-            0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60,
-            0xba, 0x84, 0x4a, 0xf4, 0x92, 0xec, 0x2c, 0xc4,
-            0x44, 0x49, 0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19,
-            0x70, 0x3b, 0xac, 0x03, 0x1c, 0xae, 0x7f, 0x60,
+            0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60, 0xba, 0x84, 0x4a, 0xf4, 0x92, 0xec,
+            0x2c, 0xc4, 0x44, 0x49, 0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19, 0x70, 0x3b, 0xac, 0x03,
+            0x1c, 0xae, 0x7f, 0x60,
         ];
 
         let expected_public_key: [u8; 32] = [
-            0xd7, 0x5a, 0x98, 0x01, 0x82, 0xb1, 0x0a, 0xb7,
-            0xd5, 0x4b, 0xfe, 0xd3, 0xc9, 0x64, 0x07, 0x3a,
-            0x0e, 0xe1, 0x72, 0xf3, 0xda, 0xa6, 0x23, 0x25,
-            0xaf, 0x02, 0x1a, 0x68, 0xf7, 0x07, 0x51, 0x1a,
+            0xd7, 0x5a, 0x98, 0x01, 0x82, 0xb1, 0x0a, 0xb7, 0xd5, 0x4b, 0xfe, 0xd3, 0xc9, 0x64,
+            0x07, 0x3a, 0x0e, 0xe1, 0x72, 0xf3, 0xda, 0xa6, 0x23, 0x25, 0xaf, 0x02, 0x1a, 0x68,
+            0xf7, 0x07, 0x51, 0x1a,
         ];
 
         let keypair = Ed25519SigningKey::from_seed(&seed);
@@ -1395,13 +1492,10 @@ mod tests {
         // Empty message signature
         let signature = keypair.sign(b"");
         let expected_signature: [u8; 64] = [
-            0xe5, 0x56, 0x43, 0x00, 0xc3, 0x60, 0xac, 0x72,
-            0x90, 0x86, 0xe2, 0xcc, 0x80, 0x6e, 0x82, 0x8a,
-            0x84, 0x87, 0x7f, 0x1e, 0xb8, 0xe5, 0xd9, 0x74,
-            0xd8, 0x73, 0xe0, 0x65, 0x22, 0x49, 0x01, 0x55,
-            0x5f, 0xb8, 0x82, 0x15, 0x90, 0xa3, 0x3b, 0xac,
-            0xc6, 0x1e, 0x39, 0x70, 0x1c, 0xf9, 0xb4, 0x6b,
-            0xd2, 0x5b, 0xf5, 0xf0, 0x59, 0x5b, 0xbe, 0x24,
+            0xe5, 0x56, 0x43, 0x00, 0xc3, 0x60, 0xac, 0x72, 0x90, 0x86, 0xe2, 0xcc, 0x80, 0x6e,
+            0x82, 0x8a, 0x84, 0x87, 0x7f, 0x1e, 0xb8, 0xe5, 0xd9, 0x74, 0xd8, 0x73, 0xe0, 0x65,
+            0x22, 0x49, 0x01, 0x55, 0x5f, 0xb8, 0x82, 0x15, 0x90, 0xa3, 0x3b, 0xac, 0xc6, 0x1e,
+            0x39, 0x70, 0x1c, 0xf9, 0xb4, 0x6b, 0xd2, 0x5b, 0xf5, 0xf0, 0x59, 0x5b, 0xbe, 0x24,
             0x65, 0x51, 0x41, 0x43, 0x8e, 0x7a, 0x10, 0x0b,
         ];
         assert_eq!(signature, expected_signature);
@@ -1415,23 +1509,19 @@ mod tests {
     fn test_ed25519_rfc8032_test2() {
         // Test vector 2 from RFC 8032 (1 byte message)
         let seed: [u8; 32] = [
-            0x4c, 0xcd, 0x08, 0x9b, 0x28, 0xff, 0x96, 0xda,
-            0x9d, 0xb6, 0xc3, 0x46, 0xec, 0x11, 0x4e, 0x0f,
-            0x5b, 0x8a, 0x31, 0x9f, 0x35, 0xab, 0xa6, 0x24,
-            0xda, 0x8c, 0xf6, 0xed, 0x4f, 0xb8, 0xa6, 0xfb,
+            0x4c, 0xcd, 0x08, 0x9b, 0x28, 0xff, 0x96, 0xda, 0x9d, 0xb6, 0xc3, 0x46, 0xec, 0x11,
+            0x4e, 0x0f, 0x5b, 0x8a, 0x31, 0x9f, 0x35, 0xab, 0xa6, 0x24, 0xda, 0x8c, 0xf6, 0xed,
+            0x4f, 0xb8, 0xa6, 0xfb,
         ];
 
         let keypair = Ed25519SigningKey::from_seed(&seed);
         let signature = keypair.sign(&[0x72]); // Message is single byte 0x72
 
         let expected_signature: [u8; 64] = [
-            0x92, 0xa0, 0x09, 0xa9, 0xf0, 0xd4, 0xca, 0xb8,
-            0x72, 0x0e, 0x82, 0x0b, 0x5f, 0x64, 0x25, 0x40,
-            0xa2, 0xb2, 0x7b, 0x54, 0x16, 0x50, 0x3f, 0x8f,
-            0xb3, 0x76, 0x22, 0x23, 0xeb, 0xdb, 0x69, 0xda,
-            0x08, 0x5a, 0xc1, 0xe4, 0x3e, 0x15, 0x99, 0x6e,
-            0x45, 0x8f, 0x36, 0x13, 0xd0, 0xf1, 0x1d, 0x8c,
-            0x38, 0x7b, 0x2e, 0xae, 0xb4, 0x30, 0x2a, 0xee,
+            0x92, 0xa0, 0x09, 0xa9, 0xf0, 0xd4, 0xca, 0xb8, 0x72, 0x0e, 0x82, 0x0b, 0x5f, 0x64,
+            0x25, 0x40, 0xa2, 0xb2, 0x7b, 0x54, 0x16, 0x50, 0x3f, 0x8f, 0xb3, 0x76, 0x22, 0x23,
+            0xeb, 0xdb, 0x69, 0xda, 0x08, 0x5a, 0xc1, 0xe4, 0x3e, 0x15, 0x99, 0x6e, 0x45, 0x8f,
+            0x36, 0x13, 0xd0, 0xf1, 0x1d, 0x8c, 0x38, 0x7b, 0x2e, 0xae, 0xb4, 0x30, 0x2a, 0xee,
             0xb0, 0x0d, 0x29, 0x16, 0x12, 0xbb, 0x0c, 0x00,
         ];
         assert_eq!(signature, expected_signature);
