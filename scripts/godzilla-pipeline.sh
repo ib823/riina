@@ -134,6 +134,28 @@ run_step() {
   "$@"
 }
 
+restore_deploy_generated_state() {
+  # Audit/deep checks intentionally regenerate local metrics/reports.
+  # Deploy must sync committed history only, so restore generated artifacts.
+  local paths=(
+    "$REPO_ROOT/website/public/metrics.json"
+    "$REPO_ROOT/reports/easier_gap_status.json"
+    "$REPO_ROOT/reports/public_quality_status.json"
+    "$REPO_ROOT/VERIFICATION_MANIFEST.md"
+  )
+
+  git restore --staged --worktree -- "${paths[@]}" >/dev/null 2>&1 || true
+}
+
+ensure_clean_worktree() {
+  local context="${1:-operation}"
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo -e "${RED}ERROR: Working tree is not clean before ${context}.${NC}"
+    git status --short
+    return 1
+  fi
+}
+
 run_audit_pipeline() {
   local riinac=""
 
@@ -196,9 +218,20 @@ case "$MODE" in
     run_audit_pipeline
     ;;
   deploy)
+    if [ "$SYNC_MODE" = "apply" ]; then
+      echo -e "${YELLOW}Deploy mode forcing --sync dry to avoid dirty tree before sync-public${NC}"
+      SYNC_MODE="dry"
+    fi
     run_audit_pipeline
+    restore_deploy_generated_state
+    ensure_clean_worktree "SYNC PUBLIC"
     run_step "SYNC PUBLIC" bash "$REPO_ROOT/scripts/sync-public.sh"
     run_step "DEPLOY WEBSITE" bash "$REPO_ROOT/scripts/deploy-website.sh"
+    if [ -f "$REPO_ROOT/scripts/verify-riina-deploy.sh" ]; then
+      run_step "VERIFY /riina END-STATE" bash "$REPO_ROOT/scripts/verify-riina-deploy.sh"
+    else
+      echo -e "${YELLOW}Skipping /riina deploy verification: script not found${NC}"
+    fi
     ;;
   release)
     run_audit_pipeline
