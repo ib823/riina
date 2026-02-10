@@ -10,6 +10,14 @@ const RiinaWebsite = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { metrics } = useMetrics();
+  const claimLevels = metrics.claimLevels || {};
+  const claimLevelLabel = (level) => {
+    if (level === 'independently_audited') return 'independently audited';
+    if (level === 'mechanized') return 'mechanized';
+    if (level === 'compiled') return 'compiled';
+    return 'generated';
+  };
+  const laneClaim = (lane) => claimLevelLabel(claimLevels[lane] || 'generated');
 
   useEffect(() => { window.scrollTo(0, 0); }, [currentPage]);
 
@@ -251,26 +259,28 @@ const RiinaWebsite = () => {
         <div className="triple-prover">
           <h3 className="triple-prover__title">{metrics.multiProver.totalProvers} provers. One truth.</h3>
           <p className="triple-prover__desc">
-            Core theorems independently verified across {metrics.multiProver.totalProvers} proof systems with different mathematical
-            foundations. A bug in one prover cannot compromise the guarantees.
+            Proof obligations are tracked across {metrics.multiProver.totalProvers} verification lanes with different mathematical
+            foundations. Current overall claim level: {claimLevelLabel(claimLevels.overall)}. Active mechanized guarantees are from
+            the Coq production build; other lanes are published with explicit claim levels.
           </p>
           <div className="triple-prover__grid">
             {[
-              { prover: metrics.coq.prover, count: fmt(metrics.proofs.qedActive), role: 'Primary', foundation: 'CIC' },
-              { prover: metrics.lean.prover, count: fmt(metrics.lean.theorems), role: 'Secondary', foundation: 'DTT' },
-              { prover: metrics.isabelle.prover, count: fmt(metrics.isabelle.lemmas), role: 'Tertiary', foundation: 'HOL' },
-              { prover: (metrics.fstar || {}).prover || 'F*', count: fmt((metrics.fstar || {}).lemmas || 0), role: 'Dependent types', foundation: 'DTT' },
-              { prover: (metrics.tlaplus || {}).prover || 'TLA+', count: fmt((metrics.tlaplus || {}).theorems || 0), role: 'Model checking', foundation: 'TLA' },
-              { prover: (metrics.alloy || {}).prover || 'Alloy 6', count: fmt((metrics.alloy || {}).assertions || 0), role: 'Relational logic', foundation: 'FOL' },
-              { prover: (metrics.smt || {}).prover || 'Z3/CVC5', count: fmt((metrics.smt || {}).assertions || 0), role: 'SMT solving', foundation: 'SMT-LIB' },
-              { prover: (metrics.verus || {}).prover || 'Verus', count: fmt((metrics.verus || {}).proofs || 0), role: 'Rust verification', foundation: 'VIR' },
-              { prover: (metrics.kani || {}).prover || 'Kani', count: fmt((metrics.kani || {}).harnesses || 0), role: 'Model checking', foundation: 'CBMC' },
-              { prover: (metrics.tv || {}).prover || 'Translation Validation', count: fmt((metrics.tv || {}).validations || 0), role: 'Binary equivalence', foundation: 'TV' },
+              { prover: metrics.coq.prover, count: fmt(metrics.proofs.qedActive), role: 'Primary', foundation: 'CIC', level: laneClaim('coq') },
+              { prover: metrics.lean.prover, count: fmt(metrics.lean.theorems), role: 'Secondary', foundation: 'DTT', level: laneClaim('lean') },
+              { prover: metrics.isabelle.prover, count: fmt(metrics.isabelle.lemmas), role: 'Tertiary', foundation: 'HOL', level: laneClaim('isabelle') },
+              { prover: (metrics.fstar || {}).prover || 'F*', count: fmt((metrics.fstar || {}).lemmas || 0), role: 'Dependent types', foundation: 'DTT', level: laneClaim('fstar') },
+              { prover: (metrics.tlaplus || {}).prover || 'TLA+', count: fmt((metrics.tlaplus || {}).theorems || 0), role: 'Model checking', foundation: 'TLA', level: laneClaim('tlaplus') },
+              { prover: (metrics.alloy || {}).prover || 'Alloy 6', count: fmt((metrics.alloy || {}).assertions || 0), role: 'Relational logic', foundation: 'FOL', level: laneClaim('alloy') },
+              { prover: (metrics.smt || {}).prover || 'Z3/CVC5', count: fmt((metrics.smt || {}).assertions || 0), role: 'SMT solving', foundation: 'SMT-LIB', level: laneClaim('smt') },
+              { prover: (metrics.verus || {}).prover || 'Verus', count: fmt((metrics.verus || {}).proofs || 0), role: 'Rust verification', foundation: 'VIR', level: laneClaim('verus') },
+              { prover: (metrics.kani || {}).prover || 'Kani', count: fmt((metrics.kani || {}).harnesses || 0), role: 'Model checking', foundation: 'CBMC', level: laneClaim('kani') },
+              { prover: (metrics.tv || {}).prover || 'Translation Validation', count: fmt((metrics.tv || {}).validations || 0), role: 'Binary equivalence', foundation: 'TV', level: laneClaim('tv') },
             ].map((p, i) => (
               <div key={i} className="triple-prover__card">
                 <div className="triple-prover__prover">{p.prover}</div>
                 <div className="triple-prover__count">{p.count}</div>
                 <div className="triple-prover__role">{p.role} &middot; {p.foundation}</div>
+                <div className="triple-prover__role">Claim level: {p.level}</div>
               </div>
             ))}
           </div>
@@ -747,7 +757,7 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
             { num: '01', title: 'Security as Types', desc: 'Rahsia<T> wraps sensitive data. kesan Kripto marks crypto functions. masa_tetap ensures constant-time execution. These are compiler-enforced, not annotations.' },
             { num: '02', title: 'Effects Track Side Effects', desc: 'Every function declares its effects: kesan Baca + Kripto. The compiler tracks what your code can do. Security-critical code is restricted to specific effects.' },
             { num: '03', title: 'The Compiler Proves Security', desc: 'When you compile, the compiler proves: no information leakage (non-interference), effects are tracked (effect safety), timing-sensitive code runs in constant time, and secrets are zeroed.' },
-            { num: '04', title: 'Verified End-to-End', desc: `RIINA's compiler itself is verified with riinac verify. The formal proofs (${metrics.coq.filesActive} Coq files, ${metrics.lean.files} Lean files, ${metrics.isabelle.files} Isabelle files) ship with the compiler. ${metrics.multiProver.totalProvers}-prover verification across Coq, Lean 4, Isabelle/HOL, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, and Translation Validation.` },
+            { num: '04', title: 'Verification Evidence', desc: `Formal proof artifacts ship with the compiler (${metrics.coq.filesActive} active Coq files, ${metrics.lean.files} Lean files, ${metrics.isabelle.files} Isabelle files). Current overall claim level is ${claimLevelLabel(claimLevels.overall)} with deploy gates enforcing active-build hygiene (0 Admitted, 0 active axioms, 0 active assumptions).` },
           ].map((step, i) => (
             <div key={i} className="pipeline-step">
               <div className="pipeline-step__num">{step.num}</div>
@@ -764,13 +774,14 @@ PCI-DSS Req 3 — Protect Stored Cardholder Data
         <div style={{maxWidth:'var(--max-w-text)',margin:'0 auto'}}>
           <h2 style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:24}}>{metrics.multiProver.totalProvers}-Prover Verification</h2>
           <p style={{color:'var(--text-secondary)',marginBottom:32}}>
-            {fmt(metrics.multiProver.tripleProverTheorems)} core theorems independently proved across {metrics.multiProver.totalProvers} verification tools using different mathematical
-            foundations. {metrics.multiProver.sorry} sorry. {metrics.proofs.admitted} admitted. {metrics.proofs.axioms} justified policy axiom. If the same theorem
-            is proved in multiple independent systems, the probability of a shared prover bug is virtually zero.
+            {fmt(metrics.multiProver.tripleProverTheorems)} mapped obligations across {metrics.multiProver.totalProvers} verification lanes.
+            Multi-prover status: {metrics.multiProver.status}. Overall claim level: {claimLevelLabel(claimLevels.overall)}.
+            Lean compiled: {String(metrics.quality?.leanCompiled || false)}. Isabelle compiled: {String(metrics.quality?.isabelleCompiled || false)}.
+            Independent external audit published: {String(claimLevels.independentlyAudited || false)}.
           </p>
           {[
             { prover: metrics.coq.prover, theorems: `${fmt(metrics.proofs.qedActive)} Qed`, role: 'Primary — authoritative proofs (CIC)' },
-            { prover: metrics.lean.prover, theorems: `${fmt(metrics.lean.theorems)} theorems`, role: 'Secondary — independent port (DTT)' },
+            { prover: metrics.lean.prover, theorems: `${fmt(metrics.lean.theorems)} theorems`, role: 'Secondary — cross-check port (DTT)' },
             { prover: metrics.isabelle.prover, theorems: `${fmt(metrics.isabelle.lemmas)} lemmas`, role: 'Tertiary — third verification (HOL)' },
             { prover: (metrics.fstar || {}).prover || 'F*', theorems: `${fmt((metrics.fstar || {}).lemmas || 0)} lemmas`, role: 'Dependent types (DTT)' },
             { prover: (metrics.tlaplus || {}).prover || 'TLA+', theorems: `${fmt((metrics.tlaplus || {}).theorems || 0)} theorems`, role: 'Model checking (TLA)' },

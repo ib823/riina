@@ -41,7 +41,42 @@ if ! git remote | grep -q "^riina$"; then
 fi
 echo -e "${GREEN}[✓] riina remote configured${NC}"
 
-# Step 2: Build website
+# Step 2: Refresh metrics and enforce public quality/claim gates
+echo ""
+echo "Refreshing public metrics..."
+bash "$REPO_ROOT/scripts/generate-metrics.sh" --fast >/dev/null
+echo -e "${GREEN}[✓] metrics.json refreshed${NC}"
+
+echo "Running public quality gates..."
+bash "$REPO_ROOT/scripts/public-quality-gates.sh" >/dev/null || {
+    echo -e "${RED}ERROR: public quality gates failed (claims/metrics/docs integrity).${NC}"
+    echo "Run: bash scripts/public-quality-gates.sh"
+    exit 1
+}
+echo -e "${GREEN}[✓] public quality gates passed${NC}"
+
+if [ "${REQUIRE_ISABELLE:-0}" = "1" ]; then
+    if command -v isabelle >/dev/null 2>&1; then
+        echo -e "${GREEN}[✓] Isabelle toolchain found (REQUIRE_ISABELLE=1)${NC}"
+    else
+        echo -e "${RED}ERROR: REQUIRE_ISABELLE=1 but 'isabelle' is not installed.${NC}"
+        exit 1
+    fi
+else
+    if ! command -v isabelle >/dev/null 2>&1; then
+        echo -e "${YELLOW}WARNING: Isabelle not found (set REQUIRE_ISABELLE=1 to enforce locally).${NC}"
+    fi
+fi
+
+# Step 3: Build WASM binary for playground
+echo ""
+echo "Building WASM binary..."
+bash "$REPO_ROOT/scripts/build-wasm.sh" || {
+    echo -e "${YELLOW}WARNING: WASM build skipped (stub .wasm will be used)${NC}"
+}
+echo -e "${GREEN}[✓] WASM build step complete${NC}"
+
+# Step 4: Build website
 echo ""
 echo "Building website..."
 (cd "$WEBSITE_DIR" && npm install --silent && npm run build) || {
@@ -49,14 +84,22 @@ echo "Building website..."
 }
 echo -e "${GREEN}[✓] Website built${NC}"
 
-# Step 3: Copy install.sh into dist so it's served at /riina/install.sh
+# Re-check gates after website prebuild hooks regenerate metrics/assets.
+echo "Re-running public quality gates after build..."
+bash "$REPO_ROOT/scripts/public-quality-gates.sh" >/dev/null || {
+    echo -e "${RED}ERROR: public quality gates failed after build regeneration.${NC}"
+    exit 1
+}
+echo -e "${GREEN}[✓] post-build public quality gates passed${NC}"
+
+# Step 5: Copy install.sh into dist so it's served at /riina/install.sh
 cp "$REPO_ROOT/scripts/install.sh" "$DIST_DIR/install.sh"
 echo -e "${GREEN}[✓] install.sh copied to dist/${NC}"
 
-# Step 4: Add .nojekyll (GitHub Pages should serve raw files, no Jekyll processing)
+# Step 6: Add .nojekyll (GitHub Pages should serve raw files, no Jekyll processing)
 touch "$DIST_DIR/.nojekyll"
 
-# Step 5: Create a temporary git repo in dist/ and push to gh-pages
+# Step 7: Create a temporary git repo in dist/ and push to gh-pages
 cd "$DIST_DIR"
 git init --quiet
 git checkout -b gh-pages --quiet

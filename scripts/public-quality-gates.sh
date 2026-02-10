@@ -40,6 +40,8 @@ METRICS_STATUS="PASS"
 METRICS_DETAIL=""
 VERSION_STATUS="PASS"
 VERSION_DETAIL=""
+CLAIM_INTEGRITY_STATUS="PASS"
+CLAIM_INTEGRITY_DETAIL=""
 
 escape_json() {
   printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -236,6 +238,74 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 8) Public claim integrity (website copy must match quality flags)
+# ---------------------------------------------------------------------------
+
+claim_bad_levels=0
+claim_overclaim_ready="false"
+claim_overall_level="generated"
+claim_phrase_hits=""
+
+if [ -f "$metrics_file" ]; then
+  claim_eval="$(
+    python3 - "$metrics_file" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+d = json.load(open(path))
+q = d.get("quality", {})
+cl = d.get("claimLevels", {})
+allowed = {"generated", "compiled", "mechanized", "independently_audited"}
+keys = ["overall", "coq", "lean", "isabelle", "fstar", "tlaplus", "alloy", "smt", "verus", "kani", "tv"]
+bad_levels = sum(1 for k in keys if cl.get(k, "generated") not in allowed)
+
+compiled_like = {"compiled", "mechanized", "independently_audited"}
+all_non_coq_compiled = all(
+    q.get(k) in compiled_like
+    for k in ("fstarStatus", "tlaplusStatus", "alloyStatus", "smtStatus", "verusStatus", "kaniStatus", "tvStatus")
+)
+
+overclaim_ready = (
+    q.get("coqCompiled") is True
+    and q.get("leanCompiled") is True
+    and q.get("isabelleCompiled") is True
+    and all_non_coq_compiled
+    and cl.get("overall") in {"mechanized", "independently_audited"}
+    and bool(cl.get("independentlyAudited")) is True
+)
+
+print(f"bad_levels={bad_levels}")
+print(f"overclaim_ready={'true' if overclaim_ready else 'false'}")
+print(f"overall={cl.get('overall', 'generated')}")
+PY
+  )"
+  claim_bad_levels="$(printf '%s\n' "$claim_eval" | awk -F= '/^bad_levels=/{print $2}' | tail -1)"
+  claim_overclaim_ready="$(printf '%s\n' "$claim_eval" | awk -F= '/^overclaim_ready=/{print $2}' | tail -1)"
+  claim_overall_level="$(printf '%s\n' "$claim_eval" | awk -F= '/^overall=/{print $2}' | tail -1)"
+fi
+
+if [ "$claim_overclaim_ready" != "true" ]; then
+  claim_phrase_hits="$(
+    grep -RInE \
+      'independently verified across|independently proved across|shared prover bug is virtually zero|compiler itself is verified|ALL COMPLETE|full stack verification|100% complete' \
+      "$REPO_ROOT/website/src/RiinaWebsite.jsx" \
+      "$REPO_ROOT/website/public/metrics.json" \
+      "$REPO_ROOT/website/index.html" \
+      2>/dev/null || true
+  )"
+fi
+
+if [ "${claim_bad_levels:-0}" -gt 0 ] || [ -n "$claim_phrase_hits" ]; then
+  CLAIM_INTEGRITY_STATUS="FAIL"
+  CLAIM_INTEGRITY_DETAIL="overall=$claim_overall_level bad_levels=${claim_bad_levels:-0} overclaim_phrases=$([ -n "$claim_phrase_hits" ] && echo 1 || echo 0)"
+  OVERALL="FAIL"
+else
+  CLAIM_INTEGRITY_STATUS="PASS"
+  CLAIM_INTEGRITY_DETAIL="overall=$claim_overall_level bad_levels=${claim_bad_levels:-0} overclaim_phrases=0"
+fi
+
+# ---------------------------------------------------------------------------
 # Report and exit
 # ---------------------------------------------------------------------------
 
@@ -251,6 +321,7 @@ cat > "$REPORT_PATH" <<EOF
   "active_build_hygiene": { "status": "$HYGIENE_STATUS", "detail": "$(escape_json "$HYGIENE_DETAIL")" },
   "metrics_alignment": { "status": "$METRICS_STATUS", "detail": "$(escape_json "$METRICS_DETAIL")" },
   "version_tag_alignment": { "status": "$VERSION_STATUS", "detail": "$(escape_json "$VERSION_DETAIL")" },
+  "claim_integrity": { "status": "$CLAIM_INTEGRITY_STATUS", "detail": "$(escape_json "$CLAIM_INTEGRITY_DETAIL")" },
   "overall": "$OVERALL"
 }
 EOF
@@ -264,6 +335,7 @@ echo "Proof ledger freshness: $LEDGER_STATUS"
 echo "Active-build hygiene  : $HYGIENE_STATUS"
 echo "Metrics alignment     : $METRICS_STATUS"
 echo "Version/tag alignment : $VERSION_STATUS"
+echo "Claim integrity       : $CLAIM_INTEGRITY_STATUS"
 echo "Report                : $REPORT_PATH"
 
 if [ "$OVERALL" = "PASS" ]; then
