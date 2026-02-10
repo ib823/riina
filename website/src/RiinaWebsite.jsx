@@ -16,7 +16,25 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
-    { version: '0.1.0', date: '2026-02-01', highlights: ['RIINA compiler with Bahasa Melayu syntax', 'Formal verification: 7,683 Qed proofs in Coq + 7,928 Lean + 8,072 Isabelle', '3-prover verification: 23,683 items across Coq, Lean 4, Isabelle/HOL', 'Standard library: ~38 unique builtins across 10 modules'] },
+    {
+      version: '0.2.0',
+      date: '2026-02-10',
+      highlights: [
+        'Production-active proofs: 7,740 Coq Qed, 0 Admitted, 0 active axioms',
+        '10-prover metrics published: 82,968 total artifacts across Coq, Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV',
+        'Public quality gates added (artifact hygiene, doc drift checks, metrics alignment, version/tag alignment)',
+        'Repository transparency: AXIOMS.md and PROOF_STATUS.md generated and enforced',
+      ],
+    },
+    {
+      version: '0.1.0',
+      date: '2026-02-01',
+      highlights: [
+        'Initial RIINA compiler release with Bahasa Melayu syntax',
+        'Core formal verification baseline and proof-driven type/effect security',
+        'Standard library, package manager, VS Code support, and examples',
+      ],
+    },
   ];
 
   const nav = (page) => { setCurrentPage(page); setMobileMenuOpen(false); };
