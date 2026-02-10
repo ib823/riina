@@ -1,40 +1,41 @@
 {
-  "generated": "2026-02-09T22:11:41Z",
-  "generatedHuman": "February 09, 2026 at 22:11 UTC",
+  "generated": "2026-02-10T07:08:39Z",
+  "generatedHuman": "February 10, 2026 at 07:08 UTC",
   "version": "0.2.0",
   "session": 83,
   "git": {
-    "commit": "96f6d33",
+    "commit": "4322e54",
     "branch": "main"
   },
   "proofs": {
-    "qedActive": 7957,
-    "qedDeprecated": 541,
+    "qedActive": 7740,
+    "qedDeprecated": 758,
     "qedTotal": 8498,
     "admitted": 0,
-    "axioms": 1,
+    "axioms": 0,
+    "assumptions": 0,
     "axiomsJustified": true
   },
   "coq": {
     "filesTotal": 284,
-    "filesActive": 251,
+    "filesActive": 245,
     "domains": 195,
     "prover": "Coq 8.20.1"
   },
   "lean": {
     "theorems": 7900,
     "sorry": 0,
-    "axioms": 2,
+    "axioms": 0,
     "files": 255,
-    "lines": 87072,
+    "lines": 87073,
     "prover": "Lean 4"
   },
   "isabelle": {
     "lemmas": 8072,
     "sorry": 0,
-    "axioms": 1,
+    "axioms": 0,
     "files": 260,
-    "lines": 89285,
+    "lines": 89286,
     "prover": "Isabelle/HOL"
   },
   "fstar": {
@@ -74,7 +75,7 @@
   },
   "multiProver": {
     "tripleProverTheorems": 7205,
-    "totalProofsAllProvers": 82982,
+    "totalProofsAllProvers": 82765,
     "totalProvers": 10,
     "proverList": ["Coq", "Lean 4", "Isabelle/HOL", "F*", "TLA+", "Alloy 6", "Z3/CVC5", "Verus", "Kani", "Translation Validation"],
     "sorry": 0,
@@ -92,9 +93,9 @@
     "kaniStatus": "stub",
     "tvStatus": "stub",
     "coqTiers": {
-      "core": 680,
+      "core": 463,
       "domain": 7277,
-      "domainTrivial": 780
+      "domainTrivial": 773
     }
   },
   "rust": {
@@ -113,7 +114,7 @@
     { "date": "2026-02-07", "event": "SMT real assertions: 1,187 verified (Z3 sat)" },
     { "date": "2026-02-06", "event": "Proof depth 20+ across all 250 domain files" },
     { "date": "2026-02-06", "event": "Triple-prover 100% complete (0 sorry across all provers)" },
-    { "date": "2026-02-06", "event": "Axiom elimination: 4 → 1 (3 axioms proved)" },
+    { "date": "2026-02-10", "event": "Axiom token elimination: 4 → 0 (explicit assumptions remain)" },
     { "date": "2026-02-01", "event": "Phase 7 complete: Platform Universality" }
   ]
 }
