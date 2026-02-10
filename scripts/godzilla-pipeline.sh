@@ -140,6 +140,8 @@ restore_deploy_generated_state() {
   local paths=(
     "$REPO_ROOT/website/public/metrics.json"
     "$REPO_ROOT/reports/easier_gap_status.json"
+    "$REPO_ROOT/reports/medium_gap_status.json"
+    "$REPO_ROOT/reports/heavy_gap_status.json"
     "$REPO_ROOT/reports/public_quality_status.json"
     "$REPO_ROOT/VERIFICATION_MANIFEST.md"
   )
