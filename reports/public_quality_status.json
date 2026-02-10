@@ -1,0 +1,11 @@
+{
+  "generated_utc": "2026-02-10T09:24:35Z",
+  "artifact_hygiene": { "status": "PASS", "detail": "tracked_artifacts=0" },
+  "gitignore_coverage": { "status": "PASS", "detail": "missing_patterns=0" },
+  "required_docs": { "status": "PASS", "detail": "missing_docs=0" },
+  "proof_ledger_freshness": { "status": "PASS", "detail": "ledger_status=up_to_date" },
+  "active_build_hygiene": { "status": "PASS", "detail": "active_files=244 admitted=0 axioms=0 assumptions=0" },
+  "metrics_alignment": { "status": "PASS", "detail": "metrics_admitted=0 metrics_axioms=0 metrics_assumptions=0" },
+  "version_tag_alignment": { "status": "PASS", "detail": "version=0.2.0 tag=v0.2.0" },
+  "overall": "PASS"
+}

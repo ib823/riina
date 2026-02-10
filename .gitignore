@@ -8,6 +8,7 @@
 **/*.vok
 **/*.glob
 **/*.aux
+**/*.crashcoqide
 **/.Makefile.coq.d
 **/.Makefile.d
 **/.lia.cache
@@ -42,3 +43,4 @@ package-lock.json
 # Nix
 result
 .lia.cache
+.nia.cache
