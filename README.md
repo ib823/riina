@@ -39,7 +39,7 @@ RIINA provides first-class support for AI-assisted development:
 
 - **Programmatic compilation:** `riinac check --json --stdin` accepts source on stdin and returns structured JSON diagnostics
 - **Full machine reference:** [llms-full.txt](llms-full.txt) contains the complete language specification, type system, and effect system in a single file
-- **Code patterns:** [07_EXAMPLES/](07_EXAMPLES/) contains 120+ annotated examples across 10 categories (security, effects, compliance, design patterns, FFI, and more)
+- **Code patterns:** [07_EXAMPLES/](07_EXAMPLES/) contains 130+ annotated examples across 10 categories (security, effects, compliance, design patterns, FFI, and more)
 - **IDE integration:** [.cursorrules](.cursorrules) and [.clinerules](.clinerules) provide pre-configured rules for Cursor and Cline; [.github/copilot-instructions.md](.github/copilot-instructions.md) provides GitHub Copilot context
 
 ---
@@ -83,7 +83,7 @@ RIINA doesn't care what industry you're in. If you care about getting security r
 | Effect tracking | Proven (effect algebra) | None | Monads (no proof) | None |
 | Type safety | Proven (Progress + Preservation) | Tested | Tested | Proven (SPARK subset) |
 | Zero external dependencies | Yes (compiler, crypto, stdlib) | No | No | No |
-| Formal proofs ship with compiler | Yes (7,934 Coq + 7924 Lean + 8072 Isabelle) | No | No | Partial |
+| Formal proofs ship with compiler | Yes (7,740 Coq + 7900 Lean + 8072 Isabelle) | No | No | Partial |
 | Triple-prover verification | Yes (Coq + Lean 4 + Isabelle/HOL) | No | No | No |
 | Bahasa Melayu native syntax | Yes | No | No | No |
 
@@ -215,12 +215,12 @@ This is not a whitepaper. This is working software.
 
 | Prover | Proofs | Files | Sorry/Admitted | Axioms | Foundation |
 |--------|--------|-------|----------------|--------|-----------|
-| **Coq 8.20.1** (Primary) | 7,934 Qed | 284 .v (250 active) | 0 | 1 (policy) | CIC |
-| **Lean 4** (Secondary) | 91 theorems | 12 .lean | 0 | 1 (justified) | DTT |
-| **Isabelle/HOL** (Tertiary) | 102 lemmas | 10 .thy | 0 | 1 (justified) | HOL |
-| **Total** | **7,875** | **306** | **0** | **1** | **3 independent** |
+| **Coq 8.20.1** (Primary) | 7,740 Qed | 284 .v (244 active) | 0 | 0 | CIC |
+| **Lean 4** (Secondary) | 7,900 theorems | 255 .lean | 0 | 0 | DTT |
+| **Isabelle/HOL** (Tertiary) | 8,072 lemmas | 260 .thy | 0 | 0 | HOL |
+| **Total** | **23,712** | **799** | **0** | **0** | **3 independent** |
 
-86 core theorems independently proved across all three provers. No other programming language has triple-prover verification.
+7,205 cross-prover theorems are aligned across Coq, Lean, and Isabelle.
 
 **What's proven:**
 - Type safety (Progress + Preservation)
@@ -239,7 +239,7 @@ This is not a whitepaper. This is working software.
 | Metric | Value |
 |--------|-------|
 | Rust crates | 15 |
-| Test count | 839 (all passing) |
+| Test count | 852 (all passing) |
 | External dependencies | **0** |
 | Lines of Rust | 31,043 |
 | Standard library builtins | 88 across 9 modules |
@@ -280,7 +280,7 @@ This is not a whitepaper. This is working software.
 
 ### Example Programs
 
-120 example `.rii` files across 10 categories:
+130 example `.rii` files across 10 categories:
 
 | Category | Examples | Topics |
 |----------|----------|--------|
@@ -319,15 +319,15 @@ riina/
 │   ├── compliance/         DO-178C, ISO-26262, Common Criteria
 │   └── Industries/         15 regulatory compliance proofs
 │
-├── 02_FORMAL/lean/          Lean 4 proofs (91 theorems, 12 files, 0 sorry)
+├── 02_FORMAL/lean/          Lean 4 proofs (7,900 theorems, 255 files, 0 sorry)
 │   └── RIINA/               Syntax, Semantics, Typing, Progress, Preservation,
 │                             TypeSafety, EffectAlgebra, EffectSystem, EffectGate,
 │                             NonInterference
 │
-├── 02_FORMAL/isabelle/      Isabelle/HOL proofs (102 lemmas, 10 files, 0 sorry)
+├── 02_FORMAL/isabelle/      Isabelle/HOL proofs (8,072 lemmas, 260 files, 0 sorry)
 │   └── RIINA/               Same 10 theory files as Lean
 │
-├── 03_PROTO/               Rust compiler (15 crates, 839 tests, 0 deps)
+├── 03_PROTO/               Rust compiler (15 crates, 852 tests, 0 deps)
 │   └── crates/
 │       ├── riinac/         Compiler driver (11 subcommands)
 │       ├── riina-lexer/    Tokenizer
@@ -346,7 +346,7 @@ riina/
 │
 ├── 04_SPECS/               Language specifications, compliance specs
 ├── 05_TOOLING/             Crypto primitives, build system (35K lines Rust)
-├── 07_EXAMPLES/            120 example .rii files
+├── 07_EXAMPLES/            130 example .rii files
 ├── docs/                   Enterprise docs, multilingual READMEs
 ├── VERSION                 Semver source of truth (0.2.0)
 ├── CHANGELOG.md            Public-facing changelog
@@ -392,14 +392,14 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 ## Current Status
 
 **Build: Passing. Grade: A.**
-**Verification:** 7,934 Coq Qed (compiled, 0 Admitted, 2 policy axiom) | 10 independent provers | 852 Rust tests
+**Verification:** 7,740 Coq Qed (compiled, 0 Admitted, 0 active axioms) | 10 independent provers | 852 Rust tests
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1. Compiler | Lexer, parser, typechecker, codegen, REPL, diagnostics | Done |
 | 2. Standard Library | 88 builtins across 9 modules | Done |
-| 3. Formal Verification | 7,934 Coq Qed + 7924 Lean + 8072 Isabelle = 82,983 total, 0 admits/sorry, 1 axiom | Stable |
-| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 120 examples | Done |
+| 3. Formal Verification | 7,740 Coq Qed + 7900 Lean + 8072 Isabelle = 82,968 total (10 provers), 0 admits/sorry, 0 active axioms | Stable |
+| 4. Developer Experience | Formatter, LSP, doc generator, VS Code extension, 130 examples | Done |
 | 5. Ecosystem | CI/CD, package manager, Docker, Nix flake, release system, installer | Done |
 | 6. Adoption | C FFI, 8 demos, community, enterprise, public branch, 15-page website (Why Proof, 15 industries, Releases) | Done |
 | 7. Platform Universality | Multi-backend (WASM, Android, iOS), platform-conditional stdlib, WASM playground, backend verification | Done |
@@ -408,7 +408,7 @@ Every research track in `01_RESEARCH/` (55 domains, A through AJ, plus Greek let
 ### What's next
 
 - **Triple-prover verification:** Complete — 86 theorems proved in Coq + Lean 4 + Isabelle/HOL. 0 sorry across all provers.
-- **Axiom status:** 1 justified axiom remains (`logical_relation_declassify` — permanent policy axiom for declassification). 3 axioms eliminated.
+- **Axiom status:** Active build is axiom-free (`Axioms=0`, `Admitted=0`, explicit assumptions `=0`).
 - **Phase 8 (Long-term):** Self-hosting compiler, hardware verification, verified OS
 - **Compliance system:** `--compliance` flag with 15 industry profiles, audit report generation (text + JSON), certification pipeline — see [Compliance Guide](docs/enterprise/COMPLIANCE_GUIDE.md)
 

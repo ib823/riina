@@ -30,6 +30,8 @@ GITIGNORE_STATUS="PASS"
 GITIGNORE_DETAIL=""
 DOCS_STATUS="PASS"
 DOCS_DETAIL=""
+DOC_DRIFT_STATUS="PASS"
+DOC_DRIFT_DETAIL=""
 LEDGER_STATUS="PASS"
 LEDGER_DETAIL=""
 HYGIENE_STATUS="PASS"
@@ -102,6 +104,32 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 3b) Public-doc drift guards (high-visibility active-build claims)
+# ---------------------------------------------------------------------------
+
+drift_hits=0
+for check in \
+  "README.md::policy axiom|1 \\(policy\\)|1 axiom|4 justified axioms|4,885|4885" \
+  "docs/UNDERSTANDING_RIINA.md::4 justified axioms|4,885|4885|249 active proof files" \
+  "docs/enterprise/COMPLIANCE_GUIDE.md::4,885|4885|4 justified axioms" \
+  "docs/enterprise/COMPLIANCE_PACKAGING.md::4 justified axioms"; do
+  file="${check%%::*}"
+  pattern="${check##*::}"
+  if [ -f "$REPO_ROOT/$file" ] && grep -Eq "$pattern" "$REPO_ROOT/$file"; then
+    drift_hits=$((drift_hits + 1))
+  fi
+done
+
+if [ "$drift_hits" -gt 0 ]; then
+  DOC_DRIFT_STATUS="FAIL"
+  DOC_DRIFT_DETAIL="stale_claim_files=$drift_hits"
+  OVERALL="FAIL"
+else
+  DOC_DRIFT_STATUS="PASS"
+  DOC_DRIFT_DETAIL="stale_claim_files=0"
+fi
+
+# ---------------------------------------------------------------------------
 # 4) Proof ledgers up-to-date
 # ---------------------------------------------------------------------------
 
@@ -124,6 +152,7 @@ COQ_PROJECT="$COQ_DIR/_CoqProject"
 active_admitted=0
 active_axioms=0
 active_assumptions=0
+active_qed=0
 active_files=0
 
 if [ -f "$COQ_PROJECT" ]; then
@@ -146,9 +175,11 @@ if [ -f "$COQ_PROJECT" ]; then
     admitted_hits="$(grep -Ec '^[[:space:]]*Admitted\.' "$path" || true)"
     axiom_hits="$(grep -Ec '^[[:space:]]*Axiom[[:space:]]+' "$path" || true)"
     assumption_hits="$(grep -Ec '^[[:space:]]*Parameter[[:space:]]+val_rel_n_step_up[[:space:]]' "$path" || true)"
+    qed_hits="$(grep -c 'Qed\.' "$path" || true)"
     active_admitted=$((active_admitted + admitted_hits))
     active_axioms=$((active_axioms + axiom_hits))
     active_assumptions=$((active_assumptions + assumption_hits))
+    active_qed=$((active_qed + qed_hits))
   done
 fi
 
@@ -158,7 +189,7 @@ else
   HYGIENE_STATUS="FAIL"
   OVERALL="FAIL"
 fi
-HYGIENE_DETAIL="active_files=$active_files admitted=$active_admitted axioms=$active_axioms assumptions=$active_assumptions"
+HYGIENE_DETAIL="active_files=$active_files qed=$active_qed admitted=$active_admitted axioms=$active_axioms assumptions=$active_assumptions"
 
 # ---------------------------------------------------------------------------
 # 6) metrics.json alignment
@@ -167,22 +198,28 @@ HYGIENE_DETAIL="active_files=$active_files admitted=$active_admitted axioms=$act
 metrics_admitted="NA"
 metrics_axioms="NA"
 metrics_assumptions="NA"
+metrics_qed="NA"
+metrics_active_files="NA"
 metrics_file="$REPO_ROOT/website/public/metrics.json"
 if [ -f "$metrics_file" ]; then
   metrics_admitted="$(grep -m1 -E '"admitted"[[:space:]]*:[[:space:]]*[0-9]+' "$metrics_file" | sed -E 's/[^0-9]*([0-9]+).*/\1/' || true)"
   metrics_axioms="$(grep -m1 -E '"axioms"[[:space:]]*:[[:space:]]*[0-9]+' "$metrics_file" | sed -E 's/[^0-9]*([0-9]+).*/\1/' || true)"
   metrics_assumptions="$(grep -m1 -E '"assumptions"[[:space:]]*:[[:space:]]*[0-9]+' "$metrics_file" | sed -E 's/[^0-9]*([0-9]+).*/\1/' || true)"
+  metrics_qed="$(python3 -c "import json; print(json.load(open('$metrics_file'))['proofs']['qedActive'])" 2>/dev/null || echo "NA")"
+  metrics_active_files="$(python3 -c "import json; print(json.load(open('$metrics_file'))['coq']['filesActive'])" 2>/dev/null || echo "NA")"
 fi
 
 if [ "$metrics_admitted" = "$active_admitted" ] \
   && [ "$metrics_axioms" = "$active_axioms" ] \
-  && [ "$metrics_assumptions" = "$active_assumptions" ]; then
+  && [ "$metrics_assumptions" = "$active_assumptions" ] \
+  && [ "$metrics_qed" = "$active_qed" ] \
+  && [ "$metrics_active_files" = "$active_files" ]; then
   METRICS_STATUS="PASS"
 else
   METRICS_STATUS="FAIL"
   OVERALL="FAIL"
 fi
-METRICS_DETAIL="metrics_admitted=$metrics_admitted metrics_axioms=$metrics_axioms metrics_assumptions=$metrics_assumptions"
+METRICS_DETAIL="metrics_qed=$metrics_qed metrics_active_files=$metrics_active_files metrics_admitted=$metrics_admitted metrics_axioms=$metrics_axioms metrics_assumptions=$metrics_assumptions"
 
 # ---------------------------------------------------------------------------
 # 7) VERSION has a matching tag
@@ -209,6 +246,7 @@ cat > "$REPORT_PATH" <<EOF
   "artifact_hygiene": { "status": "$ARTIFACT_STATUS", "detail": "$(escape_json "$ARTIFACT_DETAIL")" },
   "gitignore_coverage": { "status": "$GITIGNORE_STATUS", "detail": "$(escape_json "$GITIGNORE_DETAIL")" },
   "required_docs": { "status": "$DOCS_STATUS", "detail": "$(escape_json "$DOCS_DETAIL")" },
+  "public_doc_drift": { "status": "$DOC_DRIFT_STATUS", "detail": "$(escape_json "$DOC_DRIFT_DETAIL")" },
   "proof_ledger_freshness": { "status": "$LEDGER_STATUS", "detail": "$(escape_json "$LEDGER_DETAIL")" },
   "active_build_hygiene": { "status": "$HYGIENE_STATUS", "detail": "$(escape_json "$HYGIENE_DETAIL")" },
   "metrics_alignment": { "status": "$METRICS_STATUS", "detail": "$(escape_json "$METRICS_DETAIL")" },
@@ -221,6 +259,7 @@ echo ""
 echo "Artifact hygiene      : $ARTIFACT_STATUS"
 echo "Gitignore coverage    : $GITIGNORE_STATUS"
 echo "Required docs         : $DOCS_STATUS"
+echo "Public doc drift      : $DOC_DRIFT_STATUS"
 echo "Proof ledger freshness: $LEDGER_STATUS"
 echo "Active-build hygiene  : $HYGIENE_STATUS"
 echo "Metrics alignment     : $METRICS_STATUS"

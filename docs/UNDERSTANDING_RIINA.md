@@ -40,10 +40,10 @@ Every country needs a constitution — the foundational law that all other laws 
 - **Effect Safety** — Every side effect (reading a file, sending a network request, accessing the clock) must be declared. A function that claims to be pure (no side effects) is proven to actually be pure. You cannot hide a network call inside a math function.
 - **Declassification Correctness** — When secrets do need to be revealed (e.g., showing the last 4 digits of a credit card), this can only happen through an explicit, auditable process with a proof that the policy is followed.
 
-**Current state:** 4,885 completed proofs (Qed), 0 incomplete proofs (admits), 4 justified axioms (foundational assumptions that are documented and mathematically sound), 249 active proof files.
+**Current state:** 7,740 completed proofs (Qed), 0 incomplete proofs (admits), 0 active axioms, 244 active proof files.
 **Audit update:** 2026-02-04 (Codex audit sync).
 
-The 4 axioms are analogous to a constitution's self-evident truths — statements so fundamental they serve as starting points for everything else, each with written justification for why they are sound.
+The production-active build is now axiom-free. Historical/archived files may still contain assumptions, but active security guarantees are proved without active axioms.
 
 ### Track B — The Government (Compiler & Runtime)
 
@@ -57,7 +57,7 @@ The constitution means nothing without a government to enforce it. Track B is RI
 - **Standard Library** — 88 built-in functions across 9 modules (strings, lists, math, maps, sets, testing, time, files, JSON).
 - **Developer Tools** — Formatter (`riina-fmt`), language server (`riina-lsp`), documentation generator (`riina-doc`), VS Code extension, package manager (`riina-pkg`), REPL.
 
-**Current state:** 15 crates (Rust packages), 679 tests, all passing.
+**Current state:** 15 crates (Rust packages), 852 tests, all passing.
 
 ### Track C — The Legal Code (Specifications)
 
@@ -178,8 +178,8 @@ RIINA was constructed in eight phases, each building on the previous:
 |-------|------|---------------|--------|
 | 1 | Compiler Completion | The core compiler: lexer, parser, type checker, code generator, REPL | Done |
 | 2 | Standard Library | 88 built-in functions across 9 modules | Done |
-| 3 | Formal Verification | 4,885 machine-verified proofs, 0 incomplete proofs | Stable |
-| 4 | Developer Experience | Formatter, language server, doc generator, VS Code extension, 112 examples | Done |
+| 3 | Formal Verification | 7,740 machine-verified proofs, 0 incomplete proofs, 0 active axioms | Stable |
+| 4 | Developer Experience | Formatter, language server, doc generator, VS Code extension, 130 examples | Done |
 | 5 | Ecosystem | Package manager, CI/CD, Docker, Nix, release system, Proprietary license | Done |
 | 6 | Adoption | C FFI, demo apps, community setup, enterprise compliance, public repository | Done |
 | 7 | Platform Universality | WASM backend, mobile backends, in-browser playground, backend verification | Done |
@@ -219,13 +219,13 @@ These numbers reflect the current verified state of the codebase:
 
 | Metric | Value |
 |--------|-------|
-| Machine-verified proofs (Qed) | 4,885 (active build) |
+| Machine-verified proofs (Qed) | 7,740 (active build) |
 | Incomplete proofs (admits) | 0 |
-| Foundational axioms | 4 (all justified) |
-| Active proof files | 249 |
-| Rust tests | 679 |
+| Active axioms (production-active build) | 0 |
+| Active proof files | 244 |
+| Rust tests | 852 |
 | Compiler crates | 15 |
-| Example programs | 112 |
+| Example programs | 130 |
 | Standard library builtins | 88 |
 | Compliance profiles | 15 |
 | Target platforms | 4 (native, WASM, Android, iOS) |

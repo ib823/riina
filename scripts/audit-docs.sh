@@ -65,6 +65,24 @@ count_coq_files() {
     find "$REPO_ROOT/02_FORMAL/coq" -name "*.v" -type f 2>/dev/null | wc -l
 }
 
+count_coq_active_files() {
+    local project="$REPO_ROOT/02_FORMAL/coq/_CoqProject"
+    if [ ! -f "$project" ]; then
+        echo "0"
+        return
+    fi
+    awk '
+      {
+        line=$0;
+        sub(/^[ \t]+/, "", line);
+        if (line ~ /^[#-]/ || line == "") next;
+        split(line, tok, /[ \t]+/);
+        if (tok[1] ~ /\.v$/) c++;
+      }
+      END { print c + 0 }
+    ' "$project"
+}
+
 count_lean_theorems() {
     local total=0
     while IFS= read -r f; do
@@ -91,8 +109,27 @@ count_examples() {
     find "$REPO_ROOT/07_EXAMPLES" -name "*.rii" -type f 2>/dev/null | wc -l
 }
 
-get_session_from_log() {
-    grep -oP "Session \K\d+" "$REPO_ROOT/SESSION_LOG.md" 2>/dev/null | head -1 || echo "0"
+get_max_session_from_file() {
+    local file="$1"
+    if [ ! -f "$file" ]; then
+        echo "0"
+        return
+    fi
+    local value
+    value=$(grep -oP "Session \K\d+" "$file" 2>/dev/null | sort -n | tail -1 || true)
+    echo "${value:-0}"
+}
+
+get_actual_session() {
+    local session_log
+    local session_claude
+    session_log="$(get_max_session_from_file "$REPO_ROOT/SESSION_LOG.md")"
+    session_claude="$(get_max_session_from_file "$REPO_ROOT/CLAUDE.md")"
+    if [ "$session_log" -gt "$session_claude" ]; then
+        echo "$session_log"
+    else
+        echo "$session_claude"
+    fi
 }
 
 check_value() {
@@ -159,11 +196,14 @@ fi
 ACTUAL_QED=$(count_qed_active)
 ACTUAL_ADMITTED=$(count_admitted_active)
 ACTUAL_COQ_FILES=$(count_coq_files)
+ACTUAL_COQ_ACTIVE_FILES=$(count_coq_active_files)
 ACTUAL_LEAN=$(count_lean_theorems)
 ACTUAL_ISABELLE=$(count_isabelle_lemmas)
+# Note: ACTUAL_TOTAL for audit checks only covers Coq+Lean+Isabelle (manually verified provers).
+# The full 10-prover total is in metrics.json and includes generated stubs.
 ACTUAL_TOTAL=$((ACTUAL_QED + ACTUAL_LEAN + ACTUAL_ISABELLE))
 ACTUAL_EXAMPLES=$(count_examples)
-ACTUAL_SESSION=$(get_session_from_log)
+ACTUAL_SESSION=$(get_actual_session)
 # Locale-independent thousands separator
 add_commas() { echo "$1" | sed ':a;s/\B[0-9]\{3\}\>$/,&/;ta'; }
 ACTUAL_QED_COMMA=$(add_commas "$ACTUAL_QED")
@@ -173,6 +213,7 @@ if [ "$QUICK_MODE" != "--quick" ]; then
     echo "  Qed (active):  $ACTUAL_QED"
     echo "  Admitted:      $ACTUAL_ADMITTED"
     echo "  Coq files:     $ACTUAL_COQ_FILES"
+    echo "  Coq active:    $ACTUAL_COQ_ACTIVE_FILES"
     echo "  Lean:          $ACTUAL_LEAN theorems"
     echo "  Isabelle:      $ACTUAL_ISABELLE lemmas"
     echo "  Total proofs:  $ACTUAL_TOTAL"
@@ -189,7 +230,7 @@ fi
 
 if [ -f "$REPO_ROOT/CLAUDE.md" ]; then
     DOC_QED=$(grep -oP '\d+,?\d* Qed' "$REPO_ROOT/CLAUDE.md" | head -1 | grep -oP '^\d+,?\d*' | tr -d ',' || echo "0")
-    DOC_SESSION=$(grep -oP 'Session \K\d+' "$REPO_ROOT/CLAUDE.md" | head -1 || echo "0")
+    DOC_SESSION=$(get_max_session_from_file "$REPO_ROOT/CLAUDE.md")
     DOC_LEAN=$(grep -oP 'Lean 4 Theorems[*]{2} \| \K\d+' "$REPO_ROOT/CLAUDE.md" | head -1 || echo "0")
     DOC_ISABELLE=$(grep -oP 'Isabelle/HOL Lemmas[*]{2} \| \K\d+' "$REPO_ROOT/CLAUDE.md" | head -1 || echo "0")
 
@@ -225,6 +266,8 @@ if [ -f "$REPO_ROOT/README.md" ]; then
     # Check for known-stale Qed counts (historical values that should never appear)
     check_no_stale "$REPO_ROOT/README.md" "6,193|6193" "Stale Qed count (6,193)" || true
     check_no_stale "$REPO_ROOT/README.md" "4,044|4044" "Stale Qed count (4,044)" || true
+    check_no_stale "$REPO_ROOT/README.md" "4,885|4885" "Stale Qed count (4,885)" || true
+    check_no_stale "$REPO_ROOT/README.md" "policy axiom|1 \\(policy\\)|1 axiom" "Stale active-axiom claim" || true
 
     # Dynamically check that README Lean/Isabelle/Qed match actual counts
     README_QED=$(grep -oP '[0-9,]+ Coq Qed' "$REPO_ROOT/README.md" | head -1 | grep -oP '^[0-9,]+' | tr -d ',' || echo "0")
@@ -293,11 +336,13 @@ fi
 METRICS_FILE="$REPO_ROOT/website/public/metrics.json"
 if [ -f "$METRICS_FILE" ]; then
     WEB_QED=$(grep -oP '"qedActive":\s*\K\d+' "$METRICS_FILE" || echo "0")
+    WEB_COQ_ACTIVE=$(python3 -c "import json; print(json.load(open('$METRICS_FILE'))['coq']['filesActive'])" 2>/dev/null || echo "0")
     WEB_SESSION=$(grep -oP '"session":\s*\K\d+' "$METRICS_FILE" || echo "0")
     WEB_LEAN=$(python3 -c "import json; print(json.load(open('$METRICS_FILE'))['lean']['theorems'])" 2>/dev/null || grep -oP '"theorems":\s*\K\d+' "$METRICS_FILE" | head -1 || echo "0")
     WEB_ISABELLE=$(python3 -c "import json; print(json.load(open('$METRICS_FILE'))['isabelle']['lemmas'])" 2>/dev/null || grep -oP '"lemmas":\s*\K\d+' "$METRICS_FILE" | head -1 || echo "0")
 
     check_value "Website Qed (metrics.json)" "$ACTUAL_QED" "$WEB_QED" "metrics.json" || true
+    check_value "Website active Coq files (metrics.json)" "$ACTUAL_COQ_ACTIVE_FILES" "$WEB_COQ_ACTIVE" "metrics.json" || true
     check_value "Website Lean (metrics.json)" "$ACTUAL_LEAN" "$WEB_LEAN" "metrics.json" || true
     check_value "Website Isabelle (metrics.json)" "$ACTUAL_ISABELLE" "$WEB_ISABELLE" "metrics.json" || true
     # Session number is internal tracking — warn but don't block
@@ -360,6 +405,66 @@ for ent_file in "$REPO_ROOT/docs/enterprise/CERTIFICATION.md" "$REPO_ROOT/docs/e
         check_no_stale "$ent_file" "Rocq 9\\.1" "Stale prover ref (Rocq 9.1)" || true
     fi
 done
+if [ "$QUICK_MODE" != "--quick" ]; then echo ""; fi
+
+# ── Check high-visibility docs for stale active-build claims ─────────
+
+if [ "$QUICK_MODE" != "--quick" ]; then
+    echo -e "${CYAN}Checking high-visibility active-build claims...${NC}"
+fi
+
+if [ -f "$REPO_ROOT/docs/UNDERSTANDING_RIINA.md" ]; then
+    check_no_stale "$REPO_ROOT/docs/UNDERSTANDING_RIINA.md" "4,885|4885" "Stale Qed count (4,885)" || true
+    check_no_stale "$REPO_ROOT/docs/UNDERSTANDING_RIINA.md" "4 justified axioms|Foundational axioms[[:space:]]*\\|[[:space:]]*4" "Stale axiom claim (4)" || true
+    check_no_stale "$REPO_ROOT/docs/UNDERSTANDING_RIINA.md" "249 active proof files|Active proof files[[:space:]]*\\|[[:space:]]*249" "Stale active file count (249)" || true
+fi
+
+if [ -f "$REPO_ROOT/docs/enterprise/COMPLIANCE_GUIDE.md" ]; then
+    check_no_stale "$REPO_ROOT/docs/enterprise/COMPLIANCE_GUIDE.md" "4,885|4885|4 justified axioms" "Stale compliance proof baseline claim" || true
+fi
+
+if [ -f "$REPO_ROOT/docs/enterprise/COMPLIANCE_PACKAGING.md" ]; then
+    check_no_stale "$REPO_ROOT/docs/enterprise/COMPLIANCE_PACKAGING.md" "4 justified axioms" "Stale compliance assumptions claim" || true
+fi
+
+if [ "$QUICK_MODE" != "--quick" ]; then echo ""; fi
+
+# ── Check quality metadata consistency ────────────────────────────────
+
+if [ "$QUICK_MODE" != "--quick" ]; then
+    echo -e "${CYAN}Checking quality metadata...${NC}"
+fi
+
+if [ -f "$METRICS_FILE" ]; then
+    # Check: if lean.compiled == false but lean.sorry == 0, warn about misleading claim
+    LEAN_COMPILED=$(python3 -c "import json; d=json.load(open('$METRICS_FILE')); print(str(d.get('quality',{}).get('leanCompiled',True)).lower())" 2>/dev/null || echo "true")
+    LEAN_SORRY_WEB=$(python3 -c "import json; print(json.load(open('$METRICS_FILE'))['lean']['sorry'])" 2>/dev/null || echo "0")
+    if [ "$LEAN_COMPILED" = "false" ] && [ "$LEAN_SORRY_WEB" = "0" ]; then
+        if [ "$QUICK_MODE" != "--quick" ]; then
+            echo -e "${YELLOW}[WARN]${NC} Lean reports 0 sorry but leanCompiled=false (sorry count is syntactic, not verified)"
+        fi
+        WARNINGS=$((WARNINGS + 1))
+    fi
+
+    ISA_COMPILED=$(python3 -c "import json; d=json.load(open('$METRICS_FILE')); print(str(d.get('quality',{}).get('isabelleCompiled',True)).lower())" 2>/dev/null || echo "true")
+    ISA_SORRY_WEB=$(python3 -c "import json; print(json.load(open('$METRICS_FILE'))['isabelle']['sorry'])" 2>/dev/null || echo "0")
+    if [ "$ISA_COMPILED" = "false" ] && [ "$ISA_SORRY_WEB" = "0" ]; then
+        if [ "$QUICK_MODE" != "--quick" ]; then
+            echo -e "${YELLOW}[WARN]${NC} Isabelle reports 0 sorry but isabelleCompiled=false (sorry count is syntactic, not verified)"
+        fi
+        WARNINGS=$((WARNINGS + 1))
+    fi
+
+    # Check stub prover counts match metrics.json
+    for prover_key in fstar tlaplus alloy smt verus kani tv; do
+        STATUS=$(python3 -c "import json; d=json.load(open('$METRICS_FILE')); print(d.get('quality',{}).get('${prover_key}Status','unknown'))" 2>/dev/null || echo "unknown")
+        if [ "$STATUS" = "stub" ]; then
+            if [ "$QUICK_MODE" != "--quick" ]; then
+                echo -e "${YELLOW}[INFO]${NC} ${prover_key}: status=stub (generated, not independently verified)"
+            fi
+        fi
+    done
+fi
 if [ "$QUICK_MODE" != "--quick" ]; then echo ""; fi
 
 # ── Check hooks are installed ─────────────────────────────────────────

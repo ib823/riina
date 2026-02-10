@@ -1,6 +1,6 @@
 # RIINA Compliance System — User Guide
 
-**Verification:** 7,934 Coq Qed (compiled, 0 Admitted, 2 policy axiom) | 10 independent provers | 852 Rust tests
+**Verification:** 7,740 Coq Qed (compiled, 0 Admitted, 0 active axioms) | 10 independent provers | 852 Rust tests
 
 ## Overview
 
@@ -21,7 +21,7 @@ Every RIINA program gets these guarantees **without any flags**:
 | Effect safety | Functions cannot perform undeclared side effects | `effects/EffectSafety.v` |
 | Declassification correctness | Secrets only released through authorized policy | `properties/Declassification.v` |
 
-These are proven theorems in Coq (4,885 Qed proofs in active build, 0 admits, 4 justified axioms). The compiler IS the security tool. The `--compliance` flag adds **industry-specific** rules on top of these universal guarantees.
+These are proven theorems in Coq (7,740 Qed proofs in active build, 0 admits, 0 active axioms). The compiler IS the security tool. The `--compliance` flag adds **industry-specific** rules on top of these universal guarantees.
 
 ---
 

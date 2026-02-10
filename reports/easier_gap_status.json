@@ -1,0 +1,21 @@
+{
+  "generated_utc": "2026-02-10T09:44:00Z",
+  "scope": "easier_items_1_2_9_12",
+  "item_1_type_system_soundness": {
+    "status": "PASS",
+    "detail": "coq_exists=1 coq_listed=1 coq_thm=30 lean_exists=1 lean_thm=30 isa_exists=1 isa_thm=30"
+  },
+  "item_2_non_interference_hygiene": {
+    "status": "PASS",
+    "detail": "ni_listed=0 explicit_step_up=0 active_axioms=0 archived_ni_required=3 archived_ni_total=4 metrics_assumptions=0"
+  },
+  "item_9_protocol_foundation": {
+    "status": "PASS",
+    "detail": "exists=1 coq_thm=184 tla_thm=184 alloy_assert=368"
+  },
+  "item_12_trust_chain_foundation": {
+    "status": "PASS",
+    "detail": "files=1 signed_policy=1 bootstrap_cmd=1 coq_thm=65"
+  },
+  "overall": "PASS"
+}

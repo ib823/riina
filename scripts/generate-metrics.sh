@@ -48,8 +48,20 @@ done < <(find "$ROOT_DIR/02_FORMAL/coq/properties/_archive_deprecated" -name "*.
 # Count total .v files
 COQ_FILES=$(find "$ROOT_DIR/02_FORMAL/coq" -name "*.v" -type f 2>/dev/null | wc -l)
 
-# Count active build files (from _CoqProject)
-COQ_ACTIVE_FILES=$(grep -c "\.v$" "$ROOT_DIR/02_FORMAL/coq/_CoqProject" 2>/dev/null || echo "250")
+# Count active build files (from _CoqProject) using the same parsing rules as
+# proof-ledger/public-quality scripts (ignore comments/flags, only .v entries).
+COQ_ACTIVE_FILES=$(
+    awk '
+      {
+        line=$0;
+        sub(/^[ \t]+/, "", line);
+        if (line ~ /^[#-]/ || line == "") next;
+        split(line, tok, /[ \t]+/);
+        if (tok[1] ~ /\.v$/) c++;
+      }
+      END { print c + 0 }
+    ' "$ROOT_DIR/02_FORMAL/coq/_CoqProject" 2>/dev/null || echo "0"
+)
 
 # Count Admitted in active build (should be 0)
 # Only count "Admitted." as standalone tactic (not in comments or strings)
