@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-02-10T11:18:57Z",
+  "generated_utc": "2026-02-11T03:50:28Z",
   "artifact_hygiene": { "status": "PASS", "detail": "tracked_artifacts=0" },
   "gitignore_coverage": { "status": "PASS", "detail": "missing_patterns=0" },
   "required_docs": { "status": "PASS", "detail": "missing_docs=0" },
@@ -9,5 +9,6 @@
   "metrics_alignment": { "status": "PASS", "detail": "metrics_qed=7740 metrics_active_files=244 metrics_admitted=0 metrics_axioms=0 metrics_assumptions=0" },
   "version_tag_alignment": { "status": "PASS", "detail": "version=0.2.0 tag=v0.2.0" },
   "claim_integrity": { "status": "PASS", "detail": "overall=mechanized bad_levels=0 overclaim_phrases=0" },
+  "independent_audit_readiness": { "status": "PASS", "detail": "independent_claim=false" },
   "overall": "PASS"
 }

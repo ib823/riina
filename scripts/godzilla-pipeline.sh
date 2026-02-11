@@ -142,6 +142,8 @@ restore_deploy_generated_state() {
     "$REPO_ROOT/reports/easier_gap_status.json"
     "$REPO_ROOT/reports/medium_gap_status.json"
     "$REPO_ROOT/reports/heavy_gap_status.json"
+    "$REPO_ROOT/reports/heavy_closure_status.json"
+    "$REPO_ROOT/reports/dim1_dim9_promotion_status.json"
     "$REPO_ROOT/reports/public_quality_status.json"
     "$REPO_ROOT/VERIFICATION_MANIFEST.md"
   )
@@ -160,6 +162,13 @@ ensure_clean_worktree() {
 
 run_audit_pipeline() {
   local riinac=""
+
+  if [ -f "$REPO_ROOT/scripts/check-dim1-dim9-promotion.sh" ]; then
+    run_step "DIM1/DIM9 PROMOTION READINESS (STRICT)" \
+      bash "$REPO_ROOT/scripts/check-dim1-dim9-promotion.sh" --strict-tools
+  else
+    echo -e "${YELLOW}Skipping dim1/dim9 promotion check: scripts/check-dim1-dim9-promotion.sh not found${NC}"
+  fi
 
   run_step "METRICS GENERATION" bash "$REPO_ROOT/scripts/generate-metrics.sh" --fast
 
@@ -182,6 +191,25 @@ run_audit_pipeline() {
     run_step "EASIER GAP CLOSURE (1,2,9,12)" bash "$REPO_ROOT/scripts/check-easier-gaps.sh"
   else
     echo -e "${YELLOW}Skipping easier-gap closure check: scripts/check-easier-gaps.sh not found${NC}"
+  fi
+  if [ -f "$REPO_ROOT/scripts/check-medium-gaps.sh" ]; then
+    run_step "MEDIUM GAP CLOSURE (1,2,3,4,9,12)" bash "$REPO_ROOT/scripts/check-medium-gaps.sh"
+  else
+    echo -e "${YELLOW}Skipping medium-gap closure check: scripts/check-medium-gaps.sh not found${NC}"
+  fi
+  if [ -f "$REPO_ROOT/scripts/check-heavy-gaps.sh" ]; then
+    run_step "HEAVY GAP FOUNDATION (5,6,7,8,10,11,13)" bash "$REPO_ROOT/scripts/check-heavy-gaps.sh"
+  else
+    echo -e "${YELLOW}Skipping heavy-gap foundation check: scripts/check-heavy-gaps.sh not found${NC}"
+  fi
+  if [ -f "$REPO_ROOT/scripts/check-heavy-closure.sh" ]; then
+    if [ "${RIINA_STRICT_HEAVY_CLOSURE:-0}" = "1" ]; then
+      run_step "HEAVY CLOSURE TRACKS (STRICT)" bash "$REPO_ROOT/scripts/check-heavy-closure.sh" --strict
+    else
+      run_step "HEAVY CLOSURE TRACKS (TRACKING)" bash "$REPO_ROOT/scripts/check-heavy-closure.sh"
+    fi
+  else
+    echo -e "${YELLOW}Skipping heavy-closure track check: scripts/check-heavy-closure.sh not found${NC}"
   fi
   if [ -f "$REPO_ROOT/scripts/public-quality-gates.sh" ]; then
     run_step "PUBLIC QUALITY GATES" bash "$REPO_ROOT/scripts/public-quality-gates.sh"

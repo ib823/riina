@@ -42,6 +42,8 @@ VERSION_STATUS="PASS"
 VERSION_DETAIL=""
 CLAIM_INTEGRITY_STATUS="PASS"
 CLAIM_INTEGRITY_DETAIL=""
+AUDIT_READINESS_STATUS="PASS"
+AUDIT_READINESS_DETAIL=""
 
 escape_json() {
   printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -306,6 +308,37 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 9) Independent-audit claim readiness (must be backed by heavy closure report)
+# ---------------------------------------------------------------------------
+
+independent_claim="false"
+if [ -f "$metrics_file" ] && command -v jq >/dev/null 2>&1; then
+  independent_claim="$(jq -r '.claimLevels.independentlyAudited // false' "$metrics_file" 2>/dev/null || echo "false")"
+fi
+
+if [ "$independent_claim" = "true" ]; then
+  heavy_closure_report="$REPO_ROOT/reports/heavy_closure_status.json"
+  heavy_ready="false"
+  if [ -f "$heavy_closure_report" ] && command -v jq >/dev/null 2>&1; then
+    if jq -e '.overall_closure_ready == true' "$heavy_closure_report" >/dev/null 2>&1; then
+      heavy_ready="true"
+    fi
+  fi
+
+  if [ "$heavy_ready" = "true" ]; then
+    AUDIT_READINESS_STATUS="PASS"
+    AUDIT_READINESS_DETAIL="independent_claim=true heavy_closure_ready=true"
+  else
+    AUDIT_READINESS_STATUS="FAIL"
+    AUDIT_READINESS_DETAIL="independent_claim=true heavy_closure_ready=false"
+    OVERALL="FAIL"
+  fi
+else
+  AUDIT_READINESS_STATUS="PASS"
+  AUDIT_READINESS_DETAIL="independent_claim=false"
+fi
+
+# ---------------------------------------------------------------------------
 # Report and exit
 # ---------------------------------------------------------------------------
 
@@ -322,6 +355,7 @@ cat > "$REPORT_PATH" <<EOF
   "metrics_alignment": { "status": "$METRICS_STATUS", "detail": "$(escape_json "$METRICS_DETAIL")" },
   "version_tag_alignment": { "status": "$VERSION_STATUS", "detail": "$(escape_json "$VERSION_DETAIL")" },
   "claim_integrity": { "status": "$CLAIM_INTEGRITY_STATUS", "detail": "$(escape_json "$CLAIM_INTEGRITY_DETAIL")" },
+  "independent_audit_readiness": { "status": "$AUDIT_READINESS_STATUS", "detail": "$(escape_json "$AUDIT_READINESS_DETAIL")" },
   "overall": "$OVERALL"
 }
 EOF
@@ -336,6 +370,7 @@ echo "Active-build hygiene  : $HYGIENE_STATUS"
 echo "Metrics alignment     : $METRICS_STATUS"
 echo "Version/tag alignment : $VERSION_STATUS"
 echo "Claim integrity       : $CLAIM_INTEGRITY_STATUS"
+echo "Audit readiness       : $AUDIT_READINESS_STATUS"
 echo "Report                : $REPORT_PATH"
 
 if [ "$OVERALL" = "PASS" ]; then

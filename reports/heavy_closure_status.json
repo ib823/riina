@@ -1,0 +1,79 @@
+{
+  "generated_utc": "2026-02-11T03:52:13Z",
+  "scope": "heavy_dims_5_6_7_8_10_11_13_closure",
+  "strict_mode": 0,
+  "foundation_run_ok": true,
+  "foundation_overall": "PASS",
+  "tools": {
+    "z3": true,
+    "fstar": false,
+    "verus": false,
+    "kani": false
+  },
+  "shared_exec": {
+    "ct_tests": true,
+    "zeroize_tests": true,
+    "secret_zeroize_test": true,
+    "crypto_tests": true,
+    "riinac_verify_fast": true,
+    "strict_dim1_dim9": true
+  },
+  "dimension_5_constant_time": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": true,
+    "pending": "none"
+  },
+  "dimension_6_zeroization": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": true,
+    "pending": "none"
+  },
+  "dimension_7_compiler_correctness": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": true,
+    "pending": "none"
+  },
+  "dimension_8_crypto_correctness": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": false,
+    "fstar_domain_files": 195,
+    "fstar_generated_files": 150,
+    "pending": "replace generated F* corpus with real proofs and run F* toolchain as mandatory executable gate"
+  },
+  "dimension_10_implementation_correctness": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": false,
+    "verus_domain_files": 195,
+    "kani_domain_files": 195,
+    "riinac_src_files": 5,
+    "pending": "run Verus and Kani on production compiler modules and bind results to spec clauses"
+  },
+  "dimension_11_protocol_impl_binding": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": true,
+    "implementation_binding_hits": 2,
+    "pending": "none"
+  },
+  "dimension_13_hardware_assumptions": {
+    "foundation": "PASS",
+    "artifact_gate": true,
+    "executable_gate": true,
+    "closure_ready": false,
+    "litmus_files": 0,
+    "pending": "add explicit hardware litmus suite and release-gated trust-boundary evidence"
+  },
+  "overall_executable": "PASS",
+  "overall_closure_ready": false
+}

@@ -1,0 +1,53 @@
+{
+  "generated_utc": "2026-02-11T03:51:50Z",
+  "repo_head": "36dd9af4e4ca7d2ae16b2264ea5de24781c22cb5",
+  "scope": "dim1_dim9_promotion_readiness",
+  "strict_tools": 1,
+  "provision": {
+    "requested": true,
+    "attempted": false,
+    "succeeded": false
+  },
+  "tools": {
+    "lake": true,
+    "isabelle": false,
+    "docker": true,
+    "java": true,
+    "tla2tools_jar": true,
+    "alloy_jar": true,
+    "tla2tools_path": "/workspaces/proof/05_TOOLING/tools/formal/tla2tools.jar",
+    "alloy_path": "/workspaces/proof/05_TOOLING/tools/formal/alloy-6.2.0/lib/app/org.alloytools.alloy.dist.jar"
+  },
+  "dimension_1": {
+    "status": "PASS",
+    "promotion_ready": true,
+    "checks": {
+      "coq_core": true,
+      "coq_theorem_count": 30,
+      "lean_core": true,
+      "lean_build": true,
+      "lean_actionable_sorry": 0,
+      "isabelle_core": true,
+      "isabelle_theorem_count": 27,
+      "isabelle_build": true
+    },
+    "detail": "coq_core=1 coq_thm=30 lean_core=1 lean_build=1 lean_mode=lake_core_build lean_actionable_sorry=0 isa_core=1 isa_thm=27 isa_build=1 isa_mode=docker_core_build"
+  },
+  "dimension_9": {
+    "status": "PASS",
+    "promotion_ready": true,
+    "checks": {
+      "files": true,
+      "coq_theorem_count": 184,
+      "tla_theorem_count": 184,
+      "alloy_assert_count": 368,
+      "tla_static": true,
+      "alloy_static": true,
+      "tla_exec": true,
+      "alloy_exec": true
+    },
+    "detail": "files=1 coq_thm=184 tla_thm=184 alloy_assert=368 tla_static=1 alloy_static=1 tla_exec=1 tla_mode=sany_parse alloy_exec=1 alloy_mode=jar_commands"
+  },
+  "overall_foundation": "PASS",
+  "overall_promotion_ready": true
+}

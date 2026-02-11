@@ -1,0 +1,12 @@
+{
+  "generated_utc": "2026-02-11T03:50:10Z",
+  "scope": "heavy_items_5_6_7_8_10_11_13_foundation",
+  "item_5_constant_time_foundation": {"status": "PASS", "detail": "anchor_hits=3/3"},
+  "item_6_zeroization_foundation": {"status": "PASS", "detail": "anchor_hits=3/3"},
+  "item_7_compiler_correctness_foundation": {"status": "PASS", "detail": "anchor_hits=3/3 tv_files=195"},
+  "item_8_crypto_correctness_foundation": {"status": "PASS", "detail": "anchor_hits=3/3 fstar_files=195"},
+  "item_10_implementation_correctness_foundation": {"status": "PASS", "detail": "verus_files=195 kani_files=195 riinac_src_files=5"},
+  "item_11_protocol_impl_binding_foundation": {"status": "PASS", "detail": "anchor_hits=3/3 tla_proto_files=3"},
+  "item_13_hardware_assumptions_foundation": {"status": "PASS", "detail": "anchor_hits=3/3 hw_files=3"},
+  "overall": "PASS"
+}
