@@ -144,6 +144,8 @@ restore_deploy_generated_state() {
     "$REPO_ROOT/reports/heavy_gap_status.json"
     "$REPO_ROOT/reports/heavy_closure_status.json"
     "$REPO_ROOT/reports/dim1_dim9_promotion_status.json"
+    "$REPO_ROOT/reports/noncoq_mechanized_status.json"
+    "$REPO_ROOT/reports/dim14_runtime_status.json"
     "$REPO_ROOT/reports/public_quality_status.json"
     "$REPO_ROOT/VERIFICATION_MANIFEST.md"
   )
