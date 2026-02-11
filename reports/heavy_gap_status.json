@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-02-11T03:50:10Z",
+  "generated_utc": "2026-02-11T10:59:21Z",
   "scope": "heavy_items_5_6_7_8_10_11_13_foundation",
   "item_5_constant_time_foundation": {"status": "PASS", "detail": "anchor_hits=3/3"},
   "item_6_zeroization_foundation": {"status": "PASS", "detail": "anchor_hits=3/3"},

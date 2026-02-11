@@ -1,14 +1,14 @@
 {
-  "generated_utc": "2026-02-11T03:52:13Z",
+  "generated_utc": "2026-02-11T10:59:50Z",
   "scope": "heavy_dims_5_6_7_8_10_11_13_closure",
   "strict_mode": 0,
   "foundation_run_ok": true,
   "foundation_overall": "PASS",
   "tools": {
     "z3": true,
-    "fstar": false,
-    "verus": false,
-    "kani": false
+    "fstar": true,
+    "verus": true,
+    "kani": true
   },
   "shared_exec": {
     "ct_tests": true,
@@ -43,20 +43,31 @@
     "foundation": "PASS",
     "artifact_gate": true,
     "executable_gate": true,
-    "closure_ready": false,
+    "closure_ready": true,
+    "fstar_active_exec": true,
+    "fstar_active_files": 1,
+    "fstar_active_generated_files": 0,
     "fstar_domain_files": 195,
-    "fstar_generated_files": 150,
-    "pending": "replace generated F* corpus with real proofs and run F* toolchain as mandatory executable gate"
+    "fstar_domain_generated_files": 0,
+    "pending": "none"
   },
   "dimension_10_implementation_correctness": {
     "foundation": "PASS",
     "artifact_gate": true,
     "executable_gate": true,
-    "closure_ready": false,
+    "closure_ready": true,
+    "verus_active_exec": true,
+    "kani_active_exec": true,
+    "verus_active_files": 1,
+    "kani_active_files": 1,
+    "verus_active_generated_files": 0,
+    "kani_active_generated_files": 0,
     "verus_domain_files": 195,
     "kani_domain_files": 195,
+    "verus_domain_generated_files": 0,
+    "kani_domain_generated_files": 0,
     "riinac_src_files": 5,
-    "pending": "run Verus and Kani on production compiler modules and bind results to spec clauses"
+    "pending": "none"
   },
   "dimension_11_protocol_impl_binding": {
     "foundation": "PASS",
@@ -70,10 +81,10 @@
     "foundation": "PASS",
     "artifact_gate": true,
     "executable_gate": true,
-    "closure_ready": false,
-    "litmus_files": 0,
-    "pending": "add explicit hardware litmus suite and release-gated trust-boundary evidence"
+    "closure_ready": true,
+    "litmus_files": 3,
+    "pending": "none"
   },
   "overall_executable": "PASS",
-  "overall_closure_ready": false
+  "overall_closure_ready": true
 }

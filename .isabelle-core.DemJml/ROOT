@@ -1,0 +1,5 @@
+session RIINA_CORE = HOL +
+  theories
+    Progress
+    Preservation
+    TypeSafety
