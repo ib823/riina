@@ -1,0 +1,140 @@
+{
+  "generated": "2026-02-11T22:40:43Z",
+  "generatedHuman": "February 11, 2026 at 22:40 UTC",
+  "version": "0.2.0",
+  "session": 83,
+  "git": {
+    "commit": "1518c8b9",
+    "branch": "main"
+  },
+  "proofs": {
+    "qedActive": 7740,
+    "qedDeprecated": 758,
+    "qedTotal": 8498,
+    "admitted": 0,
+    "axioms": 0,
+    "assumptions": 0,
+    "axiomsJustified": true
+  },
+  "coq": {
+    "filesTotal": 284,
+    "filesActive": 244,
+    "domains": 195,
+    "prover": "Coq 8.20.1"
+  },
+  "lean": {
+    "theorems": 7900,
+    "sorry": 227,
+    "axioms": 0,
+    "files": 255,
+    "lines": 86983,
+    "prover": "Lean 4"
+  },
+  "isabelle": {
+    "lemmas": 8069,
+    "sorry": 0,
+    "axioms": 0,
+    "files": 260,
+    "lines": 89170,
+    "prover": "Isabelle/HOL"
+  },
+  "fstar": {
+    "lemmas": 1158,
+    "files": 252,
+    "prover": "F*"
+  },
+  "tlaplus": {
+    "theorems": 7928,
+    "files": 251,
+    "prover": "TLA+"
+  },
+  "alloy": {
+    "assertions": 7928,
+    "files": 251,
+    "prover": "Alloy 6"
+  },
+  "smt": {
+    "assertions": 7928,
+    "files": 251,
+    "prover": "Z3/CVC5 (SMT-LIB)"
+  },
+  "verus": {
+    "proofs": 1531,
+    "files": 252,
+    "prover": "Verus"
+  },
+  "kani": {
+    "harnesses": 1531,
+    "files": 252,
+    "prover": "Kani"
+  },
+  "tv": {
+    "validations": 11688,
+    "files": 251,
+    "prover": "Translation Validation"
+  },
+  "multiProver": {
+    "tripleProverTheorems": 7205,
+    "totalProofsAllProvers": 63401,
+    "totalProvers": 10,
+    "proverList": ["Coq", "Lean 4", "Isabelle/HOL", "F*", "TLA+", "Alloy 6", "Z3/CVC5", "Verus", "Kani", "Translation Validation"],
+    "sorry": 227,
+    "status": "ACTIVE_COQ_MECHANIZED"
+  },
+  "quality": {
+    "coqCompiled": true,
+    "leanCompiled": true,
+    "isabelleCompiled": true,
+    "fstarStatus": "generated",
+    "tlaplusStatus": "compiled",
+    "alloyStatus": "compiled",
+    "smtStatus": "generated",
+    "verusStatus": "generated",
+    "kaniStatus": "generated",
+    "tvStatus": "generated",
+    "runtimeProofStatus": "generated",
+    "coqTiers": {
+      "core": 463,
+      "domain": 7277,
+      "domainTrivial": 773
+    }
+  },
+  "claimLevels": {
+    "legend": ["generated", "compiled", "mechanized", "independently_audited"],
+    "overall": "mechanized",
+    "independentlyAudited": false,
+    "coq": "mechanized",
+    "lean": "compiled",
+    "isabelle": "compiled",
+    "fstar": "generated",
+    "tlaplus": "compiled",
+    "alloy": "compiled",
+    "smt": "generated",
+    "verus": "generated",
+    "kani": "generated",
+    "tv": "generated",
+    "runtimeProofArchitecture": "generated"
+  },
+  "rust": {
+    "tests": 856,
+    "testsVerified": 856,
+    "testsEstimated": 0,
+    "testsSource": "full_cargo_test",
+    "crates": 15
+  },
+  "examples": 130,
+  "status": {
+    "build": "passing",
+    "grade": "A",
+    "threats": "1231+"
+  },
+  "milestones": [
+    { "date": "2026-02-07", "event": "10-lane verification corpus published (Coq, Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV) — claim levels apply per lane" },
+    { "date": "2026-02-07", "event": "Lean 4 lane integrated into public metrics (see claim levels for current status)" },
+    { "date": "2026-02-07", "event": "SMT assertion corpus integrated into public metrics" },
+    { "date": "2026-02-06", "event": "Proof depth 20+ across all 250 domain files" },
+    { "date": "2026-02-06", "event": "Cross-prover mapping milestone recorded (current quality flags are authoritative)" },
+    { "date": "2026-02-10", "event": "Axiom token elimination: 4 → 0 (active-build explicit assumptions now 0)" },
+    { "date": "2026-02-01", "event": "Phase 7 complete: Platform Universality" }
+  ]
+}
