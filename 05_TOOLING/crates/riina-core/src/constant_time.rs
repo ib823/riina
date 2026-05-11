@@ -81,25 +81,19 @@ where
         + std::ops::Not<Output = T>,
 {
     // Convert bool to all-ones or all-zeros mask
-    let _mask = if choice {
+    let mask = if choice {
         !T::default() // All ones
     } else {
         T::default() // All zeros
     };
 
-    // Select using bitwise operations
-    // (a & mask) | (b & !mask)
-    // When mask is all-ones: a | 0 = a
-    // When mask is all-zeros: 0 | b = b
     compiler_fence(Ordering::SeqCst);
 
-    // For now, just return based on choice
-    // TODO: Implement proper bitwise selection
-    if choice {
-        a
-    } else {
-        b
-    }
+    // Select using bitwise operations:
+    // (a & mask) | (b & !mask)
+    // When mask is all-ones: (a & 1..1) | (b & 0..0) = a
+    // When mask is all-zeros: (a & 0..0) | (b & 1..1) = b
+    (a & mask) | (b & !mask)
 }
 
 /// Constant-time less-than comparison for u8
@@ -195,5 +189,30 @@ mod tests {
         assert!(!ct_lt_u8(10, 5));
         assert!(!ct_lt_u8(5, 5));
         assert!(ct_lt_u8(0, 255));
+    }
+
+    #[test]
+    fn test_ct_select_u8() {
+        assert_eq!(ct_select(true, 0xAAu8, 0x55u8), 0xAA);
+        assert_eq!(ct_select(false, 0xAAu8, 0x55u8), 0x55);
+    }
+
+    #[test]
+    fn test_ct_select_u64() {
+        let a: u64 = 0xDEAD_BEEF_CAFE_BABE;
+        let b: u64 = 0x0123_4567_89AB_CDEF;
+        assert_eq!(ct_select(true, a, b), a);
+        assert_eq!(ct_select(false, a, b), b);
+    }
+
+    #[test]
+    fn test_ct_select_preserves_all_bits() {
+        // Every bit position must round-trip through the mask correctly.
+        for shift in 0..32 {
+            let a: u32 = 1 << shift;
+            let b: u32 = !a;
+            assert_eq!(ct_select(true, a, b), a);
+            assert_eq!(ct_select(false, a, b), b);
+        }
     }
 }
