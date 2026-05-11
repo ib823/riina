@@ -135,6 +135,44 @@ struct HandlerContext {
     handler_env: Env,
 }
 
+/// Walk an expression tree and return the effect of the first `Perform`
+/// reached in pre-order traversal, if any. Used by `Expr::Handle` to tag
+/// the installed handler with the effect it most likely covers.
+fn infer_handled_effect(expr: &Expr) -> Option<Effect> {
+    match expr {
+        Expr::Perform(effect, _) => Some(*effect),
+        Expr::Pair(a, b)
+        | Expr::App(a, b)
+        | Expr::Assign(a, b)
+        | Expr::Declassify(a, b)
+        | Expr::Handle(a, _, b) => infer_handled_effect(a).or_else(|| infer_handled_effect(b)),
+        Expr::BinOp(_, a, b) => infer_handled_effect(a).or_else(|| infer_handled_effect(b)),
+        Expr::Fst(a)
+        | Expr::Snd(a)
+        | Expr::Inl(a, _)
+        | Expr::Inr(a, _)
+        | Expr::Classify(a)
+        | Expr::Prove(a)
+        | Expr::Ref(a, _)
+        | Expr::Deref(a)
+        | Expr::Lam(_, _, a)
+        | Expr::Grant(_, a) => infer_handled_effect(a),
+        Expr::If(c, t, e) => infer_handled_effect(c)
+            .or_else(|| infer_handled_effect(t))
+            .or_else(|| infer_handled_effect(e)),
+        Expr::Let(_, v, body) => {
+            infer_handled_effect(v).or_else(|| infer_handled_effect(body))
+        }
+        Expr::LetRec(_, _, v, body) => {
+            infer_handled_effect(v).or_else(|| infer_handled_effect(body))
+        }
+        Expr::Case(s, _, l, _, r) => infer_handled_effect(s)
+            .or_else(|| infer_handled_effect(l))
+            .or_else(|| infer_handled_effect(r)),
+        _ => None,
+    }
+}
+
 /// Capability context
 #[derive(Debug, Clone, Default)]
 struct Capabilities {
@@ -462,9 +500,18 @@ impl Interpreter {
 
             // E_Handle: Install effect handler
             Expr::Handle(body, handler_var, handler) => {
+                // Infer which effect this handler is intended to cover by
+                // scanning the body for the first `Perform`. If the body
+                // performs no effect, default to `Effect::System` (the
+                // catch-all used historically). This is best-effort: the
+                // dispatch logic still pops the most-recent handler
+                // regardless of effect, matching the operational semantics.
+                let inferred_effect =
+                    infer_handled_effect(body).unwrap_or(Effect::System);
+
                 // Push handler context
                 self.handlers.push(HandlerContext {
-                    effect: Effect::System, // TODO: infer effect
+                    effect: inferred_effect,
                     handler_var: handler_var.clone(),
                     handler: Rc::new((**handler).clone()),
                     handler_env: env.clone(),

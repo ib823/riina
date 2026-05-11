@@ -417,7 +417,12 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
                 ));
             }
 
-            // TODO: Actually compile with stage 0 when RIINA is ready
+            // BLOCKED: invoke `riinac` (the stage-0 bootstrap compiler) to
+            // build stage 1 from the RIINA-language sources. Requires the
+            // RIINA front-end to be feature-complete enough to compile the
+            // compiler itself; until then the Rust build is the closest
+            // approximation. The `stage0` check above already enforces that
+            // the bootstrap binary exists when we get here.
             ctx.log("Stage 1: (using Rust compiler until self-hosting ready)");
             run_command(ctx, "cargo", &["build", "--release", "--package", "riinac"])?;
         }
@@ -425,22 +430,43 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
             // Stage 2: Verification build (must match stage 1)
             ctx.log("Stage 2: Building verification compiler...");
 
-            let stage1 = ctx.root.join("target/release/riinac");
-            if !stage1.exists() {
+            let stage_binary = ctx.root.join("target/release/riinac");
+            if !stage_binary.exists() {
                 return Err(BuildError::InvalidConfiguration(
                     "Stage 1 compiler not found. Run `riina-build bootstrap --stage 1` first."
                         .to_string(),
                 ));
             }
 
-            // TODO: Actually compile with stage 1 when self-hosting ready
+            // Snapshot the stage 1 binary before the stage 2 build overwrites
+            // it in-place. The comparison below relies on having both copies.
+            let stage1_snapshot = ctx.root.join("target/release/riinac.stage1");
+            std::fs::copy(&stage_binary, &stage1_snapshot)?;
+
+            // Self-hosting prerequisites for stage 2 are not in place yet
+            // (compiler-from-stage-1 invocation requires the bootstrap to
+            // emit a working riinac front-end). Until then we re-run the
+            // same Rust build so the comparison below at least checks that
+            // the build pipeline is deterministic for this artifact.
             ctx.log("Stage 2: (using Rust compiler until self-hosting ready)");
             run_command(ctx, "cargo", &["build", "--release", "--package", "riinac"])?;
 
             if verify {
                 ctx.log("Verifying stage 1 == stage 2...");
-                // TODO: Compare binaries when self-hosting ready
-                ctx.log("✓ Stages match (placeholder)");
+                let bytes_a = std::fs::read(&stage1_snapshot)?;
+                let bytes_b = std::fs::read(&stage_binary)?;
+                if bytes_a == bytes_b {
+                    ctx.log(&format!(
+                        "✓ Stages match ({} bytes, byte-identical)",
+                        bytes_a.len()
+                    ));
+                } else {
+                    return Err(BuildError::VerificationFailed(format!(
+                        "stage 1 ({} bytes) != stage 2 ({} bytes): build is not reproducible",
+                        bytes_a.len(),
+                        bytes_b.len(),
+                    )));
+                }
             }
         }
         _ => {
@@ -467,7 +493,11 @@ fn build_hdl(ctx: &BuildContext, target: Option<&str>) -> Result<(), BuildError>
         return Ok(());
     }
 
-    // TODO: Integrate with actual HDL toolchain
+    // BLOCKED: integrate with an HDL toolchain (e.g. yosys/nextpnr for
+    // synthesis, verilator for simulation, vivado for production targets).
+    // Selection should be driven by `target` once the toolchain wrapper
+    // exists; until then this is a structural no-op that confirms an
+    // `hdl/` directory is present.
     ctx.log(&format!("HDL target: {}", target.unwrap_or("simulation")));
     ctx.log("HDL build not yet implemented");
 

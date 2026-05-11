@@ -313,6 +313,85 @@ fn run_cargo(ctx: &VerifyContext, args: &[&str]) -> Result<bool, VerifyError> {
     Ok(status.success())
 }
 
+/// Run `cargo <args>` redirected into a specific target directory.
+/// Used by the reproducibility check so two builds don't share cache state.
+fn run_cargo_with_target(
+    ctx: &VerifyContext,
+    args: &[&str],
+    target_dir: &Path,
+) -> Result<bool, VerifyError> {
+    ctx.log_verbose(&format!(
+        "Running: CARGO_TARGET_DIR={} cargo {}",
+        target_dir.display(),
+        args.join(" "),
+    ));
+
+    let status = Command::new("cargo")
+        .args(args)
+        .current_dir(&ctx.root)
+        .env("CARGO_TARGET_DIR", target_dir)
+        .stdout(if ctx.verbose { Stdio::inherit() } else { Stdio::piped() })
+        .stderr(if ctx.verbose { Stdio::inherit() } else { Stdio::piped() })
+        .status()
+        .map_err(|e| {
+            if e.kind() == io::ErrorKind::NotFound {
+                VerifyError::ToolNotFound("cargo".to_string())
+            } else {
+                VerifyError::IoError(e)
+            }
+        })?;
+
+    Ok(status.success())
+}
+
+/// Compare two release/ output directories file-by-file. Returns the list
+/// of relative paths whose contents differ between A and B (or that are
+/// missing on one side). Intermediate build artifacts under `deps/`,
+/// `build/`, `incremental/`, and `.fingerprint/` are ignored — only the
+/// final binaries / libraries at the top level are compared, since those
+/// are what determines reproducibility for downstream consumers.
+fn compare_release_dirs(a: &Path, b: &Path) -> io::Result<Vec<String>> {
+    let names_a = collect_top_level_files(a)?;
+    let names_b = collect_top_level_files(b)?;
+
+    let mut diffs: Vec<String> = Vec::new();
+    for name in names_a.iter() {
+        if !names_b.contains(name) {
+            diffs.push(format!("{name} (missing in B)"));
+            continue;
+        }
+        let bytes_a = fs::read(a.join(name))?;
+        let bytes_b = fs::read(b.join(name))?;
+        if bytes_a != bytes_b {
+            diffs.push(name.clone());
+        }
+    }
+    for name in names_b.iter() {
+        if !names_a.contains(name) {
+            diffs.push(format!("{name} (missing in A)"));
+        }
+    }
+    Ok(diffs)
+}
+
+fn collect_top_level_files(dir: &Path) -> io::Result<Vec<String>> {
+    let mut out = Vec::new();
+    if !dir.exists() {
+        return Ok(out);
+    }
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let ft = entry.file_type()?;
+        if ft.is_file() {
+            if let Some(name) = entry.file_name().to_str() {
+                out.push(name.to_string());
+            }
+        }
+    }
+    out.sort();
+    Ok(out)
+}
+
 fn verify_level_0(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     ctx.log("Level 0: Syntax verification (compilation)");
     let start = Instant::now();
@@ -564,20 +643,33 @@ fn verify_level_5(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
 fn verify_level_6(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     ctx.log("Level 6: Production verification");
 
-    // Reproducibility check
+    // Reproducibility check: build twice into separate target directories
+    // and compare top-level release artifacts byte-for-byte.
     ctx.log("Running reproducibility check...");
     let start = Instant::now();
 
-    // Build twice, compare
-    let _ = run_cargo(ctx, &["build", "--release"]);
-    // TODO: Actually compare builds
+    let target_a = ctx.root.join("target-repro-a");
+    let target_b = ctx.root.join("target-repro-b");
 
-    ctx.record(
-        "reproducibility",
-        true,
-        start.elapsed(),
-        "Reproducibility pending",
-    );
+    let build_a = run_cargo_with_target(ctx, &["build", "--release"], &target_a);
+    let build_b = run_cargo_with_target(ctx, &["build", "--release"], &target_b);
+
+    let (passed, detail) = match (build_a, build_b) {
+        (Ok(true), Ok(true)) => {
+            match compare_release_dirs(&target_a.join("release"), &target_b.join("release")) {
+                Ok(diffs) if diffs.is_empty() => (true, "Builds reproducible".to_string()),
+                Ok(diffs) => (
+                    false,
+                    format!("{} artifact(s) differ: {}", diffs.len(), diffs.join(", ")),
+                ),
+                Err(e) => (false, format!("Comparison failed: {e}")),
+            }
+        }
+        (Ok(false), _) | (_, Ok(false)) => (false, "Build failed during reproducibility run".to_string()),
+        (Err(e), _) | (_, Err(e)) => (false, format!("Build invocation error: {e:?}")),
+    };
+
+    ctx.record("reproducibility", passed, start.elapsed(), &detail);
 
     // Mutation testing
     if check_tool("cargo-mutants") {
@@ -876,14 +968,21 @@ fn main() -> ExitCode {
         Commands::Rust { tool, package } => verify_rust_tool(&mut ctx, *tool, package.as_deref()),
         Commands::Ada { level, package } => {
             ctx.log(&format!("Ada/SPARK verification at level {level}"));
-            // TODO: Integrate GNATprove
+            // BLOCKED: shell out to `gnatprove` with the appropriate flags
+            // for the requested level (e.g. --level=2 for silver). Requires
+            // GNATprove to be on PATH (already detected elsewhere via
+            // `check_tool`) and a `gnat_project` file in the workspace.
+            // Returns Ok to keep the command structurally available.
             Ok(())
         }
         Commands::Coverage { minimum, html } => verify_coverage(&mut ctx, *minimum, *html),
         Commands::Fuzz { target, duration } => run_fuzzing(&mut ctx, target.as_deref(), *duration),
         Commands::Mutate { package, timeout } => {
             ctx.log("Mutation testing...");
-            // TODO: Implement mutation testing
+            // BLOCKED: drive `cargo mutants` against the requested package
+            // with `--timeout`. `verify_level_6` already invokes this when
+            // `cargo-mutants` is on PATH; the standalone subcommand should
+            // share that path once the test-config split is settled.
             Ok(())
         }
         Commands::Audit => run_audit(&mut ctx),

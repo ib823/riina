@@ -437,14 +437,121 @@ fn hash_directory(
 fn verify_manifest(manifest_path: &Path, strict: bool, verbose: bool) -> io::Result<bool> {
     println!("Verifying against manifest: {}", manifest_path.display());
 
-    // TODO: Parse manifest and verify hashes
-    println!("Manifest verification not yet implemented");
-    println!("Would verify:");
-    println!("  - All input file hashes match");
-    println!("  - All output file hashes match");
-    println!("  - Tool versions match");
+    let contents = fs::read_to_string(manifest_path)?;
+    let inputs = parse_file_entries(&contents, "inputs");
+    let outputs = parse_file_entries(&contents, "outputs");
 
-    Ok(true)
+    // Hashes recorded in the manifest are relative to the project root.
+    // Verification is invoked from the project root in normal use; if a
+    // `project_root` is recorded, prefer that.
+    let recorded_root = parse_string_field(&contents, "project_root");
+    let root: PathBuf = recorded_root
+        .as_deref()
+        .map(PathBuf::from)
+        .filter(|p| p.is_dir())
+        .unwrap_or_else(|| env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+
+    let mut mismatches = 0usize;
+    let mut missing = 0usize;
+    let mut checked = 0usize;
+
+    for entry in inputs.iter().chain(outputs.iter()) {
+        let file = root.join(&entry.path);
+        checked += 1;
+        if !file.exists() {
+            missing += 1;
+            println!("  MISSING: {}", entry.path);
+            continue;
+        }
+        let actual_hash = hash_file(&file)?;
+        let actual_size = file_size(&file)?;
+        if actual_hash != entry.sha256 || actual_size != entry.size {
+            mismatches += 1;
+            println!("  MISMATCH: {}", entry.path);
+            if verbose {
+                println!("    expected: {} ({} bytes)", entry.sha256, entry.size);
+                println!("    actual:   {} ({} bytes)", actual_hash, actual_size);
+            }
+        } else if verbose {
+            println!("  OK: {}", entry.path);
+        }
+    }
+
+    println!();
+    println!("Verified {checked} file(s): {mismatches} mismatch(es), {missing} missing");
+
+    let all_ok = mismatches == 0 && missing == 0;
+    // In strict mode any deviation fails; otherwise treat purely-missing
+    // files as a soft warning (e.g. workspace not fully built locally).
+    Ok(if strict { all_ok } else { mismatches == 0 })
+}
+
+/// Extract `{"path": ..., "sha256": ..., "size": ...}` entries from the
+/// named array section of a manifest JSON document.
+///
+/// This is a deliberately minimal parser tailored to the output of
+/// `BuildManifest::to_json` — it doesn't aim to handle arbitrary JSON.
+fn parse_file_entries(json: &str, section: &str) -> Vec<FileEntry> {
+    let needle = format!("\"{section}\":");
+    let Some(section_start) = json.find(&needle) else {
+        return Vec::new();
+    };
+    let after = &json[section_start..];
+    let Some(open) = after.find('[') else {
+        return Vec::new();
+    };
+    let body = &after[open + 1..];
+    let Some(close) = body.find(']') else {
+        return Vec::new();
+    };
+    let body = &body[..close];
+
+    let mut entries = Vec::new();
+    let mut cursor = 0;
+    while let Some(start) = body[cursor..].find('{') {
+        let abs_start = cursor + start;
+        let Some(end_rel) = body[abs_start..].find('}') else {
+            break;
+        };
+        let obj = &body[abs_start + 1..abs_start + end_rel];
+        if let (Some(path), Some(sha256), Some(size)) = (
+            extract_string(obj, "path"),
+            extract_string(obj, "sha256"),
+            extract_number(obj, "size"),
+        ) {
+            entries.push(FileEntry { path, sha256, size });
+        }
+        cursor = abs_start + end_rel + 1;
+    }
+    entries
+}
+
+fn parse_string_field(json: &str, key: &str) -> Option<String> {
+    extract_string(json, key)
+}
+
+fn extract_string(text: &str, key: &str) -> Option<String> {
+    let needle = format!("\"{key}\"");
+    let key_pos = text.find(&needle)?;
+    let after = &text[key_pos + needle.len()..];
+    let colon = after.find(':')?;
+    let rest = &after[colon + 1..];
+    let quote_open = rest.find('"')?;
+    let after_open = &rest[quote_open + 1..];
+    let quote_close = after_open.find('"')?;
+    Some(after_open[..quote_close].to_string())
+}
+
+fn extract_number(text: &str, key: &str) -> Option<u64> {
+    let needle = format!("\"{key}\"");
+    let key_pos = text.find(&needle)?;
+    let after = &text[key_pos + needle.len()..];
+    let colon = after.find(':')?;
+    let rest = after[colon + 1..].trim_start();
+    let end = rest
+        .find(|c: char| !c.is_ascii_digit())
+        .unwrap_or(rest.len());
+    rest[..end].parse().ok()
 }
 
 fn show_manifest(manifest_path: &Path, format: &str) -> io::Result<()> {
@@ -473,10 +580,67 @@ fn diff_manifests(manifest1: &Path, manifest2: &Path) -> io::Result<()> {
     println!("  2: {}", manifest2.display());
     println!();
 
-    // TODO: Parse and compare
-    println!("Manifest diff not yet implemented");
+    let m1 = fs::read_to_string(manifest1)?;
+    let m2 = fs::read_to_string(manifest2)?;
 
+    let mut total = 0usize;
+    for section in ["inputs", "outputs"] {
+        println!("[{section}]");
+        let diffs = diff_section(&m1, &m2, section);
+        if diffs.is_empty() {
+            println!("  (no changes)");
+        } else {
+            for line in &diffs {
+                println!("  {line}");
+            }
+        }
+        total += diffs.len();
+        println!();
+    }
+
+    println!("Total changes: {total}");
     Ok(())
+}
+
+/// Compute the set of human-readable difference lines for one manifest
+/// section, comparing entries by path. Reports added, removed, and
+/// content-changed (hash or size) files.
+fn diff_section(m1: &str, m2: &str, section: &str) -> Vec<String> {
+    let entries_1 = parse_file_entries(m1, section);
+    let entries_2 = parse_file_entries(m2, section);
+
+    let by_path_1: BTreeMap<&str, &FileEntry> =
+        entries_1.iter().map(|e| (e.path.as_str(), e)).collect();
+    let by_path_2: BTreeMap<&str, &FileEntry> =
+        entries_2.iter().map(|e| (e.path.as_str(), e)).collect();
+
+    let mut diffs: Vec<String> = Vec::new();
+    for (path, e1) in &by_path_1 {
+        match by_path_2.get(path) {
+            None => diffs.push(format!("- {path} (removed)")),
+            Some(e2) if e1.sha256 != e2.sha256 || e1.size != e2.size => {
+                diffs.push(format!(
+                    "~ {path} ({} -> {}, {} -> {} bytes)",
+                    short(&e1.sha256),
+                    short(&e2.sha256),
+                    e1.size,
+                    e2.size,
+                ));
+            }
+            _ => {}
+        }
+    }
+    for path in by_path_2.keys() {
+        if !by_path_1.contains_key(path) {
+            diffs.push(format!("+ {path} (added)"));
+        }
+    }
+    diffs
+}
+
+fn short(hash: &str) -> &str {
+    let n = hash.len().min(12);
+    &hash[..n]
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -541,5 +705,81 @@ fn main() -> ExitCode {
             eprintln!("[ERROR] {e}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_manifest() -> String {
+        let m = BuildManifest {
+            version: "1".to_string(),
+            timestamp: 0,
+            profile: "release".to_string(),
+            project_root: "/tmp/proj".to_string(),
+            environment: BTreeMap::new(),
+            tools: BTreeMap::new(),
+            inputs: vec![
+                FileEntry {
+                    path: "Cargo.toml".to_string(),
+                    sha256: "aaaa1111".to_string(),
+                    size: 100,
+                },
+                FileEntry {
+                    path: "src/lib.rs".to_string(),
+                    sha256: "bbbb2222".to_string(),
+                    size: 200,
+                },
+            ],
+            outputs: vec![FileEntry {
+                path: "target/release/riinac".to_string(),
+                sha256: "cccc3333".to_string(),
+                size: 9000,
+            }],
+            verification: VerificationResults::default(),
+        };
+        m.to_json()
+    }
+
+    #[test]
+    fn test_parse_file_entries_round_trips() {
+        let json = sample_manifest();
+        let inputs = parse_file_entries(&json, "inputs");
+        let outputs = parse_file_entries(&json, "outputs");
+
+        assert_eq!(inputs.len(), 2);
+        assert_eq!(inputs[0].path, "Cargo.toml");
+        assert_eq!(inputs[0].sha256, "aaaa1111");
+        assert_eq!(inputs[0].size, 100);
+        assert_eq!(inputs[1].path, "src/lib.rs");
+
+        assert_eq!(outputs.len(), 1);
+        assert_eq!(outputs[0].path, "target/release/riinac");
+        assert_eq!(outputs[0].size, 9000);
+    }
+
+    #[test]
+    fn test_diff_section_detects_changes() {
+        let m1 = sample_manifest();
+        // Mutate one hash and add a new file in m2.
+        let m2 = m1
+            .replace("\"bbbb2222\"", "\"bbbb9999\"")
+            .replace(
+                "{\"path\": \"target/release/riinac\", \"sha256\": \"cccc3333\", \"size\": 9000}",
+                "{\"path\": \"target/release/riinac\", \"sha256\": \"cccc3333\", \"size\": 9000},\n    {\"path\": \"target/release/riina-verify\", \"sha256\": \"dddd4444\", \"size\": 5000}",
+            );
+
+        let input_diffs = diff_section(&m1, &m2, "inputs");
+        let output_diffs = diff_section(&m1, &m2, "outputs");
+
+        assert!(input_diffs.iter().any(|d| d.contains("src/lib.rs") && d.starts_with('~')));
+        assert!(output_diffs.iter().any(|d| d.contains("riina-verify") && d.starts_with('+')));
+    }
+
+    #[test]
+    fn test_parse_missing_section_returns_empty() {
+        let entries = parse_file_entries("{}", "inputs");
+        assert!(entries.is_empty());
     }
 }

@@ -755,6 +755,15 @@ impl Lower {
                 // Lower scrutinee
                 let scrut_var = self.lower_expr(scrutinee)?;
 
+                // Recover the sum type's component types so the Unwrap{Left,Right}
+                // instructions can carry the correct payload type. Falls back to
+                // Ty::Unit if the scrutinee isn't a sum (which should have been
+                // caught upstream by the type checker).
+                let (left_ty, right_ty) = match self.infer_type(scrutinee) {
+                    Ty::Sum(l, r) => (*l, *r),
+                    _ => (Ty::Unit, Ty::Unit),
+                };
+
                 // Check if left or right
                 let is_left = self.emit(
                     Instruction::IsLeft(scrut_var),
@@ -811,13 +820,13 @@ impl Lower {
                 self.current_block = then_block;
                 let left_val = self.emit(
                     Instruction::UnwrapLeft(scrut_var),
-                    Ty::Unit, // TODO: proper type
+                    left_ty.clone(),
                     SecurityLevel::Public,
                     Effect::Pure,
                 );
 
                 let saved_env = self.env.clone();
-                self.env.bind(left_name.clone(), left_val, Ty::Unit, SecurityLevel::Public);
+                self.env.bind(left_name.clone(), left_val, left_ty.clone(), SecurityLevel::Public);
                 let left_result = self.lower_expr(left_branch)?;
                 self.env = saved_env;
 
@@ -836,13 +845,13 @@ impl Lower {
                 self.current_block = else_block;
                 let right_val = self.emit(
                     Instruction::UnwrapRight(scrut_var),
-                    Ty::Unit, // TODO: proper type
+                    right_ty.clone(),
                     SecurityLevel::Public,
                     Effect::Pure,
                 );
 
                 let saved_env = self.env.clone();
-                self.env.bind(right_name.clone(), right_val, Ty::Unit, SecurityLevel::Public);
+                self.env.bind(right_name.clone(), right_val, right_ty.clone(), SecurityLevel::Public);
                 let right_result = self.lower_expr(right_branch)?;
                 self.env = saved_env;
 

@@ -42,7 +42,10 @@ pub mod ml_kem;
 pub mod x25519;
 
 // Hybrid schemes (Law 2: ML-KEM-768 + X25519, ML-DSA-65 + Ed25519)
-// TODO: Re-enable once ML-KEM and ML-DSA are fully implemented
+//
+// BLOCKED: re-enable once both `ml_kem` and `ml_dsa` expose stable,
+// audited APIs. The hybrid module itself is otherwise complete (see
+// `crypto/hybrid.rs`) — only the upstream PQC primitives gate this.
 // pub mod hybrid;
 
 /// Error type for cryptographic operations
@@ -194,23 +197,19 @@ pub trait Mac {
         Ok(mac.finalize())
     }
 
-    /// Verify a MAC tag in constant time
+    /// Verify a MAC tag in constant time.
     ///
-    /// TODO: Fix type mismatch - ct_eq expects &[u8; 32] but tag is &[u8]
-    fn verify(_key: &[u8], _data: &[u8], _tag: &[u8]) -> CryptoResult<bool>
+    /// Returns `Ok(true)` iff `tag` matches the MAC of `data` under `key`.
+    /// The comparison is constant-time with respect to the tag contents.
+    fn verify(key: &[u8], data: &[u8], tag: &[u8]) -> CryptoResult<bool>
     where
         Self: Sized,
     {
-        // Temporarily disabled due to pre-existing type mismatch
-        Err(CryptoError::InvalidTagLength)
-        /*
-        use crate::constant_time::ConstantTimeEq;
         let computed = Self::mac(key, data)?;
         if tag.len() != computed.len() {
             return Err(CryptoError::InvalidTagLength);
         }
-        Ok(computed.ct_eq(tag))
-        */
+        Ok(crate::constant_time::ct_eq_slices(&computed, tag))
     }
 }
 

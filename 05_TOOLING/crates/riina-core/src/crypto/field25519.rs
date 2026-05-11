@@ -281,6 +281,28 @@ impl FieldElement {
         Self { limbs }.weak_reduce()
     }
 
+    /// Constant-time selection: returns `a` if `choice == 0`, `b` if `choice == 1`.
+    ///
+    /// Execution time and memory access patterns are independent of `choice`,
+    /// so this is safe for use with secret bits (e.g. scalar bits during
+    /// scalar multiplication).
+    ///
+    /// # Panics
+    /// Panics in debug builds if `choice` is not 0 or 1.
+    #[must_use]
+    pub fn ct_select(a: &Self, b: &Self, choice: u8) -> Self {
+        debug_assert!(choice == 0 || choice == 1, "choice must be 0 or 1");
+
+        let mask = -(choice as i64); // 0 or -1 (all bits set)
+        let mut limbs = [0i64; 5];
+        for i in 0..5 {
+            // When mask == 0: limbs[i] = a.limbs[i].
+            // When mask == -1: limbs[i] = a.limbs[i] ^ (a ^ b) = b.limbs[i].
+            limbs[i] = a.limbs[i] ^ (mask & (a.limbs[i] ^ b.limbs[i]));
+        }
+        Self { limbs }
+    }
+
     /// Constant-time conditional swap.
     ///
     /// If swap is 1, swap self and other.
@@ -352,17 +374,55 @@ impl FieldElement {
 
     /// Square this field element: a^2 (mod p).
     ///
-    /// This is slightly more efficient than general multiplication
-    /// since we can use squaring-specific optimizations.
+    /// Uses the symmetry a[i]*a[j] == a[j]*a[i] to compute each cross product
+    /// once and double it, rather than running the full schoolbook multiplier.
+    /// Saves ~10 multiplications versus a general `self * self`.
     ///
     /// # Returns
     /// self * self (mod p)
     #[inline]
     #[must_use]
     pub fn square(self) -> Self {
-        // For now, just use multiplication
-        // TODO: Implement dedicated squaring for ~20% speedup
-        self * self
+        let a = self.limbs;
+        let mut c = [0i128; 10];
+
+        // Cross terms: 2 * a[i] * a[j] for i < j, written into c[i+j].
+        for i in 0..5 {
+            let ai = i128::from(a[i]);
+            for j in (i + 1)..5 {
+                c[i + j] += 2 * ai * i128::from(a[j]);
+            }
+        }
+
+        // Diagonal terms: a[i]^2 into c[2i].
+        for i in 0..5 {
+            let ai = i128::from(a[i]);
+            c[2 * i] += ai * ai;
+        }
+
+        // Reduce modulo 2^255 - 19: fold c[5..10] back into c[0..5] multiplied by 19.
+        for i in 0..5 {
+            c[i] += c[i + 5] * 19;
+        }
+
+        // Carry propagation in i128 before casting to i64 (same pattern as Mul).
+        let mut carry: i128 = 0;
+        for i in 0..5 {
+            c[i] += carry;
+            carry = c[i] >> 51;
+            c[i] &= 0x7ffffffffffff;
+        }
+        c[0] += carry * 19;
+
+        let limbs = [
+            c[0] as i64,
+            c[1] as i64,
+            c[2] as i64,
+            c[3] as i64,
+            c[4] as i64,
+        ];
+
+        Self { limbs }.weak_reduce().weak_reduce()
     }
 
     /// Compute the multiplicative inverse: a^(-1) (mod p).
@@ -618,6 +678,30 @@ mod tests {
         // Round trip through field should be deterministic
         let fe2 = FieldElement::from_bytes(&recovered);
         assert_eq!(fe.ct_eq(&fe2), 1);
+    }
+
+    #[test]
+    fn test_square_matches_mul() {
+        // The dedicated squaring routine must agree bit-for-bit with the
+        // general multiplier on a range of inputs.
+        let inputs = [
+            FieldElement::ZERO,
+            FieldElement::ONE,
+            FieldElement::ONE + FieldElement::ONE,
+            FieldElement::from_bytes(&[0xAA; 32]),
+            FieldElement::from_bytes(&[0xFF; 32]),
+            FieldElement::from_bytes(&[
+                0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0,
+                0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+                0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00,
+                0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE,
+            ]),
+        ];
+        for x in &inputs {
+            let via_mul = *x * *x;
+            let via_sq = x.square();
+            assert_eq!(via_sq.ct_eq(&via_mul), 1, "square != mul for input {:?}", x.limbs);
+        }
     }
 
     #[test]

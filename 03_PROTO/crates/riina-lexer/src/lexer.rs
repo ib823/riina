@@ -316,9 +316,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
                     s.push(c);
                     s.push_str(&self.consume_while(|ch| ch.is_ascii_hexdigit() || ch == '_'));
-                    // Check suffix
-                    // ...
-                    return TokenKind::LiteralInt(s, None); // TODO: Suffix
+                    return TokenKind::LiteralInt(s, self.read_int_suffix());
                 }
             }
         }
@@ -338,12 +336,38 @@ impl<'a> Lexer<'a> {
                     s.push_str(&self.consume_while(|ch| ch.is_ascii_digit() || ch == '_'));
                     // Exponent
                     // ...
-                    return TokenKind::LiteralFloat(s, None);
+                    return TokenKind::LiteralFloat(s, self.read_float_suffix());
                 }
             }
         }
 
-        TokenKind::LiteralInt(s, None) // Default
+        // A trailing `f32`/`f64` suffix promotes an otherwise-int literal to float.
+        if matches!(self.peek(), Some('f')) {
+            if let Some(suffix) = self.read_float_suffix() {
+                return TokenKind::LiteralFloat(s, Some(suffix));
+            }
+        }
+
+        TokenKind::LiteralInt(s, self.read_int_suffix())
+    }
+
+    /// Consume an integer-literal suffix starting with `u` or `i`
+    /// (e.g. `u32`, `i64`, `usize`). Returns `None` if no suffix is present.
+    /// Validation of the exact suffix value is left to the parser.
+    fn read_int_suffix(&mut self) -> Option<String> {
+        match self.peek() {
+            Some('u' | 'i') => Some(self.consume_while(is_ident_continue)),
+            _ => None,
+        }
+    }
+
+    /// Consume a float-literal suffix starting with `f` (e.g. `f32`, `f64`).
+    /// Returns `None` if no suffix is present.
+    fn read_float_suffix(&mut self) -> Option<String> {
+        match self.peek() {
+            Some('f') => Some(self.consume_while(is_ident_continue)),
+            _ => None,
+        }
     }
 
     #[allow(clippy::too_many_lines)]

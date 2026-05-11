@@ -34,6 +34,9 @@ pub enum TypeError {
     InvalidDeclassification { message: String },
     /// Location not found in store typing
     LocationNotFound(Location),
+    /// `perform Pure` is never well-typed: Pure carries no observable
+    /// behavior, so there is nothing for a handler to intercept.
+    PerformPure,
 }
 
 impl std::fmt::Display for TypeError {
@@ -64,7 +67,20 @@ impl std::fmt::Display for TypeError {
             TypeError::LocationNotFound(loc) => {
                 write!(f, "Location not found in store: {}", loc)
             }
+            TypeError::PerformPure => {
+                write!(f, "Cannot `perform` the Pure effect: Pure has no observable behavior")
+            }
         }
+    }
+}
+
+/// Return the required payload type for effects whose signature is fixed
+/// at the language level. Effects not listed here accept any payload.
+fn expected_payload_type(eff: Effect) -> Option<Ty> {
+    match eff {
+        // Time access has no input — must be performed on `()`.
+        Effect::Time => Some(Ty::Unit),
+        _ => None,
     }
 }
 
@@ -970,11 +986,22 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
 
         // UNVERIFIED: Effects (Pending formalization in Typing.v)
         Expr::Perform(eff, e) => {
+            // It is a static error to `perform Pure`: by definition Pure has
+            // no observable behavior, so there is nothing to handle.
+            if *eff == Effect::Pure {
+                return Err(TypeError::PerformPure);
+            }
             let (te, eff_e) = type_check(ctx, e)?;
-            // TODO: Validate payload type matches effect definition?
-            // For now, assume payload is generic or valid.
-            // In a real system, 'eff' would have a signature.
-            Ok((te, eff_e.join(*eff))) 
+            // If this effect has a fixed payload type registered, enforce it.
+            // Effects without a fixed payload (the common case in this
+            // codebase, since per-effect signatures aren't declared yet)
+            // accept any payload type.
+            if let Some(expected) = expected_payload_type(*eff) {
+                if !types_compatible(&expected, &te) {
+                    return Err(TypeError::TypeMismatch { expected, found: te });
+                }
+            }
+            Ok((te, eff_e.join(*eff)))
         },
         Expr::Handle(e, _x, h) => {
              let (_t_e, _eff_e) = type_check(ctx, e)?;
