@@ -149,7 +149,7 @@ let decide_restart (p_strat: restart_strategy) (p_can_restart: bool) : Tot resta
   | OneForOne -> RestartChild
   | AllForOne -> RestartAll
   | RestForOne -> RestartRest
-  | _ -> (* TODO: default value for restart_decision *) admit() else Escalate
+  | _ -> DoNothing else Escalate
 
 (* restart_decision_eqb (matches Coq: Definition restart_decision_eqb) *)
 let restart_decision_eqb (p_d1: restart_decision) (p_d2: restart_decision) : Tot bool =
