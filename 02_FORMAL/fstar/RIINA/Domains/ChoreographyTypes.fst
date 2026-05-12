@@ -76,7 +76,7 @@ let rec local_dual (p_l: local_type) : Tot local_type =
   | LRecv (r, t, p_l') -> LSend r t (local_dual p_l')
   | LSelect (r, la, l1, lb, l2) -> LOffer r la (local_dual l1) lb (local_dual l2)
   | LOffer (r, la, l1, lb, l2) -> LSelect r la (local_dual l1) lb (local_dual l2)
-  | _ -> (* TODO: default value for local_type *) admit()
+  | _ -> LEnd
 
 (* project (matches Coq: Fixpoint project) *)
 let rec project (p_g: global_type) (p_r: nat) : Tot local_type =
@@ -86,7 +86,7 @@ let rec project (p_g: global_type) (p_r: nat) : Tot local_type =
   | GRec (n, p_g') -> LRec n (project p_g' p_r)
   | GMsg (p, q, t, p_g') -> if (p_r = p) then LSend q t (project p_g' p_r) else if (p_r = q) then LRecv p t (project p_g' p_r) else project p_g' p_r
   | GBranch (p, q, l1, g1, l2, g2) -> if (p_r = p) then LSelect q l1 (project g1 p_r) l2 (project g2 p_r) else if (p_r = q) then LOffer p l1 (project g1 p_r) l2 (project g2 p_r) else project g1 p_r
-  | _ -> (* TODO: default value for local_type *) admit()
+  | _ -> LEnd
 
 (* well_formed_global (matches Coq: Fixpoint well_formed_global) *)
 let rec well_formed_global (p_g: global_type) : Tot bool =
