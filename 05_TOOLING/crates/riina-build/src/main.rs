@@ -276,6 +276,39 @@ impl From<io::Error> for BuildError {
 // BUILD COMMANDS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+fn check_tool(name: &str) -> bool {
+    Command::new("which")
+        .arg(name)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|s| s.success())
+}
+
+/// Select the HDL toolchain command sequence for a given target.
+///
+/// Pure dispatcher: returns the tool name and argument vector(s) needed to
+/// build the HDL, or `None` if the target uses a vendor toolchain that
+/// isn't wired up. Split out for unit testing without invoking real tools.
+fn hdl_toolchain_for(target: &str) -> HdlPlan {
+    match target {
+        "simulation" | "sim" | "verilator" => HdlPlan::Verilator,
+        "ice40" => HdlPlan::Synth { family: "ice40" },
+        "ecp5" => HdlPlan::Synth { family: "ecp5" },
+        "synthesis" => HdlPlan::Synth { family: "ice40" },
+        "vivado" | "xilinx" | "quartus" | "altera" | "production" => HdlPlan::Vendor,
+        _ => HdlPlan::Unknown,
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum HdlPlan {
+    Verilator,
+    Synth { family: &'static str },
+    Vendor,
+    Unknown,
+}
+
 fn run_command(ctx: &BuildContext, cmd: &str, args: &[&str]) -> Result<(), BuildError> {
     ctx.log_verbose(&format!("Running: {cmd} {}", args.join(" ")));
 
@@ -417,12 +450,24 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
                 ));
             }
 
-            // BLOCKED: invoke `riinac` (the stage-0 bootstrap compiler) to
-            // build stage 1 from the RIINA-language sources. Requires the
-            // RIINA front-end to be feature-complete enough to compile the
-            // compiler itself; until then the Rust build is the closest
-            // approximation. The `stage0` check above already enforces that
-            // the bootstrap binary exists when we get here.
+            // BLOCKED on self-hosting (multi-session work, tracked separately):
+            //   1. No `.riina` source files exist for the compiler itself —
+            //      the lexer/parser/typechecker/codegen are all Rust-only
+            //      (03_PROTO/crates/riina-{lexer,parser,typechecker,codegen}).
+            //      Self-hosting requires reimplementing each of these in
+            //      RIINA, with a test corpus exercising every front-end
+            //      feature the compiler relies on.
+            //   2. The prototype `riinac` (03_PROTO/crates/riinac) is a stub
+            //      that prints "Not yet implemented" — it does not actually
+            //      compile RIINA programs to WASM/native, so even with .riina
+            //      sources it could not produce a stage-1 binary today.
+            //   3. The codegen crate (03_PROTO/crates/riina-codegen) now
+            //      builds again after the recent type refactor, but its test
+            //      corpus still references removed Expr variants and is not
+            //      yet green — a prerequisite for trusting any output from a
+            //      future RIINA-built compiler.
+            // Until those three are addressed, the Rust build of `riinac`
+            // remains the "stage 1" approximation.
             ctx.log("Stage 1: (using Rust compiler until self-hosting ready)");
             run_command(ctx, "cargo", &["build", "--release", "--package", "riinac"])?;
         }
@@ -493,15 +538,75 @@ fn build_hdl(ctx: &BuildContext, target: Option<&str>) -> Result<(), BuildError>
         return Ok(());
     }
 
-    // BLOCKED: integrate with an HDL toolchain (e.g. yosys/nextpnr for
-    // synthesis, verilator for simulation, vivado for production targets).
-    // Selection should be driven by `target` once the toolchain wrapper
-    // exists; until then this is a structural no-op that confirms an
-    // `hdl/` directory is present.
-    ctx.log(&format!("HDL target: {}", target.unwrap_or("simulation")));
-    ctx.log("HDL build not yet implemented");
+    let target = target.unwrap_or("simulation");
+    ctx.log(&format!("HDL target: {target}"));
 
-    Ok(())
+    // Gather top-level Verilog/SystemVerilog sources from `hdl/`.
+    let mut sources: Vec<String> = Vec::new();
+    if let Ok(entries) = fs::read_dir(&hdl_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file()
+                && path
+                    .extension()
+                    .is_some_and(|e| e == "v" || e == "sv" || e == "vhd" || e == "vhdl")
+            {
+                sources.push(path.display().to_string());
+            }
+        }
+    }
+    if sources.is_empty() {
+        ctx.log("⚠ no HDL source files (*.v/*.sv/*.vhd) found under hdl/, skipping");
+        return Ok(());
+    }
+
+    match hdl_toolchain_for(target) {
+        HdlPlan::Verilator => {
+            if !check_tool("verilator") {
+                ctx.log("⚠ verilator not on PATH, skipping simulation build");
+                return Ok(());
+            }
+            let mut args: Vec<&str> = vec!["--lint-only"];
+            for s in &sources {
+                args.push(s.as_str());
+            }
+            run_command(ctx, "verilator", &args)?;
+            ctx.log("✓ Verilator lint passed");
+            Ok(())
+        }
+        HdlPlan::Synth { family } => {
+            if !check_tool("yosys") {
+                ctx.log("⚠ yosys not on PATH, skipping synthesis");
+                return Ok(());
+            }
+            let synth_pass = format!("synth_{family}");
+            let read_cmd = sources
+                .iter()
+                .map(|s| format!("read_verilog {s}"))
+                .collect::<Vec<_>>()
+                .join("; ");
+            let script = format!("{read_cmd}; {synth_pass}");
+            run_command(ctx, "yosys", &["-q", "-p", &script])?;
+            ctx.log(&format!("✓ yosys {synth_pass} completed"));
+            // Place-and-route is optional and target-board-specific; only
+            // attempt it when the matching nextpnr binary is on PATH.
+            let nextpnr = format!("nextpnr-{family}");
+            if check_tool(&nextpnr) {
+                ctx.log(&format!("{nextpnr} present (place-and-route requires a target .pcf/.lpf; skipping)"));
+            }
+            Ok(())
+        }
+        HdlPlan::Vendor => {
+            ctx.log("⚠ vendor toolchain (Vivado/Quartus) not integrated; skipping");
+            Ok(())
+        }
+        HdlPlan::Unknown => {
+            ctx.log(&format!(
+                "⚠ unknown HDL target '{target}'; expected one of: simulation, ice40, ecp5, synthesis, vivado"
+            ));
+            Ok(())
+        }
+    }
 }
 
 fn build_all(ctx: &BuildContext, level: u8) -> Result<(), BuildError> {
@@ -682,5 +787,35 @@ fn main() -> ExitCode {
             eprintln!("[ERROR] {e}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hdl_toolchain_simulation_is_verilator() {
+        assert_eq!(hdl_toolchain_for("simulation"), HdlPlan::Verilator);
+        assert_eq!(hdl_toolchain_for("sim"), HdlPlan::Verilator);
+        assert_eq!(hdl_toolchain_for("verilator"), HdlPlan::Verilator);
+    }
+
+    #[test]
+    fn hdl_toolchain_synthesis_dispatches_by_family() {
+        assert_eq!(hdl_toolchain_for("ice40"), HdlPlan::Synth { family: "ice40" });
+        assert_eq!(hdl_toolchain_for("ecp5"), HdlPlan::Synth { family: "ecp5" });
+    }
+
+    #[test]
+    fn hdl_toolchain_vendor_targets() {
+        assert_eq!(hdl_toolchain_for("vivado"), HdlPlan::Vendor);
+        assert_eq!(hdl_toolchain_for("quartus"), HdlPlan::Vendor);
+        assert_eq!(hdl_toolchain_for("production"), HdlPlan::Vendor);
+    }
+
+    #[test]
+    fn hdl_toolchain_unknown_target() {
+        assert_eq!(hdl_toolchain_for("nonsense"), HdlPlan::Unknown);
     }
 }

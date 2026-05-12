@@ -1733,6 +1733,42 @@ mod tests {
         }
     }
 
+    /// Deterministic self-consistency KAT for ML-DSA-65.
+    ///
+    /// Pins implementation output for fixed (seed, message) so future drift
+    /// is detected by CI. The expected digest below was computed from this
+    /// very implementation — it is a *self-consistency* vector, not an
+    /// externally published NIST FIPS 204 KAT. When offline access permits,
+    /// swap the expected digest for one derived from NIST's published
+    /// test vectors (intermediate values appendix of FIPS 204).
+    #[test]
+    fn test_ml_dsa_65_self_consistency_kat() {
+        use crate::crypto::sha2::Sha256;
+        let keygen_seed = [0x03u8; 32];
+        let kp = MlDsa65KeyPair::generate(&keygen_seed).unwrap();
+        let message = b"RIINA ML-DSA-65 KAT self-consistency vector";
+        let sig = kp.sign(message).unwrap();
+        // Verify roundtrip first so a sig failure isn't masked by a digest mismatch.
+        kp.verify(message, &sig).expect("KAT sig must verify");
+        let mut h = Sha256::new();
+        h.update(kp.verifying_key().as_bytes());
+        h.update(&sig);
+        let digest = h.finalize();
+        assert_eq!(
+            digest, ML_DSA_65_KAT_DIGEST,
+            "ML-DSA-65 self-consistency KAT digest drifted: got {:02x?}",
+            digest
+        );
+    }
+
+    // Computed from `test_ml_dsa_65_self_consistency_kat` under deterministic
+    // seed (keygen=0x03...). Update only after auditing.
+    const ML_DSA_65_KAT_DIGEST: [u8; 32] = [
+        0x3b, 0xeb, 0xc3, 0xbf, 0x39, 0xcd, 0xc8, 0xda, 0xff, 0x60, 0xf5, 0xd3, 0x2c, 0x1a, 0x17,
+        0x09, 0x52, 0x44, 0x20, 0xca, 0x84, 0x20, 0x51, 0x6a, 0xf2, 0xc2, 0x38, 0x66, 0xfa, 0x33,
+        0x56, 0x52,
+    ];
+
     #[test]
     fn test_ml_dsa_65_kem_trait() {
         let mut sk = [0u8; SECRET_KEY_SIZE];

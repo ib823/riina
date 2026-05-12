@@ -285,6 +285,100 @@ fn check_tool(name: &str) -> bool {
         .is_ok_and(|s| s.success())
 }
 
+/// Build the argument list for a `gnatprove` invocation.
+///
+/// Split out as a pure function so it can be unit-tested without GNATprove
+/// actually being installed in the sandbox.
+fn gnatprove_args(level: u8, project: &Path, package: Option<&str>) -> Vec<String> {
+    let mut args = vec![
+        format!("--level={level}"),
+        "-P".to_string(),
+        project.display().to_string(),
+        "--report=fail".to_string(),
+    ];
+    if let Some(pkg) = package {
+        args.push("-u".to_string());
+        args.push(pkg.to_string());
+    }
+    args
+}
+
+/// Find the first GNAT project file (`*.gpr`) under `root`.
+///
+/// Scans only one directory level deep — Ada projects typically place the
+/// `.gpr` at the workspace root or one subdirectory in. Returns the first
+/// match found so callers can fail fast when no Ada project is present.
+fn find_gnat_project(root: &Path) -> Option<PathBuf> {
+    let entries = fs::read_dir(root).ok()?;
+    let mut subdirs = Vec::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() && path.extension().is_some_and(|e| e == "gpr") {
+            return Some(path);
+        }
+        if path.is_dir() {
+            subdirs.push(path);
+        }
+    }
+    for dir in subdirs {
+        if let Ok(entries) = fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() && path.extension().is_some_and(|e| e == "gpr") {
+                    return Some(path);
+                }
+            }
+        }
+    }
+    None
+}
+
+fn run_gnatprove(
+    ctx: &VerifyContext,
+    level: u8,
+    package: Option<&str>,
+) -> Result<(), VerifyError> {
+    if !check_tool("gnatprove") {
+        ctx.log("⚠ gnatprove not on PATH, skipping Ada/SPARK verification");
+        return Ok(());
+    }
+    let Some(project) = find_gnat_project(&ctx.root) else {
+        ctx.log("⚠ no .gpr project file found, skipping Ada/SPARK verification");
+        return Ok(());
+    };
+    let args = gnatprove_args(level, &project, package);
+    ctx.log_verbose(&format!("Running: gnatprove {}", args.join(" ")));
+    let status = Command::new("gnatprove")
+        .args(&args)
+        .current_dir(&ctx.root)
+        .stdout(if ctx.verbose {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        })
+        .stderr(if ctx.verbose {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        })
+        .status()
+        .map_err(|e| {
+            if e.kind() == io::ErrorKind::NotFound {
+                VerifyError::ToolNotFound("gnatprove".to_string())
+            } else {
+                VerifyError::IoError(e)
+            }
+        })?;
+    if status.success() {
+        ctx.log("✓ Ada/SPARK verification passed");
+        Ok(())
+    } else {
+        Err(VerifyError::VerificationFailed(format!(
+            "gnatprove exited with status {status}"
+        )))
+    }
+}
+
 fn run_cargo(ctx: &VerifyContext, args: &[&str]) -> Result<bool, VerifyError> {
     ctx.log_verbose(&format!("Running: cargo {}", args.join(" ")));
 
@@ -968,22 +1062,27 @@ fn main() -> ExitCode {
         Commands::Rust { tool, package } => verify_rust_tool(&mut ctx, *tool, package.as_deref()),
         Commands::Ada { level, package } => {
             ctx.log(&format!("Ada/SPARK verification at level {level}"));
-            // BLOCKED: shell out to `gnatprove` with the appropriate flags
-            // for the requested level (e.g. --level=2 for silver). Requires
-            // GNATprove to be on PATH (already detected elsewhere via
-            // `check_tool`) and a `gnat_project` file in the workspace.
-            // Returns Ok to keep the command structurally available.
-            Ok(())
+            run_gnatprove(&mut ctx, *level, package.as_deref())
         }
         Commands::Coverage { minimum, html } => verify_coverage(&mut ctx, *minimum, *html),
         Commands::Fuzz { target, duration } => run_fuzzing(&mut ctx, target.as_deref(), *duration),
         Commands::Mutate { package, timeout } => {
             ctx.log("Mutation testing...");
-            // BLOCKED: drive `cargo mutants` against the requested package
-            // with `--timeout`. `verify_level_6` already invokes this when
-            // `cargo-mutants` is on PATH; the standalone subcommand should
-            // share that path once the test-config split is settled.
-            Ok(())
+            if !check_tool("cargo-mutants") {
+                ctx.log("⚠ cargo-mutants not on PATH, skipping");
+                Ok(())
+            } else {
+                let pkg = package.as_deref().unwrap_or("riina-core");
+                let timeout_str = timeout.to_string();
+                let args = ["mutants", "--package", pkg, "--timeout", &timeout_str];
+                match run_cargo(&ctx, &args) {
+                    Ok(true) => Ok(()),
+                    Ok(false) => Err(VerifyError::VerificationFailed(
+                        "some mutants survived".to_string(),
+                    )),
+                    Err(e) => Err(e),
+                }
+            }
         }
         Commands::Audit => run_audit(&mut ctx),
         Commands::Report { output } => generate_report(&ctx, output),
@@ -1007,5 +1106,48 @@ fn main() -> ExitCode {
             eprintln!("[ERROR] {e}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn gnatprove_args_no_package() {
+        let args = gnatprove_args(2, &PathBuf::from("foo.gpr"), None);
+        assert_eq!(args, vec!["--level=2", "-P", "foo.gpr", "--report=fail"]);
+    }
+
+    #[test]
+    fn gnatprove_args_with_package() {
+        let args = gnatprove_args(4, &PathBuf::from("proj/foo.gpr"), Some("crypto_pkg"));
+        assert_eq!(
+            args,
+            vec![
+                "--level=4",
+                "-P",
+                "proj/foo.gpr",
+                "--report=fail",
+                "-u",
+                "crypto_pkg",
+            ]
+        );
+    }
+
+    #[test]
+    fn find_gnat_project_returns_none_on_empty() {
+        let dir = tempdir_like();
+        assert!(find_gnat_project(&dir).is_none());
+    }
+
+    fn tempdir_like() -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "riina-verify-test-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::create_dir_all(&dir);
+        dir
     }
 }

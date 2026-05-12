@@ -41,12 +41,12 @@ pub mod ml_dsa;
 pub mod ml_kem;
 pub mod x25519;
 
-// Hybrid schemes (Law 2: ML-KEM-768 + X25519, ML-DSA-65 + Ed25519)
-//
-// BLOCKED: re-enable once both `ml_kem` and `ml_dsa` expose stable,
-// audited APIs. The hybrid module itself is otherwise complete (see
-// `crypto/hybrid.rs`) — only the upstream PQC primitives gate this.
-// pub mod hybrid;
+// Hybrid schemes (Law 2: ML-KEM-768 + X25519, ML-DSA-65 + Ed25519).
+// The underlying ML-KEM-768 (`ml_kem.rs`) and ML-DSA-65 (`ml_dsa.rs`)
+// implementations carry KAT self-consistency tests; pending an external
+// FIPS 203 / 204 audit, callers should treat the hybrid API as
+// "implementation complete, audit pending" rather than fully cleared.
+pub mod hybrid;
 
 /// Error type for cryptographic operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

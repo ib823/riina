@@ -41,13 +41,13 @@ use crate::crypto::ed25519::{
 };
 use crate::crypto::hkdf::HkdfSha256;
 use crate::crypto::ml_dsa::{
-    MlDsa65KeyPair, MlDsa65SigningKey, MlDsa65VerifyingKey,
+    MlDsa65KeyPair, MlDsa65VerifyingKey,
     PUBLIC_KEY_SIZE as ML_DSA_PUBLIC_KEY_SIZE,
     SECRET_KEY_SIZE as ML_DSA_SECRET_KEY_SIZE,
     SIGNATURE_SIZE as ML_DSA_SIGNATURE_SIZE,
 };
 use crate::crypto::ml_kem::{
-    MlKem768KeyPair, MlKem768EncapsulationKey, MlKem768DecapsulationKey,
+    MlKem768KeyPair, MlKem768EncapsulationKey,
     PUBLIC_KEY_SIZE as ML_KEM_PUBLIC_KEY_SIZE,
     SECRET_KEY_SIZE as ML_KEM_SECRET_KEY_SIZE,
     CIPHERTEXT_SIZE as ML_KEM_CIPHERTEXT_SIZE,

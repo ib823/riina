@@ -214,8 +214,6 @@ pub struct Interpreter {
     caps: Capabilities,
     /// Current security context
     security_context: SecurityLevel,
-    /// Next actor ID counter (JALINAN Phase 6)
-    next_actor_id: u64,
 }
 
 impl Interpreter {
@@ -227,7 +225,6 @@ impl Interpreter {
             handlers: Vec::new(),
             caps: Capabilities::new(),
             security_context: SecurityLevel::Public,
-            next_actor_id: 0,
         }
     }
 
@@ -320,11 +317,6 @@ impl Interpreter {
                             })
                     }
                     Value::Builtin(name) => crate::builtins::apply_builtin(&name, arg_val),
-                    // Partially-applied builtin: form pair and complete the call
-                    Value::BuiltinPartial(name, first_arg) => {
-                        let pair = Value::Pair(first_arg, Box::new(arg_val));
-                        crate::builtins::apply_builtin(&name, pair)
-                    }
                     _ => Err(Error::TypeMismatch {
                         expected: "function".to_string(),
                         found: format!("{:?}", func_val),
@@ -426,7 +418,7 @@ impl Interpreter {
 
             // E_Let: eval ρ σ e1 σ' v1 -> eval (extend ρ x v1) σ' e2 σ'' v2
             //        -> eval ρ σ (ELet x e1 e2) σ'' v2
-            Expr::Let(name, _, binding, body) => {
+            Expr::Let(name, binding, body) => {
                 let bind_val = self.eval_with_env(env, binding)?;
                 let new_env = env.extend(name.clone(), bind_val);
                 self.eval_with_env(&new_env, body)
@@ -672,77 +664,6 @@ impl Interpreter {
             // BINARY OPERATIONS (Expr::BinOp)
             // ═══════════════════════════════════════════════════════════════
             // ═══════════════════════════════════════════════════════════════
-            // JALINAN Phase 6 (Actor, Choreography, CRDT, Content-Addressed)
-            // ═══════════════════════════════════════════════════════════════
-            Expr::ActorDecl { name: _, init_state, handler, .. } => {
-                // Evaluate init state and handler to verify they're valid
-                let _init = self.eval_with_env(env, init_state)?;
-                let _handler = self.eval_with_env(env, handler)?;
-                Ok(Value::Unit)
-            }
-
-            Expr::ChoreographyBlock { .. } => {
-                // Protocol declaration — no runtime behavior
-                Ok(Value::Unit)
-            }
-
-            Expr::Spawn(actor_expr, state_expr) => {
-                // Evaluate subexpressions for side effects
-                let _actor = self.eval_with_env(env, actor_expr)?;
-                let _state = self.eval_with_env(env, state_expr)?;
-                self.next_actor_id += 1;
-                Ok(Value::ActorRef(self.next_actor_id))
-            }
-
-            Expr::ActorSend(actor_expr, msg_expr) => {
-                let _actor = self.eval_with_env(env, actor_expr)?;
-                let _msg = self.eval_with_env(env, msg_expr)?;
-                // Single-threaded: message send is a no-op
-                Ok(Value::Unit)
-            }
-
-            Expr::ActorRecv(actor_expr) => {
-                let _actor = self.eval_with_env(env, actor_expr)?;
-                // Single-threaded: no mailbox, return unit
-                Ok(Value::Unit)
-            }
-
-            Expr::CRDTMerge(a_expr, b_expr) => {
-                let a = self.eval_with_env(env, a_expr)?;
-                let b = self.eval_with_env(env, b_expr)?;
-                // GCounter merge: pointwise max for integers
-                match (&a, &b) {
-                    (Value::Int(x), Value::Int(y)) => Ok(Value::Int(std::cmp::max(*x, *y))),
-                    _ => Ok(a),
-                }
-            }
-
-            Expr::ContentHash(val_expr) => {
-                let val = self.eval_with_env(env, val_expr)?;
-                // DJB2 hash
-                let mut hash: u64 = 5381;
-                match &val {
-                    Value::Int(n) => {
-                        let mut n = *n;
-                        for _ in 0..8 {
-                            hash = hash.wrapping_mul(33).wrapping_add(n & 0xff);
-                            n >>= 8;
-                        }
-                    }
-                    Value::String(s) => {
-                        for b in s.bytes() {
-                            hash = hash.wrapping_mul(33).wrapping_add(u64::from(b));
-                        }
-                    }
-                    Value::Bool(b) => {
-                        hash = hash.wrapping_mul(33).wrapping_add(if *b { 1 } else { 0 });
-                    }
-                    _ => {}
-                }
-                let hex = format!("{hash:016x}");
-                Ok(Value::Hash(hex.into_bytes()))
-            }
-
             Expr::BinOp(op, lhs, rhs) => {
                 let l = self.eval_with_env(env, lhs)?;
                 let r = self.eval_with_env(env, rhs)?;
