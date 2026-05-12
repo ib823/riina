@@ -1415,6 +1415,43 @@ mod tests {
         }
     }
 
+    /// Deterministic self-consistency KAT for ML-KEM-768.
+    ///
+    /// Pins implementation output for fixed seeds so any future drift is
+    /// detected by CI. The expected digest below was computed from this very
+    /// implementation — it is a *self-consistency* vector, not an externally
+    /// published NIST FIPS 203 KAT. When offline access permits, swap the
+    /// expected digest for one derived from NIST's published test vectors
+    /// (intermediate values appendix of FIPS 203).
+    #[test]
+    fn test_ml_kem_768_self_consistency_kat() {
+        use crate::crypto::sha2::Sha256;
+        let keygen_seed = [0x01u8; 64];
+        let encaps_seed = [0x02u8; 32];
+        let kp = MlKem768KeyPair::generate(&keygen_seed).unwrap();
+        let (ct, ss) = kp.encapsulate(&encaps_seed).unwrap();
+        let ek = kp.encapsulation_key();
+        let mut h = Sha256::new();
+        h.update(ek.as_bytes());
+        h.update(&ct);
+        h.update(&ss);
+        let digest = h.finalize();
+        let expected: [u8; 32] = ML_KEM_768_KAT_DIGEST;
+        assert_eq!(
+            digest, expected,
+            "ML-KEM-768 self-consistency KAT digest drifted: got {:02x?}",
+            digest
+        );
+    }
+
+    // Computed from `test_ml_kem_768_self_consistency_kat` under deterministic
+    // seeds (keygen=0x01..., encaps=0x02...). Update only after auditing.
+    const ML_KEM_768_KAT_DIGEST: [u8; 32] = [
+        0xc8, 0xca, 0x68, 0x86, 0xa2, 0xce, 0x36, 0x0c, 0xae, 0xc6, 0x44, 0x03, 0x93, 0xa8, 0x42,
+        0xce, 0x56, 0x00, 0x58, 0x6c, 0x0b, 0x5c, 0x78, 0x99, 0x2e, 0xc0, 0x9e, 0x78, 0xd8, 0x9d,
+        0x3f, 0xd3,
+    ];
+
     #[test]
     fn test_ml_kem_768_kem_trait() {
         // Test via the Kem trait interface

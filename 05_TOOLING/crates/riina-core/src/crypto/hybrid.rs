@@ -41,13 +41,13 @@ use crate::crypto::ed25519::{
 };
 use crate::crypto::hkdf::HkdfSha256;
 use crate::crypto::ml_dsa::{
-    MlDsa65KeyPair, MlDsa65SigningKey, MlDsa65VerifyingKey,
+    MlDsa65KeyPair, MlDsa65VerifyingKey,
     PUBLIC_KEY_SIZE as ML_DSA_PUBLIC_KEY_SIZE,
     SECRET_KEY_SIZE as ML_DSA_SECRET_KEY_SIZE,
     SIGNATURE_SIZE as ML_DSA_SIGNATURE_SIZE,
 };
 use crate::crypto::ml_kem::{
-    MlKem768KeyPair, MlKem768EncapsulationKey, MlKem768DecapsulationKey,
+    MlKem768KeyPair, MlKem768EncapsulationKey,
     PUBLIC_KEY_SIZE as ML_KEM_PUBLIC_KEY_SIZE,
     SECRET_KEY_SIZE as ML_KEM_SECRET_KEY_SIZE,
     CIPHERTEXT_SIZE as ML_KEM_CIPHERTEXT_SIZE,
@@ -332,12 +332,31 @@ pub struct HybridVerifyingKey {
 }
 
 impl HybridVerifyingKey {
-    /// Create from bytes
+    /// Create from bytes.
+    ///
+    /// Validates that the encoded Ed25519 public key decompresses to a
+    /// point on the curve, and that the ML-DSA-65 public key has the
+    /// correct length. ML-DSA's `from_bytes` doesn't currently perform
+    /// deeper structural checks, but we still gate on it so future
+    /// validation tightening propagates here automatically.
     ///
     /// # Errors
-    /// Returns error if validation fails.
+    /// Returns `InvalidSignature` if either embedded public key is
+    /// rejected by its component constructor.
     pub fn from_bytes(bytes: &[u8; HYBRID_SIG_PUBLIC_KEY_SIZE]) -> CryptoResult<Self> {
-        // TODO: Validate both public keys
+        let ed25519_pk: [u8; ED25519_PUBLIC_KEY_SIZE] = bytes[..ED25519_PUBLIC_KEY_SIZE]
+            .try_into()
+            .map_err(|_| CryptoError::InvalidSignature)?;
+        let ml_dsa_pk: [u8; ML_DSA_PUBLIC_KEY_SIZE] = bytes[ED25519_PUBLIC_KEY_SIZE..]
+            .try_into()
+            .map_err(|_| CryptoError::InvalidSignature)?;
+
+        // Ed25519: ensures the point decompresses (i.e. lies on the curve).
+        let _ = Ed25519VerifyingKey::from_bytes(&ed25519_pk)?;
+        // ML-DSA-65: ensures the byte length is exactly PUBLIC_KEY_SIZE and
+        // any future structural validation runs.
+        let _ = MlDsa65VerifyingKey::from_bytes(&ml_dsa_pk)?;
+
         Ok(Self { bytes: *bytes })
     }
 

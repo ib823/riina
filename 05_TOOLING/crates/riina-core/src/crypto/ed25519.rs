@@ -241,19 +241,19 @@ impl EdwardsPoint {
         result
     }
 
-    /// Constant-time selection: returns a if choice == 0, b if choice == 1
+    /// Constant-time selection: returns `a` if `choice == 0`, `b` if `choice == 1`.
+    ///
+    /// Selects each coordinate of the projective point using
+    /// `FieldElement::ct_select`, which is itself constant-time. The whole
+    /// operation runs in time independent of `choice`, so it is safe to
+    /// drive directly from secret scalar bits.
     fn ct_select(a: &Self, b: &Self, choice: u8) -> Self {
         debug_assert!(choice == 0 || choice == 1);
-
-        // Convert choice to mask: 0 -> 0x00...00, 1 -> 0xff...ff
-        let mask = -(choice as i64);
-
-        // We need to implement ct_select for FieldElement
-        // For now, use conditional logic (TODO: make this truly constant-time)
-        if choice == 1 {
-            *b
-        } else {
-            *a
+        Self {
+            x: FieldElement::ct_select(&a.x, &b.x, choice),
+            y: FieldElement::ct_select(&a.y, &b.y, choice),
+            z: FieldElement::ct_select(&a.z, &b.z, choice),
+            t: FieldElement::ct_select(&a.t, &b.t, choice),
         }
     }
 

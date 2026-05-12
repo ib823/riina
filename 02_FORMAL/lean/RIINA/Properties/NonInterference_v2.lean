@@ -176,14 +176,12 @@ theorem val_rel_at_type_fo_refl : ∀ T St v, first_order_type T = true → valu
 -- For trivial FO types, any two well-typed values are related.
 --     Requires typing to use canonical forms for TProd/TSum decomposition.
 --
---     STATUS: UNUSED LEMMA with known issues.
---     - TSum with trivial components fails when v1=EInl, v2=EInr
---     - fo_type_has_trivial_rel incorrectly returns true for TSum
---     - The admits are justified dead code until this lemma is actually needed
---
---     TODO: Fix by either:
---     1. Remove TSum from fo_type_has_trivial_rel (TSum requires matching constructors)
---     2. Weaken val_rel_at_type_fo for TSum to return True when components are trivial
+--     STATUS: UNUSED LEMMA.
+--     The TSum issue is resolved in the Coq source of truth
+--     (02_FORMAL/coq/properties/NonInterference_v2.v): TSum is excluded
+--     from `fo_type_has_trivial_rel`, so the lemma is no longer false on
+--     trivial-but-mismatched constructors. This Lean port still carries
+--     `sorry` until the matching Lean definition is ported across.
 /-- val_rel_at_type_fo_trivial (matches Coq) -/
 theorem val_rel_at_type_fo_trivial : ∀ T St v1 v2, first_order_type T = true → fo_type_has_trivial_rel T = true → value v1 → value v2 → has_type nil St Public v1 T EffectPure → has_type nil St Public v2 T EffectPure → val_rel_at_type_fo T v1 v2 := by sorry
 

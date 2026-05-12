@@ -175,7 +175,7 @@ fn free_vars(expr: &Expr) -> HashSet<Ident> {
             fv.extend(free_vars(e2));
             fv
         }
-        Expr::Let(name, _, e1, e2) => {
+        Expr::Let(name, e1, e2) => {
             let mut fv = free_vars(e1);
             let mut fv2 = free_vars(e2);
             fv2.remove(name);
@@ -224,18 +224,6 @@ fn free_vars(expr: &Expr) -> HashSet<Ident> {
             }
             fv
         }
-        Expr::ActorDecl { init_state, handler, .. } => {
-            let mut fv = free_vars(init_state);
-            fv.extend(free_vars(handler));
-            fv
-        }
-        Expr::ChoreographyBlock { .. } => HashSet::new(),
-        Expr::Spawn(a, b) | Expr::ActorSend(a, b) | Expr::CRDTMerge(a, b) => {
-            let mut fv = free_vars(a);
-            fv.extend(free_vars(b));
-            fv
-        }
-        Expr::ActorRecv(a) | Expr::ContentHash(a) => free_vars(a),
     }
 }
 
@@ -377,7 +365,7 @@ impl Lower {
                 }
             }
             Expr::Assign(_, _) => Ty::Unit,
-            Expr::If(_, t, _) | Expr::Let(_, _, _, t) | Expr::LetRec(_, _, _, t) | Expr::Case(_, _, t, _, _) => self.infer_type(t),
+            Expr::If(_, t, _) | Expr::Let(_, _, t) | Expr::LetRec(_, _, _, t) | Expr::Case(_, _, t, _, _) => self.infer_type(t),
             Expr::App(e1, _) => {
                 if let Ty::Fn(_, ret, _) = self.infer_type(e1) {
                     *ret
@@ -396,13 +384,6 @@ impl Lower {
                 | BinOp::And | BinOp::Or => Ty::Bool,
             },
             Expr::FFICall { ret_ty, .. } => ret_ty.clone(),
-            Expr::ActorDecl { .. } => Ty::Unit,
-            Expr::ChoreographyBlock { .. } => Ty::Unit,
-            Expr::Spawn(_, _) => Ty::Int, // Actor ref as integer ID
-            Expr::ActorSend(_, _) => Ty::Unit,
-            Expr::ActorRecv(_) => Ty::Int, // Message as generic value
-            Expr::CRDTMerge(_, _) => Ty::Int, // Merged state
-            Expr::ContentHash(_) => Ty::String, // Hash as hex string
         }
     }
 
@@ -427,7 +408,7 @@ impl Lower {
                     .join(self.infer_effect(t))
                     .join(self.infer_effect(f))
             }
-            Expr::Let(_, _, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
+            Expr::Let(_, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
             Expr::App(e1, e2) => {
                 let base = self.infer_effect(e1).join(self.infer_effect(e2));
                 if let Ty::Fn(_, _, eff) = self.infer_type(e1) {
@@ -457,19 +438,6 @@ impl Lower {
                 }
                 eff
             }
-            Expr::ActorDecl { init_state, handler, .. } => {
-                self.infer_effect(init_state).join(self.infer_effect(handler))
-            }
-            Expr::ChoreographyBlock { .. } => Effect::Pure,
-            Expr::Spawn(a, b) => {
-                self.infer_effect(a).join(self.infer_effect(b)).join(Effect::Alloc)
-            }
-            Expr::ActorSend(a, b) => {
-                self.infer_effect(a).join(self.infer_effect(b)).join(Effect::Write)
-            }
-            Expr::ActorRecv(a) => self.infer_effect(a).join(Effect::Read),
-            Expr::CRDTMerge(a, b) => self.infer_effect(a).join(self.infer_effect(b)),
-            Expr::ContentHash(a) => self.infer_effect(a),
         }
     }
 
@@ -755,6 +723,15 @@ impl Lower {
                 // Lower scrutinee
                 let scrut_var = self.lower_expr(scrutinee)?;
 
+                // Recover the sum type's component types so the Unwrap{Left,Right}
+                // instructions can carry the correct payload type. Falls back to
+                // Ty::Unit if the scrutinee isn't a sum (which should have been
+                // caught upstream by the type checker).
+                let (left_ty, right_ty) = match self.infer_type(scrutinee) {
+                    Ty::Sum(l, r) => (*l, *r),
+                    _ => (Ty::Unit, Ty::Unit),
+                };
+
                 // Check if left or right
                 let is_left = self.emit(
                     Instruction::IsLeft(scrut_var),
@@ -811,13 +788,13 @@ impl Lower {
                 self.current_block = then_block;
                 let left_val = self.emit(
                     Instruction::UnwrapLeft(scrut_var),
-                    Ty::Unit, // TODO: proper type
+                    left_ty.clone(),
                     SecurityLevel::Public,
                     Effect::Pure,
                 );
 
                 let saved_env = self.env.clone();
-                self.env.bind(left_name.clone(), left_val, Ty::Unit, SecurityLevel::Public);
+                self.env.bind(left_name.clone(), left_val, left_ty.clone(), SecurityLevel::Public);
                 let left_result = self.lower_expr(left_branch)?;
                 self.env = saved_env;
 
@@ -836,13 +813,13 @@ impl Lower {
                 self.current_block = else_block;
                 let right_val = self.emit(
                     Instruction::UnwrapRight(scrut_var),
-                    Ty::Unit, // TODO: proper type
+                    right_ty.clone(),
                     SecurityLevel::Public,
                     Effect::Pure,
                 );
 
                 let saved_env = self.env.clone();
-                self.env.bind(right_name.clone(), right_val, Ty::Unit, SecurityLevel::Public);
+                self.env.bind(right_name.clone(), right_val, right_ty.clone(), SecurityLevel::Public);
                 let right_result = self.lower_expr(right_branch)?;
                 self.env = saved_env;
 
@@ -963,7 +940,7 @@ impl Lower {
                 ))
             }
 
-            Expr::Let(name, _, binding, body) => {
+            Expr::Let(name, binding, body) => {
                 let bind_var = self.lower_expr(binding)?;
                 let bind_ty = self.infer_type(binding);
 
@@ -1258,86 +1235,6 @@ impl Lower {
                     ret_ty.clone(),
                     SecurityLevel::Public,
                     Effect::System,
-                ))
-            }
-
-            Expr::ActorDecl { name, init_state, handler, .. } => {
-                let init_var = self.lower_expr(init_state)?;
-                let handler_var = self.lower_expr(handler)?;
-                Ok(self.emit(
-                    Instruction::ActorDecl {
-                        name: name.clone(),
-                        init_state: init_var,
-                        handler: handler_var,
-                    },
-                    Ty::Unit,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
-
-            Expr::ChoreographyBlock { name, roles, .. } => {
-                Ok(self.emit(
-                    Instruction::ChoreographyDecl {
-                        name: name.clone(),
-                        roles: roles.clone(),
-                    },
-                    Ty::Unit,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
-
-            Expr::Spawn(actor_expr, state_expr) => {
-                let actor_var = self.lower_expr(actor_expr)?;
-                let state_var = self.lower_expr(state_expr)?;
-                Ok(self.emit(
-                    Instruction::ActorSpawn(actor_var, state_var),
-                    Ty::Int,
-                    SecurityLevel::Public,
-                    Effect::Alloc,
-                ))
-            }
-
-            Expr::ActorSend(actor_expr, msg_expr) => {
-                let actor_var = self.lower_expr(actor_expr)?;
-                let msg_var = self.lower_expr(msg_expr)?;
-                Ok(self.emit(
-                    Instruction::ActorSend(actor_var, msg_var),
-                    Ty::Unit,
-                    SecurityLevel::Public,
-                    Effect::Write,
-                ))
-            }
-
-            Expr::ActorRecv(actor_expr) => {
-                let actor_var = self.lower_expr(actor_expr)?;
-                Ok(self.emit(
-                    Instruction::ActorRecv(actor_var),
-                    Ty::Int,
-                    SecurityLevel::Public,
-                    Effect::Read,
-                ))
-            }
-
-            Expr::CRDTMerge(a_expr, b_expr) => {
-                let a_var = self.lower_expr(a_expr)?;
-                let b_var = self.lower_expr(b_expr)?;
-                Ok(self.emit(
-                    Instruction::CRDTMerge(a_var, b_var),
-                    Ty::Int,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
-
-            Expr::ContentHash(val_expr) => {
-                let val_var = self.lower_expr(val_expr)?;
-                Ok(self.emit(
-                    Instruction::ContentHash(val_var),
-                    Ty::String,
-                    SecurityLevel::Public,
-                    Effect::Pure,
                 ))
             }
 

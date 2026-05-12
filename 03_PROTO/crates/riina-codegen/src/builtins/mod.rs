@@ -20,13 +20,35 @@ pub(crate) mod json;
 
 use crate::value::{Env, Value};
 use crate::{Error, Result};
+use riina_types::Effect;
+
+/// Effect classification for a builtin name (canonical form).
+///
+/// Used as the effect gate for builtins: callers (typechecker / codegen)
+/// query this so a builtin invocation is annotated with the effect it
+/// requires, rather than being silently treated as pure. `Pure` is
+/// returned for any builtin not explicitly classified.
+#[must_use]
+pub fn builtin_effect(name: &str) -> Effect {
+    match name {
+        // stdout writers
+        "cetak" | "cetakln" => Effect::Write,
+        // file I/O — `fail::*` builtins
+        n if n.starts_with("fail_") || n.starts_with("baca_") || n.starts_with("tulis_") => {
+            Effect::FileSystem
+        }
+        // clock access
+        n if n.starts_with("masa_") || n == "sekarang" || n == "now" => Effect::Time,
+        _ => Effect::Pure,
+    }
+}
 
 /// Register all built-in functions into the given environment.
 #[must_use]
 pub fn register_builtins(env: &Env) -> Env {
     let mut e = env.clone();
 
-    // I/O (TODO: effect gate)
+    // I/O — effect class is `Effect::Write` (see `builtin_effect`).
     e = e.extend("cetak".to_string(), Value::Builtin("cetak".to_string()));
     e = e.extend("print".to_string(), Value::Builtin("cetak".to_string()));
     e = e.extend("cetakln".to_string(), Value::Builtin("cetakln".to_string()));
@@ -317,6 +339,16 @@ mod tests {
     fn test_format_value_list() {
         let v = Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]);
         assert_eq!(format_value(&v), "[1, 2, 3]");
+    }
+
+    #[test]
+    fn test_builtin_effect_io() {
+        assert_eq!(builtin_effect("cetak"), Effect::Write);
+        assert_eq!(builtin_effect("cetakln"), Effect::Write);
+        // English aliases register under the canonical name, so callers ask
+        // for the canonical name when querying the effect.
+        assert_eq!(builtin_effect("panjang"), Effect::Pure);
+        assert_eq!(builtin_effect("ke_teks"), Effect::Pure);
     }
 
     #[test]
