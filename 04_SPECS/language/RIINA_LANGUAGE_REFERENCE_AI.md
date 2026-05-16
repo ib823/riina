@@ -1,6 +1,6 @@
 # RIINA Language Reference (AI-Optimized)
 
-Version: 0.1.0 | File extension: `.rii` | Prover: Rocq 9.1 (Coq 8.21)
+Version: 0.1.0 | File extension: `.rii` | Prover: Coq 8.20.1
 
 RIINA is a formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system. All security properties are proven in Coq.
 
@@ -823,7 +823,7 @@ riinac verify --full
 
 ## 15. Formal Verification
 
-All security properties proven in Coq (Rocq 9.1):
+All security properties proven in Coq (8.20.1):
 - **Type safety**: Progress + Preservation
 - **Non-interference**: Secret data cannot influence public output
 - **Effect safety**: Effects tracked and enforced

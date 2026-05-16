@@ -177,7 +177,7 @@ if [ -f "$COQ_PROJECT" ]; then
     path="$COQ_DIR/$rel"
     [ -f "$path" ] || continue
     admitted_hits="$(grep -Ec '^[[:space:]]*Admitted\.' "$path" || true)"
-    axiom_hits="$(grep -Ec '^[[:space:]]*Axiom[[:space:]]+' "$path" || true)"
+    axiom_hits="$(grep -Ec '^[[:space:]]*Axiom[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]+:' "$path" || true)"
     assumption_hits="$(grep -Ec '^[[:space:]]*Parameter[[:space:]]+val_rel_n_step_up[[:space:]]' "$path" || true)"
     qed_hits="$(grep -c 'Qed\.' "$path" || true)"
     active_admitted=$((active_admitted + admitted_hits))
