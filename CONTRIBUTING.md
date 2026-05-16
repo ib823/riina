@@ -1,16 +1,13 @@
 # Contributing to RIINA™
 
-**Verification:** active-build Coq corpus (0 Admitted, 0 active axioms) +
-10 prover lanes tracked with claim levels + Rust test suites in `03_PROTO`
-and `05_TOOLING`. Live counts are published in `PROOF_STATUS.md` and in
-`website/public/metrics.json`.
+**Verification:** live counts and per-lane claim levels in `PROOF_STATUS.md` and `website/public/metrics.json`. Active Coq build is 0 Admitted / 0 active axioms; 10 prover lanes are tracked alongside Rust test suites in `03_PROTO` and `05_TOOLING`.
 
 Thank you for your interest in RIINA. This guide covers how to contribute effectively.
 
 ## Prerequisites
 
 - **Rust** 1.84.0+ — `rustup install stable`
-- **Rocq 9.1.1** — Only needed for formal proof work (files use `From Stdlib`)
+- **Coq 8.20.1** — Only needed for formal proof work (files use `From Coq`; see CHANGELOG.md for the prior Rocq migration)
 - No external dependencies required
 
 ## Getting Started

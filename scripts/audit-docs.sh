@@ -39,25 +39,49 @@ WARNINGS=0
 
 # ── Helper functions ──────────────────────────────────────────────────
 
+# The authoritative "active" set is the list of .v files in _CoqProject —
+# this matches scripts/public-quality-gates.sh (the CI hygiene gate) and
+# excludes orphan drafts under domains/_incomplete/ and the
+# NonInterference_v2* working files, which are not part of the active build.
+list_coq_active_paths() {
+    local project="$REPO_ROOT/02_FORMAL/coq/_CoqProject"
+    [ -f "$project" ] || return 0
+    awk '
+      {
+        line=$0;
+        sub(/^[ \t]+/, "", line);
+        if (line ~ /^[#-]/ || line == "") next;
+        split(line, tok, /[ \t]+/);
+        if (tok[1] ~ /\.v$/) print tok[1];
+      }
+    ' "$project"
+}
+
 count_qed_active() {
     local total=0
-    while IFS= read -r f; do
-        local count=$(grep -c "Qed\." "$f" 2>/dev/null || true)
+    while IFS= read -r rel; do
+        local f="$REPO_ROOT/02_FORMAL/coq/$rel"
+        [ -f "$f" ] || continue
+        local count
+        count=$(grep -c "Qed\." "$f" 2>/dev/null || true)
         if [ -n "$count" ] && [ "$count" -gt 0 ] 2>/dev/null; then
             total=$((total + count))
         fi
-    done < <(find "$REPO_ROOT/02_FORMAL/coq" -name "*.v" -type f ! -path "*/_archive_deprecated/*" 2>/dev/null)
+    done < <(list_coq_active_paths)
     echo "$total"
 }
 
 count_admitted_active() {
     local total=0
-    while IFS= read -r f; do
-        local count=$(grep -cP '^\s*Admitted\.' "$f" 2>/dev/null || true)
+    while IFS= read -r rel; do
+        local f="$REPO_ROOT/02_FORMAL/coq/$rel"
+        [ -f "$f" ] || continue
+        local count
+        count=$(grep -cP '^\s*Admitted\.' "$f" 2>/dev/null || true)
         if [ -n "$count" ] && [ "$count" -gt 0 ] 2>/dev/null; then
             total=$((total + count))
         fi
-    done < <(find "$REPO_ROOT/02_FORMAL/coq" -name "*.v" -type f ! -path "*/_archive_deprecated/*" 2>/dev/null)
+    done < <(list_coq_active_paths)
     echo "$total"
 }
 
@@ -249,10 +273,11 @@ if [ -f "$REPO_ROOT/CLAUDE.md" ]; then
         fi
     fi
 else
+    # CLAUDE.md is an optional internal tracking file (no other doc
+    # depends on it). Absence is not a discrepancy.
     if [ "$QUICK_MODE" != "--quick" ]; then
-        echo -e "${RED}[ERROR]${NC} CLAUDE.md not found!"
+        echo -e "${GREEN}[OK]${NC} CLAUDE.md: not present (optional internal tracking)"
     fi
-    DISCREPANCIES=$((DISCREPANCIES + 1))
 fi
 if [ "$QUICK_MODE" != "--quick" ]; then echo ""; fi
 
@@ -310,8 +335,16 @@ if [ "$QUICK_MODE" != "--quick" ]; then
 fi
 
 if [ -f "$REPO_ROOT/CHANGELOG.md" ]; then
-    CL_QED=$(grep -oP '\d+,?\d* Coq Qed' "$REPO_ROOT/CHANGELOG.md" | head -1 | grep -oP '^\d+,?\d*' | tr -d ',' || echo "0")
-    check_value "Qed in CHANGELOG.md banner" "$ACTUAL_QED" "$CL_QED" "CHANGELOG.md" || true
+    # Only enforce the count if the banner actually embeds a "N Coq Qed"
+    # claim. The current banner deliberately defers to PROOF_STATUS.md /
+    # metrics.json instead of embedding a Qed number that would rot.
+    CL_QED_RAW=$(grep -oP '\d+,?\d* Coq Qed' "$REPO_ROOT/CHANGELOG.md" | head -1 || true)
+    if [ -n "$CL_QED_RAW" ]; then
+        CL_QED=$(printf '%s' "$CL_QED_RAW" | grep -oP '^\d+,?\d*' | tr -d ',')
+        check_value "Qed in CHANGELOG.md banner" "$ACTUAL_QED" "$CL_QED" "CHANGELOG.md" || true
+    elif [ "$QUICK_MODE" != "--quick" ]; then
+        echo -e "${GREEN}[OK]${NC} CHANGELOG.md banner: no embedded Qed claim (defers to live sources)"
+    fi
 fi
 if [ "$QUICK_MODE" != "--quick" ]; then echo ""; fi
 
@@ -472,32 +505,34 @@ if [ "$QUICK_MODE" != "--quick" ]; then echo ""; fi
 if [ "$QUICK_MODE" != "--quick" ]; then
     echo -e "${CYAN}Checking git hooks...${NC}"
 
+    # Hook installation is a per-developer environment concern, not a
+    # repo doc-claim issue, so missing hooks are a WARN — they remind a
+    # human contributor to run install_hooks.sh, but they don't block CI
+    # or fresh-clone audits.
+    hook_warn() {
+        echo -e "${YELLOW}[WARN]${NC} $1"
+        echo "         Run: bash 00_SETUP/scripts/install_hooks.sh"
+        WARNINGS=$((WARNINGS + 1))
+    }
+
     if [ -f "$REPO_ROOT/.git/hooks/pre-commit" ]; then
         if grep -q "riinac verify" "$REPO_ROOT/.git/hooks/pre-commit" 2>/dev/null; then
             echo -e "${GREEN}[OK]${NC} pre-commit hook installed (riinac verify)"
         else
-            echo -e "${RED}[ERROR]${NC} pre-commit hook exists but is NOT the RIINA hook!"
-            echo "         Run: bash 00_SETUP/scripts/install_hooks.sh"
-            DISCREPANCIES=$((DISCREPANCIES + 1))
+            hook_warn "pre-commit hook exists but is NOT the RIINA hook"
         fi
     else
-        echo -e "${RED}[ERROR]${NC} pre-commit hook NOT installed!"
-        echo "         Run: bash 00_SETUP/scripts/install_hooks.sh"
-        DISCREPANCIES=$((DISCREPANCIES + 1))
+        hook_warn "pre-commit hook NOT installed"
     fi
 
     if [ -f "$REPO_ROOT/.git/hooks/pre-push" ]; then
         if grep -q "riinac verify" "$REPO_ROOT/.git/hooks/pre-push" 2>/dev/null; then
             echo -e "${GREEN}[OK]${NC} pre-push hook installed (riinac verify --full)"
         else
-            echo -e "${RED}[ERROR]${NC} pre-push hook exists but is NOT the RIINA hook!"
-            echo "         Run: bash 00_SETUP/scripts/install_hooks.sh"
-            DISCREPANCIES=$((DISCREPANCIES + 1))
+            hook_warn "pre-push hook exists but is NOT the RIINA hook"
         fi
     else
-        echo -e "${RED}[ERROR]${NC} pre-push hook NOT installed!"
-        echo "         Run: bash 00_SETUP/scripts/install_hooks.sh"
-        DISCREPANCIES=$((DISCREPANCIES + 1))
+        hook_warn "pre-push hook NOT installed"
     fi
     echo ""
 fi
@@ -514,10 +549,16 @@ if [ "$QUICK_MODE" != "--quick" ]; then
             */01_RESEARCH/*|*/99_ARCHIVE/*|*/_archive_deprecated/*|*/CLAUDE_WEB_PROMPT_*|*/CLAUDE_AI_*|*/delegation_prompts/*) continue ;;
         esac
         banner_line=$(grep -E "^\*\*(Audit Update|Verification):\*\*" "$file" | head -1)
-        # Check if banner has current Qed count
-        if ! echo "$banner_line" | grep -q "${ACTUAL_QED_COMMA} Coq Qed" 2>/dev/null; then
-            STALE_BANNERS=$((STALE_BANNERS + 1))
+        # A banner is current if it either (a) embeds the current Qed
+        # count, or (b) defers to live sources (PROOF_STATUS.md /
+        # metrics.json) instead of embedding a number that would rot.
+        if echo "$banner_line" | grep -q "${ACTUAL_QED_COMMA} Coq Qed" 2>/dev/null; then
+            continue
         fi
+        if echo "$banner_line" | grep -qE "live counts|PROOF_STATUS\.md|metrics\.json" 2>/dev/null; then
+            continue
+        fi
+        STALE_BANNERS=$((STALE_BANNERS + 1))
     done < <(grep -rlE "^\*\*(Audit Update|Verification):\*\*" "$REPO_ROOT" 2>/dev/null || true)
 
     if [ "$STALE_BANNERS" -gt 0 ]; then

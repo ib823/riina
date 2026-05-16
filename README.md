@@ -239,7 +239,7 @@ This is not a whitepaper. This is working software.
 
 | Prover | Snapshot | Claim level | Notes |
 |--------|----------|-------------|-------|
-| **Rocq 9.1.1** (Primary) | 7,025 Qed (active build), 0 Admitted, 0 active axioms | mechanized | 297 files declared in `_CoqProject`; 37 of those entries reference files that no longer exist in the worktree and are pending cleanup |
+| **Coq 8.20.1** (Primary) | 7,025 Qed (active build), 0 Admitted, 0 active axioms | mechanized | 297 files declared in `_CoqProject`; 37 of those entries reference files that no longer exist in the worktree and are pending cleanup |
 | **Lean 4** (Secondary) | 10,146 declarations | generated | 287 files; 177 `sorry`, 10 axioms — claim downgraded from earlier `mechanized` claim |
 | **Isabelle/HOL** (Tertiary) | 9,935 lemmas | generated | 285 files; 0 `sorry`, one Isabelle-side axiom |
 | **F\*** | 7,899 lemmas | generated | 268 files |
