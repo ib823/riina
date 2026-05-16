@@ -244,9 +244,7 @@ impl VerifyContext {
 #[derive(Debug)]
 enum VerifyError {
     IoError(io::Error),
-    CommandFailed { tool: String, exit_code: i32 },
     ToolNotFound(String),
-    CoverageBelowThreshold { actual: f64, required: f64 },
     VerificationFailed(String),
 }
 
@@ -254,13 +252,7 @@ impl std::fmt::Display for VerifyError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             VerifyError::IoError(e) => write!(f, "I/O error: {e}"),
-            VerifyError::CommandFailed { tool, exit_code } => {
-                write!(f, "{tool} failed with exit code {exit_code}")
-            }
             VerifyError::ToolNotFound(tool) => write!(f, "Tool not found: {tool}"),
-            VerifyError::CoverageBelowThreshold { actual, required } => {
-                write!(f, "Coverage {actual:.1}% below threshold {required}%")
-            }
             VerifyError::VerificationFailed(msg) => write!(f, "Verification failed: {msg}"),
         }
     }
@@ -333,11 +325,7 @@ fn find_gnat_project(root: &Path) -> Option<PathBuf> {
     None
 }
 
-fn run_gnatprove(
-    ctx: &VerifyContext,
-    level: u8,
-    package: Option<&str>,
-) -> Result<(), VerifyError> {
+fn run_gnatprove(ctx: &VerifyContext, level: u8, package: Option<&str>) -> Result<(), VerifyError> {
     if !check_tool("gnatprove") {
         ctx.log("⚠ gnatprove not on PATH, skipping Ada/SPARK verification");
         return Ok(());
@@ -424,8 +412,16 @@ fn run_cargo_with_target(
         .args(args)
         .current_dir(&ctx.root)
         .env("CARGO_TARGET_DIR", target_dir)
-        .stdout(if ctx.verbose { Stdio::inherit() } else { Stdio::piped() })
-        .stderr(if ctx.verbose { Stdio::inherit() } else { Stdio::piped() })
+        .stdout(if ctx.verbose {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        })
+        .stderr(if ctx.verbose {
+            Stdio::inherit()
+        } else {
+            Stdio::piped()
+        })
         .status()
         .map_err(|e| {
             if e.kind() == io::ErrorKind::NotFound {
@@ -449,7 +445,7 @@ fn compare_release_dirs(a: &Path, b: &Path) -> io::Result<Vec<String>> {
     let names_b = collect_top_level_files(b)?;
 
     let mut diffs: Vec<String> = Vec::new();
-    for name in names_a.iter() {
+    for name in &names_a {
         if !names_b.contains(name) {
             diffs.push(format!("{name} (missing in B)"));
             continue;
@@ -460,7 +456,7 @@ fn compare_release_dirs(a: &Path, b: &Path) -> io::Result<Vec<String>> {
             diffs.push(name.clone());
         }
     }
-    for name in names_b.iter() {
+    for name in &names_b {
         if !names_a.contains(name) {
             diffs.push(format!("{name} (missing in A)"));
         }
@@ -625,7 +621,7 @@ fn verify_level_3(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
     // Property tests
     let start = Instant::now();
     let passed = run_cargo(ctx, &["test", "--all-features", "--", "proptest"])?;
-    ctx.record("proptest", true, start.elapsed(), "Property tests run");
+    ctx.record("proptest", passed, start.elapsed(), "Property tests run");
 
     // Kani
     if check_tool("kani") {
@@ -759,7 +755,9 @@ fn verify_level_6(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
                 Err(e) => (false, format!("Comparison failed: {e}")),
             }
         }
-        (Ok(false), _) | (_, Ok(false)) => (false, "Build failed during reproducibility run".to_string()),
+        (Ok(false), _) | (_, Ok(false)) => {
+            (false, "Build failed during reproducibility run".to_string())
+        }
         (Err(e), _) | (_, Err(e)) => (false, format!("Build invocation error: {e:?}")),
     };
 
@@ -794,9 +792,7 @@ fn verify_level_6(ctx: &mut VerifyContext) -> Result<(), VerifyError> {
 fn verify_full(ctx: &mut VerifyContext, level: u8) -> Result<(), VerifyError> {
     ctx.log(&format!("Running full verification at level {level}"));
 
-    if level >= 0 {
-        verify_level_0(ctx)?;
-    }
+    verify_level_0(ctx)?;
     if level >= 1 {
         verify_level_1(ctx)?;
     }
@@ -933,7 +929,6 @@ fn run_fuzzing(
         ctx.log(&format!("Fuzzing: {target}"));
         let start = Instant::now();
 
-        let duration_str = duration.to_string();
         let max_time = format!("-max_total_time={duration}");
 
         let passed = run_cargo(ctx, &["+nightly", "fuzz", "run", target, "--", &max_time])?;
@@ -1062,7 +1057,7 @@ fn main() -> ExitCode {
         Commands::Rust { tool, package } => verify_rust_tool(&mut ctx, *tool, package.as_deref()),
         Commands::Ada { level, package } => {
             ctx.log(&format!("Ada/SPARK verification at level {level}"));
-            run_gnatprove(&mut ctx, *level, package.as_deref())
+            run_gnatprove(&ctx, *level, package.as_deref())
         }
         Commands::Coverage { minimum, html } => verify_coverage(&mut ctx, *minimum, *html),
         Commands::Fuzz { target, duration } => run_fuzzing(&mut ctx, target.as_deref(), *duration),
@@ -1143,11 +1138,8 @@ mod tests {
     }
 
     fn tempdir_like() -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "riina-verify-test-{}",
-            std::process::id()
-        ));
-        let _ = std::fs::create_dir_all(&dir);
+        let dir = env::temp_dir().join(format!("riina-verify-test-{}", std::process::id()));
+        let _ = fs::create_dir_all(&dir);
         dir
     }
 }

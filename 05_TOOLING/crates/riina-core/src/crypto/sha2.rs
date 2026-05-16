@@ -665,7 +665,7 @@ mod tests {
         let one_shot = Sha256::hash(data);
 
         let mut hasher = Sha256::new();
-        for &byte in data.iter() {
+        for &byte in data {
             hasher.update(&[byte]);
         }
         let byte_by_byte = hasher.finalize();
@@ -775,7 +775,7 @@ mod tests {
         let one_shot = Sha512::hash(data);
 
         let mut hasher = Sha512::new();
-        for &byte in data.iter() {
+        for &byte in data {
             hasher.update(&[byte]);
         }
         let byte_by_byte = hasher.finalize();

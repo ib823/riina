@@ -541,18 +541,19 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
-    fn test_hash_computation() {
-        let temp_dir = TempDir::new().unwrap();
+    fn test_hash_computation() -> io::Result<()> {
+        let temp_dir = TempDir::new()?;
         let file_path = temp_dir.path().join("test.txt");
-        fs::write(&file_path, "hello world").unwrap();
+        fs::write(&file_path, "hello world")?;
 
-        let hash = compute_sha256(&file_path).unwrap();
+        let hash = compute_sha256(&file_path)?;
 
         // SHA-256 of "hello world"
         assert_eq!(
             hash,
             "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
         );
+        Ok(())
     }
 
     #[test]

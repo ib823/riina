@@ -34,30 +34,22 @@
 //! ```
 
 use crate::crypto::ed25519::{
-    Ed25519SigningKey, Ed25519VerifyingKey, 
-    PUBLIC_KEY_SIZE as ED25519_PUBLIC_KEY_SIZE,
-    SECRET_KEY_SIZE as ED25519_SECRET_KEY_SIZE,
-    SIGNATURE_SIZE as ED25519_SIGNATURE_SIZE,
+    Ed25519SigningKey, Ed25519VerifyingKey, PUBLIC_KEY_SIZE as ED25519_PUBLIC_KEY_SIZE,
+    SECRET_KEY_SIZE as ED25519_SECRET_KEY_SIZE, SIGNATURE_SIZE as ED25519_SIGNATURE_SIZE,
 };
 use crate::crypto::hkdf::HkdfSha256;
 use crate::crypto::ml_dsa::{
-    MlDsa65KeyPair, MlDsa65VerifyingKey,
-    PUBLIC_KEY_SIZE as ML_DSA_PUBLIC_KEY_SIZE,
-    SECRET_KEY_SIZE as ML_DSA_SECRET_KEY_SIZE,
-    SIGNATURE_SIZE as ML_DSA_SIGNATURE_SIZE,
+    MlDsa65KeyPair, MlDsa65VerifyingKey, PUBLIC_KEY_SIZE as ML_DSA_PUBLIC_KEY_SIZE,
+    SECRET_KEY_SIZE as ML_DSA_SECRET_KEY_SIZE, SIGNATURE_SIZE as ML_DSA_SIGNATURE_SIZE,
 };
 use crate::crypto::ml_kem::{
-    MlKem768KeyPair, MlKem768EncapsulationKey,
-    PUBLIC_KEY_SIZE as ML_KEM_PUBLIC_KEY_SIZE,
-    SECRET_KEY_SIZE as ML_KEM_SECRET_KEY_SIZE,
-    CIPHERTEXT_SIZE as ML_KEM_CIPHERTEXT_SIZE,
+    MlKem768EncapsulationKey, MlKem768KeyPair, CIPHERTEXT_SIZE as ML_KEM_CIPHERTEXT_SIZE,
+    PUBLIC_KEY_SIZE as ML_KEM_PUBLIC_KEY_SIZE, SECRET_KEY_SIZE as ML_KEM_SECRET_KEY_SIZE,
     SHARED_SECRET_SIZE as ML_KEM_SHARED_SECRET_SIZE,
 };
 use crate::crypto::x25519::{
-    X25519KeyPair,
-    PUBLIC_KEY_SIZE as X25519_PUBLIC_KEY_SIZE,
-    PRIVATE_KEY_SIZE as X25519_PRIVATE_KEY_SIZE,
-    SHARED_SECRET_SIZE as X25519_SHARED_SECRET_SIZE,
+    X25519KeyPair, PRIVATE_KEY_SIZE as X25519_PRIVATE_KEY_SIZE,
+    PUBLIC_KEY_SIZE as X25519_PUBLIC_KEY_SIZE, SHARED_SECRET_SIZE as X25519_SHARED_SECRET_SIZE,
 };
 use crate::crypto::{CryptoError, CryptoResult};
 use crate::zeroize::Zeroize;
@@ -180,7 +172,10 @@ impl HybridKem {
 pub fn hybrid_kem_encapsulate(
     public_key: &[u8; HYBRID_KEM_PUBLIC_KEY_SIZE],
     random: &[u8],
-) -> CryptoResult<([u8; HYBRID_KEM_CIPHERTEXT_SIZE], [u8; HYBRID_KEM_SHARED_SECRET_SIZE])> {
+) -> CryptoResult<(
+    [u8; HYBRID_KEM_CIPHERTEXT_SIZE],
+    [u8; HYBRID_KEM_SHARED_SECRET_SIZE],
+)> {
     if random.len() < 64 {
         return Err(CryptoError::KeyGenerationFailed);
     }
@@ -447,12 +442,10 @@ mod tests {
     fn test_domain_separated_message() {
         let msg = b"test message";
         let result = create_domain_separated_message(msg);
-        
+
         assert!(result.starts_with(HYBRID_SIG_CONTEXT));
         let len_start = HYBRID_SIG_CONTEXT.len();
-        let len_bytes: [u8; 8] = result[len_start..len_start + 8]
-            .try_into()
-            .unwrap();
+        let len_bytes: [u8; 8] = result[len_start..len_start + 8].try_into().unwrap();
         assert_eq!(u64::from_be_bytes(len_bytes), msg.len() as u64);
         assert_eq!(&result[len_start + 8..], msg);
     }
@@ -479,10 +472,10 @@ mod tests {
         let random = [0x42u8; 128];
         let keypair = HybridKem::generate(&random).unwrap();
         let pk = keypair.public_key();
-        
+
         let enc_random = [0x24u8; 64];
         let (ct, ss1) = hybrid_kem_encapsulate(&pk, &enc_random).unwrap();
-        
+
         let ss2 = keypair.decapsulate(&ct).unwrap();
         assert_eq!(ss1, ss2);
     }
@@ -493,10 +486,10 @@ mod tests {
         let random = [0x42u8; 64];
         let signing_key = HybridSigningKey::generate(&random).unwrap();
         let verifying_key = signing_key.verifying_key();
-        
+
         let message = b"The quick brown fox jumps over the lazy dog";
         let signature = signing_key.sign(message).unwrap();
-        
+
         assert!(verifying_key.verify(message, &signature).is_ok());
     }
 
@@ -506,10 +499,10 @@ mod tests {
         let random = [0x42u8; 64];
         let signing_key = HybridSigningKey::generate(&random).unwrap();
         let verifying_key = signing_key.verifying_key();
-        
+
         let message = b"Original message";
         let signature = signing_key.sign(message).unwrap();
-        
+
         let wrong_message = b"Wrong message";
         assert!(verifying_key.verify(wrong_message, &signature).is_err());
     }

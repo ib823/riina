@@ -293,9 +293,8 @@ fn check_tool(name: &str) -> bool {
 fn hdl_toolchain_for(target: &str) -> HdlPlan {
     match target {
         "simulation" | "sim" | "verilator" => HdlPlan::Verilator,
-        "ice40" => HdlPlan::Synth { family: "ice40" },
+        "ice40" | "synthesis" => HdlPlan::Synth { family: "ice40" },
         "ecp5" => HdlPlan::Synth { family: "ecp5" },
-        "synthesis" => HdlPlan::Synth { family: "ice40" },
         "vivado" | "xilinx" | "quartus" | "altera" | "production" => HdlPlan::Vendor,
         _ => HdlPlan::Unknown,
     }
@@ -486,7 +485,7 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
             // Snapshot the stage 1 binary before the stage 2 build overwrites
             // it in-place. The comparison below relies on having both copies.
             let stage1_snapshot = ctx.root.join("target/release/riinac.stage1");
-            std::fs::copy(&stage_binary, &stage1_snapshot)?;
+            fs::copy(&stage_binary, &stage1_snapshot)?;
 
             // Self-hosting prerequisites for stage 2 are not in place yet
             // (compiler-from-stage-1 invocation requires the bootstrap to
@@ -498,8 +497,8 @@ fn build_bootstrap(ctx: &BuildContext, stage: u8, verify: bool) -> Result<(), Bu
 
             if verify {
                 ctx.log("Verifying stage 1 == stage 2...");
-                let bytes_a = std::fs::read(&stage1_snapshot)?;
-                let bytes_b = std::fs::read(&stage_binary)?;
+                let bytes_a = fs::read(&stage1_snapshot)?;
+                let bytes_b = fs::read(&stage_binary)?;
                 if bytes_a == bytes_b {
                     ctx.log(&format!(
                         "✓ Stages match ({} bytes, byte-identical)",
@@ -592,7 +591,9 @@ fn build_hdl(ctx: &BuildContext, target: Option<&str>) -> Result<(), BuildError>
             // attempt it when the matching nextpnr binary is on PATH.
             let nextpnr = format!("nextpnr-{family}");
             if check_tool(&nextpnr) {
-                ctx.log(&format!("{nextpnr} present (place-and-route requires a target .pcf/.lpf; skipping)"));
+                ctx.log(&format!(
+                    "{nextpnr} present (place-and-route requires a target .pcf/.lpf; skipping)"
+                ));
             }
             Ok(())
         }
@@ -803,7 +804,10 @@ mod tests {
 
     #[test]
     fn hdl_toolchain_synthesis_dispatches_by_family() {
-        assert_eq!(hdl_toolchain_for("ice40"), HdlPlan::Synth { family: "ice40" });
+        assert_eq!(
+            hdl_toolchain_for("ice40"),
+            HdlPlan::Synth { family: "ice40" }
+        );
         assert_eq!(hdl_toolchain_for("ecp5"), HdlPlan::Synth { family: "ecp5" });
     }
 

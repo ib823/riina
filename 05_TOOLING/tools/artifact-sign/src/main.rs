@@ -157,7 +157,6 @@ enum SbomFormat {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 struct KeyPair {
-    algorithm: SigningAlgorithm,
     public_key: Vec<u8>,
     private_key: Vec<u8>,
 }
@@ -188,8 +187,8 @@ impl KeyPair {
             .map(|i| ((i * 23 + 47) % 256) as u8)
             .collect();
 
+        let _ = algorithm;
         Self {
-            algorithm,
             public_key,
             private_key,
         }
@@ -310,7 +309,7 @@ fn generate_keypair(
     name: &str,
     algorithm: SigningAlgorithm,
     output: &Path,
-    verbose: bool,
+    _verbose: bool,
 ) -> io::Result<()> {
     println!("Generating {} key pair...", algorithm.name());
 
@@ -449,7 +448,7 @@ fn generate_sbom(
     project: &Path,
     output: &Path,
     format: SbomFormat,
-    verbose: bool,
+    _verbose: bool,
 ) -> io::Result<()> {
     println!("Generating SBOM for: {}", project.display());
 
@@ -584,12 +583,18 @@ fn main() -> ExitCode {
             output,
             format,
         } => generate_sbom(project, output, *format, cli.verbose),
-        Commands::SignManifest { manifest, key } => {
+        Commands::SignManifest {
+            manifest: _,
+            key: _,
+        } => {
             println!("Signing manifest and artifacts...");
             println!("Not yet implemented - would sign manifest + all referenced files");
             Ok(())
         }
-        Commands::VerifyManifest { manifest, key } => {
+        Commands::VerifyManifest {
+            manifest: _,
+            key: _,
+        } => {
             println!("Verifying manifest and artifacts...");
             println!("Not yet implemented - would verify manifest + all referenced files");
             Ok(())

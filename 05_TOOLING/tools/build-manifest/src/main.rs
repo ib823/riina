@@ -773,8 +773,12 @@ mod tests {
         let input_diffs = diff_section(&m1, &m2, "inputs");
         let output_diffs = diff_section(&m1, &m2, "outputs");
 
-        assert!(input_diffs.iter().any(|d| d.contains("src/lib.rs") && d.starts_with('~')));
-        assert!(output_diffs.iter().any(|d| d.contains("riina-verify") && d.starts_with('+')));
+        assert!(input_diffs
+            .iter()
+            .any(|d| d.contains("src/lib.rs") && d.starts_with('~')));
+        assert!(output_diffs
+            .iter()
+            .any(|d| d.contains("riina-verify") && d.starts_with('+')));
     }
 
     #[test]

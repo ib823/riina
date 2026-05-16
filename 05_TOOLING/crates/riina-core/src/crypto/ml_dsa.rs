@@ -497,12 +497,10 @@ fn use_hint(hint: i32, r: i32) -> i32 {
         } else {
             r1 + 1
         }
+    } else if r1 == 0 {
+        m - 1
     } else {
-        if r1 == 0 {
-            m - 1
-        } else {
-            r1 - 1
-        }
+        r1 - 1
     }
 }
 
