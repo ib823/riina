@@ -161,9 +161,9 @@ impl Effect {
     pub const fn level(self) -> u8 {
         match self {
             Self::Pure => 0,
-            Self::Mut => 1,       // Local mutation (below Read)
+            Self::Mut => 1, // Local mutation (below Read)
             Self::Read => 2,
-            Self::Alloc => 3,     // Heap allocation
+            Self::Alloc => 3, // Heap allocation
             Self::Write => 4,
             Self::FileSystem => 5,
             Self::Network => 6,
@@ -191,8 +191,12 @@ impl Effect {
             Self::Network | Self::NetworkSecure => EffectCategory::Network,
             Self::Crypto | Self::Random => EffectCategory::Crypto,
             Self::System | Self::Time | Self::Process => EffectCategory::System,
-            Self::Panel | Self::Zirah | Self::Benteng
-            | Self::Sandi | Self::Menara | Self::Gapura => EffectCategory::Product,
+            Self::Panel
+            | Self::Zirah
+            | Self::Benteng
+            | Self::Sandi
+            | Self::Menara
+            | Self::Gapura => EffectCategory::Product,
         }
     }
 
@@ -527,11 +531,21 @@ pub enum Ty {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinOp {
     // Arithmetic
-    Add, Sub, Mul, Div, Mod,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
     // Comparison
-    Eq, Ne, Lt, Le, Gt, Ge,
+    Eq,
+    Ne,
+    Lt,
+    Le,
+    Gt,
+    Ge,
     // Logical
-    And, Or,
+    And,
+    Or,
 }
 
 /// A source span (byte offsets) for LSP support.
@@ -551,8 +565,16 @@ impl Span {
     #[must_use]
     pub const fn merge(self, other: Self) -> Self {
         Self {
-            start: if self.start < other.start { self.start } else { other.start },
-            end: if self.end > other.end { self.end } else { other.end },
+            start: if self.start < other.start {
+                self.start
+            } else {
+                other.start
+            },
+            end: if self.end > other.end {
+                self.end
+            } else {
+                other.end
+            },
         }
     }
 }
@@ -570,17 +592,11 @@ pub enum TopLevelDecl {
         body: Box<Expr>,
     },
     /// biar name = expr;
-    Binding {
-        name: Ident,
-        value: Box<Expr>,
-    },
+    Binding { name: Ident, value: Box<Expr> },
     /// Expression at top level (the program's main expression)
     Expr(Box<Expr>),
     /// luaran "C" { ... } — extern block for FFI declarations
-    ExternBlock {
-        abi: String,
-        decls: Vec<ExternDecl>,
-    },
+    ExternBlock { abi: String, decls: Vec<ExternDecl> },
 }
 
 /// A single declaration inside an extern block.
@@ -613,7 +629,10 @@ impl Program {
     /// Create a Program without span info (backwards compat).
     #[must_use]
     pub fn new(decls: Vec<TopLevelDecl>) -> Self {
-        Self { spans: Vec::new(), decls }
+        Self {
+            spans: Vec::new(),
+            decls,
+        }
     }
 
     /// Create a Program with span info.
@@ -635,14 +654,24 @@ impl Program {
 
         // Helper: desugar a single function decl into the appropriate binding
         #[allow(clippy::boxed_local)]
-        fn desugar_function(name: Ident, params: Vec<(Ident, Ty)>, return_ty: Ty, effect: Effect, body: Box<Expr>, continuation: Box<Expr>) -> Expr {
+        fn desugar_function(
+            name: Ident,
+            params: Vec<(Ident, Ty)>,
+            return_ty: Ty,
+            effect: Effect,
+            body: Box<Expr>,
+            continuation: Box<Expr>,
+        ) -> Expr {
             let lam = params.iter().rev().fold(*body, |acc, (p, ty)| {
                 Expr::Lam(p.clone(), ty.clone(), Box::new(acc))
             });
             // Build the curried function type for the LetRec annotation
-            let fn_ty = params.iter().rev().fold(return_ty.clone(), |ret, (_, param_ty)| {
-                Ty::Fn(Box::new(param_ty.clone()), Box::new(ret), effect)
-            });
+            let fn_ty = params
+                .iter()
+                .rev()
+                .fold(return_ty.clone(), |ret, (_, param_ty)| {
+                    Ty::Fn(Box::new(param_ty.clone()), Box::new(ret), effect)
+                });
             Expr::LetRec(name, fn_ty, Box::new(lam), continuation)
         }
 
@@ -670,12 +699,14 @@ impl Program {
         let last = decls.pop().unwrap();
         let mut result = match last {
             TopLevelDecl::Expr(e) => *e,
-            TopLevelDecl::Binding { name, value } => {
-                Expr::Let(name, value, Box::new(Expr::Unit))
-            }
-            TopLevelDecl::Function { name, params, return_ty, effect, body } => {
-                desugar_function(name, params, return_ty, effect, body, Box::new(Expr::Unit))
-            }
+            TopLevelDecl::Binding { name, value } => Expr::Let(name, value, Box::new(Expr::Unit)),
+            TopLevelDecl::Function {
+                name,
+                params,
+                return_ty,
+                effect,
+                body,
+            } => desugar_function(name, params, return_ty, effect, body, Box::new(Expr::Unit)),
             TopLevelDecl::ExternBlock { decls: edecls, .. } => {
                 desugar_extern_block(edecls, Expr::Unit)
             }
@@ -683,15 +714,15 @@ impl Program {
         // Wrap remaining decls from back to front
         for decl in decls.into_iter().rev() {
             result = match decl {
-                TopLevelDecl::Expr(e) => {
-                    Expr::Let("_".to_string(), e, Box::new(result))
-                }
-                TopLevelDecl::Binding { name, value } => {
-                    Expr::Let(name, value, Box::new(result))
-                }
-                TopLevelDecl::Function { name, params, return_ty, effect, body } => {
-                    desugar_function(name, params, return_ty, effect, body, Box::new(result))
-                }
+                TopLevelDecl::Expr(e) => Expr::Let("_".to_string(), e, Box::new(result)),
+                TopLevelDecl::Binding { name, value } => Expr::Let(name, value, Box::new(result)),
+                TopLevelDecl::Function {
+                    name,
+                    params,
+                    return_ty,
+                    effect,
+                    body,
+                } => desugar_function(name, params, return_ty, effect, body, Box::new(result)),
                 TopLevelDecl::ExternBlock { decls: edecls, .. } => {
                     desugar_extern_block(edecls, result)
                 }

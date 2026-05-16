@@ -7,7 +7,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod analysis;
 pub mod json;
 pub mod jsonrpc;
 pub mod server;
-pub mod analysis;

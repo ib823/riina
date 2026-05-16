@@ -65,8 +65,7 @@ pub fn create_scaffold(root: &Path, name: &str) -> crate::error::Result<()> {
     use crate::error::PkgError;
     let layout = Layout::new(root);
 
-    std::fs::create_dir_all(layout.src_dir())
-        .map_err(|e| PkgError::io(layout.src_dir(), e))?;
+    std::fs::create_dir_all(layout.src_dir()).map_err(|e| PkgError::io(layout.src_dir(), e))?;
 
     // Write riina.toml
     let manifest = format!(
@@ -89,13 +88,11 @@ System = false
 Product = false
 "#
     );
-    std::fs::write(layout.manifest(), manifest)
-        .map_err(|e| PkgError::io(layout.manifest(), e))?;
+    std::fs::write(layout.manifest(), manifest).map_err(|e| PkgError::io(layout.manifest(), e))?;
 
     // Write src/lib.rii
-    let lib_content = format!(
-        "// {name} — RIINA package\n\nfungsi utama() -> Nombor {{\n    pulang 0;\n}}\n"
-    );
+    let lib_content =
+        format!("// {name} — RIINA package\n\nfungsi utama() -> Nombor {{\n    pulang 0;\n}}\n");
     std::fs::write(layout.lib_entry(), lib_content)
         .map_err(|e| PkgError::io(layout.lib_entry(), e))?;
 

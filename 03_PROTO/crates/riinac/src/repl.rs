@@ -5,7 +5,7 @@
 //! Supports bilingual commands (Bahasa Melayu + English).
 //! RIINA = Rigorous Immutable Invariant, No Assumptions
 
-use std::io::{self, Write, BufRead};
+use std::io::{self, BufRead, Write};
 
 use riina_parser::Parser;
 use riina_typechecker::{type_check, Context};

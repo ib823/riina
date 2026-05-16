@@ -32,8 +32,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::toolchain::{AndroidToolchain, AndroidAbi, ToolchainError};
 use crate::jni::{generate_jni_bridge, generate_jni_header, generate_jni_impl};
+use crate::toolchain::{AndroidAbi, AndroidToolchain, ToolchainError};
 
 // Note: Program is not used in current API but kept for future IR-driven codegen
 #[allow(unused_imports)]
@@ -136,10 +136,7 @@ impl AndroidBuilder {
     }
 
     /// Create builder with custom toolchain.
-    pub fn with_toolchain(
-        toolchain: AndroidToolchain,
-        output_dir: impl AsRef<Path>,
-    ) -> Self {
+    pub fn with_toolchain(toolchain: AndroidToolchain, output_dir: impl AsRef<Path>) -> Self {
         Self {
             toolchain,
             output_dir: output_dir.as_ref().to_path_buf(),
@@ -295,7 +292,7 @@ impl AndroidBuilder {
 
         if libs.is_empty() {
             return Err(AndroidBuildError::BuildFailed(
-                "No libraries were built".to_string()
+                "No libraries were built".to_string(),
             ));
         }
 
@@ -307,7 +304,8 @@ impl AndroidBuilder {
         // Basic manifest snippet - effects would be analyzed at a higher level
         r#"<!-- RIINA native library permissions -->
 <uses-permission android:name="android.permission.INTERNET" />
-"#.to_string()
+"#
+        .to_string()
     }
 }
 
@@ -343,7 +341,8 @@ pub fn build_scaffolding(
     // Generate manifest snippet
     let manifest_snippet = r#"<!-- RIINA native library -->
 <uses-permission android:name="android.permission.INTERNET" />
-"#.to_string();
+"#
+    .to_string();
 
     Ok(AndroidArtifact {
         libs: vec![], // No actual build in scaffolding mode
@@ -367,8 +366,7 @@ LOCAL_LDLIBS := -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 "#,
-        config.lib_name,
-        config.opt_level
+        config.lib_name, config.opt_level
     )
 }
 

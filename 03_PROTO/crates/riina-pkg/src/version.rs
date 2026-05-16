@@ -16,7 +16,12 @@ pub struct Version {
 
 impl Version {
     pub fn new(major: u64, minor: u64, patch: u64) -> Self {
-        Self { major, minor, patch, pre: None }
+        Self {
+            major,
+            minor,
+            patch,
+            pre: None,
+        }
     }
 
     pub fn parse(s: &str) -> Result<Self> {
@@ -30,16 +35,28 @@ impl Version {
         if parts.len() != 3 {
             return Err(PkgError::InvalidVersion(s.to_string()));
         }
-        let major = parts[0].parse::<u64>().map_err(|_| PkgError::InvalidVersion(s.to_string()))?;
-        let minor = parts[1].parse::<u64>().map_err(|_| PkgError::InvalidVersion(s.to_string()))?;
-        let patch = parts[2].parse::<u64>().map_err(|_| PkgError::InvalidVersion(s.to_string()))?;
-        Ok(Self { major, minor, patch, pre })
+        let major = parts[0]
+            .parse::<u64>()
+            .map_err(|_| PkgError::InvalidVersion(s.to_string()))?;
+        let minor = parts[1]
+            .parse::<u64>()
+            .map_err(|_| PkgError::InvalidVersion(s.to_string()))?;
+        let patch = parts[2]
+            .parse::<u64>()
+            .map_err(|_| PkgError::InvalidVersion(s.to_string()))?;
+        Ok(Self {
+            major,
+            minor,
+            patch,
+            pre,
+        })
     }
 }
 
 impl Ord for Version {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.major.cmp(&other.major)
+        self.major
+            .cmp(&other.major)
             .then(self.minor.cmp(&other.minor))
             .then(self.patch.cmp(&other.patch))
             .then_with(|| match (&self.pre, &other.pre) {
@@ -107,7 +124,10 @@ impl VersionReq {
         let s = s.trim();
         if s == "*" {
             return Ok(Self {
-                comparators: vec![Comparator { op: Op::Wildcard, version: Version::new(0, 0, 0) }],
+                comparators: vec![Comparator {
+                    op: Op::Wildcard,
+                    version: Version::new(0, 0, 0),
+                }],
             });
         }
 
@@ -131,7 +151,9 @@ impl VersionReq {
     pub fn intersect(&self, other: &Self) -> Self {
         let mut combined = self.comparators.clone();
         combined.extend(other.comparators.iter().cloned());
-        Self { comparators: combined }
+        Self {
+            comparators: combined,
+        }
     }
 }
 
@@ -150,22 +172,46 @@ impl fmt::Display for VersionReq {
 fn parse_comparator(s: &str) -> Result<Comparator> {
     let s = s.trim();
     if let Some(rest) = s.strip_prefix(">=") {
-        Ok(Comparator { op: Op::Gte, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Gte,
+            version: Version::parse(rest)?,
+        })
     } else if let Some(rest) = s.strip_prefix("<=") {
-        Ok(Comparator { op: Op::Lte, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Lte,
+            version: Version::parse(rest)?,
+        })
     } else if let Some(rest) = s.strip_prefix('>') {
-        Ok(Comparator { op: Op::Gt, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Gt,
+            version: Version::parse(rest)?,
+        })
     } else if let Some(rest) = s.strip_prefix('<') {
-        Ok(Comparator { op: Op::Lt, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Lt,
+            version: Version::parse(rest)?,
+        })
     } else if let Some(rest) = s.strip_prefix('=') {
-        Ok(Comparator { op: Op::Exact, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Exact,
+            version: Version::parse(rest)?,
+        })
     } else if let Some(rest) = s.strip_prefix('^') {
-        Ok(Comparator { op: Op::Caret, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Caret,
+            version: Version::parse(rest)?,
+        })
     } else if let Some(rest) = s.strip_prefix('~') {
-        Ok(Comparator { op: Op::Tilde, version: Version::parse(rest)? })
+        Ok(Comparator {
+            op: Op::Tilde,
+            version: Version::parse(rest)?,
+        })
     } else {
         // bare version => caret
-        Ok(Comparator { op: Op::Caret, version: Version::parse(s)? })
+        Ok(Comparator {
+            op: Op::Caret,
+            version: Version::parse(s)?,
+        })
     }
 }
 

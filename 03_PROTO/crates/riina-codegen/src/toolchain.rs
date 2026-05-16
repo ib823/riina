@@ -51,10 +51,18 @@ pub enum ToolchainError {
 impl std::fmt::Display for ToolchainError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NdkNotFound => write!(f, "Android NDK not found. Set ANDROID_NDK_HOME or ANDROID_NDK_ROOT."),
-            Self::SdkNotFound => write!(f, "Android SDK not found. Set ANDROID_HOME or ANDROID_SDK_ROOT."),
+            Self::NdkNotFound => write!(
+                f,
+                "Android NDK not found. Set ANDROID_NDK_HOME or ANDROID_NDK_ROOT."
+            ),
+            Self::SdkNotFound => write!(
+                f,
+                "Android SDK not found. Set ANDROID_HOME or ANDROID_SDK_ROOT."
+            ),
             Self::XcodeNotFound => write!(f, "Xcode not found. Install Xcode from the App Store."),
-            Self::XcodeBuildNotFound => write!(f, "xcodebuild not found. Install Xcode Command Line Tools."),
+            Self::XcodeBuildNotFound => {
+                write!(f, "xcodebuild not found. Install Xcode Command Line Tools.")
+            }
             Self::ClangNotFound => write!(f, "clang not found in toolchain."),
             Self::InvalidPath(path) => write!(f, "Invalid toolchain path: {}", path),
             Self::CommandFailed(msg) => write!(f, "Command failed: {}", msg),
@@ -177,9 +185,10 @@ impl AndroidToolchain {
 
         // Validate NDK structure
         if !ndk_path.join("toolchains").exists() {
-            return Err(ToolchainError::InvalidPath(
-                format!("{} does not contain toolchains/", ndk_path.display())
-            ));
+            return Err(ToolchainError::InvalidPath(format!(
+                "{} does not contain toolchains/",
+                ndk_path.display()
+            )));
         }
 
         // Get NDK version
@@ -291,10 +300,7 @@ impl AndroidToolchain {
         #[cfg(unix)]
         {
             use std::process::Command;
-            let output = Command::new("which")
-                .arg("cmake")
-                .output()
-                .ok()?;
+            let output = Command::new("which").arg("cmake").output().ok()?;
             if output.status.success() {
                 let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
                 return Some(PathBuf::from(path));
@@ -303,10 +309,7 @@ impl AndroidToolchain {
         #[cfg(windows)]
         {
             use std::process::Command;
-            let output = Command::new("where")
-                .arg("cmake")
-                .output()
-                .ok()?;
+            let output = Command::new("where").arg("cmake").output().ok()?;
             if output.status.success() {
                 let path = String::from_utf8_lossy(&output.stdout)
                     .lines()
@@ -334,20 +337,30 @@ impl AndroidToolchain {
     /// Get host tag for current platform.
     fn host_tag() -> &'static str {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-        { "linux-x86_64" }
+        {
+            "linux-x86_64"
+        }
         #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-        { "darwin-x86_64" }
+        {
+            "darwin-x86_64"
+        }
         #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-        { "darwin-x86_64" } // NDK uses x86_64 even on ARM Mac (Rosetta)
+        {
+            "darwin-x86_64"
+        } // NDK uses x86_64 even on ARM Mac (Rosetta)
         #[cfg(windows)]
-        { "windows-x86_64" }
+        {
+            "windows-x86_64"
+        }
         #[cfg(not(any(
             all(target_os = "linux", target_arch = "x86_64"),
             all(target_os = "macos", target_arch = "x86_64"),
             all(target_os = "macos", target_arch = "aarch64"),
             windows
         )))]
-        { "unknown" }
+        {
+            "unknown"
+        }
     }
 }
 
@@ -502,8 +515,14 @@ mod tests {
     #[test]
     fn test_ios_arch_triples() {
         assert_eq!(IosArch::Arm64.triple(), "arm64-apple-ios");
-        assert_eq!(IosArch::Arm64Simulator.triple(), "arm64-apple-ios-simulator");
-        assert_eq!(IosArch::X86_64Simulator.triple(), "x86_64-apple-ios-simulator");
+        assert_eq!(
+            IosArch::Arm64Simulator.triple(),
+            "arm64-apple-ios-simulator"
+        );
+        assert_eq!(
+            IosArch::X86_64Simulator.triple(),
+            "x86_64-apple-ios-simulator"
+        );
     }
 
     #[test]

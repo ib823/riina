@@ -31,7 +31,10 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
         "teks_belah" => {
             // (String, String) -> List
             let (s, delim) = extract_pair_strings(arg, "teks_belah")?;
-            let parts: Vec<Value> = s.split(&delim).map(|p| Value::String(p.to_string())).collect();
+            let parts: Vec<Value> = s
+                .split(&delim)
+                .map(|p| Value::String(p.to_string()))
+                .collect();
             Ok(Some(Value::List(parts)))
         }
         "teks_cantum" => {
@@ -40,7 +43,10 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                 Value::Pair(sep, list) => {
                     let sep_s = extract_string(sep, "teks_cantum")?;
                     let items = extract_list(list, "teks_cantum")?;
-                    let parts: Result<Vec<String>> = items.iter().map(|v| extract_string(v, "teks_cantum")).collect();
+                    let parts: Result<Vec<String>> = items
+                        .iter()
+                        .map(|v| extract_string(v, "teks_cantum"))
+                        .collect();
                     Ok(Some(Value::String(parts?.join(&sep_s))))
                 }
                 _ => Err(type_err("(string, list)", arg, "teks_cantum")),
@@ -108,7 +114,8 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                         Value::Pair(start, end) => {
                             let st = extract_int(start, "teks_sub")? as usize;
                             let en = extract_int(end, "teks_sub")? as usize;
-                            let result: String = s_str.chars().skip(st).take(en.saturating_sub(st)).collect();
+                            let result: String =
+                                s_str.chars().skip(st).take(en.saturating_sub(st)).collect();
                             Ok(Some(Value::String(result)))
                         }
                         _ => Err(type_err("(string, (int, int))", arg, "teks_sub")),
@@ -148,7 +155,8 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                             if current >= w {
                                 Ok(Some(Value::String(text)))
                             } else {
-                                let padding: String = std::iter::repeat_n(pad_char, w - current).collect();
+                                let padding: String =
+                                    std::iter::repeat_n(pad_char, w - current).collect();
                                 Ok(Some(Value::String(format!("{}{}", padding, text))))
                             }
                         }
@@ -172,7 +180,8 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                             if current >= w {
                                 Ok(Some(Value::String(text)))
                             } else {
-                                let padding: String = std::iter::repeat_n(pad_char, w - current).collect();
+                                let padding: String =
+                                    std::iter::repeat_n(pad_char, w - current).collect();
                                 Ok(Some(Value::String(format!("{}{}", text, padding))))
                             }
                         }
@@ -246,11 +255,14 @@ mod tests {
     #[test]
     fn test_teks_belah() {
         let result = apply("teks_belah", &pair_s("a,b,c", ",")).unwrap().unwrap();
-        assert_eq!(result, Value::List(vec![
-            Value::String("a".to_string()),
-            Value::String("b".to_string()),
-            Value::String("c".to_string()),
-        ]));
+        assert_eq!(
+            result,
+            Value::List(vec![
+                Value::String("a".to_string()),
+                Value::String("b".to_string()),
+                Value::String("c".to_string()),
+            ])
+        );
     }
 
     #[test]
@@ -266,7 +278,9 @@ mod tests {
 
     #[test]
     fn test_teks_potong() {
-        let result = apply("teks_potong", &Value::String("  hi  ".to_string())).unwrap().unwrap();
+        let result = apply("teks_potong", &Value::String("  hi  ".to_string()))
+            .unwrap()
+            .unwrap();
         assert_eq!(result, Value::String("hi".to_string()));
     }
 
@@ -296,8 +310,14 @@ mod tests {
 
     #[test]
     fn test_teks_mula_akhir_dengan() {
-        assert_eq!(apply("teks_mula_dengan", &pair_s("hello", "he")).unwrap(), Some(Value::Bool(true)));
-        assert_eq!(apply("teks_akhir_dengan", &pair_s("hello", "lo")).unwrap(), Some(Value::Bool(true)));
+        assert_eq!(
+            apply("teks_mula_dengan", &pair_s("hello", "he")).unwrap(),
+            Some(Value::Bool(true))
+        );
+        assert_eq!(
+            apply("teks_akhir_dengan", &pair_s("hello", "lo")).unwrap(),
+            Some(Value::Bool(true))
+        );
     }
 
     #[test]
@@ -318,22 +338,37 @@ mod tests {
             Box::new(Value::String("hello".to_string())),
             Box::new(Value::Int(1)),
         );
-        assert_eq!(apply("teks_aksara_di", &arg).unwrap(), Some(Value::String("e".to_string())));
+        assert_eq!(
+            apply("teks_aksara_di", &arg).unwrap(),
+            Some(Value::String("e".to_string()))
+        );
     }
 
     #[test]
     fn test_teks_sub() {
         let arg = Value::Pair(
             Box::new(Value::String("hello world".to_string())),
-            Box::new(Value::Pair(Box::new(Value::Int(0)), Box::new(Value::Int(5)))),
+            Box::new(Value::Pair(
+                Box::new(Value::Int(0)),
+                Box::new(Value::Int(5)),
+            )),
         );
-        assert_eq!(apply("teks_sub", &arg).unwrap(), Some(Value::String("hello".to_string())));
+        assert_eq!(
+            apply("teks_sub", &arg).unwrap(),
+            Some(Value::String("hello".to_string()))
+        );
     }
 
     #[test]
     fn test_teks_indeks() {
-        assert_eq!(apply("teks_indeks", &pair_s("hello", "ll")).unwrap(), Some(Value::Int(2)));
-        assert_eq!(apply("teks_indeks", &pair_s("hello", "xyz")).unwrap(), Some(Value::Int(u64::MAX)));
+        assert_eq!(
+            apply("teks_indeks", &pair_s("hello", "ll")).unwrap(),
+            Some(Value::Int(2))
+        );
+        assert_eq!(
+            apply("teks_indeks", &pair_s("hello", "xyz")).unwrap(),
+            Some(Value::Int(u64::MAX))
+        );
     }
 
     #[test]
@@ -342,34 +377,54 @@ mod tests {
             Box::new(Value::String("ab".to_string())),
             Box::new(Value::Int(3)),
         );
-        assert_eq!(apply("teks_ulang", &arg).unwrap(), Some(Value::String("ababab".to_string())));
+        assert_eq!(
+            apply("teks_ulang", &arg).unwrap(),
+            Some(Value::String("ababab".to_string()))
+        );
     }
 
     #[test]
     fn test_teks_pad_kiri() {
         let arg = Value::Pair(
             Box::new(Value::String("42".to_string())),
-            Box::new(Value::Pair(Box::new(Value::Int(5)), Box::new(Value::String("0".to_string())))),
+            Box::new(Value::Pair(
+                Box::new(Value::Int(5)),
+                Box::new(Value::String("0".to_string())),
+            )),
         );
-        assert_eq!(apply("teks_pad_kiri", &arg).unwrap(), Some(Value::String("00042".to_string())));
+        assert_eq!(
+            apply("teks_pad_kiri", &arg).unwrap(),
+            Some(Value::String("00042".to_string()))
+        );
     }
 
     #[test]
     fn test_teks_pad_kanan() {
         let arg = Value::Pair(
             Box::new(Value::String("hi".to_string())),
-            Box::new(Value::Pair(Box::new(Value::Int(5)), Box::new(Value::String(".".to_string())))),
+            Box::new(Value::Pair(
+                Box::new(Value::Int(5)),
+                Box::new(Value::String(".".to_string())),
+            )),
         );
-        assert_eq!(apply("teks_pad_kanan", &arg).unwrap(), Some(Value::String("hi...".to_string())));
+        assert_eq!(
+            apply("teks_pad_kanan", &arg).unwrap(),
+            Some(Value::String("hi...".to_string()))
+        );
     }
 
     #[test]
     fn test_teks_baris() {
-        let result = apply("teks_baris", &Value::String("a\nb\nc".to_string())).unwrap().unwrap();
-        assert_eq!(result, Value::List(vec![
-            Value::String("a".to_string()),
-            Value::String("b".to_string()),
-            Value::String("c".to_string()),
-        ]));
+        let result = apply("teks_baris", &Value::String("a\nb\nc".to_string()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            result,
+            Value::List(vec![
+                Value::String("a".to_string()),
+                Value::String("b".to_string()),
+                Value::String("c".to_string()),
+            ])
+        );
     }
 }

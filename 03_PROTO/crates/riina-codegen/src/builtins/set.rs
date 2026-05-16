@@ -18,65 +18,63 @@ pub static BUILTINS: &[(&str, &str, &str)] = &[
 pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
     match name {
         "set_baru" => Ok(Some(Value::List(Vec::new()))),
-        "set_letak" => {
-            match arg {
-                Value::Pair(list, val) => {
-                    let items = extract_list(list, "set_letak")?;
-                    let mut result = items.clone();
-                    if !result.contains(val) {
-                        result.push(val.as_ref().clone());
+        "set_letak" => match arg {
+            Value::Pair(list, val) => {
+                let items = extract_list(list, "set_letak")?;
+                let mut result = items.clone();
+                if !result.contains(val) {
+                    result.push(val.as_ref().clone());
+                }
+                Ok(Some(Value::List(result)))
+            }
+            _ => Err(type_err("(list, value)", arg, "set_letak")),
+        },
+        "set_buang" => match arg {
+            Value::Pair(list, val) => {
+                let items = extract_list(list, "set_buang")?;
+                let result: Vec<Value> = items
+                    .iter()
+                    .filter(|v| *v != val.as_ref())
+                    .cloned()
+                    .collect();
+                Ok(Some(Value::List(result)))
+            }
+            _ => Err(type_err("(list, value)", arg, "set_buang")),
+        },
+        "set_mengandungi" => match arg {
+            Value::Pair(list, val) => {
+                let items = extract_list(list, "set_mengandungi")?;
+                Ok(Some(Value::Bool(items.contains(val))))
+            }
+            _ => Err(type_err("(list, value)", arg, "set_mengandungi")),
+        },
+        "set_kesatuan" => match arg {
+            Value::Pair(a, b) => {
+                let items_a = extract_list(a, "set_kesatuan")?;
+                let items_b = extract_list(b, "set_kesatuan")?;
+                let mut result = items_a.clone();
+                for item in items_b {
+                    if !result.contains(item) {
+                        result.push(item.clone());
                     }
-                    Ok(Some(Value::List(result)))
                 }
-                _ => Err(type_err("(list, value)", arg, "set_letak")),
+                Ok(Some(Value::List(result)))
             }
-        }
-        "set_buang" => {
-            match arg {
-                Value::Pair(list, val) => {
-                    let items = extract_list(list, "set_buang")?;
-                    let result: Vec<Value> = items.iter().filter(|v| *v != val.as_ref()).cloned().collect();
-                    Ok(Some(Value::List(result)))
-                }
-                _ => Err(type_err("(list, value)", arg, "set_buang")),
+            _ => Err(type_err("(list, list)", arg, "set_kesatuan")),
+        },
+        "set_persilangan" => match arg {
+            Value::Pair(a, b) => {
+                let items_a = extract_list(a, "set_persilangan")?;
+                let items_b = extract_list(b, "set_persilangan")?;
+                let result: Vec<Value> = items_a
+                    .iter()
+                    .filter(|v| items_b.contains(v))
+                    .cloned()
+                    .collect();
+                Ok(Some(Value::List(result)))
             }
-        }
-        "set_mengandungi" => {
-            match arg {
-                Value::Pair(list, val) => {
-                    let items = extract_list(list, "set_mengandungi")?;
-                    Ok(Some(Value::Bool(items.contains(val))))
-                }
-                _ => Err(type_err("(list, value)", arg, "set_mengandungi")),
-            }
-        }
-        "set_kesatuan" => {
-            match arg {
-                Value::Pair(a, b) => {
-                    let items_a = extract_list(a, "set_kesatuan")?;
-                    let items_b = extract_list(b, "set_kesatuan")?;
-                    let mut result = items_a.clone();
-                    for item in items_b {
-                        if !result.contains(item) {
-                            result.push(item.clone());
-                        }
-                    }
-                    Ok(Some(Value::List(result)))
-                }
-                _ => Err(type_err("(list, list)", arg, "set_kesatuan")),
-            }
-        }
-        "set_persilangan" => {
-            match arg {
-                Value::Pair(a, b) => {
-                    let items_a = extract_list(a, "set_persilangan")?;
-                    let items_b = extract_list(b, "set_persilangan")?;
-                    let result: Vec<Value> = items_a.iter().filter(|v| items_b.contains(v)).cloned().collect();
-                    Ok(Some(Value::List(result)))
-                }
-                _ => Err(type_err("(list, list)", arg, "set_persilangan")),
-            }
-        }
+            _ => Err(type_err("(list, list)", arg, "set_persilangan")),
+        },
         "set_panjang" => {
             let items = extract_list(arg, "set_panjang")?;
             Ok(Some(Value::Int(items.len() as u64)))
@@ -106,7 +104,10 @@ mod tests {
 
     #[test]
     fn test_set_baru() {
-        assert_eq!(apply("set_baru", &Value::Unit).unwrap(), Some(Value::List(vec![])));
+        assert_eq!(
+            apply("set_baru", &Value::Unit).unwrap(),
+            Some(Value::List(vec![]))
+        );
     }
 
     #[test]
@@ -126,7 +127,10 @@ mod tests {
     fn test_set_buang() {
         let set = Value::List(vec![Value::Int(1), Value::Int(2)]);
         let arg = Value::Pair(Box::new(set), Box::new(Value::Int(1)));
-        assert_eq!(apply("set_buang", &arg).unwrap(), Some(Value::List(vec![Value::Int(2)])));
+        assert_eq!(
+            apply("set_buang", &arg).unwrap(),
+            Some(Value::List(vec![Value::Int(2)]))
+        );
     }
 
     #[test]
@@ -136,7 +140,11 @@ mod tests {
         let arg = Value::Pair(Box::new(a), Box::new(b));
         assert_eq!(
             apply("set_kesatuan", &arg).unwrap(),
-            Some(Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]))
+            Some(Value::List(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3)
+            ]))
         );
     }
 

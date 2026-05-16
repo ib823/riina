@@ -16,8 +16,8 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::{ComplianceProfile, ComplianceViolation, Severity};
 use crate::rules;
+use crate::{ComplianceProfile, ComplianceViolation, Severity};
 
 /// Overall compliance verdict.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,8 +112,14 @@ pub fn generate(
         let implemented = rules::rule_count(p);
         let total = spec_total_rules(p);
         let profile_violations = by_profile.remove(&p).unwrap_or_default();
-        let errors = profile_violations.iter().filter(|v| v.severity == Severity::Error).count();
-        let warnings = profile_violations.iter().filter(|v| v.severity == Severity::Warning).count();
+        let errors = profile_violations
+            .iter()
+            .filter(|v| v.severity == Severity::Error)
+            .count();
+        let warnings = profile_violations
+            .iter()
+            .filter(|v| v.severity == Severity::Warning)
+            .count();
         total_rules += implemented;
 
         profile_coverages.push(ProfileCoverage {
@@ -166,8 +172,20 @@ impl ComplianceReport {
         json_kv_str(&mut out, "  ", "source_sha256", &self.source_sha256, true);
         json_kv_str(&mut out, "  ", "timestamp", &self.timestamp, true);
         json_kv_str(&mut out, "  ", "verdict", &self.verdict.to_string(), true);
-        json_kv_num(&mut out, "  ", "total_rules_checked", self.total_rules_checked, true);
-        json_kv_num(&mut out, "  ", "total_violations", self.total_violations, true);
+        json_kv_num(
+            &mut out,
+            "  ",
+            "total_rules_checked",
+            self.total_rules_checked,
+            true,
+        );
+        json_kv_num(
+            &mut out,
+            "  ",
+            "total_violations",
+            self.total_violations,
+            true,
+        );
         json_kv_num(&mut out, "  ", "total_errors", self.total_errors, true);
         json_kv_num(&mut out, "  ", "total_warnings", self.total_warnings, true);
 
@@ -175,8 +193,20 @@ impl ComplianceReport {
         for (i, pc) in self.profiles.iter().enumerate() {
             out.push_str("    {\n");
             json_kv_str(&mut out, "      ", "profile", pc.profile.slug(), true);
-            json_kv_str(&mut out, "      ", "description", pc.profile.description(), true);
-            json_kv_num(&mut out, "      ", "rules_implemented", pc.rules_implemented, true);
+            json_kv_str(
+                &mut out,
+                "      ",
+                "description",
+                pc.profile.description(),
+                true,
+            );
+            json_kv_num(
+                &mut out,
+                "      ",
+                "rules_implemented",
+                pc.rules_implemented,
+                true,
+            );
             json_kv_num(&mut out, "      ", "rules_total", pc.rules_total, true);
             let pct = if pc.rules_total > 0 {
                 (pc.rules_implemented as f64 / pc.rules_total as f64) * 100.0
@@ -191,17 +221,33 @@ impl ComplianceReport {
             for (j, v) in pc.violations.iter().enumerate() {
                 out.push_str("        {\n");
                 json_kv_str(&mut out, "          ", "rule_id", v.rule_id, true);
-                json_kv_str(&mut out, "          ", "severity", &v.severity.to_string(), true);
-                json_kv_str(&mut out, "          ", "message", &json_escape(&v.message), false);
+                json_kv_str(
+                    &mut out,
+                    "          ",
+                    "severity",
+                    &v.severity.to_string(),
+                    true,
+                );
+                json_kv_str(
+                    &mut out,
+                    "          ",
+                    "message",
+                    &json_escape(&v.message),
+                    false,
+                );
                 out.push('\n');
                 out.push_str("        }");
-                if j + 1 < pc.violations.len() { out.push(','); }
+                if j + 1 < pc.violations.len() {
+                    out.push(',');
+                }
                 out.push('\n');
             }
             out.push_str("      ]\n");
 
             out.push_str("    }");
-            if i + 1 < self.profiles.len() { out.push(','); }
+            if i + 1 < self.profiles.len() {
+                out.push(',');
+            }
             out.push('\n');
         }
         out.push_str("  ]\n");
@@ -226,8 +272,10 @@ impl ComplianceReport {
         out.push_str(&format!("  Verdict:     {}\n", self.verdict));
         out.push_str(&format!("{thin}\n"));
 
-        out.push_str(&format!("  Rules checked: {}   Violations: {}   Errors: {}   Warnings: {}\n",
-            self.total_rules_checked, self.total_violations, self.total_errors, self.total_warnings));
+        out.push_str(&format!(
+            "  Rules checked: {}   Violations: {}   Errors: {}   Warnings: {}\n",
+            self.total_rules_checked, self.total_violations, self.total_errors, self.total_warnings
+        ));
         out.push_str(&format!("{thin}\n"));
 
         for pc in &self.profiles {
@@ -237,13 +285,18 @@ impl ComplianceReport {
                 0.0
             };
             out.push_str(&format!("\n  PROFILE: {}\n", pc.profile.description()));
-            out.push_str(&format!("  Coverage: {}/{} rules ({:.1}%)\n",
-                pc.rules_implemented, pc.rules_total, pct));
+            out.push_str(&format!(
+                "  Coverage: {}/{} rules ({:.1}%)\n",
+                pc.rules_implemented, pc.rules_total, pct
+            ));
 
             if pc.violations.is_empty() {
                 out.push_str("  Status: CLEAN — no violations\n");
             } else {
-                out.push_str(&format!("  Status: {} error(s), {} warning(s)\n", pc.errors, pc.warnings));
+                out.push_str(&format!(
+                    "  Status: {} error(s), {} warning(s)\n",
+                    pc.errors, pc.warnings
+                ));
                 out.push('\n');
                 for v in &pc.violations {
                     let marker = match v.severity {
@@ -258,7 +311,10 @@ impl ComplianceReport {
         out.push_str(&format!("\n{line}\n"));
         out.push_str("  This report is a machine-generated audit artifact.\n");
         out.push_str("  Compliance rules are backed by Coq formal proofs.\n");
-        out.push_str(&format!("  Verify integrity: sha256sum <source_file> == {}\n", self.source_sha256));
+        out.push_str(&format!(
+            "  Verify integrity: sha256sum <source_file> == {}\n",
+            self.source_sha256
+        ));
         out.push_str(&format!("{line}\n"));
         out
     }
@@ -270,22 +326,26 @@ impl ComplianceReport {
 
 fn json_kv_str(out: &mut String, indent: &str, key: &str, val: &str, comma: bool) {
     out.push_str(&format!("{indent}\"{key}\": \"{val}\""));
-    if comma { out.push(','); }
+    if comma {
+        out.push(',');
+    }
     out.push('\n');
 }
 
 fn json_kv_num(out: &mut String, indent: &str, key: &str, val: usize, comma: bool) {
     out.push_str(&format!("{indent}\"{key}\": {val}"));
-    if comma { out.push(','); }
+    if comma {
+        out.push(',');
+    }
     out.push('\n');
 }
 
 fn json_escape(s: &str) -> String {
     s.replace('\\', "\\\\")
-     .replace('"', "\\\"")
-     .replace('\n', "\\n")
-     .replace('\r', "\\r")
-     .replace('\t', "\\t")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
 }
 
 /// Simple SHA-256 (no deps — we implement the NIST FIPS 180-4 algorithm).
@@ -300,27 +360,21 @@ fn sha256_hex(data: &[u8]) -> String {
 
 fn sha256_compress(data: &[u8]) -> [u32; 8] {
     const K: [u32; 64] = [
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-        0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-        0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-        0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-        0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-        0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,
+        0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
+        0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f,
+        0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
+        0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+        0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116,
+        0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
+        0xc67178f2,
     ];
 
     let mut h: [u32; 8] = [
-        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
+        0x5be0cd19,
     ];
 
     // Pre-processing: pad message
@@ -395,7 +449,10 @@ fn utc_now_iso8601() -> String {
     #[cfg(unix)]
     {
         use std::process::Command;
-        if let Ok(output) = Command::new("date").args(["-u", "+%Y-%m-%dT%H:%M:%SZ"]).output() {
+        if let Ok(output) = Command::new("date")
+            .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
+            .output()
+        {
             if output.status.success() {
                 return String::from_utf8_lossy(&output.stdout).trim().to_string();
             }
@@ -413,18 +470,29 @@ mod tests {
     #[test]
     fn sha256_empty() {
         let hash = sha256_hex(b"");
-        assert_eq!(hash, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        assert_eq!(
+            hash,
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
     }
 
     #[test]
     fn sha256_hello() {
         let hash = sha256_hex(b"hello");
-        assert_eq!(hash, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+        assert_eq!(
+            hash,
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        );
     }
 
     #[test]
     fn report_pass_verdict() {
-        let report = generate("test.rii", "biar x = 1;\nx", &[ComplianceProfile::PciDss], &[]);
+        let report = generate(
+            "test.rii",
+            "biar x = 1;\nx",
+            &[ComplianceProfile::PciDss],
+            &[],
+        );
         assert_eq!(report.verdict, Verdict::Pass);
         assert_eq!(report.total_errors, 0);
         assert_eq!(report.total_warnings, 0);
@@ -457,7 +525,12 @@ mod tests {
 
     #[test]
     fn report_json_parses() {
-        let report = generate("test.rii", "src", &[ComplianceProfile::PciDss, ComplianceProfile::Pdpa], &[]);
+        let report = generate(
+            "test.rii",
+            "src",
+            &[ComplianceProfile::PciDss, ComplianceProfile::Pdpa],
+            &[],
+        );
         let json = report.to_json();
         assert!(json.contains("\"verdict\": \"PASS\""));
         assert!(json.contains("\"pci-dss\""));
@@ -484,8 +557,16 @@ mod tests {
 
     #[test]
     fn report_multi_profile() {
-        let report = generate("t.rii", "s",
-            &[ComplianceProfile::PciDss, ComplianceProfile::Pdpa, ComplianceProfile::Bnm], &[]);
+        let report = generate(
+            "t.rii",
+            "s",
+            &[
+                ComplianceProfile::PciDss,
+                ComplianceProfile::Pdpa,
+                ComplianceProfile::Bnm,
+            ],
+            &[],
+        );
         assert_eq!(report.profiles.len(), 3);
         assert_eq!(report.total_rules_checked, 3 + 2 + 1); // 6 total
     }

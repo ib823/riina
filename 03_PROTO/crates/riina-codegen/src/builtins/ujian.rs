@@ -15,64 +15,60 @@ pub static BUILTINS: &[(&str, &str, &str)] = &[
 
 pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
     match name {
-        "tegaskan" | "tegaskan_betul" => {
-            match arg {
-                Value::Bool(true) => Ok(Some(Value::Unit)),
-                Value::Bool(false) => Err(Error::InvalidOperation("assertion failed".to_string())),
-                _ => Err(Error::TypeMismatch {
-                    expected: "bool".to_string(),
-                    found: format!("{:?}", arg),
-                    context: name.to_string(),
-                }),
-            }
-        }
-        "tegaskan_salah" => {
-            match arg {
-                Value::Bool(false) => Ok(Some(Value::Unit)),
-                Value::Bool(true) => Err(Error::InvalidOperation("assert_false failed: got true".to_string())),
-                _ => Err(Error::TypeMismatch {
-                    expected: "bool".to_string(),
-                    found: format!("{:?}", arg),
-                    context: name.to_string(),
-                }),
-            }
-        }
-        "tegaskan_sama" => {
-            match arg {
-                Value::Pair(a, b) => {
-                    if a == b {
-                        Ok(Some(Value::Unit))
-                    } else {
-                        Err(Error::InvalidOperation(format!(
-                            "assert_eq failed: {:?} != {:?}", a, b
-                        )))
-                    }
+        "tegaskan" | "tegaskan_betul" => match arg {
+            Value::Bool(true) => Ok(Some(Value::Unit)),
+            Value::Bool(false) => Err(Error::InvalidOperation("assertion failed".to_string())),
+            _ => Err(Error::TypeMismatch {
+                expected: "bool".to_string(),
+                found: format!("{:?}", arg),
+                context: name.to_string(),
+            }),
+        },
+        "tegaskan_salah" => match arg {
+            Value::Bool(false) => Ok(Some(Value::Unit)),
+            Value::Bool(true) => Err(Error::InvalidOperation(
+                "assert_false failed: got true".to_string(),
+            )),
+            _ => Err(Error::TypeMismatch {
+                expected: "bool".to_string(),
+                found: format!("{:?}", arg),
+                context: name.to_string(),
+            }),
+        },
+        "tegaskan_sama" => match arg {
+            Value::Pair(a, b) => {
+                if a == b {
+                    Ok(Some(Value::Unit))
+                } else {
+                    Err(Error::InvalidOperation(format!(
+                        "assert_eq failed: {:?} != {:?}",
+                        a, b
+                    )))
                 }
-                _ => Err(Error::TypeMismatch {
-                    expected: "(value, value)".to_string(),
-                    found: format!("{:?}", arg),
-                    context: name.to_string(),
-                }),
             }
-        }
-        "tegaskan_beza" => {
-            match arg {
-                Value::Pair(a, b) => {
-                    if a != b {
-                        Ok(Some(Value::Unit))
-                    } else {
-                        Err(Error::InvalidOperation(format!(
-                            "assert_ne failed: {:?} == {:?}", a, b
-                        )))
-                    }
+            _ => Err(Error::TypeMismatch {
+                expected: "(value, value)".to_string(),
+                found: format!("{:?}", arg),
+                context: name.to_string(),
+            }),
+        },
+        "tegaskan_beza" => match arg {
+            Value::Pair(a, b) => {
+                if a != b {
+                    Ok(Some(Value::Unit))
+                } else {
+                    Err(Error::InvalidOperation(format!(
+                        "assert_ne failed: {:?} == {:?}",
+                        a, b
+                    )))
                 }
-                _ => Err(Error::TypeMismatch {
-                    expected: "(value, value)".to_string(),
-                    found: format!("{:?}", arg),
-                    context: name.to_string(),
-                }),
             }
-        }
+            _ => Err(Error::TypeMismatch {
+                expected: "(value, value)".to_string(),
+                found: format!("{:?}", arg),
+                context: name.to_string(),
+            }),
+        },
         _ => Ok(None),
     }
 }
@@ -83,19 +79,28 @@ mod tests {
 
     #[test]
     fn test_tegaskan() {
-        assert_eq!(apply("tegaskan", &Value::Bool(true)).unwrap(), Some(Value::Unit));
+        assert_eq!(
+            apply("tegaskan", &Value::Bool(true)).unwrap(),
+            Some(Value::Unit)
+        );
         assert!(apply("tegaskan", &Value::Bool(false)).is_err());
     }
 
     #[test]
     fn test_tegaskan_betul() {
-        assert_eq!(apply("tegaskan_betul", &Value::Bool(true)).unwrap(), Some(Value::Unit));
+        assert_eq!(
+            apply("tegaskan_betul", &Value::Bool(true)).unwrap(),
+            Some(Value::Unit)
+        );
         assert!(apply("tegaskan_betul", &Value::Bool(false)).is_err());
     }
 
     #[test]
     fn test_tegaskan_salah() {
-        assert_eq!(apply("tegaskan_salah", &Value::Bool(false)).unwrap(), Some(Value::Unit));
+        assert_eq!(
+            apply("tegaskan_salah", &Value::Bool(false)).unwrap(),
+            Some(Value::Unit)
+        );
         assert!(apply("tegaskan_salah", &Value::Bool(true)).is_err());
     }
 

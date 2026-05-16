@@ -197,7 +197,11 @@ impl SourceLocation {
     /// Creates a new source location.
     #[must_use]
     pub const fn new(line: u32, column: u32, offset: BytePos) -> Self {
-        Self { line, column, offset }
+        Self {
+            line,
+            column,
+            offset,
+        }
     }
 }
 
@@ -330,8 +334,8 @@ impl SourceMap {
     ///
     /// Panics if more than `u16::MAX` files are added.
     pub fn add_file(&mut self, name: impl Into<String>, source: impl Into<String>) -> FileId {
-        let id = u16::try_from(self.files.len())
-            .expect("source map overflow: more than u16::MAX files");
+        let id =
+            u16::try_from(self.files.len()).expect("source map overflow: more than u16::MAX files");
 
         self.files.push(SourceFile::new(name, source));
         FileId(id)

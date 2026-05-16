@@ -37,7 +37,9 @@ pub struct LockedPackage {
 
 impl Lockfile {
     pub fn new() -> Self {
-        Self { packages: Vec::new() }
+        Self {
+            packages: Vec::new(),
+        }
     }
 
     /// Serialize to string.
@@ -49,7 +51,9 @@ impl Lockfile {
             out.push_str(&format!("versi = \"{}\"\n", pkg.version));
             out.push_str(&format!("checksum = \"{}\"\n", pkg.checksum));
             if !pkg.dependencies.is_empty() {
-                let deps: Vec<String> = pkg.dependencies.iter()
+                let deps: Vec<String> = pkg
+                    .dependencies
+                    .iter()
                     .map(|d| format!("\"{d}\""))
                     .collect();
                 out.push_str(&format!("kebergantungan = [{}]\n", deps.join(", ")));
@@ -100,15 +104,13 @@ impl Lockfile {
 
     /// Read from file.
     pub fn from_file(path: &Path) -> Result<Self> {
-        let source = std::fs::read_to_string(path)
-            .map_err(|e| PkgError::io(path, e))?;
+        let source = std::fs::read_to_string(path).map_err(|e| PkgError::io(path, e))?;
         Self::parse(&source)
     }
 
     /// Write to file.
     pub fn write_to(&self, path: &Path) -> Result<()> {
-        std::fs::write(path, self.serialize())
-            .map_err(|e| PkgError::io(path, e))
+        std::fs::write(path, self.serialize()).map_err(|e| PkgError::io(path, e))
     }
 
     /// Get locked version for a package.
@@ -133,11 +135,20 @@ struct LockedPackageBuilder {
 
 impl LockedPackageBuilder {
     fn build(self) -> Result<LockedPackage> {
-        let name = self.name.ok_or_else(|| PkgError::Other("lockfile: missing nama".into()))?;
-        let version_str = self.version.ok_or_else(|| PkgError::Other("lockfile: missing versi".into()))?;
+        let name = self
+            .name
+            .ok_or_else(|| PkgError::Other("lockfile: missing nama".into()))?;
+        let version_str = self
+            .version
+            .ok_or_else(|| PkgError::Other("lockfile: missing versi".into()))?;
         let version = Version::parse(&version_str)?;
         let checksum = self.checksum.unwrap_or_default();
-        Ok(LockedPackage { name, version, checksum, dependencies: self.dependencies })
+        Ok(LockedPackage {
+            name,
+            version,
+            checksum,
+            dependencies: self.dependencies,
+        })
     }
 }
 
@@ -156,7 +167,8 @@ fn parse_string_array(s: &str) -> Vec<String> {
         return Vec::new();
     }
     let inner = &s[1..s.len() - 1];
-    inner.split(',')
+    inner
+        .split(',')
         .map(|item| unquote(item.trim()))
         .filter(|item| !item.is_empty())
         .collect()

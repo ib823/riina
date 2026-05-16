@@ -183,7 +183,10 @@ mod tests {
         assert_eq!(Target::from_str("native"), Some(Target::Native));
         assert_eq!(Target::from_str("wasm32"), Some(Target::Wasm32));
         assert_eq!(Target::from_str("wasm64"), Some(Target::Wasm64));
-        assert_eq!(Target::from_str("android-arm64"), Some(Target::AndroidArm64));
+        assert_eq!(
+            Target::from_str("android-arm64"),
+            Some(Target::AndroidArm64)
+        );
         assert_eq!(Target::from_str("ios-arm64"), Some(Target::IosArm64));
         assert_eq!(Target::from_str("unknown"), None);
     }

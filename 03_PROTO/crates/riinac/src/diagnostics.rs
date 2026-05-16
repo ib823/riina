@@ -43,7 +43,8 @@ pub fn format_diagnostic(source: &str, span: &Span, message: &str, filename: &st
 
     // Build caret line: spaces up to column, then carets
     let prefix_width = col - 1;
-    let carets: String = "^".repeat(underline_len.min(source_line.len().saturating_sub(prefix_width).max(1)));
+    let carets: String =
+        "^".repeat(underline_len.min(source_line.len().saturating_sub(prefix_width).max(1)));
 
     let line_num_width = format!("{}", line).len();
     let padding: String = " ".repeat(line_num_width);

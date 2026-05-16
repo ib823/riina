@@ -182,8 +182,8 @@ impl<T> TypedArena<T> {
         let index = current_chunk.storage.len();
         let global_index = prefix_sum + index;
 
-        let global_index = u32::try_from(global_index)
-            .expect("arena overflow: more than u32::MAX elements");
+        let global_index =
+            u32::try_from(global_index).expect("arena overflow: more than u32::MAX elements");
 
         current_chunk.storage.push(value);
 

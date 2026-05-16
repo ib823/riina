@@ -2,11 +2,11 @@
 
 //! CLI subcommand dispatch for `riinac pkg <command>`.
 
-use crate::error::{PkgError, Result};
 use crate::effects::EffectPermissions;
+use crate::error::{PkgError, Result};
 use crate::integrity::sha256_hex;
 use crate::layout::{self, Layout};
-use crate::lockfile::{Lockfile, LockedPackage};
+use crate::lockfile::{LockedPackage, Lockfile};
 use crate::manifest::Manifest;
 use crate::registry::{FsRegistry, Registry};
 use crate::resolve;
@@ -22,12 +22,16 @@ pub fn run(args: &[String]) -> Result<()> {
     match args[0].as_str() {
         "init" => cmd_init(args.get(1).map(|s| s.as_str())),
         "add" => {
-            let name = args.get(1).ok_or_else(|| PkgError::Other("usage: riinac pkg add <dep> [version]".into()))?;
+            let name = args
+                .get(1)
+                .ok_or_else(|| PkgError::Other("usage: riinac pkg add <dep> [version]".into()))?;
             let version = args.get(2).map(|s| s.as_str()).unwrap_or("*");
             cmd_add(name, version)
         }
         "remove" => {
-            let name = args.get(1).ok_or_else(|| PkgError::Other("usage: riinac pkg remove <dep>".into()))?;
+            let name = args
+                .get(1)
+                .ok_or_else(|| PkgError::Other("usage: riinac pkg remove <dep>".into()))?;
             cmd_remove(name)
         }
         "update" => cmd_update(args.get(1).map(|s| s.as_str())),
@@ -37,7 +41,10 @@ pub fn run(args: &[String]) -> Result<()> {
         "list" => cmd_list(),
         "tree" => cmd_tree(),
         "clean" => cmd_clean(),
-        other => Err(PkgError::Other(format!("unknown pkg command: {other}\n{}", usage_string()))),
+        other => Err(PkgError::Other(format!(
+            "unknown pkg command: {other}\n{}",
+            usage_string()
+        ))),
     }
 }
 
@@ -53,17 +60,19 @@ fn usage_string() -> String {
      \x20 publish           Publish to registry\n\
      \x20 list              List dependencies\n\
      \x20 tree              Print dependency tree\n\
-     \x20 clean             Clean cache and build artifacts".to_string()
+     \x20 clean             Clean cache and build artifacts"
+        .to_string()
 }
 
 fn find_project_root() -> Result<PathBuf> {
-    let cwd = std::env::current_dir()
-        .map_err(|e| PkgError::io(".", e))?;
+    let cwd = std::env::current_dir().map_err(|e| PkgError::io(".", e))?;
     let manifest = cwd.join("riina.toml");
     if manifest.is_file() {
         Ok(cwd)
     } else {
-        Err(PkgError::Other("no riina.toml found in current directory".into()))
+        Err(PkgError::Other(
+            "no riina.toml found in current directory".into(),
+        ))
     }
 }
 
@@ -93,20 +102,22 @@ fn cmd_init(name: Option<&str>) -> Result<()> {
 fn cmd_add(name: &str, version: &str) -> Result<()> {
     let root = find_project_root()?;
     let manifest_path = root.join("riina.toml");
-    let mut source = std::fs::read_to_string(&manifest_path)
-        .map_err(|e| PkgError::io(&manifest_path, e))?;
+    let mut source =
+        std::fs::read_to_string(&manifest_path).map_err(|e| PkgError::io(&manifest_path, e))?;
 
     // Find [kebergantungan] section and add entry
     if let Some(pos) = source.find("[kebergantungan]") {
-        let insert_pos = source[pos..].find('\n').map(|p| pos + p + 1).unwrap_or(source.len());
+        let insert_pos = source[pos..]
+            .find('\n')
+            .map(|p| pos + p + 1)
+            .unwrap_or(source.len());
         let line = format!("{} = \"{}\"\n", name, version);
         source.insert_str(insert_pos, &line);
     } else {
         source.push_str(&format!("\n[kebergantungan]\n{} = \"{}\"\n", name, version));
     }
 
-    std::fs::write(&manifest_path, &source)
-        .map_err(|e| PkgError::io(&manifest_path, e))?;
+    std::fs::write(&manifest_path, &source).map_err(|e| PkgError::io(&manifest_path, e))?;
     eprintln!("Added {} = \"{}\"", name, version);
     Ok(())
 }
@@ -114,16 +125,15 @@ fn cmd_add(name: &str, version: &str) -> Result<()> {
 fn cmd_remove(name: &str) -> Result<()> {
     let root = find_project_root()?;
     let manifest_path = root.join("riina.toml");
-    let source = std::fs::read_to_string(&manifest_path)
-        .map_err(|e| PkgError::io(&manifest_path, e))?;
+    let source =
+        std::fs::read_to_string(&manifest_path).map_err(|e| PkgError::io(&manifest_path, e))?;
 
     let mut lines: Vec<&str> = source.lines().collect();
     let pattern = format!("{} = ", name);
     lines.retain(|line| !line.trim().starts_with(&pattern));
 
     let new_source = lines.join("\n") + "\n";
-    std::fs::write(&manifest_path, &new_source)
-        .map_err(|e| PkgError::io(&manifest_path, e))?;
+    std::fs::write(&manifest_path, &new_source).map_err(|e| PkgError::io(&manifest_path, e))?;
     eprintln!("Removed {}", name);
     Ok(())
 }
@@ -169,13 +179,14 @@ fn cmd_lock() -> Result<()> {
         let pkg = &graph.packages[name];
         let pkg_path = reg.package_path(name, &pkg.version);
         let checksum = if pkg_path.join("riina.toml").is_file() {
-            let data = std::fs::read(pkg_path.join("riina.toml"))
-                .unwrap_or_default();
+            let data = std::fs::read(pkg_path.join("riina.toml")).unwrap_or_default();
             sha256_hex(&data)
         } else {
             String::new()
         };
-        let dep_strs: Vec<String> = pkg.deps.iter()
+        let dep_strs: Vec<String> = pkg
+            .deps
+            .iter()
             .map(|d| {
                 let dv = &graph.packages[d].version;
                 format!("{d} {dv}")
@@ -190,7 +201,10 @@ fn cmd_lock() -> Result<()> {
     }
 
     lockfile.write_to(&root.join("riina.lock"))?;
-    eprintln!("Resolved {} packages. Wrote riina.lock", lockfile.packages.len());
+    eprintln!(
+        "Resolved {} packages. Wrote riina.lock",
+        lockfile.packages.len()
+    );
     Ok(())
 }
 
@@ -203,19 +217,23 @@ fn cmd_build() -> Result<()> {
         // Just build root
         let config = crate::build::BuildConfig::new(&root);
         let mut graph_packages = std::collections::BTreeMap::new();
-        graph_packages.insert(manifest.package.name.clone(), crate::resolve::ResolvedPackage {
-            name: manifest.package.name.clone(),
-            version: manifest.package.version.clone(),
-            deps: vec![],
-        });
-        let graph = crate::resolve::ResolvedGraph { packages: graph_packages };
+        graph_packages.insert(
+            manifest.package.name.clone(),
+            crate::resolve::ResolvedPackage {
+                name: manifest.package.name.clone(),
+                version: manifest.package.version.clone(),
+                deps: vec![],
+            },
+        );
+        let graph = crate::resolve::ResolvedGraph {
+            packages: graph_packages,
+        };
         let steps = crate::build::build_plan(&graph, &config, &manifest.package.name)?;
         crate::build::execute_build(&steps)?;
     } else {
         let reg = FsRegistry::new(registry_root());
         let graph = resolve::resolve(&deps, &reg)?;
-        let config = crate::build::BuildConfig::new(&root)
-            .with_registry(registry_root());
+        let config = crate::build::BuildConfig::new(&root).with_registry(registry_root());
         let steps = crate::build::build_plan(&graph, &config, &manifest.package.name)?;
         crate::build::execute_build(&steps)?;
     }
@@ -229,7 +247,10 @@ fn cmd_publish() -> Result<()> {
     let manifest = Manifest::from_file(&root.join("riina.toml"))?;
     let reg = FsRegistry::new(registry_root());
     reg.publish(&manifest.package.name, &manifest.package.version, &root)?;
-    eprintln!("Published {} v{}", manifest.package.name, manifest.package.version);
+    eprintln!(
+        "Published {} v{}",
+        manifest.package.name, manifest.package.version
+    );
     Ok(())
 }
 

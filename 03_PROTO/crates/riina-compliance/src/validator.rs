@@ -24,8 +24,12 @@ fn walk_inner(expr: &Expr, rules: &[ComplianceRule], out: &mut Vec<ComplianceVio
 
     // Recurse into children
     match expr {
-        Expr::Unit | Expr::Bool(_) | Expr::Int(_) | Expr::String(_)
-        | Expr::Var(_) | Expr::Loc(_) => {}
+        Expr::Unit
+        | Expr::Bool(_)
+        | Expr::Int(_)
+        | Expr::String(_)
+        | Expr::Var(_)
+        | Expr::Loc(_) => {}
 
         Expr::Lam(_, _, body)
         | Expr::Fst(body)

@@ -46,9 +46,8 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                 .map_err(|e| {
                     Error::InvalidOperation(format!("fail_tambah: cannot open '{}': {}", path, e))
                 })?;
-            f.write_all(content.as_bytes()).map_err(|e| {
-                Error::InvalidOperation(format!("fail_tambah: write error: {}", e))
-            })?;
+            f.write_all(content.as_bytes())
+                .map_err(|e| Error::InvalidOperation(format!("fail_tambah: write error: {}", e)))?;
             Ok(Some(Value::Unit))
         }
         "fail_ada" => {
@@ -90,7 +89,10 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
             let content = std::fs::read_to_string(&path).map_err(|e| {
                 Error::InvalidOperation(format!("fail_baca_baris: cannot read '{}': {}", path, e))
             })?;
-            let lines: Vec<Value> = content.lines().map(|l| Value::String(l.to_string())).collect();
+            let lines: Vec<Value> = content
+                .lines()
+                .map(|l| Value::String(l.to_string()))
+                .collect();
             Ok(Some(Value::List(lines)))
         }
         _ => Ok(None),
@@ -141,7 +143,9 @@ mod tests {
         assert_eq!(apply("fail_tulis", &arg).unwrap(), Some(Value::Unit));
 
         // Read
-        let result = apply("fail_baca", &Value::String(path.clone())).unwrap().unwrap();
+        let result = apply("fail_baca", &Value::String(path.clone()))
+            .unwrap()
+            .unwrap();
         assert_eq!(result, Value::String("hello riina".to_string()));
 
         // Exists
@@ -151,7 +155,9 @@ mod tests {
         );
 
         // Size
-        let size = apply("fail_panjang", &Value::String(path.clone())).unwrap().unwrap();
+        let size = apply("fail_panjang", &Value::String(path.clone()))
+            .unwrap()
+            .unwrap();
         assert_eq!(size, Value::Int(11));
 
         // Delete
@@ -191,12 +197,17 @@ mod tests {
         let path = tmp.to_str().unwrap().to_string();
         std::fs::write(&path, "a\nb\nc").unwrap();
 
-        let result = apply("fail_baca_baris", &Value::String(path.clone())).unwrap().unwrap();
-        assert_eq!(result, Value::List(vec![
-            Value::String("a".to_string()),
-            Value::String("b".to_string()),
-            Value::String("c".to_string()),
-        ]));
+        let result = apply("fail_baca_baris", &Value::String(path.clone()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            result,
+            Value::List(vec![
+                Value::String("a".to_string()),
+                Value::String("b".to_string()),
+                Value::String("c".to_string()),
+            ])
+        );
         let _ = std::fs::remove_file(&path);
     }
 
@@ -207,9 +218,12 @@ mod tests {
         std::fs::write(tmp.join("a.txt"), "").unwrap();
         std::fs::write(tmp.join("b.txt"), "").unwrap();
 
-        let result = apply("fail_senarai", &Value::String(tmp.to_str().unwrap().to_string()))
-            .unwrap()
-            .unwrap();
+        let result = apply(
+            "fail_senarai",
+            &Value::String(tmp.to_str().unwrap().to_string()),
+        )
+        .unwrap()
+        .unwrap();
         match result {
             Value::List(items) => assert!(items.len() >= 2),
             _ => panic!("expected list"),

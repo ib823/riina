@@ -31,19 +31,27 @@ pub fn run() -> io::Result<()> {
         match method {
             "initialize" => {
                 let result = json::obj(vec![
-                    ("capabilities", json::obj(vec![
-                        ("textDocumentSync", JsonValue::Number(1.0)), // Full sync
-                        ("hoverProvider", JsonValue::Bool(true)),
-                        ("completionProvider", json::obj(vec![
-                            ("triggerCharacters", JsonValue::Array(vec![
-                                JsonValue::String(".".into()),
-                            ])),
-                        ])),
-                    ])),
-                    ("serverInfo", json::obj(vec![
-                        ("name", JsonValue::String("riina-lsp".into())),
-                        ("version", JsonValue::String("0.1.0".into())),
-                    ])),
+                    (
+                        "capabilities",
+                        json::obj(vec![
+                            ("textDocumentSync", JsonValue::Number(1.0)), // Full sync
+                            ("hoverProvider", JsonValue::Bool(true)),
+                            (
+                                "completionProvider",
+                                json::obj(vec![(
+                                    "triggerCharacters",
+                                    JsonValue::Array(vec![JsonValue::String(".".into())]),
+                                )]),
+                            ),
+                        ]),
+                    ),
+                    (
+                        "serverInfo",
+                        json::obj(vec![
+                            ("name", JsonValue::String("riina-lsp".into())),
+                            ("version", JsonValue::String("0.1.0".into())),
+                        ]),
+                    ),
                 ]);
                 if let Some(id) = id {
                     jsonrpc::write_message(&mut writer, &jsonrpc::response(id, result))?;
@@ -62,18 +70,34 @@ pub fn run() -> io::Result<()> {
             }
             "textDocument/didOpen" => {
                 if let Some(td) = params.get("textDocument") {
-                    let uri = td.get("uri").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let text = td.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let uri = td
+                        .get("uri")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let text = td
+                        .get("text")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
                     documents.insert(uri.clone(), text.clone());
                     publish_diagnostics(&mut writer, &uri, &text)?;
                 }
             }
             "textDocument/didChange" => {
                 if let Some(td) = params.get("textDocument") {
-                    let uri = td.get("uri").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let uri = td
+                        .get("uri")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
                     if let Some(JsonValue::Array(arr)) = params.get("contentChanges") {
                         if let Some(change) = arr.first() {
-                            let text = change.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                            let text = change
+                                .get("text")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
                             documents.insert(uri.clone(), text.clone());
                             publish_diagnostics(&mut writer, &uri, &text)?;
                         }
@@ -110,16 +134,25 @@ fn publish_diagnostics(writer: &mut impl Write, uri: &str, source: &str) -> io::
         .iter()
         .map(|d| {
             json::obj(vec![
-                ("range", json::obj(vec![
-                    ("start", json::obj(vec![
-                        ("line", JsonValue::Number(d.start_line as f64)),
-                        ("character", JsonValue::Number(d.start_col as f64)),
-                    ])),
-                    ("end", json::obj(vec![
-                        ("line", JsonValue::Number(d.end_line as f64)),
-                        ("character", JsonValue::Number(d.end_col as f64)),
-                    ])),
-                ])),
+                (
+                    "range",
+                    json::obj(vec![
+                        (
+                            "start",
+                            json::obj(vec![
+                                ("line", JsonValue::Number(d.start_line as f64)),
+                                ("character", JsonValue::Number(d.start_col as f64)),
+                            ]),
+                        ),
+                        (
+                            "end",
+                            json::obj(vec![
+                                ("line", JsonValue::Number(d.end_line as f64)),
+                                ("character", JsonValue::Number(d.end_col as f64)),
+                            ]),
+                        ),
+                    ]),
+                ),
                 ("severity", JsonValue::Number(d.severity as u8 as f64)),
                 ("source", JsonValue::String("riina".into())),
                 ("message", JsonValue::String(d.message.clone())),
@@ -160,12 +193,16 @@ fn handle_hover(params: &JsonValue, documents: &HashMap<String, String>) -> Json
 
     // Basic hover: show file URI and type info
     // Full implementation needs span map from M1
-    json::obj(vec![
-        ("contents", json::obj(vec![
+    json::obj(vec![(
+        "contents",
+        json::obj(vec![
             ("kind", JsonValue::String("markdown".into())),
-            ("value", JsonValue::String("RIINA — hover info coming soon".into())),
-        ])),
-    ])
+            (
+                "value",
+                JsonValue::String("RIINA — hover info coming soon".into()),
+            ),
+        ]),
+    )])
 }
 
 fn handle_completion() -> JsonValue {

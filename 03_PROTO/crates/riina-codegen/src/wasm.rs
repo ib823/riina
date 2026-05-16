@@ -44,12 +44,12 @@
 
 use crate::backend::{AuxFile, Backend, BackendOutput, Target};
 use crate::ir::{
-    BasicBlock, BinOp, BlockId, Constant, Function, FuncId,
-    Instruction, Program, Terminator, UnaryOp, VarId,
+    BasicBlock, BinOp, BlockId, Constant, FuncId, Function, Instruction, Program, Terminator,
+    UnaryOp, VarId,
 };
 use crate::wasm_encode::{
-    self, DataSegment, ElemSegment, Export, ExportKind, FuncBody, FuncType,
-    GlobalType, Import, ImportKind, MemoryType, Op, TableType, ValType, WasmModule,
+    self, DataSegment, ElemSegment, Export, ExportKind, FuncBody, FuncType, GlobalType, Import,
+    ImportKind, MemoryType, Op, TableType, ValType, WasmModule,
 };
 use crate::Result;
 
@@ -114,7 +114,11 @@ impl WasmBackend {
         if heap_start == 0 {
             // Even with no data, start heap at 16 to avoid null pointer confusion
         }
-        let heap_start = if heap_start == 0 { HEAP_START_ALIGN } else { heap_start };
+        let heap_start = if heap_start == 0 {
+            HEAP_START_ALIGN
+        } else {
+            heap_start
+        };
 
         // === Import section: WASI fd_write for I/O ===
         // fd_write(fd: i32, iovs: i32, iovs_len: i32, nwritten: i32) -> i32
@@ -142,7 +146,10 @@ impl WasmBackend {
         });
 
         // === Memory ===
-        module.memories.push(MemoryType { min: 1, max: Some(256) });
+        module.memories.push(MemoryType {
+            min: 1,
+            max: Some(256),
+        });
 
         // === Global: heap pointer (mutable i32) ===
         let mut heap_init = Vec::new();
@@ -214,9 +221,14 @@ impl WasmBackend {
             let func = program.function(fid).unwrap();
             module.functions.push(user_func_type_idx);
 
-            let body = self.emit_function(func, &func_index_map, &string_table, alloc_func_index, user_func_type_idx)?;
+            let body = self.emit_function(
+                func,
+                &func_index_map,
+                &string_table,
+                alloc_func_index,
+                user_func_type_idx,
+            )?;
             module.codes.push(body);
-
         }
 
         // === _start trampoline ===
@@ -311,7 +323,6 @@ impl WasmBackend {
             code,
         }
     }
-
 
     /// Emit WASM instructions for a function.
     ///
@@ -416,7 +427,10 @@ impl WasmBackend {
 
         // Build a block index for quick lookup by BlockId.
         // Note: if multiple blocks share a BlockId, only the last one is kept.
-        let block_map: HashMap<BlockId, usize> = func.blocks.iter().enumerate()
+        let block_map: HashMap<BlockId, usize> = func
+            .blocks
+            .iter()
+            .enumerate()
             .map(|(i, b)| (b.id, i))
             .collect();
 
@@ -434,7 +448,11 @@ impl WasmBackend {
             self.emit_block_instrs(block, &ctx, &mut code)?;
 
             match &block.terminator {
-                Some(Terminator::CondBranch { cond, then_block, else_block }) => {
+                Some(Terminator::CondBranch {
+                    cond,
+                    then_block,
+                    else_block,
+                }) => {
                     // Structured if/else emission:
                     // Stack: push condition, then if (result i32) ... else ... end
                     if let Some(local) = ctx.var_map.get(cond) {
@@ -452,7 +470,13 @@ impl WasmBackend {
                         inlined.insert(then_idx);
                         self.emit_block_instrs(then_blk, &ctx, &mut code)?;
                         // Push the then result onto the stack.
-                        self.emit_phi_value_for_branch(then_blk, &func.blocks, &block_map, &ctx, &mut code)?;
+                        self.emit_phi_value_for_branch(
+                            then_blk,
+                            &func.blocks,
+                            &block_map,
+                            &ctx,
+                            &mut code,
+                        )?;
                     } else {
                         // Fallback: push 0
                         code.push(Op::I32Const as u8);
@@ -467,7 +491,13 @@ impl WasmBackend {
                         let else_blk = &func.blocks[else_idx];
                         inlined.insert(else_idx);
                         self.emit_block_instrs(else_blk, &ctx, &mut code)?;
-                        self.emit_phi_value_for_branch(else_blk, &func.blocks, &block_map, &ctx, &mut code)?;
+                        self.emit_phi_value_for_branch(
+                            else_blk,
+                            &func.blocks,
+                            &block_map,
+                            &ctx,
+                            &mut code,
+                        )?;
                     } else {
                         code.push(Op::I32Const as u8);
                         wasm_encode::encode_sleb128(0, &mut code);
@@ -704,7 +734,7 @@ impl WasmBackend {
                 code.push(Op::I32Store as u8);
                 code.push(0x02); // alignment: 4
                 code.push(0x00); // offset: 0
-                // Store returns unit (0)
+                                 // Store returns unit (0)
                 code.push(Op::I32Const as u8);
                 wasm_encode::encode_sleb128(0, code);
             }
@@ -727,20 +757,18 @@ impl WasmBackend {
                     BinOp::Or => code.push(Op::I32Or as u8),
                 }
             }
-            Instruction::UnaryOp(op, operand) => {
-                match op {
-                    UnaryOp::Not => {
-                        Self::emit_local_get(operand, ctx.var_map, code);
-                        code.push(Op::I32Eqz as u8);
-                    }
-                    UnaryOp::Neg => {
-                        code.push(Op::I32Const as u8);
-                        wasm_encode::encode_sleb128(0, code);
-                        Self::emit_local_get(operand, ctx.var_map, code);
-                        code.push(Op::I32Sub as u8);
-                    }
+            Instruction::UnaryOp(op, operand) => match op {
+                UnaryOp::Not => {
+                    Self::emit_local_get(operand, ctx.var_map, code);
+                    code.push(Op::I32Eqz as u8);
                 }
-            }
+                UnaryOp::Neg => {
+                    code.push(Op::I32Const as u8);
+                    wasm_encode::encode_sleb128(0, code);
+                    Self::emit_local_get(operand, ctx.var_map, code);
+                    code.push(Op::I32Sub as u8);
+                }
+            },
             Instruction::Call(func_var, arg) => {
                 if let Some(fid) = ctx.var_to_func.get(func_var) {
                     if let Some(&idx) = ctx.func_map.get(fid) {
@@ -764,9 +792,10 @@ impl WasmBackend {
                     // Load func_idx from closure memory for table index
                     Self::emit_local_get(func_var, ctx.var_map, code);
                     code.push(Op::I32Load as u8);
-                    code.push(0x02); code.push(0x00); // load func_table_idx from closure[0]
-                    // call_indirect: type must match (i32, i32) -> i32
-                    // Find the user function type index (first user function type)
+                    code.push(0x02);
+                    code.push(0x00); // load func_table_idx from closure[0]
+                                     // call_indirect: type must match (i32, i32) -> i32
+                                     // Find the user function type index (first user function type)
                     code.push(Op::CallIndirect as u8);
                     wasm_encode::encode_uleb128(ctx.user_func_type_idx as u64, code);
                     wasm_encode::encode_uleb128(0, code); // table 0
@@ -785,7 +814,8 @@ impl WasmBackend {
                 // Store a at ptr+0
                 Self::emit_local_get(a, ctx.var_map, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
                 // Store b at ptr+4
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
@@ -797,8 +827,8 @@ impl WasmBackend {
                 code.push(Op::I32Store as u8);
                 code.push(0x02); // align 4
                 code.push(0x04); // offset 4
-                // Result is already in local from LocalTee; load it back for the
-                // generic LocalSet below
+                                 // Result is already in local from LocalTee; load it back for the
+                                 // generic LocalSet below
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
                         code.push(Op::LocalGet as u8);
@@ -810,7 +840,8 @@ impl WasmBackend {
                 // Load i32 at pair_ptr + 0
                 Self::emit_local_get(pair, ctx.var_map, code);
                 code.push(Op::I32Load as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
             }
             Instruction::Snd(pair) => {
                 // Load i32 at pair_ptr + 4
@@ -832,7 +863,8 @@ impl WasmBackend {
                 code.push(Op::I32Const as u8);
                 wasm_encode::encode_sleb128(0, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
                 // Store value at +4
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
@@ -842,7 +874,8 @@ impl WasmBackend {
                 }
                 Self::emit_local_get(val, ctx.var_map, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x04);
+                code.push(0x02);
+                code.push(0x04);
                 // Push ptr for generic LocalSet
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
@@ -863,7 +896,8 @@ impl WasmBackend {
                 code.push(Op::I32Const as u8);
                 wasm_encode::encode_sleb128(1, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
                         code.push(Op::LocalGet as u8);
@@ -872,7 +906,8 @@ impl WasmBackend {
                 }
                 Self::emit_local_get(val, ctx.var_map, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x04);
+                code.push(0x02);
+                code.push(0x04);
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
                         code.push(Op::LocalGet as u8);
@@ -884,14 +919,16 @@ impl WasmBackend {
                 // Load tag at sum_ptr+0, check if == 0
                 Self::emit_local_get(sum, ctx.var_map, code);
                 code.push(Op::I32Load as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
                 code.push(Op::I32Eqz as u8); // tag==0 means left
             }
             Instruction::UnwrapLeft(sum) | Instruction::UnwrapRight(sum) => {
                 // Load value at sum_ptr+4
                 Self::emit_local_get(sum, ctx.var_map, code);
                 code.push(Op::I32Load as u8);
-                code.push(0x02); code.push(0x04);
+                code.push(0x02);
+                code.push(0x04);
             }
             Instruction::Copy(src) => {
                 Self::emit_local_get(src, ctx.var_map, code);
@@ -918,7 +955,8 @@ impl WasmBackend {
                 code.push(Op::I32Const as u8);
                 wasm_encode::encode_sleb128(func_idx as i64, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
                 // Store each capture
                 for (i, cap) in captures.iter().enumerate() {
                     if let Some(result_var) = result {
@@ -941,7 +979,10 @@ impl WasmBackend {
                     }
                 }
             }
-            Instruction::FixClosure { closure, capture_index } => {
+            Instruction::FixClosure {
+                closure,
+                capture_index,
+            } => {
                 // Patch captures[capture_index] with closure pointer itself
                 Self::emit_local_get(closure, ctx.var_map, code);
                 // Duplicate
@@ -967,7 +1008,8 @@ impl WasmBackend {
                 }
                 Self::emit_local_get(init, ctx.var_map, code);
                 code.push(Op::I32Store as u8);
-                code.push(0x02); code.push(0x00);
+                code.push(0x02);
+                code.push(0x00);
                 // Push ptr for generic LocalSet
                 if let Some(result_var) = result {
                     if let Some(local) = ctx.var_map.get(&result_var) {
@@ -997,7 +1039,8 @@ impl WasmBackend {
                     wasm_encode::encode_sleb128(4, code);
                     code.push(Op::I32Add as u8); // ptr + 4 = data start
                     code.push(Op::I32Store as u8);
-                    code.push(0x02); code.push(0x00); // store at scratch[0]
+                    code.push(0x02);
+                    code.push(0x00); // store at scratch[0]
 
                     // Store len at scratch[4]
                     code.push(Op::GlobalGet as u8);
@@ -1007,9 +1050,11 @@ impl WasmBackend {
                     code.push(Op::I32Add as u8); // scratch + 4
                     Self::emit_local_get(arg, ctx.var_map, code);
                     code.push(Op::I32Load as u8);
-                    code.push(0x02); code.push(0x00); // load len from arg
+                    code.push(0x02);
+                    code.push(0x00); // load len from arg
                     code.push(Op::I32Store as u8);
-                    code.push(0x02); code.push(0x00); // store at scratch[4]
+                    code.push(0x02);
+                    code.push(0x00); // store at scratch[4]
 
                     // Call fd_write(1, scratch, 1, scratch+8)
                     code.push(Op::I32Const as u8);
@@ -1268,16 +1313,21 @@ mod tests {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
         let v2 = VarId::new(2);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(5)), v0),
-            ann(Instruction::Const(Constant::Int(3)), v1),
-            ann(Instruction::BinOp(BinOp::Mod, v0, v1), v2),
-        ], v2);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(5)), v0),
+                ann(Instruction::Const(Constant::Int(3)), v1),
+                ann(Instruction::BinOp(BinOp::Mod, v0, v1), v2),
+            ],
+            v2,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
-        assert!(output.primary.windows(1).any(|w| w[0] == 0x6F),
-            "WASM binary should contain I32RemS opcode (0x6F)");
+        assert!(
+            output.primary.windows(1).any(|w| w[0] == 0x6F),
+            "WASM binary should contain I32RemS opcode (0x6F)"
+        );
     }
 
     #[test]
@@ -1285,16 +1335,21 @@ mod tests {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
         let v2 = VarId::new(2);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Bool(true)), v0),
-            ann(Instruction::Const(Constant::Bool(false)), v1),
-            ann(Instruction::BinOp(BinOp::Or, v0, v1), v2),
-        ], v2);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Bool(true)), v0),
+                ann(Instruction::Const(Constant::Bool(false)), v1),
+                ann(Instruction::BinOp(BinOp::Or, v0, v1), v2),
+            ],
+            v2,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
-        assert!(output.primary.windows(1).any(|w| w[0] == 0x72),
-            "WASM binary should contain I32Or opcode (0x72)");
+        assert!(
+            output.primary.windows(1).any(|w| w[0] == 0x72),
+            "WASM binary should contain I32Or opcode (0x72)"
+        );
     }
 
     #[test]
@@ -1304,12 +1359,17 @@ mod tests {
 
         let helper_id = FuncId::new(1);
         let mut helper_func = ir::Function::new(
-            helper_id, "helper".to_string(), "x".to_string(),
-            riina_types::Ty::Int, riina_types::Ty::Int, riina_types::Effect::Pure,
+            helper_id,
+            "helper".to_string(),
+            "x".to_string(),
+            riina_types::Ty::Int,
+            riina_types::Ty::Int,
+            riina_types::Effect::Pure,
         );
         let he = BlockId::new(0);
         let mut hb = BasicBlock::new(he);
-        hb.instrs.push(ann(Instruction::Const(Constant::Int(99)), VarId::new(100)));
+        hb.instrs
+            .push(ann(Instruction::Const(Constant::Int(99)), VarId::new(100)));
         hb.terminator = Some(Terminator::Return(VarId::new(100)));
         helper_func.blocks.push(hb);
         helper_func.entry = he;
@@ -1319,13 +1379,23 @@ mod tests {
         let v1 = VarId::new(1);
         let v2 = VarId::new(2);
         let mut main_func = ir::Function::new(
-            FuncId::MAIN, "main".to_string(), "x".to_string(),
-            riina_types::Ty::Unit, riina_types::Ty::Int, riina_types::Effect::Pure,
+            FuncId::MAIN,
+            "main".to_string(),
+            "x".to_string(),
+            riina_types::Ty::Unit,
+            riina_types::Ty::Int,
+            riina_types::Effect::Pure,
         );
         let entry = BlockId::new(0);
         let mut block = BasicBlock::new(entry);
         block.instrs = vec![
-            ann(Instruction::Closure { func: helper_id, captures: vec![] }, v0),
+            ann(
+                Instruction::Closure {
+                    func: helper_id,
+                    captures: vec![],
+                },
+                v0,
+            ),
             ann(Instruction::Const(Constant::Int(0)), v1),
             ann(Instruction::Call(v0, v1), v2),
         ];
@@ -1342,9 +1412,7 @@ mod tests {
     fn test_wasm_backend_with_main() {
         let backend = WasmBackend::new(Target::Wasm32);
         let v0 = VarId::new(0);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(42)), v0),
-        ], v0);
+        let program = make_program(vec![ann(Instruction::Const(Constant::Int(42)), v0)], v0);
 
         let output = backend.emit(&program).unwrap();
         assert!(output.primary.len() > 8);
@@ -1356,16 +1424,22 @@ mod tests {
     #[test]
     fn test_wasm_string_constant() {
         let v0 = VarId::new(0);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::String("hello".to_string())), v0),
-        ], v0);
+        let program = make_program(
+            vec![ann(
+                Instruction::Const(Constant::String("hello".to_string())),
+                v0,
+            )],
+            v0,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Data section should contain "hello"
         let binary = &output.primary;
-        assert!(binary.windows(5).any(|w| w == b"hello"),
-            "WASM binary should contain 'hello' in data section");
+        assert!(
+            binary.windows(5).any(|w| w == b"hello"),
+            "WASM binary should contain 'hello' in data section"
+        );
     }
 
     #[test]
@@ -1375,22 +1449,29 @@ mod tests {
         let v2 = VarId::new(2);
         let v3 = VarId::new(3);
         let v4 = VarId::new(4);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(10)), v0),
-            ann(Instruction::Const(Constant::Int(20)), v1),
-            ann(Instruction::Pair(v0, v1), v2),
-            ann(Instruction::Fst(v2), v3),
-            ann(Instruction::Snd(v2), v4),
-        ], v4);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(10)), v0),
+                ann(Instruction::Const(Constant::Int(20)), v1),
+                ann(Instruction::Pair(v0, v1), v2),
+                ann(Instruction::Fst(v2), v3),
+                ann(Instruction::Snd(v2), v4),
+            ],
+            v4,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Should contain i32.load (0x28) for projections
-        assert!(output.primary.windows(1).any(|w| w[0] == Op::I32Load as u8),
-            "WASM binary should contain I32Load for pair projection");
+        assert!(
+            output.primary.windows(1).any(|w| w[0] == Op::I32Load as u8),
+            "WASM binary should contain I32Load for pair projection"
+        );
         // Should contain call to alloc
-        assert!(output.primary.windows(1).any(|w| w[0] == Op::Call as u8),
-            "WASM binary should contain Call for alloc");
+        assert!(
+            output.primary.windows(1).any(|w| w[0] == Op::Call as u8),
+            "WASM binary should contain Call for alloc"
+        );
     }
 
     #[test]
@@ -1399,50 +1480,83 @@ mod tests {
         let v1 = VarId::new(1);
         let v2 = VarId::new(2);
         let v3 = VarId::new(3);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(42)), v0),
-            ann(Instruction::Inl(v0), v1),
-            ann(Instruction::IsLeft(v1), v2),
-            ann(Instruction::UnwrapLeft(v1), v3),
-        ], v3);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(42)), v0),
+                ann(Instruction::Inl(v0), v1),
+                ann(Instruction::IsLeft(v1), v2),
+                ann(Instruction::UnwrapLeft(v1), v3),
+            ],
+            v3,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Should contain i32.eqz (0x45) for IsLeft tag check
-        assert!(output.primary.windows(1).any(|w| w[0] == Op::I32Eqz as u8),
-            "WASM binary should contain I32Eqz for IsLeft");
+        assert!(
+            output.primary.windows(1).any(|w| w[0] == Op::I32Eqz as u8),
+            "WASM binary should contain I32Eqz for IsLeft"
+        );
     }
 
     #[test]
     fn test_wasm_closure_capture() {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(42)), v0),
-            ann(Instruction::Closure { func: FuncId::MAIN, captures: vec![v0] }, v1),
-        ], v1);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(42)), v0),
+                ann(
+                    Instruction::Closure {
+                        func: FuncId::MAIN,
+                        captures: vec![v0],
+                    },
+                    v1,
+                ),
+            ],
+            v1,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Should contain i32.store for writing captures
-        assert!(output.primary.windows(1).any(|w| w[0] == Op::I32Store as u8),
-            "WASM binary should contain I32Store for closure captures");
+        assert!(
+            output
+                .primary
+                .windows(1)
+                .any(|w| w[0] == Op::I32Store as u8),
+            "WASM binary should contain I32Store for closure captures"
+        );
     }
 
     #[test]
     fn test_wasm_builtin_cetak() {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::String("hello".to_string())), v0),
-            ann(Instruction::BuiltinCall { name: "cetakln".to_string(), arg: v0 }, v1),
-        ], v1);
+        let program = make_program(
+            vec![
+                ann(
+                    Instruction::Const(Constant::String("hello".to_string())),
+                    v0,
+                ),
+                ann(
+                    Instruction::BuiltinCall {
+                        name: "cetakln".to_string(),
+                        arg: v0,
+                    },
+                    v1,
+                ),
+            ],
+            v1,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Should have "fd_write" in the import section (WASI)
-        assert!(output.primary.windows(8).any(|w| w == b"fd_write"),
-            "WASM binary should import fd_write");
+        assert!(
+            output.primary.windows(8).any(|w| w == b"fd_write"),
+            "WASM binary should import fd_write"
+        );
     }
 
     #[test]
@@ -1452,61 +1566,73 @@ mod tests {
         let v2 = VarId::new(2);
         let v3 = VarId::new(3);
         let v4 = VarId::new(4);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(10)), v0),
-            ann(Instruction::Alloc { init: v0, level: riina_types::SecurityLevel::Public }, v1),
-            ann(Instruction::Load(v1), v2),
-            ann(Instruction::Const(Constant::Int(20)), v3),
-            ann(Instruction::Store(v1, v3), v4),
-        ], v2);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(10)), v0),
+                ann(
+                    Instruction::Alloc {
+                        init: v0,
+                        level: riina_types::SecurityLevel::Public,
+                    },
+                    v1,
+                ),
+                ann(Instruction::Load(v1), v2),
+                ann(Instruction::Const(Constant::Int(20)), v3),
+                ann(Instruction::Store(v1, v3), v4),
+            ],
+            v2,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Should have i32.load and i32.store
         assert!(output.primary.windows(1).any(|w| w[0] == Op::I32Load as u8));
-        assert!(output.primary.windows(1).any(|w| w[0] == Op::I32Store as u8));
+        assert!(output
+            .primary
+            .windows(1)
+            .any(|w| w[0] == Op::I32Store as u8));
     }
 
     #[test]
     fn test_wasm_has_global_heap_ptr() {
         let v0 = VarId::new(0);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(0)), v0),
-        ], v0);
+        let program = make_program(vec![ann(Instruction::Const(Constant::Int(0)), v0)], v0);
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Global section ID is 6
-        assert!(output.primary.contains(&0x06),
-            "WASM binary should contain global section");
+        assert!(
+            output.primary.contains(&0x06),
+            "WASM binary should contain global section"
+        );
     }
 
     #[test]
     fn test_wasm_has_import_section() {
         let v0 = VarId::new(0);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(0)), v0),
-        ], v0);
+        let program = make_program(vec![ann(Instruction::Const(Constant::Int(0)), v0)], v0);
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Import section should have "wasi_snapshot_preview1"
-        assert!(output.primary.windows(8).any(|w| w == b"fd_write"),
-            "WASM binary should contain WASI import");
+        assert!(
+            output.primary.windows(8).any(|w| w == b"fd_write"),
+            "WASM binary should contain WASI import"
+        );
     }
 
     #[test]
     fn test_wasm_has_table_section() {
         let v0 = VarId::new(0);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(0)), v0),
-        ], v0);
+        let program = make_program(vec![ann(Instruction::Const(Constant::Int(0)), v0)], v0);
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         // Table section ID is 4
-        assert!(output.primary.contains(&0x04),
-            "WASM binary should contain table section");
+        assert!(
+            output.primary.contains(&0x04),
+            "WASM binary should contain table section"
+        );
     }
 
     #[test]
@@ -1514,11 +1640,14 @@ mod tests {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
         let v2 = VarId::new(2);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(99)), v0),
-            ann(Instruction::Inr(v0), v1),
-            ann(Instruction::IsLeft(v1), v2),
-        ], v2);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(99)), v0),
+                ann(Instruction::Inr(v0), v1),
+                ann(Instruction::IsLeft(v1), v2),
+            ],
+            v2,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
@@ -1530,10 +1659,25 @@ mod tests {
     fn test_wasm_fix_closure() {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
-        let program = make_program(vec![
-            ann(Instruction::Closure { func: FuncId::MAIN, captures: vec![VarId::new(99)] }, v0),
-            ann(Instruction::FixClosure { closure: v0, capture_index: 0 }, v1),
-        ], v1);
+        let program = make_program(
+            vec![
+                ann(
+                    Instruction::Closure {
+                        func: FuncId::MAIN,
+                        captures: vec![VarId::new(99)],
+                    },
+                    v0,
+                ),
+                ann(
+                    Instruction::FixClosure {
+                        closure: v0,
+                        capture_index: 0,
+                    },
+                    v1,
+                ),
+            ],
+            v1,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
@@ -1544,10 +1688,13 @@ mod tests {
     fn test_wasm_multiple_strings_deduped() {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::String("abc".to_string())), v0),
-            ann(Instruction::Const(Constant::String("abc".to_string())), v1),
-        ], v1);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::String("abc".to_string())), v0),
+                ann(Instruction::Const(Constant::String("abc".to_string())), v1),
+            ],
+            v1,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
@@ -1560,10 +1707,19 @@ mod tests {
     fn test_wasm_effect_perform_passthrough() {
         let v0 = VarId::new(0);
         let v1 = VarId::new(1);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(42)), v0),
-            ann(Instruction::Perform { effect: riina_types::Effect::Write, payload: v0 }, v1),
-        ], v1);
+        let program = make_program(
+            vec![
+                ann(Instruction::Const(Constant::Int(42)), v0),
+                ann(
+                    Instruction::Perform {
+                        effect: riina_types::Effect::Write,
+                        payload: v0,
+                    },
+                    v1,
+                ),
+            ],
+            v1,
+        );
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
@@ -1599,7 +1755,7 @@ mod tests {
         let v_cond = VarId::new(11);
         let v_then = VarId::new(12);
         let v_else = VarId::new(13);
-        let v_phi  = VarId::new(14);
+        let v_phi = VarId::new(14);
 
         // bb0 (entry): compute condition
         let mut entry_block = BasicBlock::new(bb0);
@@ -1615,26 +1771,20 @@ mod tests {
 
         // bb1 (then): return 42
         let mut then_block = BasicBlock::new(bb1);
-        then_block.instrs = vec![
-            ann(Instruction::Const(Constant::Int(42)), v_then),
-        ];
+        then_block.instrs = vec![ann(Instruction::Const(Constant::Int(42)), v_then)];
         then_block.terminator = Some(Terminator::Branch(bb3));
 
         // bb2 (else): return 99
         let mut else_block = BasicBlock::new(bb2);
-        else_block.instrs = vec![
-            ann(Instruction::Const(Constant::Int(99)), v_else),
-        ];
+        else_block.instrs = vec![ann(Instruction::Const(Constant::Int(99)), v_else)];
         else_block.terminator = Some(Terminator::Branch(bb3));
 
         // bb3 (merge): phi + return
         let mut merge_block = BasicBlock::new(bb3);
-        merge_block.instrs = vec![
-            ann(Instruction::Phi(vec![
-                (bb1, v_then),
-                (bb2, v_else),
-            ]), v_phi),
-        ];
+        merge_block.instrs = vec![ann(
+            Instruction::Phi(vec![(bb1, v_then), (bb2, v_else)]),
+            v_phi,
+        )];
         merge_block.terminator = Some(Terminator::Return(v_phi));
 
         main_func.blocks = vec![entry_block, then_block, else_block, merge_block];
@@ -1654,12 +1804,16 @@ mod tests {
         assert_eq!(&binary[0..4], b"\x00asm");
 
         // Should contain Op::If (0x04)
-        assert!(binary.contains(&(Op::If as u8)),
-            "WASM binary should contain If opcode for structured if/else");
+        assert!(
+            binary.contains(&(Op::If as u8)),
+            "WASM binary should contain If opcode for structured if/else"
+        );
 
         // Should contain Op::Else (0x05)
-        assert!(binary.contains(&(Op::Else as u8)),
-            "WASM binary should contain Else opcode");
+        assert!(
+            binary.contains(&(Op::Else as u8)),
+            "WASM binary should contain Else opcode"
+        );
 
         // Should contain Op::End (0x0B) — at least for the if/else/end
         let end_count = binary.iter().filter(|&&b| b == Op::End as u8).count();
@@ -1670,8 +1824,10 @@ mod tests {
         // Should NOT contain bare BrIf (0x0D) — we use structured if/else now
         // Note: BrIf might still appear in other contexts, but for this simple
         // program it should not be present
-        assert!(!binary.contains(&(Op::BrIf as u8)),
-            "WASM binary should NOT contain BrIf — should use structured if/else");
+        assert!(
+            !binary.contains(&(Op::BrIf as u8)),
+            "WASM binary should NOT contain BrIf — should use structured if/else"
+        );
     }
 
     #[test]
@@ -1682,35 +1838,43 @@ mod tests {
         let binary = &output.primary;
 
         // Should contain LocalSet (0x21) for storing the phi result
-        assert!(binary.contains(&(Op::LocalSet as u8)),
-            "WASM binary should contain LocalSet for phi result storage");
+        assert!(
+            binary.contains(&(Op::LocalSet as u8)),
+            "WASM binary should contain LocalSet for phi result storage"
+        );
 
         // Should contain Return (0x0F) for the merge block
-        assert!(binary.contains(&(Op::Return as u8)),
-            "WASM binary should contain Return opcode");
+        assert!(
+            binary.contains(&(Op::Return as u8)),
+            "WASM binary should contain Return opcode"
+        );
     }
 
     #[test]
     fn test_wasm_start_trampoline() {
         let v0 = VarId::new(0);
-        let program = make_program(vec![
-            ann(Instruction::Const(Constant::Int(42)), v0),
-        ], v0);
+        let program = make_program(vec![ann(Instruction::Const(Constant::Int(42)), v0)], v0);
 
         let backend = WasmBackend::new(Target::Wasm32);
         let output = backend.emit(&program).unwrap();
         let binary = &output.primary;
 
         // Should export _start
-        assert!(binary.windows(6).any(|w| w == b"_start"),
-            "WASM binary should export _start");
+        assert!(
+            binary.windows(6).any(|w| w == b"_start"),
+            "WASM binary should export _start"
+        );
 
         // Should also export main
-        assert!(binary.windows(4).any(|w| w == b"main"),
-            "WASM binary should export main");
+        assert!(
+            binary.windows(4).any(|w| w == b"main"),
+            "WASM binary should export main"
+        );
 
         // Should contain Op::Drop (0x1A) for the trampoline dropping main's result
-        assert!(binary.contains(&(Op::Drop as u8)),
-            "WASM binary should contain Drop opcode in _start trampoline");
+        assert!(
+            binary.contains(&(Op::Drop as u8)),
+            "WASM binary should contain Drop opcode in _start trampoline"
+        );
     }
 }

@@ -19,7 +19,11 @@ pub static BUILTINS: &[(&str, &str, &str)] = &[
     ("senarai_lipat", "list_fold", "senarai_lipat"),
     ("senarai_balik", "list_reverse", "senarai_balik"),
     ("senarai_susun", "list_sort", "senarai_susun"),
-    ("senarai_mengandungi", "list_contains", "senarai_mengandungi"),
+    (
+        "senarai_mengandungi",
+        "list_contains",
+        "senarai_mengandungi",
+    ),
     ("senarai_sambung", "list_concat", "senarai_sambung"),
     ("senarai_kepala", "list_head", "senarai_kepala"),
     ("senarai_ekor", "list_tail", "senarai_ekor"),
@@ -53,7 +57,11 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
                     let items = extract_list(list, "senarai_dapat")?;
                     let i = extract_int(idx, "senarai_dapat")? as usize;
                     items.get(i).cloned().map(Some).ok_or_else(|| {
-                        Error::InvalidOperation(format!("index {} out of bounds, list length {}", i, items.len()))
+                        Error::InvalidOperation(format!(
+                            "index {} out of bounds, list length {}",
+                            i,
+                            items.len()
+                        ))
                     })
                 }
                 _ => Err(type_err("(list, int)", arg, "senarai_dapat")),
@@ -72,11 +80,9 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
         "senarai_susun" => {
             let items = extract_list(arg, "senarai_susun")?;
             let mut sorted = items.clone();
-            sorted.sort_by(|a, b| {
-                match (a, b) {
-                    (Value::Int(x), Value::Int(y)) => x.cmp(y),
-                    _ => std::cmp::Ordering::Equal,
-                }
+            sorted.sort_by(|a, b| match (a, b) {
+                (Value::Int(x), Value::Int(y)) => x.cmp(y),
+                _ => std::cmp::Ordering::Equal,
             });
             Ok(Some(Value::List(sorted)))
         }
@@ -104,9 +110,11 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
         }
         "senarai_kepala" => {
             let items = extract_list(arg, "senarai_kepala")?;
-            items.first().cloned().map(Some).ok_or_else(|| {
-                Error::InvalidOperation("head of empty list".to_string())
-            })
+            items
+                .first()
+                .cloned()
+                .map(Some)
+                .ok_or_else(|| Error::InvalidOperation("head of empty list".to_string()))
         }
         "senarai_ekor" => {
             let items = extract_list(arg, "senarai_ekor")?;
@@ -219,7 +227,10 @@ mod tests {
 
     #[test]
     fn test_senarai_baru() {
-        assert_eq!(apply("senarai_baru", &Value::Unit).unwrap(), Some(Value::List(vec![])));
+        assert_eq!(
+            apply("senarai_baru", &Value::Unit).unwrap(),
+            Some(Value::List(vec![]))
+        );
     }
 
     #[test]
@@ -247,7 +258,10 @@ mod tests {
     #[test]
     fn test_senarai_panjang() {
         let list = Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]);
-        assert_eq!(apply("senarai_panjang", &list).unwrap(), Some(Value::Int(3)));
+        assert_eq!(
+            apply("senarai_panjang", &list).unwrap(),
+            Some(Value::Int(3))
+        );
     }
 
     #[test]
@@ -255,7 +269,11 @@ mod tests {
         let list = Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]);
         assert_eq!(
             apply("senarai_balik", &list).unwrap(),
-            Some(Value::List(vec![Value::Int(3), Value::Int(2), Value::Int(1)]))
+            Some(Value::List(vec![
+                Value::Int(3),
+                Value::Int(2),
+                Value::Int(1)
+            ]))
         );
     }
 
@@ -264,7 +282,11 @@ mod tests {
         let list = Value::List(vec![Value::Int(3), Value::Int(1), Value::Int(2)]);
         assert_eq!(
             apply("senarai_susun", &list).unwrap(),
-            Some(Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]))
+            Some(Value::List(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3)
+            ]))
         );
     }
 
@@ -272,9 +294,15 @@ mod tests {
     fn test_senarai_mengandungi() {
         let list = Value::List(vec![Value::Int(1), Value::Int(2)]);
         let arg = Value::Pair(Box::new(list.clone()), Box::new(Value::Int(2)));
-        assert_eq!(apply("senarai_mengandungi", &arg).unwrap(), Some(Value::Bool(true)));
+        assert_eq!(
+            apply("senarai_mengandungi", &arg).unwrap(),
+            Some(Value::Bool(true))
+        );
         let arg2 = Value::Pair(Box::new(list), Box::new(Value::Int(5)));
-        assert_eq!(apply("senarai_mengandungi", &arg2).unwrap(), Some(Value::Bool(false)));
+        assert_eq!(
+            apply("senarai_mengandungi", &arg2).unwrap(),
+            Some(Value::Bool(false))
+        );
     }
 
     #[test]
@@ -301,14 +329,23 @@ mod tests {
     #[test]
     fn test_senarai_zip() {
         let a = Value::List(vec![Value::Int(1), Value::Int(2)]);
-        let b = Value::List(vec![Value::String("a".to_string()), Value::String("b".to_string())]);
+        let b = Value::List(vec![
+            Value::String("a".to_string()),
+            Value::String("b".to_string()),
+        ]);
         let arg = Value::Pair(Box::new(a), Box::new(b));
         let result = apply("senarai_zip", &arg).unwrap().unwrap();
         assert_eq!(
             result,
             Value::List(vec![
-                Value::Pair(Box::new(Value::Int(1)), Box::new(Value::String("a".to_string()))),
-                Value::Pair(Box::new(Value::Int(2)), Box::new(Value::String("b".to_string()))),
+                Value::Pair(
+                    Box::new(Value::Int(1)),
+                    Box::new(Value::String("a".to_string()))
+                ),
+                Value::Pair(
+                    Box::new(Value::Int(2)),
+                    Box::new(Value::String("b".to_string()))
+                ),
             ])
         );
     }
@@ -320,25 +357,46 @@ mod tests {
         let list = Value::List(vec![inner1, inner2]);
         assert_eq!(
             apply("senarai_rata", &list).unwrap(),
-            Some(Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]))
+            Some(Value::List(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3)
+            ]))
         );
     }
 
     #[test]
     fn test_senarai_unik() {
-        let list = Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(1), Value::Int(3)]);
+        let list = Value::List(vec![
+            Value::Int(1),
+            Value::Int(2),
+            Value::Int(1),
+            Value::Int(3),
+        ]);
         assert_eq!(
             apply("senarai_unik", &list).unwrap(),
-            Some(Value::List(vec![Value::Int(1), Value::Int(2), Value::Int(3)]))
+            Some(Value::List(vec![
+                Value::Int(1),
+                Value::Int(2),
+                Value::Int(3)
+            ]))
         );
     }
 
     #[test]
     fn test_senarai_potong() {
-        let list = Value::List(vec![Value::Int(10), Value::Int(20), Value::Int(30), Value::Int(40)]);
+        let list = Value::List(vec![
+            Value::Int(10),
+            Value::Int(20),
+            Value::Int(30),
+            Value::Int(40),
+        ]);
         let arg = Value::Pair(
             Box::new(list),
-            Box::new(Value::Pair(Box::new(Value::Int(1)), Box::new(Value::Int(3)))),
+            Box::new(Value::Pair(
+                Box::new(Value::Int(1)),
+                Box::new(Value::Int(3)),
+            )),
         );
         assert_eq!(
             apply("senarai_potong", &arg).unwrap(),
@@ -348,13 +406,22 @@ mod tests {
 
     #[test]
     fn test_senarai_nombor() {
-        let list = Value::List(vec![Value::String("a".to_string()), Value::String("b".to_string())]);
+        let list = Value::List(vec![
+            Value::String("a".to_string()),
+            Value::String("b".to_string()),
+        ]);
         let result = apply("senarai_nombor", &list).unwrap().unwrap();
         assert_eq!(
             result,
             Value::List(vec![
-                Value::Pair(Box::new(Value::Int(0)), Box::new(Value::String("a".to_string()))),
-                Value::Pair(Box::new(Value::Int(1)), Box::new(Value::String("b".to_string()))),
+                Value::Pair(
+                    Box::new(Value::Int(0)),
+                    Box::new(Value::String("a".to_string()))
+                ),
+                Value::Pair(
+                    Box::new(Value::Int(1)),
+                    Box::new(Value::String("b".to_string()))
+                ),
             ])
         );
     }

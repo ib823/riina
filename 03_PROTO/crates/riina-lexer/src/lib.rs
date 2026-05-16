@@ -13,13 +13,13 @@
 #![deny(clippy::unwrap_used, clippy::expect_used)]
 #![warn(clippy::pedantic)]
 
-mod token;
-mod lexer;
 mod error;
+mod lexer;
+mod token;
 
-pub use token::{Token, TokenKind, Span};
-pub use lexer::Lexer;
 pub use error::LexError;
+pub use lexer::Lexer;
+pub use token::{Span, Token, TokenKind};
 
 #[cfg(test)]
 mod tests {
@@ -70,8 +70,14 @@ mod tests {
         let input = "betul salah";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::LiteralBool(true));
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::LiteralBool(false));
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::LiteralBool(true)
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::LiteralBool(false)
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -138,7 +144,10 @@ mod tests {
             TokenKind::LiteralFloat(s, _) => assert_eq!(s, "42.5"),
             _ => panic!("Expected Float"),
         }
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::LiteralBool(true));
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::LiteralBool(true)
+        );
         match lexer.next_token().unwrap().kind {
             TokenKind::LiteralChar(c) => assert_eq!(c, 'a'),
             _ => panic!("Expected Char"),
@@ -208,14 +217,26 @@ mod tests {
         let input = "& | ^ !";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::And,
-            "Bitwise AND '&' must tokenize to TokenKind::And");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Or,
-            "Bitwise OR '|' must tokenize to TokenKind::Or");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Caret,
-            "Bitwise XOR '^' must tokenize to TokenKind::Caret");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Not,
-            "Logical NOT '!' must tokenize to TokenKind::Not");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::And,
+            "Bitwise AND '&' must tokenize to TokenKind::And"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Or,
+            "Bitwise OR '|' must tokenize to TokenKind::Or"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Caret,
+            "Bitwise XOR '^' must tokenize to TokenKind::Caret"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Not,
+            "Logical NOT '!' must tokenize to TokenKind::Not"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -227,8 +248,11 @@ mod tests {
         let input = "%";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Percent,
-            "Modulo '%' must tokenize to TokenKind::Percent");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Percent,
+            "Modulo '%' must tokenize to TokenKind::Percent"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -240,10 +264,16 @@ mod tests {
         let input = "<< >>";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Shl,
-            "Left shift '<<' must tokenize to TokenKind::Shl");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Shr,
-            "Right shift '>>' must tokenize to TokenKind::Shr");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Shl,
+            "Left shift '<<' must tokenize to TokenKind::Shl"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Shr,
+            "Right shift '>>' must tokenize to TokenKind::Shr"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -255,10 +285,16 @@ mod tests {
         let input = "&& ||";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::AndAnd,
-            "Logical AND '&&' must tokenize to TokenKind::AndAnd");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::OrOr,
-            "Logical OR '||' must tokenize to TokenKind::OrOr");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::AndAnd,
+            "Logical AND '&&' must tokenize to TokenKind::AndAnd"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::OrOr,
+            "Logical OR '||' must tokenize to TokenKind::OrOr"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -270,16 +306,31 @@ mod tests {
         let input = "+= -= *= /= %=";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::PlusEq,
-            "'+=' must tokenize to TokenKind::PlusEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::MinusEq,
-            "'-=' must tokenize to TokenKind::MinusEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::StarEq,
-            "'*=' must tokenize to TokenKind::StarEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::SlashEq,
-            "'/=' must tokenize to TokenKind::SlashEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::PercentEq,
-            "'%=' must tokenize to TokenKind::PercentEq");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::PlusEq,
+            "'+=' must tokenize to TokenKind::PlusEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::MinusEq,
+            "'-=' must tokenize to TokenKind::MinusEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::StarEq,
+            "'*=' must tokenize to TokenKind::StarEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::SlashEq,
+            "'/=' must tokenize to TokenKind::SlashEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::PercentEq,
+            "'%=' must tokenize to TokenKind::PercentEq"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -291,16 +342,31 @@ mod tests {
         let input = "&= |= ^= <<= >>=";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::AndEq,
-            "'&=' must tokenize to TokenKind::AndEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::OrEq,
-            "'|=' must tokenize to TokenKind::OrEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::CaretEq,
-            "'^=' must tokenize to TokenKind::CaretEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::ShlEq,
-            "'<<=' must tokenize to TokenKind::ShlEq");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::ShrEq,
-            "'>>=' must tokenize to TokenKind::ShrEq");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::AndEq,
+            "'&=' must tokenize to TokenKind::AndEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::OrEq,
+            "'|=' must tokenize to TokenKind::OrEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::CaretEq,
+            "'^=' must tokenize to TokenKind::CaretEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::ShlEq,
+            "'<<=' must tokenize to TokenKind::ShlEq"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::ShrEq,
+            "'>>=' must tokenize to TokenKind::ShrEq"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -312,10 +378,16 @@ mod tests {
         let input = "-> =>";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Arrow,
-            "'->' must tokenize to TokenKind::Arrow");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::FatArrow,
-            "'=>' must tokenize to TokenKind::FatArrow");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Arrow,
+            "'->' must tokenize to TokenKind::Arrow"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::FatArrow,
+            "'=>' must tokenize to TokenKind::FatArrow"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -327,8 +399,11 @@ mod tests {
         let input = "=";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eq,
-            "'=' must tokenize to TokenKind::Eq");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Eq,
+            "'=' must tokenize to TokenKind::Eq"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -345,12 +420,21 @@ mod tests {
         let input = ". .. ..=";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Dot,
-            "'.' must tokenize to TokenKind::Dot");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::DotDot,
-            "'..' must tokenize to TokenKind::DotDot");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::DotDotEq,
-            "'..=' must tokenize to TokenKind::DotDotEq");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Dot,
+            "'.' must tokenize to TokenKind::Dot"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::DotDot,
+            "'..' must tokenize to TokenKind::DotDot"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::DotDotEq,
+            "'..=' must tokenize to TokenKind::DotDotEq"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -362,12 +446,21 @@ mod tests {
         let input = ": :: :=";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Colon,
-            "':' must tokenize to TokenKind::Colon");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::ColonColon,
-            "'::' must tokenize to TokenKind::ColonColon");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::ColonEq,
-            "':=' must tokenize to TokenKind::ColonEq");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Colon,
+            "':' must tokenize to TokenKind::Colon"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::ColonColon,
+            "'::' must tokenize to TokenKind::ColonColon"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::ColonEq,
+            "':=' must tokenize to TokenKind::ColonEq"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -379,14 +472,26 @@ mod tests {
         let input = "? @ # $";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Question,
-            "'?' must tokenize to TokenKind::Question");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::At,
-            "'@' must tokenize to TokenKind::At");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Hash,
-            "'#' must tokenize to TokenKind::Hash");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Dollar,
-            "'$' must tokenize to TokenKind::Dollar");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Question,
+            "'?' must tokenize to TokenKind::Question"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::At,
+            "'@' must tokenize to TokenKind::At"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Hash,
+            "'#' must tokenize to TokenKind::Hash"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Dollar,
+            "'$' must tokenize to TokenKind::Dollar"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -403,24 +508,51 @@ mod tests {
         let input = "const static type struct enum union trait impl where";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwConst,
-            "'const' must tokenize to TokenKind::KwConst");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwStatic,
-            "'static' must tokenize to TokenKind::KwStatic");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwType,
-            "'type' must tokenize to TokenKind::KwType");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwStruct,
-            "'struct' must tokenize to TokenKind::KwStruct");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwEnum,
-            "'enum' must tokenize to TokenKind::KwEnum");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwUnion,
-            "'union' must tokenize to TokenKind::KwUnion");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwTrait,
-            "'trait' must tokenize to TokenKind::KwTrait");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwImpl,
-            "'impl' must tokenize to TokenKind::KwImpl");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwWhere,
-            "'where' must tokenize to TokenKind::KwWhere");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwConst,
+            "'const' must tokenize to TokenKind::KwConst"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwStatic,
+            "'static' must tokenize to TokenKind::KwStatic"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwType,
+            "'type' must tokenize to TokenKind::KwType"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwStruct,
+            "'struct' must tokenize to TokenKind::KwStruct"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwEnum,
+            "'enum' must tokenize to TokenKind::KwEnum"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwUnion,
+            "'union' must tokenize to TokenKind::KwUnion"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwTrait,
+            "'trait' must tokenize to TokenKind::KwTrait"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwImpl,
+            "'impl' must tokenize to TokenKind::KwImpl"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwWhere,
+            "'where' must tokenize to TokenKind::KwWhere"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -432,14 +564,26 @@ mod tests {
         let input = "mod pub use extern";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwMod,
-            "'mod' must tokenize to TokenKind::KwMod");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwPub,
-            "'pub' must tokenize to TokenKind::KwPub");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwUse,
-            "'use' must tokenize to TokenKind::KwUse");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwExtern,
-            "'extern' must tokenize to TokenKind::KwExtern");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwMod,
+            "'mod' must tokenize to TokenKind::KwMod"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwPub,
+            "'pub' must tokenize to TokenKind::KwPub"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwUse,
+            "'use' must tokenize to TokenKind::KwUse"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwExtern,
+            "'extern' must tokenize to TokenKind::KwExtern"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -472,12 +616,21 @@ mod tests {
         let input = "as ref move";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwAs,
-            "'as' must tokenize to TokenKind::KwAs");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwRef,
-            "'ref' must tokenize to TokenKind::KwRef");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwMove,
-            "'move' must tokenize to TokenKind::KwMove");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwAs,
+            "'as' must tokenize to TokenKind::KwAs"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwRef,
+            "'ref' must tokenize to TokenKind::KwRef"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwMove,
+            "'move' must tokenize to TokenKind::KwMove"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -489,14 +642,26 @@ mod tests {
         let input = "self Self super crate";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSelfValue,
-            "'self' must tokenize to TokenKind::KwSelfValue");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSelfType,
-            "'Self' must tokenize to TokenKind::KwSelfType");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSuper,
-            "'super' must tokenize to TokenKind::KwSuper");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCrate,
-            "'crate' must tokenize to TokenKind::KwCrate");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSelfValue,
+            "'self' must tokenize to TokenKind::KwSelfValue"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSelfType,
+            "'Self' must tokenize to TokenKind::KwSelfType"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSuper,
+            "'super' must tokenize to TokenKind::KwSuper"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCrate,
+            "'crate' must tokenize to TokenKind::KwCrate"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -508,10 +673,16 @@ mod tests {
         let input = "async await";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwAsync,
-            "'async' must tokenize to TokenKind::KwAsync");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwAwait,
-            "'await' must tokenize to TokenKind::KwAwait");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwAsync,
+            "'async' must tokenize to TokenKind::KwAsync"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwAwait,
+            "'await' must tokenize to TokenKind::KwAwait"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -523,8 +694,11 @@ mod tests {
         let input = "unsafe";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwUnsafe,
-            "'unsafe' must tokenize to TokenKind::KwUnsafe");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwUnsafe,
+            "'unsafe' must tokenize to TokenKind::KwUnsafe"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -570,10 +744,16 @@ mod tests {
         let input = "inl inr";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwInl,
-            "'inl' must tokenize to TokenKind::KwInl");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwInr,
-            "'inr' must tokenize to TokenKind::KwInr");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwInl,
+            "'inl' must tokenize to TokenKind::KwInl"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwInr,
+            "'inr' must tokenize to TokenKind::KwInr"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -602,10 +782,16 @@ mod tests {
         let input = "capability revoke";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCapability,
-            "'capability' must tokenize to TokenKind::KwCapability");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwRevoke,
-            "'revoke' must tokenize to TokenKind::KwRevoke");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCapability,
+            "'capability' must tokenize to TokenKind::KwCapability"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwRevoke,
+            "'revoke' must tokenize to TokenKind::KwRevoke"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -635,8 +821,11 @@ mod tests {
         let input = "product";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwProduct,
-            "'product' must tokenize to TokenKind::KwProduct");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwProduct,
+            "'product' must tokenize to TokenKind::KwProduct"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -648,14 +837,26 @@ mod tests {
         let input = "ct speculation_safe combined zeroize";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCt,
-            "'ct' must tokenize to TokenKind::KwCt");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSpeculationSafe,
-            "'speculation_safe' must tokenize to TokenKind::KwSpeculationSafe");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCombined,
-            "'combined' must tokenize to TokenKind::KwCombined");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwZeroize,
-            "'zeroize' must tokenize to TokenKind::KwZeroize");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCt,
+            "'ct' must tokenize to TokenKind::KwCt"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSpeculationSafe,
+            "'speculation_safe' must tokenize to TokenKind::KwSpeculationSafe"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCombined,
+            "'combined' must tokenize to TokenKind::KwCombined"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwZeroize,
+            "'zeroize' must tokenize to TokenKind::KwZeroize"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -672,18 +873,36 @@ mod tests {
         let input = "tetap statik modul awam guna luaran";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwConst,
-            "'tetap' (const) must tokenize to TokenKind::KwConst");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwStatic,
-            "'statik' (static) must tokenize to TokenKind::KwStatic");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwMod,
-            "'modul' (mod) must tokenize to TokenKind::KwMod");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwPub,
-            "'awam' (pub) must tokenize to TokenKind::KwPub");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwUse,
-            "'guna' (use) must tokenize to TokenKind::KwUse");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwExtern,
-            "'luaran' (extern) must tokenize to TokenKind::KwExtern");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwConst,
+            "'tetap' (const) must tokenize to TokenKind::KwConst"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwStatic,
+            "'statik' (static) must tokenize to TokenKind::KwStatic"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwMod,
+            "'modul' (mod) must tokenize to TokenKind::KwMod"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwPub,
+            "'awam' (pub) must tokenize to TokenKind::KwPub"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwUse,
+            "'guna' (use) must tokenize to TokenKind::KwUse"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwExtern,
+            "'luaran' (extern) must tokenize to TokenKind::KwExtern"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -695,14 +914,26 @@ mod tests {
         let input = "padan dengan keluar terus";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwMatch,
-            "'padan' (match) must tokenize to TokenKind::KwMatch");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwWith,
-            "'dengan' (with) must tokenize to TokenKind::KwWith");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwBreak,
-            "'keluar' (break) must tokenize to TokenKind::KwBreak");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwContinue,
-            "'terus' (continue) must tokenize to TokenKind::KwContinue");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwMatch,
+            "'padan' (match) must tokenize to TokenKind::KwMatch"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwWith,
+            "'dengan' (with) must tokenize to TokenKind::KwWith"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwBreak,
+            "'keluar' (break) must tokenize to TokenKind::KwBreak"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwContinue,
+            "'terus' (continue) must tokenize to TokenKind::KwContinue"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -714,12 +945,21 @@ mod tests {
         let input = "sebagai ruj pindah";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwAs,
-            "'sebagai' (as) must tokenize to TokenKind::KwAs");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwRef,
-            "'ruj' (ref) must tokenize to TokenKind::KwRef");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwMove,
-            "'pindah' (move) must tokenize to TokenKind::KwMove");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwAs,
+            "'sebagai' (as) must tokenize to TokenKind::KwAs"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwRef,
+            "'ruj' (ref) must tokenize to TokenKind::KwRef"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwMove,
+            "'pindah' (move) must tokenize to TokenKind::KwMove"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -731,12 +971,21 @@ mod tests {
         let input = "diri Diri peti";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSelfValue,
-            "'diri' (self) must tokenize to TokenKind::KwSelfValue");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSelfType,
-            "'Diri' (Self) must tokenize to TokenKind::KwSelfType");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCrate,
-            "'peti' (crate) must tokenize to TokenKind::KwCrate");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSelfValue,
+            "'diri' (self) must tokenize to TokenKind::KwSelfValue"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSelfType,
+            "'Diri' (Self) must tokenize to TokenKind::KwSelfType"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCrate,
+            "'peti' (crate) must tokenize to TokenKind::KwCrate"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -748,8 +997,11 @@ mod tests {
         let input = "bahaya";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwUnsafe,
-            "'bahaya' (unsafe) must tokenize to TokenKind::KwUnsafe");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwUnsafe,
+            "'bahaya' (unsafe) must tokenize to TokenKind::KwUnsafe"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -761,12 +1013,21 @@ mod tests {
         let input = "pilih cabang tamat";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSelect,
-            "'pilih' (select) must tokenize to TokenKind::KwSelect");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwBranch,
-            "'cabang' (branch) must tokenize to TokenKind::KwBranch");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwEnd,
-            "'tamat' (end) must tokenize to TokenKind::KwEnd");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSelect,
+            "'pilih' (select) must tokenize to TokenKind::KwSelect"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwBranch,
+            "'cabang' (branch) must tokenize to TokenKind::KwBranch"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwEnd,
+            "'tamat' (end) must tokenize to TokenKind::KwEnd"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -778,10 +1039,16 @@ mod tests {
         let input = "peroleh lepas";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwAcquire,
-            "'peroleh' (acquire) must tokenize to TokenKind::KwAcquire");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwRelease,
-            "'lepas' (release) must tokenize to TokenKind::KwRelease");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwAcquire,
+            "'peroleh' (acquire) must tokenize to TokenKind::KwAcquire"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwRelease,
+            "'lepas' (release) must tokenize to TokenKind::KwRelease"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -793,14 +1060,26 @@ mod tests {
         let input = "masa_tetap selamat_spekulasi gabungan kosongkan";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCt,
-            "'masa_tetap' (ct) must tokenize to TokenKind::KwCt");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwSpeculationSafe,
-            "'selamat_spekulasi' (speculation_safe) must tokenize to TokenKind::KwSpeculationSafe");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwCombined,
-            "'gabungan' (combined) must tokenize to TokenKind::KwCombined");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwZeroize,
-            "'kosongkan' (zeroize) must tokenize to TokenKind::KwZeroize");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCt,
+            "'masa_tetap' (ct) must tokenize to TokenKind::KwCt"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwSpeculationSafe,
+            "'selamat_spekulasi' (speculation_safe) must tokenize to TokenKind::KwSpeculationSafe"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwCombined,
+            "'gabungan' (combined) must tokenize to TokenKind::KwCombined"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwZeroize,
+            "'kosongkan' (zeroize) must tokenize to TokenKind::KwZeroize"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -818,8 +1097,10 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralInt(s, _) => assert_eq!(s, "0xABCDEF",
-                "Hex literal must preserve original representation"),
+            TokenKind::LiteralInt(s, _) => assert_eq!(
+                s, "0xABCDEF",
+                "Hex literal must preserve original representation"
+            ),
             other => panic!("Expected LiteralInt, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -834,8 +1115,10 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralInt(s, _) => assert_eq!(s, "0o755",
-                "Octal literal must preserve original representation"),
+            TokenKind::LiteralInt(s, _) => assert_eq!(
+                s, "0o755",
+                "Octal literal must preserve original representation"
+            ),
             other => panic!("Expected LiteralInt, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -850,8 +1133,10 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralInt(s, _) => assert_eq!(s, "0b1010",
-                "Binary literal must preserve original representation"),
+            TokenKind::LiteralInt(s, _) => assert_eq!(
+                s, "0b1010",
+                "Binary literal must preserve original representation"
+            ),
             other => panic!("Expected LiteralInt, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -866,8 +1151,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralInt(s, _) => assert_eq!(s, "1_000_000",
-                "Underscores in integers must be preserved"),
+            TokenKind::LiteralInt(s, _) => {
+                assert_eq!(s, "1_000_000", "Underscores in integers must be preserved")
+            }
             other => panic!("Expected LiteralInt, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -882,8 +1168,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralFloat(s, _) => assert_eq!(s, "3.141_592",
-                "Underscores in floats must be preserved"),
+            TokenKind::LiteralFloat(s, _) => {
+                assert_eq!(s, "3.141_592", "Underscores in floats must be preserved")
+            }
             other => panic!("Expected LiteralFloat, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -898,8 +1185,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralInt(s, _) => assert_eq!(s, "0",
-                "Zero must be a valid integer literal"),
+            TokenKind::LiteralInt(s, _) => {
+                assert_eq!(s, "0", "Zero must be a valid integer literal")
+            }
             other => panic!("Expected LiteralInt, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -914,8 +1202,7 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralString(s) => assert_eq!(s, "",
-                "Empty string must be valid"),
+            TokenKind::LiteralString(s) => assert_eq!(s, "", "Empty string must be valid"),
             other => panic!("Expected LiteralString, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -930,8 +1217,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralString(s) => assert_eq!(s, "hello\nworld\t!",
-                "Escape sequences must be interpreted"),
+            TokenKind::LiteralString(s) => {
+                assert_eq!(s, "hello\nworld\t!", "Escape sequences must be interpreted")
+            }
             other => panic!("Expected LiteralString, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -946,8 +1234,10 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralString(s) => assert_eq!(s, "say \"hello\"",
-                "Escaped quotes must be preserved in string"),
+            TokenKind::LiteralString(s) => assert_eq!(
+                s, "say \"hello\"",
+                "Escaped quotes must be preserved in string"
+            ),
             other => panic!("Expected LiteralString, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -962,8 +1252,10 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralString(s) => assert_eq!(s, "path\\to\\file",
-                "Escaped backslashes must produce single backslash"),
+            TokenKind::LiteralString(s) => assert_eq!(
+                s, "path\\to\\file",
+                "Escaped backslashes must produce single backslash"
+            ),
             other => panic!("Expected LiteralString, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -986,8 +1278,11 @@ mod tests {
         for (input, expected, name) in inputs {
             let mut lexer = Lexer::new(input);
             match lexer.next_token().unwrap().kind {
-                TokenKind::LiteralChar(c) => assert_eq!(c, expected,
-                    "Char escape for {} must produce {:?}", name, expected),
+                TokenKind::LiteralChar(c) => assert_eq!(
+                    c, expected,
+                    "Char escape for {} must produce {:?}",
+                    name, expected
+                ),
                 other => panic!("Expected LiteralChar for {}, got {:?}", name, other),
             }
         }
@@ -1002,8 +1297,7 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Lifetime(s) => assert_eq!(s, "a",
-                "Simple lifetime must be recognized"),
+            TokenKind::Lifetime(s) => assert_eq!(s, "a", "Simple lifetime must be recognized"),
             other => panic!("Expected Lifetime, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1018,8 +1312,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Lifetime(s) => assert_eq!(s, "static",
-                "'static must be recognized as lifetime"),
+            TokenKind::Lifetime(s) => {
+                assert_eq!(s, "static", "'static must be recognized as lifetime")
+            }
             other => panic!("Expected Lifetime, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1034,8 +1329,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Lifetime(s) => assert_eq!(s, "_anon",
-                "Lifetime with underscore must be recognized"),
+            TokenKind::Lifetime(s) => {
+                assert_eq!(s, "_anon", "Lifetime with underscore must be recognized")
+            }
             other => panic!("Expected Lifetime, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1137,8 +1433,11 @@ mod tests {
         let input = "";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof,
-            "Empty input must produce Eof immediately");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Eof,
+            "Empty input must produce Eof immediately"
+        );
     }
 
     #[test]
@@ -1149,8 +1448,11 @@ mod tests {
         let input = "   \t\n\r  ";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof,
-            "Whitespace-only input must produce Eof");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::Eof,
+            "Whitespace-only input must produce Eof"
+        );
     }
 
     #[test]
@@ -1236,10 +1538,16 @@ mod tests {
         let input = "fn /* outer /* inner */ still outer */ let";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwFn,
-            "Token before nested comment must be parsed");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwLet,
-            "Token after nested comment must be parsed");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwFn,
+            "Token before nested comment must be parsed"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwLet,
+            "Token after nested comment must be parsed"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -1265,8 +1573,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Identifier(s) => assert_eq!(s, "变量",
-                "Unicode identifier must be preserved"),
+            TokenKind::Identifier(s) => {
+                assert_eq!(s, "变量", "Unicode identifier must be preserved")
+            }
             other => panic!("Expected Identifier, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1281,8 +1590,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Identifier(s) => assert_eq!(s, "pendapatan",
-                "Malay identifier must be preserved"),
+            TokenKind::Identifier(s) => {
+                assert_eq!(s, "pendapatan", "Malay identifier must be preserved")
+            }
             other => panic!("Expected Identifier, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1297,8 +1607,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralString(s) => assert_eq!(s, "مرحبا بالعالم",
-                "Unicode in string must be preserved"),
+            TokenKind::LiteralString(s) => {
+                assert_eq!(s, "مرحبا بالعالم", "Unicode in string must be preserved")
+            }
             other => panic!("Expected LiteralString, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1329,7 +1640,10 @@ mod tests {
         let token = lexer.next_token().unwrap();
         assert_eq!(token.kind, TokenKind::KwFn);
         assert_eq!(token.span.start, 2, "Span must start after whitespace");
-        assert_eq!(token.span.end, 4, "Span end must account for whitespace offset");
+        assert_eq!(
+            token.span.end, 4,
+            "Span end must account for whitespace offset"
+        );
     }
 
     #[test]
@@ -1359,8 +1673,9 @@ mod tests {
         let mut lexer = Lexer::new(&long_name);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Identifier(s) => assert_eq!(s, long_name,
-                "Long identifier must be preserved"),
+            TokenKind::Identifier(s) => {
+                assert_eq!(s, long_name, "Long identifier must be preserved")
+            }
             other => panic!("Expected Identifier, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1376,8 +1691,9 @@ mod tests {
         let mut lexer = Lexer::new(&input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralString(s) => assert_eq!(s, long_content,
-                "Long string must be preserved"),
+            TokenKind::LiteralString(s) => {
+                assert_eq!(s, long_content, "Long string must be preserved")
+            }
             other => panic!("Expected LiteralString, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1392,8 +1708,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Identifier(s) => assert_eq!(s, "_unused",
-                "Underscore-prefixed identifier must be valid"),
+            TokenKind::Identifier(s) => {
+                assert_eq!(s, "_unused", "Underscore-prefixed identifier must be valid")
+            }
             other => panic!("Expected Identifier, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1408,8 +1725,9 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::Identifier(s) => assert_eq!(s, "var123",
-                "Identifier with numbers must be valid"),
+            TokenKind::Identifier(s) => {
+                assert_eq!(s, "var123", "Identifier with numbers must be valid")
+            }
             other => panic!("Expected Identifier, got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1449,10 +1767,16 @@ mod tests {
         let input = "true false";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::LiteralBool(true),
-            "'true' must be boolean true");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::LiteralBool(false),
-            "'false' must be boolean false");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::LiteralBool(true),
+            "'true' must be boolean true"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::LiteralBool(false),
+            "'false' must be boolean false"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 
@@ -1465,8 +1789,7 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralChar(c) => assert_eq!(c, ' ',
-                "Space char literal must be valid"),
+            TokenKind::LiteralChar(c) => assert_eq!(c, ' ', "Space char literal must be valid"),
             other => panic!("Expected LiteralChar ' ', got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1481,8 +1804,7 @@ mod tests {
         let mut lexer = Lexer::new(input);
 
         match lexer.next_token().unwrap().kind {
-            TokenKind::LiteralChar(c) => assert_eq!(c, 'λ',
-                "Unicode char literal must be valid"),
+            TokenKind::LiteralChar(c) => assert_eq!(c, 'λ', "Unicode char literal must be valid"),
             other => panic!("Expected LiteralChar 'λ', got {:?}", other),
         }
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
@@ -1523,10 +1845,16 @@ mod tests {
         let input = "bersih pure";
         let mut lexer = Lexer::new(input);
 
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwPure,
-            "'bersih' (pure) must tokenize to TokenKind::KwPure");
-        assert_eq!(lexer.next_token().unwrap().kind, TokenKind::KwPure,
-            "'pure' must tokenize to TokenKind::KwPure");
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwPure,
+            "'bersih' (pure) must tokenize to TokenKind::KwPure"
+        );
+        assert_eq!(
+            lexer.next_token().unwrap().kind,
+            TokenKind::KwPure,
+            "'pure' must tokenize to TokenKind::KwPure"
+        );
         assert_eq!(lexer.next_token().unwrap().kind, TokenKind::Eof);
     }
 

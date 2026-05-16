@@ -60,8 +60,7 @@ impl Registry for FsRegistry {
             return Ok(Vec::new());
         }
         let mut versions = Vec::new();
-        let entries = std::fs::read_dir(&pkg_dir)
-            .map_err(|e| PkgError::io(&pkg_dir, e))?;
+        let entries = std::fs::read_dir(&pkg_dir).map_err(|e| PkgError::io(&pkg_dir, e))?;
         for entry in entries {
             let entry = entry.map_err(|e| PkgError::io(&pkg_dir, e))?;
             if entry.path().is_dir() {
@@ -86,7 +85,9 @@ impl Registry for FsRegistry {
     }
 
     fn exists(&self, name: &str, version: &Version) -> bool {
-        self.package_path(name, version).join("riina.toml").is_file()
+        self.package_path(name, version)
+            .join("riina.toml")
+            .is_file()
     }
 }
 
@@ -95,13 +96,14 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     let entries = std::fs::read_dir(src).map_err(|e| PkgError::io(src, e))?;
     for entry in entries {
         let entry = entry.map_err(|e| PkgError::io(src, e))?;
-        let ty = entry.file_type().map_err(|e| PkgError::io(entry.path(), e))?;
+        let ty = entry
+            .file_type()
+            .map_err(|e| PkgError::io(entry.path(), e))?;
         let dest_path = dst.join(entry.file_name());
         if ty.is_dir() {
             copy_dir_recursive(&entry.path(), &dest_path)?;
         } else {
-            std::fs::copy(entry.path(), &dest_path)
-                .map_err(|e| PkgError::io(&dest_path, e))?;
+            std::fs::copy(entry.path(), &dest_path).map_err(|e| PkgError::io(&dest_path, e))?;
         }
     }
     Ok(())
@@ -121,19 +123,25 @@ impl MemRegistry {
     pub fn add(&mut self, manifest: Manifest) {
         let name = manifest.package.name.clone();
         let version = manifest.package.version.clone();
-        self.packages.entry(name).or_default().insert(version, manifest);
+        self.packages
+            .entry(name)
+            .or_default()
+            .insert(version, manifest);
     }
 }
 
 impl Registry for MemRegistry {
     fn list_versions(&self, name: &str) -> Result<Vec<Version>> {
-        Ok(self.packages.get(name)
+        Ok(self
+            .packages
+            .get(name)
             .map(|m| m.keys().cloned().collect())
             .unwrap_or_default())
     }
 
     fn get_manifest(&self, name: &str, version: &Version) -> Result<Manifest> {
-        self.packages.get(name)
+        self.packages
+            .get(name)
             .and_then(|m| m.get(version))
             .cloned()
             .ok_or_else(|| PkgError::DependencyNotFound {
@@ -147,14 +155,16 @@ impl Registry for MemRegistry {
     }
 
     fn exists(&self, name: &str, version: &Version) -> bool {
-        self.packages.get(name).is_some_and(|m| m.contains_key(version))
+        self.packages
+            .get(name)
+            .is_some_and(|m| m.contains_key(version))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::manifest::{PackageMeta, AllowedEffects};
+    use crate::manifest::{AllowedEffects, PackageMeta};
 
     fn dummy_manifest(name: &str, ver: &str) -> Manifest {
         Manifest {

@@ -56,8 +56,7 @@ impl Manifest {
 
     /// Read and parse a riina.toml from disk.
     pub fn from_file(path: &Path) -> Result<Self> {
-        let source = std::fs::read_to_string(path)
-            .map_err(|e| PkgError::io(path, e))?;
+        let source = std::fs::read_to_string(path).map_err(|e| PkgError::io(path, e))?;
         Self::parse(&source, path)
     }
 
@@ -136,7 +135,9 @@ impl<'a> TomlParser<'a> {
             let (key, value) = self.parse_kv(trimmed, line_idx + 1)?;
 
             match current_table {
-                TableKind::Pakej => { pkg_fields.insert(key, value); }
+                TableKind::Pakej => {
+                    pkg_fields.insert(key, value);
+                }
                 TableKind::Kebergantungan => {
                     deps.insert(key, value.as_str(line_idx + 1, &self.file)?);
                 }
@@ -174,31 +175,67 @@ impl<'a> TomlParser<'a> {
             field: "pakej".to_string(),
         })?;
 
-        Ok(Manifest { package, dependencies: deps, dev_dependencies: dev_deps, allowed_effects: effects, workspace })
+        Ok(Manifest {
+            package,
+            dependencies: deps,
+            dev_dependencies: dev_deps,
+            allowed_effects: effects,
+            workspace,
+        })
     }
 
     fn build_package(&self, fields: &BTreeMap<String, TomlValue>) -> Result<PackageMeta> {
-        let name = fields.get("nama")
-            .ok_or_else(|| PkgError::ManifestMissing { file: self.file.clone(), field: "nama".into() })?
+        let name = fields
+            .get("nama")
+            .ok_or_else(|| PkgError::ManifestMissing {
+                file: self.file.clone(),
+                field: "nama".into(),
+            })?
             .as_str(0, &self.file)?;
-        let version_str = fields.get("versi")
-            .ok_or_else(|| PkgError::ManifestMissing { file: self.file.clone(), field: "versi".into() })?
+        let version_str = fields
+            .get("versi")
+            .ok_or_else(|| PkgError::ManifestMissing {
+                file: self.file.clone(),
+                field: "versi".into(),
+            })?
             .as_str(0, &self.file)?;
         let version = Version::parse(&version_str)?;
-        let authors = fields.get("pengarang")
+        let authors = fields
+            .get("pengarang")
             .map(|v| v.as_string_array(0, &self.file))
             .transpose()?
             .unwrap_or_default();
-        let license = fields.get("lesen").map(|v| v.as_str(0, &self.file)).transpose()?;
-        let description = fields.get("keterangan").map(|v| v.as_str(0, &self.file)).transpose()?;
-        let homepage = fields.get("laman").map(|v| v.as_str(0, &self.file)).transpose()?;
-        let repository = fields.get("repositori").map(|v| v.as_str(0, &self.file)).transpose()?;
-        Ok(PackageMeta { name, version, authors, license, description, homepage, repository })
+        let license = fields
+            .get("lesen")
+            .map(|v| v.as_str(0, &self.file))
+            .transpose()?;
+        let description = fields
+            .get("keterangan")
+            .map(|v| v.as_str(0, &self.file))
+            .transpose()?;
+        let homepage = fields
+            .get("laman")
+            .map(|v| v.as_str(0, &self.file))
+            .transpose()?;
+        let repository = fields
+            .get("repositori")
+            .map(|v| v.as_str(0, &self.file))
+            .transpose()?;
+        Ok(PackageMeta {
+            name,
+            version,
+            authors,
+            license,
+            description,
+            homepage,
+            repository,
+        })
     }
 
     fn parse_kv(&self, line: &str, line_num: usize) -> Result<(String, TomlValue)> {
         let eq_pos = line.find('=').ok_or_else(|| PkgError::ManifestParse {
-            file: self.file.clone(), line: line_num,
+            file: self.file.clone(),
+            line: line_num,
             message: format!("expected 'key = value', got: {line}"),
         })?;
         let key = line[..eq_pos].trim().to_string();
@@ -228,7 +265,8 @@ impl<'a> TomlParser<'a> {
                     items.push(item[1..item.len() - 1].to_string());
                 } else if !item.is_empty() {
                     return Err(PkgError::ManifestParse {
-                        file: self.file.clone(), line: line_num,
+                        file: self.file.clone(),
+                        line: line_num,
                         message: format!("expected quoted string in array, got: {item}"),
                     });
                 }
@@ -236,7 +274,8 @@ impl<'a> TomlParser<'a> {
             Ok(TomlValue::Array(items))
         } else {
             Err(PkgError::ManifestParse {
-                file: self.file.clone(), line: line_num,
+                file: self.file.clone(),
+                line: line_num,
                 message: format!("unsupported value: {s}"),
             })
         }
@@ -255,7 +294,8 @@ impl TomlValue {
         match self {
             Self::Str(s) => Ok(s.clone()),
             _ => Err(PkgError::ManifestParse {
-                file: file.to_path_buf(), line,
+                file: file.to_path_buf(),
+                line,
                 message: "expected string".into(),
             }),
         }
@@ -265,7 +305,8 @@ impl TomlValue {
         match self {
             Self::Bool(b) => Ok(*b),
             _ => Err(PkgError::ManifestParse {
-                file: file.to_path_buf(), line,
+                file: file.to_path_buf(),
+                line,
                 message: "expected boolean".into(),
             }),
         }
@@ -275,7 +316,8 @@ impl TomlValue {
         match self {
             Self::Array(a) => Ok(a.clone()),
             _ => Err(PkgError::ManifestParse {
-                file: file.to_path_buf(), line,
+                file: file.to_path_buf(),
+                line,
                 message: "expected array".into(),
             }),
         }

@@ -67,7 +67,11 @@ pub struct Diagnostic {
 impl Diagnostic {
     /// Create an error diagnostic.
     #[must_use]
-    pub fn error(code: impl Into<String>, message_bm: impl Into<String>, message_en: impl Into<String>) -> Self {
+    pub fn error(
+        code: impl Into<String>,
+        message_bm: impl Into<String>,
+        message_en: impl Into<String>,
+    ) -> Self {
         Self {
             severity: Severity::Error,
             code: code.into(),
@@ -82,7 +86,11 @@ impl Diagnostic {
 
     /// Create a warning diagnostic.
     #[must_use]
-    pub fn warning(code: impl Into<String>, message_bm: impl Into<String>, message_en: impl Into<String>) -> Self {
+    pub fn warning(
+        code: impl Into<String>,
+        message_bm: impl Into<String>,
+        message_en: impl Into<String>,
+    ) -> Self {
         Self {
             severity: Severity::Warning,
             code: code.into(),
@@ -97,7 +105,13 @@ impl Diagnostic {
 
     /// Set primary span.
     #[must_use]
-    pub fn with_primary(mut self, file_id: FileId, span: Span, label_bm: impl Into<String>, label_en: impl Into<String>) -> Self {
+    pub fn with_primary(
+        mut self,
+        file_id: FileId,
+        span: Span,
+        label_bm: impl Into<String>,
+        label_en: impl Into<String>,
+    ) -> Self {
         self.primary = Some(SpannedLabel {
             span,
             file_id,
@@ -183,8 +197,12 @@ mod tests {
         let mut sm = SourceMap::new();
         let fid = sm.add_file("test.rii", "biar x = 42;\nbiar y = x + z;\n");
 
-        let diag = Diagnostic::error("T0001", "Pembolehubah tidak ditemui: z", "Variable not found: z")
-            .with_primary(fid, Span::new(27, 28), "tidak ditemui", "not found");
+        let diag = Diagnostic::error(
+            "T0001",
+            "Pembolehubah tidak ditemui: z",
+            "Variable not found: z",
+        )
+        .with_primary(fid, Span::new(27, 28), "tidak ditemui", "not found");
 
         let rendered = diag.render(&sm);
         assert!(rendered.contains("ralat[T0001]"));

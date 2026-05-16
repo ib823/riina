@@ -33,7 +33,9 @@ fn extract_doc_comments(source: &str) -> Vec<(usize, String)> {
         .enumerate()
         .filter_map(|(i, line)| {
             let trimmed = line.trim();
-            trimmed.strip_prefix("///").map(|rest| (i, rest.trim_start().to_string()))
+            trimmed
+                .strip_prefix("///")
+                .map(|rest| (i, rest.trim_start().to_string()))
         })
         .collect()
 }
@@ -141,11 +143,16 @@ pub fn extract_docs(source: &str, program: &Program) -> Vec<DocItem> {
             TopLevelDecl::Expr(_) => {}
             TopLevelDecl::ExternBlock { abi, decls } => {
                 for decl in decls {
-                    let params_str: Vec<String> = decl.params
+                    let params_str: Vec<String> = decl
+                        .params
                         .iter()
                         .map(|(n, t)| format!("{n}: {}", format_ty(t)))
                         .collect();
-                    let mut sig = format!("luaran \"{abi}\" fungsi {}({})", decl.name, params_str.join(", "));
+                    let mut sig = format!(
+                        "luaran \"{abi}\" fungsi {}({})",
+                        decl.name,
+                        params_str.join(", ")
+                    );
                     if decl.ret_ty != Ty::Unit {
                         sig.push_str(&format!(" -> {}", format_ty(&decl.ret_ty)));
                     }
@@ -174,7 +181,9 @@ pub fn generate_html(title: &str, items: &[DocItem]) -> String {
     html.push_str(&format!("<title>{title} — RIINA Dokumentasi</title>\n"));
     html.push_str("<style>\n");
     html.push_str("body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 900px; margin: 0 auto; padding: 2em; background: #fafafa; }\n");
-    html.push_str("h1 { color: #1a1a2e; border-bottom: 2px solid #16213e; padding-bottom: 0.3em; }\n");
+    html.push_str(
+        "h1 { color: #1a1a2e; border-bottom: 2px solid #16213e; padding-bottom: 0.3em; }\n",
+    );
     html.push_str("h2 { color: #16213e; margin-top: 2em; }\n");
     html.push_str(".sig { background: #0f3460; color: #e0e0e0; padding: 0.8em 1em; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }\n");
     html.push_str(".doc { padding: 0.5em 0; color: #333; line-height: 1.6; }\n");

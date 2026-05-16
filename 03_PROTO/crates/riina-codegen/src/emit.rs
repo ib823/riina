@@ -2607,7 +2607,9 @@ impl CEmitter {
         self.writeln("");
 
         // CRDT merge (pointwise max for integer counters)
-        self.writeln("static riina_value_t* riina_crdt_merge(riina_value_t* a, riina_value_t* b) {");
+        self.writeln(
+            "static riina_value_t* riina_crdt_merge(riina_value_t* a, riina_value_t* b) {",
+        );
         self.writeln("    if (a->tag == RIINA_TAG_INT && b->tag == RIINA_TAG_INT) {");
         self.writeln("        return riina_int(a->data.int_val > b->data.int_val ? a->data.int_val : b->data.int_val);");
         self.writeln("    }");
@@ -2829,7 +2831,11 @@ impl CEmitter {
                     Instruction::FixClosure { closure, .. } => {
                         vars.insert(*closure);
                     }
-                    Instruction::ActorDecl { init_state, handler, .. } => {
+                    Instruction::ActorDecl {
+                        init_state,
+                        handler,
+                        ..
+                    } => {
                         vars.insert(*init_state);
                         vars.insert(*handler);
                     }
@@ -3136,8 +3142,11 @@ impl CEmitter {
             // ═══════════════════════════════════════════════════════════
             // JALINAN (actors, choreography, CRDTs, content-addressed)
             // ═══════════════════════════════════════════════════════════
-
-            Instruction::ActorDecl { name: _, init_state, handler } => {
+            Instruction::ActorDecl {
+                name: _,
+                init_state,
+                handler,
+            } => {
                 self.writeln(&format!(
                     "{result} = *riina_actor_decl(&{init}, &{handler});",
                     result = result,
@@ -3147,9 +3156,7 @@ impl CEmitter {
             }
 
             Instruction::ChoreographyDecl { name: _, roles: _ } => {
-                self.writeln(&format!(
-                    "{result} = *riina_choreography_decl();",
-                ));
+                self.writeln(&format!("{result} = *riina_choreography_decl();",));
             }
 
             Instruction::ActorSpawn(decl, state) => {

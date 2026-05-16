@@ -2,9 +2,9 @@
 
 //! Conversion builtins (penukaran)
 
+use super::format_value;
 use crate::value::Value;
 use crate::{Error, Result};
-use super::format_value;
 
 /// Apply a conversion builtin. Returns Ok(None) if name doesn't match.
 pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
@@ -59,31 +59,61 @@ mod tests {
 
     #[test]
     fn test_ke_teks() {
-        assert_eq!(apply("ke_teks", &Value::Int(42)).unwrap(), Some(Value::String("42".to_string())));
+        assert_eq!(
+            apply("ke_teks", &Value::Int(42)).unwrap(),
+            Some(Value::String("42".to_string()))
+        );
     }
 
     #[test]
     fn test_ke_nombor() {
-        assert_eq!(apply("ke_nombor", &Value::String("99".to_string())).unwrap(), Some(Value::Int(99)));
+        assert_eq!(
+            apply("ke_nombor", &Value::String("99".to_string())).unwrap(),
+            Some(Value::Int(99))
+        );
     }
 
     #[test]
     fn test_ke_bool_truthy() {
-        assert_eq!(apply("ke_bool", &Value::Int(1)).unwrap(), Some(Value::Bool(true)));
-        assert_eq!(apply("ke_bool", &Value::Int(0)).unwrap(), Some(Value::Bool(false)));
-        assert_eq!(apply("ke_bool", &Value::String("x".to_string())).unwrap(), Some(Value::Bool(true)));
-        assert_eq!(apply("ke_bool", &Value::String(String::new())).unwrap(), Some(Value::Bool(false)));
-        assert_eq!(apply("ke_bool", &Value::Unit).unwrap(), Some(Value::Bool(false)));
+        assert_eq!(
+            apply("ke_bool", &Value::Int(1)).unwrap(),
+            Some(Value::Bool(true))
+        );
+        assert_eq!(
+            apply("ke_bool", &Value::Int(0)).unwrap(),
+            Some(Value::Bool(false))
+        );
+        assert_eq!(
+            apply("ke_bool", &Value::String("x".to_string())).unwrap(),
+            Some(Value::Bool(true))
+        );
+        assert_eq!(
+            apply("ke_bool", &Value::String(String::new())).unwrap(),
+            Some(Value::Bool(false))
+        );
+        assert_eq!(
+            apply("ke_bool", &Value::Unit).unwrap(),
+            Some(Value::Bool(false))
+        );
     }
 
     #[test]
     fn test_bool_ke_nombor() {
-        assert_eq!(apply("bool_ke_nombor", &Value::Bool(true)).unwrap(), Some(Value::Int(1)));
-        assert_eq!(apply("bool_ke_nombor", &Value::Bool(false)).unwrap(), Some(Value::Int(0)));
+        assert_eq!(
+            apply("bool_ke_nombor", &Value::Bool(true)).unwrap(),
+            Some(Value::Int(1))
+        );
+        assert_eq!(
+            apply("bool_ke_nombor", &Value::Bool(false)).unwrap(),
+            Some(Value::Int(0))
+        );
     }
 
     #[test]
     fn test_nombor_ke_teks() {
-        assert_eq!(apply("nombor_ke_teks", &Value::Int(123)).unwrap(), Some(Value::String("123".to_string())));
+        assert_eq!(
+            apply("nombor_ke_teks", &Value::Int(123)).unwrap(),
+            Some(Value::String("123".to_string()))
+        );
     }
 }

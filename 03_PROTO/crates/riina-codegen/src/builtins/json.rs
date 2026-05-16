@@ -50,17 +50,15 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
             // (Value, Teks, Value) -> Value
             // Encoded as (map, (key, value))
             match arg {
-                Value::Pair(obj, kv) => {
-                    match (obj.as_ref(), kv.as_ref()) {
-                        (Value::Map(m), Value::Pair(k, v)) => {
-                            let key = extract_string(k, "json_letak")?;
-                            let mut new_map = m.clone();
-                            new_map.insert(key, v.as_ref().clone());
-                            Ok(Some(Value::Map(new_map)))
-                        }
-                        _ => Err(type_err("(map, (string, value))", arg, "json_letak")),
+                Value::Pair(obj, kv) => match (obj.as_ref(), kv.as_ref()) {
+                    (Value::Map(m), Value::Pair(k, v)) => {
+                        let key = extract_string(k, "json_letak")?;
+                        let mut new_map = m.clone();
+                        new_map.insert(key, v.as_ref().clone());
+                        Ok(Some(Value::Map(new_map)))
                     }
-                }
+                    _ => Err(type_err("(map, (string, value))", arg, "json_letak")),
+                },
                 _ => Err(type_err("(map, (string, value))", arg, "json_letak")),
             }
         }
@@ -234,7 +232,9 @@ fn parse_null(s: &str) -> Result<(Value, &str)> {
 
 fn parse_number(s: &str) -> Result<(Value, &str)> {
     let end = s
-        .find(|c: char| !c.is_ascii_digit() && c != '-' && c != '.' && c != 'e' && c != 'E' && c != '+')
+        .find(|c: char| {
+            !c.is_ascii_digit() && c != '-' && c != '.' && c != 'e' && c != 'E' && c != '+'
+        })
         .unwrap_or(s.len());
     let num_str = &s[..end];
     // Try integer first, fall back to float→int
@@ -318,9 +318,12 @@ mod tests {
 
     #[test]
     fn test_json_urai_simple() {
-        let result = apply("json_urai", &Value::String(r#"{"name":"RIINA","version":1}"#.to_string()))
-            .unwrap()
-            .unwrap();
+        let result = apply(
+            "json_urai",
+            &Value::String(r#"{"name":"RIINA","version":1}"#.to_string()),
+        )
+        .unwrap()
+        .unwrap();
         match result {
             Value::Map(m) => {
                 assert_eq!(m.get("name"), Some(&Value::String("RIINA".to_string())));
@@ -372,12 +375,9 @@ mod tests {
 
     #[test]
     fn test_json_urai_escapes() {
-        let result = apply(
-            "json_urai",
-            &Value::String(r#""hello\nworld""#.to_string()),
-        )
-        .unwrap()
-        .unwrap();
+        let result = apply("json_urai", &Value::String(r#""hello\nworld""#.to_string()))
+            .unwrap()
+            .unwrap();
         assert_eq!(result, Value::String("hello\nworld".to_string()));
     }
 

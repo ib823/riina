@@ -120,7 +120,10 @@ mod tests {
 
     #[test]
     fn test_peta_baru() {
-        assert_eq!(apply("peta_baru", &Value::Unit).unwrap(), Some(Value::Map(BTreeMap::new())));
+        assert_eq!(
+            apply("peta_baru", &Value::Unit).unwrap(),
+            Some(Value::Map(BTreeMap::new()))
+        );
     }
 
     #[test]
@@ -159,10 +162,13 @@ mod tests {
         let map = Value::Map(m);
 
         let keys = apply("peta_kunci", &map).unwrap().unwrap();
-        assert_eq!(keys, Value::List(vec![
-            Value::String("a".to_string()),
-            Value::String("b".to_string()),
-        ]));
+        assert_eq!(
+            keys,
+            Value::List(vec![
+                Value::String("a".to_string()),
+                Value::String("b".to_string()),
+            ])
+        );
 
         let vals = apply("peta_nilai", &map).unwrap().unwrap();
         assert_eq!(vals, Value::List(vec![Value::Int(1), Value::Int(2)]));
@@ -173,16 +179,28 @@ mod tests {
         let mut m = BTreeMap::new();
         m.insert("x".to_string(), Value::Int(1));
         let map = Value::Map(m);
-        let arg = Value::Pair(Box::new(map.clone()), Box::new(Value::String("x".to_string())));
-        assert_eq!(apply("peta_mengandungi", &arg).unwrap(), Some(Value::Bool(true)));
+        let arg = Value::Pair(
+            Box::new(map.clone()),
+            Box::new(Value::String("x".to_string())),
+        );
+        assert_eq!(
+            apply("peta_mengandungi", &arg).unwrap(),
+            Some(Value::Bool(true))
+        );
         let arg2 = Value::Pair(Box::new(map), Box::new(Value::String("y".to_string())));
-        assert_eq!(apply("peta_mengandungi", &arg2).unwrap(), Some(Value::Bool(false)));
+        assert_eq!(
+            apply("peta_mengandungi", &arg2).unwrap(),
+            Some(Value::Bool(false))
+        );
     }
 
     #[test]
     fn test_peta_panjang() {
         let mut m = BTreeMap::new();
         m.insert("a".to_string(), Value::Int(1));
-        assert_eq!(apply("peta_panjang", &Value::Map(m)).unwrap(), Some(Value::Int(1)));
+        assert_eq!(
+            apply("peta_panjang", &Value::Map(m)).unwrap(),
+            Some(Value::Int(1))
+        );
     }
 }

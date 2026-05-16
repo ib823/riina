@@ -3,7 +3,7 @@
 //! Compliance rule definitions per profile.
 //! Spec: 04_SPECS/industries/
 
-use riina_types::{Expr, Effect};
+use riina_types::{Effect, Expr};
 
 use crate::{ComplianceProfile, ComplianceViolation, Severity};
 
@@ -58,7 +58,8 @@ fn pci_dss_rules() -> Vec<ComplianceRule> {
                         return Some(ComplianceViolation {
                             rule_id: "PCI-DSS-3.4",
                             profile: ComplianceProfile::PciDss,
-                            message: "Declassification of secret data requires a Prove guard".into(),
+                            message: "Declassification of secret data requires a Prove guard"
+                                .into(),
                             severity: Severity::Error,
                         });
                     }
@@ -98,7 +99,9 @@ fn pci_dss_rules() -> Vec<ComplianceRule> {
                 // LetRec binding with auth-related name but body has no Perform(Crypto, _)
                 if let Expr::LetRec(name, _ty, body, _) = expr {
                     let lower = name.to_lowercase();
-                    if (lower.contains("auth") || lower.contains("login") || lower.contains("verify_password"))
+                    if (lower.contains("auth")
+                        || lower.contains("login")
+                        || lower.contains("verify_password"))
                         && !contains_effect(body, Effect::Crypto)
                     {
                         return Some(ComplianceViolation {
@@ -159,7 +162,8 @@ fn pdpa_rules() -> Vec<ComplianceRule> {
                         return Some(ComplianceViolation {
                             rule_id: "PDPA-S24",
                             profile: ComplianceProfile::Pdpa,
-                            message: "Sending personal data over network without sanitization".into(),
+                            message: "Sending personal data over network without sanitization"
+                                .into(),
                             severity: Severity::Error,
                         });
                     }
@@ -175,30 +179,28 @@ fn pdpa_rules() -> Vec<ComplianceRule> {
 // ---------------------------------------------------------------------------
 
 fn bnm_rules() -> Vec<ComplianceRule> {
-    vec![
-        ComplianceRule {
-            id: "BNM-RMiT-10",
-            profile: ComplianceProfile::Bnm,
-            description: "Financial crypto must use ConstantTime<_>",
-            check: |expr| {
-                // Perform(Crypto, _) inside a function with "financial" or "payment" in name
-                // We check at the Perform level: if crypto is performed, the enclosing
-                // expression should be ConstantTime-wrapped.
-                // Simplified heuristic: flag Perform(Crypto, _) on non-ConstantTime arg
-                if let Expr::Perform(Effect::Crypto, arg) = expr {
-                    if !is_constant_time_wrapped(arg) {
-                        return Some(ComplianceViolation {
+    vec![ComplianceRule {
+        id: "BNM-RMiT-10",
+        profile: ComplianceProfile::Bnm,
+        description: "Financial crypto must use ConstantTime<_>",
+        check: |expr| {
+            // Perform(Crypto, _) inside a function with "financial" or "payment" in name
+            // We check at the Perform level: if crypto is performed, the enclosing
+            // expression should be ConstantTime-wrapped.
+            // Simplified heuristic: flag Perform(Crypto, _) on non-ConstantTime arg
+            if let Expr::Perform(Effect::Crypto, arg) = expr {
+                if !is_constant_time_wrapped(arg) {
+                    return Some(ComplianceViolation {
                             rule_id: "BNM-RMiT-10",
                             profile: ComplianceProfile::Bnm,
                             message: "Crypto operation argument should use ConstantTime<_> type for financial data".into(),
                             severity: Severity::Warning,
                         });
-                    }
                 }
-                None
-            },
+            }
+            None
         },
-    ]
+    }]
 }
 
 // ---------------------------------------------------------------------------
@@ -238,8 +240,10 @@ fn contains_personal_data_var(expr: &Expr) -> bool {
     match expr {
         Expr::Var(name) => {
             let lower = name.to_lowercase();
-            lower.contains("personal") || lower.contains("user_data")
-                || lower.contains("nama") || lower.contains("ic_number")
+            lower.contains("personal")
+                || lower.contains("user_data")
+                || lower.contains("nama")
+                || lower.contains("ic_number")
         }
         Expr::App(f, a) => contains_personal_data_var(f) || contains_personal_data_var(a),
         Expr::Pair(l, r) => contains_personal_data_var(l) || contains_personal_data_var(r),

@@ -2,9 +2,9 @@
 
 //! Tests for compliance validation.
 
-use riina_types::{Expr, Ty, Effect};
+use riina_types::{Effect, Expr, Ty};
 
-use crate::{ComplianceProfile, parse_profiles, validate, has_errors};
+use crate::{has_errors, parse_profiles, validate, ComplianceProfile};
 
 #[test]
 fn parse_profiles_single() {
@@ -15,7 +15,14 @@ fn parse_profiles_single() {
 #[test]
 fn parse_profiles_multiple() {
     let profiles = parse_profiles("pci-dss,pdpa,bnm").unwrap();
-    assert_eq!(profiles, vec![ComplianceProfile::PciDss, ComplianceProfile::Pdpa, ComplianceProfile::Bnm]);
+    assert_eq!(
+        profiles,
+        vec![
+            ComplianceProfile::PciDss,
+            ComplianceProfile::Pdpa,
+            ComplianceProfile::Bnm
+        ]
+    );
 }
 
 #[test]
@@ -65,7 +72,9 @@ fn pci_dss_6_5_card_data_not_secret() {
 fn pci_dss_6_5_card_data_classified_ok() {
     let expr = Expr::Let(
         "card_number".into(),
-        Box::new(Expr::Classify(Box::new(Expr::String("4111111111111111".into())))),
+        Box::new(Expr::Classify(Box::new(Expr::String(
+            "4111111111111111".into(),
+        )))),
         Box::new(Expr::Unit),
     );
     let violations = validate(&expr, &[ComplianceProfile::PciDss]);
@@ -77,7 +86,11 @@ fn pci_dss_8_3_auth_without_crypto() {
     let expr = Expr::LetRec(
         "authenticate".into(),
         Ty::Fn(Box::new(Ty::String), Box::new(Ty::Bool), Effect::Pure),
-        Box::new(Expr::Lam("pwd".into(), Ty::String, Box::new(Expr::Bool(true)))),
+        Box::new(Expr::Lam(
+            "pwd".into(),
+            Ty::String,
+            Box::new(Expr::Bool(true)),
+        )),
         Box::new(Expr::Unit),
     );
     let violations = validate(&expr, &[ComplianceProfile::PciDss]);
@@ -92,7 +105,10 @@ fn pci_dss_8_3_auth_with_crypto_ok() {
         Box::new(Expr::Lam(
             "pwd".into(),
             Ty::String,
-            Box::new(Expr::Perform(Effect::Crypto, Box::new(Expr::Var("pwd".into())))),
+            Box::new(Expr::Perform(
+                Effect::Crypto,
+                Box::new(Expr::Var("pwd".into())),
+            )),
         )),
         Box::new(Expr::Unit),
     );
@@ -113,30 +129,21 @@ fn pdpa_s7_user_input_not_tainted() {
 
 #[test]
 fn pdpa_s24_personal_data_over_network() {
-    let expr = Expr::Perform(
-        Effect::Network,
-        Box::new(Expr::Var("personal_data".into())),
-    );
+    let expr = Expr::Perform(Effect::Network, Box::new(Expr::Var("personal_data".into())));
     let violations = validate(&expr, &[ComplianceProfile::Pdpa]);
     assert!(violations.iter().any(|v| v.rule_id == "PDPA-S24"));
 }
 
 #[test]
 fn bnm_rmit_10_crypto_without_constant_time() {
-    let expr = Expr::Perform(
-        Effect::Crypto,
-        Box::new(Expr::Var("payment_hash".into())),
-    );
+    let expr = Expr::Perform(Effect::Crypto, Box::new(Expr::Var("payment_hash".into())));
     let violations = validate(&expr, &[ComplianceProfile::Bnm]);
     assert!(violations.iter().any(|v| v.rule_id == "BNM-RMiT-10"));
 }
 
 #[test]
 fn no_violations_without_profiles() {
-    let expr = Expr::Declassify(
-        Box::new(Expr::Int(42)),
-        Box::new(Expr::Int(0)),
-    );
+    let expr = Expr::Declassify(Box::new(Expr::Int(42)), Box::new(Expr::Int(0)));
     let violations = validate(&expr, &[]);
     assert!(violations.is_empty());
 }

@@ -161,7 +161,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // BASE VALUES (correspond to Expr::Unit, Expr::Bool, Expr::Int, Expr::String)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Built-in function (name, implementation pointer index)
     ///
     /// Not in Coq — Rust-only extension for I/O builtins.
@@ -190,7 +189,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // PRODUCT VALUES (correspond to Expr::Pair)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Pair of values
     ///
     /// Corresponds to Coq `VPair v1 v2`.
@@ -199,7 +197,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // SUM VALUES (correspond to Expr::Inl, Expr::Inr)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Sum value (left or right)
     ///
     /// Corresponds to Coq `VInl v` or `VInr v`.
@@ -208,7 +205,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // FUNCTION VALUES (correspond to Expr::Lam)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Closure (function value)
     ///
     /// Corresponds to Coq `VClosure env x T e`.
@@ -217,7 +213,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // REFERENCE VALUES (correspond to Expr::Ref)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Reference (mutable cell)
     ///
     /// Corresponds to Coq `VRef loc`.
@@ -226,7 +221,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // SECURITY VALUES (correspond to Expr::Classify, Expr::Prove)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Secret value (information hiding)
     ///
     /// Corresponds to Coq `VSecret v`.
@@ -240,7 +234,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // CAPABILITY VALUES (correspond to capability tokens)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Effect capability token
     ///
     /// Corresponds to Coq `VCap eff`.
@@ -249,7 +242,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // COLLECTION VALUES (Rust-only extensions, not in Coq)
     // ═══════════════════════════════════════════════════════════════════
-
     /// List value (ordered collection)
     ///
     /// Not in Coq — Rust-only extension for stdlib.
@@ -263,7 +255,6 @@ pub enum Value {
     // ═══════════════════════════════════════════════════════════════════
     // JALINAN VALUES (actor system, CRDTs, content-addressed)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Actor reference (unique ID)
     ///
     /// Not in Coq — Rust-only extension for JALINAN Phase 6.
@@ -709,14 +700,20 @@ impl Value {
                 Sum::Left(v) | Sum::Right(v) => v.security_level(),
             },
             Self::List(items) => {
-                if items.iter().any(|v| v.security_level() == SecurityLevel::Secret) {
+                if items
+                    .iter()
+                    .any(|v| v.security_level() == SecurityLevel::Secret)
+                {
                     SecurityLevel::Secret
                 } else {
                     SecurityLevel::Public
                 }
             }
             Self::Map(entries) => {
-                if entries.values().any(|v| v.security_level() == SecurityLevel::Secret) {
+                if entries
+                    .values()
+                    .any(|v| v.security_level() == SecurityLevel::Secret)
+                {
                     SecurityLevel::Secret
                 } else {
                     SecurityLevel::Public
@@ -787,7 +784,7 @@ impl std::fmt::Display for Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use riina_types::{Expr, Effect};
+    use riina_types::{Effect, Expr};
 
     // ═══════════════════════════════════════════════════════════════════
     // VALUE CONSTRUCTOR TESTS
@@ -821,11 +818,17 @@ mod tests {
     #[test]
     fn test_value_string_edge_cases() {
         assert_eq!(Value::string("").as_string(), Some(""));
-        assert_eq!(Value::string("hello world").as_string(), Some("hello world"));
+        assert_eq!(
+            Value::string("hello world").as_string(),
+            Some("hello world")
+        );
         // Unicode
         assert_eq!(Value::string("こんにちは").as_string(), Some("こんにちは"));
         // Bahasa Melayu
-        assert_eq!(Value::string("Selamat pagi").as_string(), Some("Selamat pagi"));
+        assert_eq!(
+            Value::string("Selamat pagi").as_string(),
+            Some("Selamat pagi")
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -999,10 +1002,7 @@ mod tests {
         // Secret inside a pair inside a pair
         let deep_secret = Value::pair(
             Value::int(1),
-            Value::pair(
-                Value::int(2),
-                Value::secret(Value::int(3))
-            )
+            Value::pair(Value::int(2), Value::secret(Value::int(3))),
         );
         assert_eq!(deep_secret.security_level(), SecurityLevel::Secret);
     }
@@ -1125,7 +1125,10 @@ mod tests {
         assert_eq!(Value::int(42).to_string(), "42");
         assert_eq!(Value::int(100).to_string(), "100");
         assert_eq!(Value::string("hello").to_string(), "\"hello\"");
-        assert_eq!(Value::pair(Value::int(1), Value::int(2)).to_string(), "(1, 2)");
+        assert_eq!(
+            Value::pair(Value::int(1), Value::int(2)).to_string(),
+            "(1, 2)"
+        );
         assert_eq!(Value::inl(Value::int(1)).to_string(), "inl 1");
         assert_eq!(Value::inr(Value::int(2)).to_string(), "inr 2");
         assert_eq!(Value::secret(Value::int(42)).to_string(), "secret(42)");
@@ -1134,10 +1137,7 @@ mod tests {
 
     #[test]
     fn test_value_display_nested() {
-        let nested_pair = Value::pair(
-            Value::pair(Value::int(1), Value::int(2)),
-            Value::int(3)
-        );
+        let nested_pair = Value::pair(Value::pair(Value::int(1), Value::int(2)), Value::int(3));
         assert_eq!(nested_pair.to_string(), "((1, 2), 3)");
     }
 
@@ -1192,7 +1192,10 @@ mod tests {
     #[test]
     fn test_jalinan_values_are_public() {
         assert_eq!(Value::actor_ref(1).security_level(), SecurityLevel::Public);
-        assert_eq!(Value::hash(vec![1, 2, 3]).security_level(), SecurityLevel::Public);
+        assert_eq!(
+            Value::hash(vec![1, 2, 3]).security_level(),
+            SecurityLevel::Public
+        );
         assert_eq!(
             Value::crdt_state(Value::int(1), Value::int(0)).security_level(),
             SecurityLevel::Public

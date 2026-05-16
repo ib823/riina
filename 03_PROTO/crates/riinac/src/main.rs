@@ -175,7 +175,9 @@ fn parse_args() -> (Command, Option<PathBuf>, Options) {
                     Some(t) => opts.target = Some(t),
                     None => {
                         eprintln!("Unknown target: {}", rest_slice[i]);
-                        eprintln!("Available targets: native, wasm32, wasm64, android-arm64, ios-arm64");
+                        eprintln!(
+                            "Available targets: native, wasm32, wasm64, android-arm64, ios-arm64"
+                        );
                         process::exit(1);
                     }
                 }
@@ -247,9 +249,10 @@ fn main() {
     let expr = match parser.parse_program() {
         Ok(program) => program.desugar(),
         Err(e) => {
-            eprintln!("{}", diagnostics::format_diagnostic(
-                &source, &e.span, &e.to_string(), &filename
-            ));
+            eprintln!(
+                "{}",
+                diagnostics::format_diagnostic(&source, &e.span, &e.to_string(), &filename)
+            );
             process::exit(1);
         }
     };
@@ -313,15 +316,13 @@ fn main() {
             println!("Type: {:?}", ty);
             println!("Effect: {:?}", eff);
         }
-        Command::Run => {
-            match riina_codegen::eval_with_builtins(&expr) {
-                Ok(val) => println!("{:?}", val),
-                Err(e) => {
-                    eprintln!("Runtime Error: {}", e);
-                    process::exit(1);
-                }
+        Command::Run => match riina_codegen::eval_with_builtins(&expr) {
+            Ok(val) => println!("{:?}", val),
+            Err(e) => {
+                eprintln!("Runtime Error: {}", e);
+                process::exit(1);
             }
-        }
+        },
         Command::EmitC => {
             let target = opts.target.unwrap_or(riina_codegen::Target::Native);
             match riina_codegen::compile(&expr) {
@@ -345,15 +346,13 @@ fn main() {
                 }
             }
         }
-        Command::EmitIR => {
-            match riina_codegen::compile(&expr) {
-                Ok(program) => println!("{:#?}", program),
-                Err(e) => {
-                    eprintln!("Codegen Error: {}", e);
-                    process::exit(1);
-                }
+        Command::EmitIR => match riina_codegen::compile(&expr) {
+            Ok(program) => println!("{:#?}", program),
+            Err(e) => {
+                eprintln!("Codegen Error: {}", e);
+                process::exit(1);
             }
-        }
+        },
         Command::Build => {
             let target = opts.target.unwrap_or(riina_codegen::Target::Native);
 
@@ -374,11 +373,11 @@ fn main() {
                 }
             };
 
-            let stem = input.file_stem()
+            let stem = input
+                .file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("output");
-            let output_dir = input.parent()
-                .unwrap_or_else(|| std::path::Path::new("."));
+            let output_dir = input.parent().unwrap_or_else(|| std::path::Path::new("."));
 
             if target == riina_codegen::Target::Native {
                 // Native: write C, compile with cc
@@ -391,7 +390,8 @@ fn main() {
 
                 let status = process::Command::new("cc")
                     .args([
-                        "-o", &output_name.to_string_lossy(),
+                        "-o",
+                        &output_name.to_string_lossy(),
                         &*tmp_c.to_string_lossy(),
                     ])
                     .status();
@@ -432,15 +432,13 @@ fn main() {
                 eprintln!("Built for target: {}", target);
             }
         }
-        Command::Fmt => {
-            match riina_fmt::format_source(&source) {
-                Ok(formatted) => print!("{formatted}"),
-                Err(e) => {
-                    eprintln!("Format error: {e}");
-                    process::exit(1);
-                }
+        Command::Fmt => match riina_fmt::format_source(&source) {
+            Ok(formatted) => print!("{formatted}"),
+            Err(e) => {
+                eprintln!("Format error: {e}");
+                process::exit(1);
             }
-        }
+        },
         Command::Doc => {
             let title = input
                 .file_stem()

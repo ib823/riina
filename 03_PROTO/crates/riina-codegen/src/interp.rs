@@ -160,9 +160,7 @@ fn infer_handled_effect(expr: &Expr) -> Option<Effect> {
         Expr::If(c, t, e) => infer_handled_effect(c)
             .or_else(|| infer_handled_effect(t))
             .or_else(|| infer_handled_effect(e)),
-        Expr::Let(_, v, body) => {
-            infer_handled_effect(v).or_else(|| infer_handled_effect(body))
-        }
+        Expr::Let(_, v, body) => infer_handled_effect(v).or_else(|| infer_handled_effect(body)),
         Expr::LetRec(_, _, v, body) => {
             infer_handled_effect(v).or_else(|| infer_handled_effect(body))
         }
@@ -498,8 +496,7 @@ impl Interpreter {
                 // catch-all used historically). This is best-effort: the
                 // dispatch logic still pops the most-recent handler
                 // regardless of effect, matching the operational semantics.
-                let inferred_effect =
-                    infer_handled_effect(body).unwrap_or(Effect::System);
+                let inferred_effect = infer_handled_effect(body).unwrap_or(Effect::System);
 
                 // Push handler context
                 self.handlers.push(HandlerContext {

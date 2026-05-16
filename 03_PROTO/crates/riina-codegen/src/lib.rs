@@ -67,31 +67,31 @@
 #![forbid(unsafe_code)]
 #![warn(clippy::all)]
 
-pub mod ir;
-pub mod value;
-pub mod lower;
-pub mod interp;
-pub mod emit;
-pub mod builtins;
-pub mod ffi;
+pub mod android_build;
 pub mod backend;
-pub mod wasm;
-pub mod wasm_encode;
-pub mod platform;
-pub mod mobile;
+pub mod builtins;
+pub mod emit;
+pub mod ffi;
+pub mod interp;
+pub mod ios_build;
+pub mod ir;
 pub mod jni;
+pub mod lower;
+pub mod mobile;
+pub mod platform;
 pub mod swift_bridge;
 pub mod toolchain;
-pub mod android_build;
-pub mod ios_build;
+pub mod value;
+pub mod wasm;
+pub mod wasm_encode;
 
 // Re-export primary interface
-pub use ir::{Instruction, BasicBlock, Function, Program};
-pub use value::Value;
-pub use lower::Lower;
+pub use backend::{backend_for_target, Backend, BackendOutput, Target};
+pub use emit::{emit_c, CEmitter};
 pub use interp::Interpreter;
-pub use emit::{CEmitter, emit_c};
-pub use backend::{Backend, BackendOutput, Target, backend_for_target};
+pub use ir::{BasicBlock, Function, Instruction, Program};
+pub use lower::Lower;
+pub use value::Value;
 
 /// Result type for code generation operations
 pub type Result<T> = std::result::Result<T, Error>;
@@ -133,14 +133,27 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnboundVariable(name) => write!(f, "unbound variable: {name}"),
-            Self::TypeMismatch { expected, found, context } => {
-                write!(f, "type mismatch in {context}: expected {expected}, found {found}")
+            Self::TypeMismatch {
+                expected,
+                found,
+                context,
+            } => {
+                write!(
+                    f,
+                    "type mismatch in {context}: expected {expected}, found {found}"
+                )
             }
             Self::EffectViolation { allowed, found } => {
                 write!(f, "effect violation: allowed {allowed:?}, found {found:?}")
             }
-            Self::SecurityViolation { context_level, data_level } => {
-                write!(f, "security violation: context {context_level:?}, data {data_level:?}")
+            Self::SecurityViolation {
+                context_level,
+                data_level,
+            } => {
+                write!(
+                    f,
+                    "security violation: context {context_level:?}, data {data_level:?}"
+                )
             }
             Self::InvalidOperation(msg) => write!(f, "invalid operation: {msg}"),
             Self::DivisionByZero => write!(f, "division by zero"),
@@ -295,10 +308,7 @@ mod tests {
     /// Test full pipeline: AST -> IR -> C code produces valid output
     #[test]
     fn test_integration_full_pipeline_to_c() {
-        let expr = Expr::Pair(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Bool(true)),
-        );
+        let expr = Expr::Pair(Box::new(Expr::Int(1)), Box::new(Expr::Bool(true)));
 
         let c_code = compile_to_c(&expr).unwrap();
 
@@ -442,10 +452,7 @@ mod tests {
     #[test]
     fn test_integration_pair_projections() {
         // fst (1, 2)
-        let pair = Expr::Pair(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Int(2)),
-        );
+        let pair = Expr::Pair(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)));
 
         let fst_result = eval(&Expr::Fst(Box::new(pair.clone()))).unwrap();
         let snd_result = eval(&Expr::Snd(Box::new(pair))).unwrap();

@@ -54,19 +54,20 @@ pub fn resolve(
 
         // Cycle detection
         if visiting.contains(&name) {
-            return Err(PkgError::CycleDetected(
-                visiting.iter().cloned().collect(),
-            ));
+            return Err(PkgError::CycleDetected(visiting.iter().cloned().collect()));
         }
         visiting.insert(name.clone());
 
-        let req = constraints.get(&name).cloned().unwrap_or_else(|| {
-            VersionReq::parse("*").unwrap()
-        });
+        let req = constraints
+            .get(&name)
+            .cloned()
+            .unwrap_or_else(|| VersionReq::parse("*").unwrap());
 
         // Find highest matching version
         let versions = registry.list_versions(&name)?;
-        let chosen = versions.iter().rev()
+        let chosen = versions
+            .iter()
+            .rev()
             .find(|v| req.matches(v))
             .cloned()
             .ok_or_else(|| PkgError::DependencyNotFound {
@@ -96,11 +97,14 @@ pub fn resolve(
             }
         }
 
-        resolved.insert(name.clone(), ResolvedPackage {
-            name: name.clone(),
-            version: chosen,
-            deps: dep_names,
-        });
+        resolved.insert(
+            name.clone(),
+            ResolvedPackage {
+                name: name.clone(),
+                version: chosen,
+                deps: dep_names,
+            },
+        );
 
         visiting.remove(&name);
     }
@@ -109,9 +113,7 @@ pub fn resolve(
 }
 
 /// Topological sort using Kahn's algorithm.
-fn topological_sort(
-    packages: &BTreeMap<String, ResolvedPackage>,
-) -> Result<Vec<String>> {
+fn topological_sort(packages: &BTreeMap<String, ResolvedPackage>) -> Result<Vec<String>> {
     let mut in_degree: BTreeMap<String, usize> = BTreeMap::new();
     let mut dependents: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
@@ -121,12 +123,16 @@ fn topological_sort(
             if packages.contains_key(dep) {
                 in_degree.entry(dep.clone()).or_insert(0);
                 *in_degree.entry(name.clone()).or_insert(0) += 1;
-                dependents.entry(dep.clone()).or_default().push(name.clone());
+                dependents
+                    .entry(dep.clone())
+                    .or_default()
+                    .push(name.clone());
             }
         }
     }
 
-    let mut queue: Vec<String> = in_degree.iter()
+    let mut queue: Vec<String> = in_degree
+        .iter()
         .filter(|(_, &deg)| deg == 0)
         .map(|(name, _)| name.clone())
         .collect();
@@ -149,7 +155,8 @@ fn topological_sort(
     }
 
     if order.len() != packages.len() {
-        let remaining: Vec<String> = packages.keys()
+        let remaining: Vec<String> = packages
+            .keys()
             .filter(|k| !order.contains(k))
             .cloned()
             .collect();
@@ -198,8 +205,8 @@ fn print_tree_recursive(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::manifest::{AllowedEffects, Manifest, PackageMeta};
     use crate::registry::MemRegistry;
-    use crate::manifest::{Manifest, PackageMeta, AllowedEffects};
 
     fn make_manifest(name: &str, ver: &str, deps: &[(&str, &str)]) -> Manifest {
         let mut dep_map = BTreeMap::new();
@@ -210,8 +217,11 @@ mod tests {
             package: PackageMeta {
                 name: name.to_string(),
                 version: Version::parse(ver).unwrap(),
-                authors: vec![], license: None, description: None,
-                homepage: None, repository: None,
+                authors: vec![],
+                license: None,
+                description: None,
+                homepage: None,
+                repository: None,
             },
             dependencies: dep_map,
             dev_dependencies: BTreeMap::new(),
@@ -231,8 +241,14 @@ mod tests {
 
         let graph = resolve(&root, &reg).unwrap();
         assert_eq!(graph.packages.len(), 2);
-        assert_eq!(graph.packages["a"].version, Version::parse("1.0.0").unwrap());
-        assert_eq!(graph.packages["b"].version, Version::parse("2.0.0").unwrap());
+        assert_eq!(
+            graph.packages["a"].version,
+            Version::parse("1.0.0").unwrap()
+        );
+        assert_eq!(
+            graph.packages["b"].version,
+            Version::parse("2.0.0").unwrap()
+        );
     }
 
     #[test]
@@ -246,7 +262,10 @@ mod tests {
         root.insert("a".to_string(), VersionReq::parse("^1.0.0").unwrap());
 
         let graph = resolve(&root, &reg).unwrap();
-        assert_eq!(graph.packages["a"].version, Version::parse("1.2.0").unwrap());
+        assert_eq!(
+            graph.packages["a"].version,
+            Version::parse("1.2.0").unwrap()
+        );
     }
 
     #[test]

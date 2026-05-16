@@ -71,16 +71,15 @@ impl Cache {
         if !self.root.is_dir() {
             return Ok(result);
         }
-        let entries = std::fs::read_dir(&self.root)
-            .map_err(|e| PkgError::io(&self.root, e))?;
+        let entries = std::fs::read_dir(&self.root).map_err(|e| PkgError::io(&self.root, e))?;
         for entry in entries {
             let entry = entry.map_err(|e| PkgError::io(&self.root, e))?;
             if !entry.path().is_dir() {
                 continue;
             }
             let pkg_name = entry.file_name().to_string_lossy().to_string();
-            let versions = std::fs::read_dir(entry.path())
-                .map_err(|e| PkgError::io(entry.path(), e))?;
+            let versions =
+                std::fs::read_dir(entry.path()).map_err(|e| PkgError::io(entry.path(), e))?;
             for ver_entry in versions {
                 let ver_entry = ver_entry.map_err(|e| PkgError::io(entry.path(), e))?;
                 if ver_entry.path().is_dir() {
@@ -102,13 +101,14 @@ fn copy_dir(src: &Path, dst: &Path) -> Result<()> {
     let entries = std::fs::read_dir(src).map_err(|e| PkgError::io(src, e))?;
     for entry in entries {
         let entry = entry.map_err(|e| PkgError::io(src, e))?;
-        let ty = entry.file_type().map_err(|e| PkgError::io(entry.path(), e))?;
+        let ty = entry
+            .file_type()
+            .map_err(|e| PkgError::io(entry.path(), e))?;
         let dest_path = dst.join(entry.file_name());
         if ty.is_dir() {
             copy_dir(&entry.path(), &dest_path)?;
         } else {
-            std::fs::copy(entry.path(), &dest_path)
-                .map_err(|e| PkgError::io(&dest_path, e))?;
+            std::fs::copy(entry.path(), &dest_path).map_err(|e| PkgError::io(&dest_path, e))?;
         }
     }
     Ok(())

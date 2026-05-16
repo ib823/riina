@@ -57,14 +57,13 @@
 //!
 //! # Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST
 
+use crate::builtins;
+use crate::ir::BinOp as IrBinOp;
 use crate::ir::{
-    AnnotatedInstr, BlockId, Constant, Function, FuncId,
-    Instruction, Program, Terminator, VarId,
+    AnnotatedInstr, BlockId, Constant, FuncId, Function, Instruction, Program, Terminator, VarId,
 };
 use crate::{Error, Result};
-use crate::ir::BinOp as IrBinOp;
 use riina_types::{BinOp, Effect, Expr, Ident, SecurityLevel, Ty};
-use crate::builtins;
 use std::collections::{HashMap, HashSet};
 
 /// Map a source name to its canonical builtin name, if it is a known builtin.
@@ -100,19 +99,27 @@ fn builtin_canonical(name: &str) -> Option<&'static str> {
     }
     // String (teks) builtins
     for &(bm, en, canonical) in builtins::teks::BUILTINS {
-        if name == bm || name == en { return Some(canonical); }
+        if name == bm || name == en {
+            return Some(canonical);
+        }
     }
     // List (senarai) builtins
     for &(bm, en, canonical) in builtins::senarai::BUILTINS {
-        if name == bm || name == en { return Some(canonical); }
+        if name == bm || name == en {
+            return Some(canonical);
+        }
     }
     // Map (peta) builtins
     for &(bm, en, canonical) in builtins::peta::BUILTINS {
-        if name == bm || name == en { return Some(canonical); }
+        if name == bm || name == en {
+            return Some(canonical);
+        }
     }
     // Set builtins
     for &(bm, en, canonical) in builtins::set::BUILTINS {
-        if name == bm || name == en { return Some(canonical); }
+        if name == bm || name == en {
+            return Some(canonical);
+        }
     }
     None
 }
@@ -146,7 +153,6 @@ impl VarEnv {
     fn lookup(&self, name: &str) -> Option<VarId> {
         self.bindings.get(name).copied()
     }
-
 }
 
 /// Compute the set of free variables in an expression.
@@ -206,8 +212,13 @@ fn free_vars(expr: &Expr) -> HashSet<Ident> {
             fv.extend(fv2);
             fv
         }
-        Expr::Fst(e) | Expr::Snd(e) | Expr::Inl(e, _) | Expr::Inr(e, _)
-        | Expr::Deref(e) | Expr::Classify(e) | Expr::Prove(e)
+        Expr::Fst(e)
+        | Expr::Snd(e)
+        | Expr::Inl(e, _)
+        | Expr::Inr(e, _)
+        | Expr::Deref(e)
+        | Expr::Classify(e)
+        | Expr::Prove(e)
         | Expr::Ref(e, _) => free_vars(e),
         Expr::Perform(_, e) | Expr::Require(_, e) | Expr::Grant(_, e) => free_vars(e),
         Expr::Handle(e, x, h) => {
@@ -340,13 +351,11 @@ impl Lower {
                 }
             }
             Expr::Inl(_, ty) | Expr::Inr(_, ty) => ty.clone(),
-            Expr::Lam(_, param_ty, body) => {
-                Ty::Fn(
-                    Box::new(param_ty.clone()),
-                    Box::new(self.infer_type(body)),
-                    self.infer_effect(body),
-                )
-            }
+            Expr::Lam(_, param_ty, body) => Ty::Fn(
+                Box::new(param_ty.clone()),
+                Box::new(self.infer_type(body)),
+                self.infer_effect(body),
+            ),
             Expr::Classify(e) => Ty::Secret(Box::new(self.infer_type(e))),
             Expr::Declassify(e, _) => {
                 if let Ty::Secret(t) = self.infer_type(e) {
@@ -365,7 +374,10 @@ impl Lower {
                 }
             }
             Expr::Assign(_, _) => Ty::Unit,
-            Expr::If(_, t, _) | Expr::Let(_, _, t) | Expr::LetRec(_, _, _, t) | Expr::Case(_, _, t, _, _) => self.infer_type(t),
+            Expr::If(_, t, _)
+            | Expr::Let(_, _, t)
+            | Expr::LetRec(_, _, _, t)
+            | Expr::Case(_, _, t, _, _) => self.infer_type(t),
             Expr::App(e1, _) => {
                 if let Ty::Fn(_, ret, _) = self.infer_type(e1) {
                     *ret
@@ -380,8 +392,14 @@ impl Lower {
             Expr::Loc(_) => Ty::Unit, // Runtime-only; actual type from store
             Expr::BinOp(op, _, _) => match op {
                 BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => Ty::Int,
-                BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge
-                | BinOp::And | BinOp::Or => Ty::Bool,
+                BinOp::Eq
+                | BinOp::Ne
+                | BinOp::Lt
+                | BinOp::Le
+                | BinOp::Gt
+                | BinOp::Ge
+                | BinOp::And
+                | BinOp::Or => Ty::Bool,
             },
             Expr::FFICall { ret_ty, .. } => ret_ty.clone(),
         }
@@ -398,16 +416,14 @@ impl Lower {
             Expr::Pair(e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
             Expr::Fst(e) | Expr::Snd(e) => self.infer_effect(e),
             Expr::Inl(e, _) | Expr::Inr(e, _) => self.infer_effect(e),
-            Expr::Case(e, _, e1, _, e2) => {
-                self.infer_effect(e)
-                    .join(self.infer_effect(e1))
-                    .join(self.infer_effect(e2))
-            }
-            Expr::If(c, t, f) => {
-                self.infer_effect(c)
-                    .join(self.infer_effect(t))
-                    .join(self.infer_effect(f))
-            }
+            Expr::Case(e, _, e1, _, e2) => self
+                .infer_effect(e)
+                .join(self.infer_effect(e1))
+                .join(self.infer_effect(e2)),
+            Expr::If(c, t, f) => self
+                .infer_effect(c)
+                .join(self.infer_effect(t))
+                .join(self.infer_effect(f)),
             Expr::Let(_, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
             Expr::App(e1, e2) => {
                 let base = self.infer_effect(e1).join(self.infer_effect(e2));
@@ -421,11 +437,10 @@ impl Lower {
             Expr::Handle(e, _, h) => self.infer_effect(e).join(self.infer_effect(h)),
             Expr::Ref(e, _) => self.infer_effect(e).join(Effect::Write),
             Expr::Deref(e) => self.infer_effect(e).join(Effect::Read),
-            Expr::Assign(e1, e2) => {
-                self.infer_effect(e1)
-                    .join(self.infer_effect(e2))
-                    .join(Effect::Write)
-            }
+            Expr::Assign(e1, e2) => self
+                .infer_effect(e1)
+                .join(self.infer_effect(e2))
+                .join(Effect::Write),
             Expr::Classify(e) | Expr::Declassify(e, _) | Expr::Prove(e) => self.infer_effect(e),
             Expr::Require(eff, e) => self.infer_effect(e).join(*eff),
             Expr::Grant(_, e) => self.infer_effect(e),
@@ -449,41 +464,33 @@ impl Lower {
             // ═══════════════════════════════════════════════════════════════
             // CONSTANTS (Expr::Unit, Expr::Bool, Expr::Int, Expr::String)
             // ═══════════════════════════════════════════════════════════════
-            Expr::Unit => {
-                Ok(self.emit(
-                    Instruction::Const(Constant::Unit),
-                    Ty::Unit,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
+            Expr::Unit => Ok(self.emit(
+                Instruction::Const(Constant::Unit),
+                Ty::Unit,
+                SecurityLevel::Public,
+                Effect::Pure,
+            )),
 
-            Expr::Bool(b) => {
-                Ok(self.emit(
-                    Instruction::Const(Constant::Bool(*b)),
-                    Ty::Bool,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
+            Expr::Bool(b) => Ok(self.emit(
+                Instruction::Const(Constant::Bool(*b)),
+                Ty::Bool,
+                SecurityLevel::Public,
+                Effect::Pure,
+            )),
 
-            Expr::Int(n) => {
-                Ok(self.emit(
-                    Instruction::Const(Constant::Int(*n)),
-                    Ty::Int,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
+            Expr::Int(n) => Ok(self.emit(
+                Instruction::Const(Constant::Int(*n)),
+                Ty::Int,
+                SecurityLevel::Public,
+                Effect::Pure,
+            )),
 
-            Expr::String(s) => {
-                Ok(self.emit(
-                    Instruction::Const(Constant::String(s.clone())),
-                    Ty::String,
-                    SecurityLevel::Public,
-                    Effect::Pure,
-                ))
-            }
+            Expr::String(s) => Ok(self.emit(
+                Instruction::Const(Constant::String(s.clone())),
+                Ty::String,
+                SecurityLevel::Public,
+                Effect::Pure,
+            )),
 
             // ═══════════════════════════════════════════════════════════════
             // VARIABLES (Expr::Var)
@@ -501,10 +508,17 @@ impl Lower {
                         ));
                     }
                 }
-                let var = self.env.lookup(name)
+                let var = self
+                    .env
+                    .lookup(name)
                     .ok_or_else(|| Error::UnboundVariable(name.clone()))?;
                 let ty = self.env.types.get(&var).cloned().unwrap_or(Ty::Unit);
-                let level = self.env.levels.get(&var).copied().unwrap_or(SecurityLevel::Public);
+                let level = self
+                    .env
+                    .levels
+                    .get(&var)
+                    .copied()
+                    .unwrap_or(SecurityLevel::Public);
                 Ok(self.emit(Instruction::Copy(var), ty, level, Effect::Pure))
             }
 
@@ -528,18 +542,21 @@ impl Lower {
 
                 // Compute free variables that need to be captured
                 let body_fv = free_vars(body);
-                let mut capture_names: Vec<Ident> = body_fv.into_iter()
+                let mut capture_names: Vec<Ident> = body_fv
+                    .into_iter()
                     .filter(|name| name != param && self.env.lookup(name).is_some())
                     .collect();
                 capture_names.sort(); // deterministic order
 
                 // Resolve captures to VarIds in the *current* environment
-                let capture_vars: Vec<VarId> = capture_names.iter()
+                let capture_vars: Vec<VarId> = capture_names
+                    .iter()
                     .filter_map(|name| self.env.lookup(name))
                     .collect();
 
                 // Record capture metadata on the function for C emission
-                func.captures = capture_names.iter()
+                func.captures = capture_names
+                    .iter()
                     .map(|name| {
                         let var = self.env.lookup(name).unwrap();
                         let ty = self.env.types.get(&var).cloned().unwrap_or(Ty::Unit);
@@ -564,7 +581,11 @@ impl Lower {
                     let old_var = saved_env.lookup(name).unwrap();
                     let new_var = self.fresh_var();
                     let ty = saved_env.types.get(&old_var).cloned().unwrap_or(Ty::Unit);
-                    let level = saved_env.levels.get(&old_var).copied().unwrap_or(SecurityLevel::Public);
+                    let level = saved_env
+                        .levels
+                        .get(&old_var)
+                        .copied()
+                        .unwrap_or(SecurityLevel::Public);
                     self.env.bind(name.clone(), new_var, ty, level);
                 }
 
@@ -597,11 +618,7 @@ impl Lower {
                 self.next_var = saved_next_var;
 
                 // Emit closure creation with captured variables
-                let fn_ty = Ty::Fn(
-                    Box::new(param_ty.clone()),
-                    Box::new(return_ty),
-                    body_effect,
-                );
+                let fn_ty = Ty::Fn(Box::new(param_ty.clone()), Box::new(return_ty), body_effect);
                 Ok(self.emit(
                     Instruction::Closure {
                         func: func_id,
@@ -653,17 +670,9 @@ impl Lower {
             Expr::Pair(e1, e2) => {
                 let v1 = self.lower_expr(e1)?;
                 let v2 = self.lower_expr(e2)?;
-                let ty = Ty::Prod(
-                    Box::new(self.infer_type(e1)),
-                    Box::new(self.infer_type(e2)),
-                );
+                let ty = Ty::Prod(Box::new(self.infer_type(e1)), Box::new(self.infer_type(e2)));
                 let effect = self.infer_effect(e1).join(self.infer_effect(e2));
-                Ok(self.emit(
-                    Instruction::Pair(v1, v2),
-                    ty,
-                    SecurityLevel::Public,
-                    effect,
-                ))
+                Ok(self.emit(Instruction::Pair(v1, v2), ty, SecurityLevel::Public, effect))
             }
 
             Expr::Fst(e) => {
@@ -794,7 +803,12 @@ impl Lower {
                 );
 
                 let saved_env = self.env.clone();
-                self.env.bind(left_name.clone(), left_val, left_ty.clone(), SecurityLevel::Public);
+                self.env.bind(
+                    left_name.clone(),
+                    left_val,
+                    left_ty.clone(),
+                    SecurityLevel::Public,
+                );
                 let left_result = self.lower_expr(left_branch)?;
                 self.env = saved_env;
 
@@ -819,7 +833,12 @@ impl Lower {
                 );
 
                 let saved_env = self.env.clone();
-                self.env.bind(right_name.clone(), right_val, right_ty.clone(), SecurityLevel::Public);
+                self.env.bind(
+                    right_name.clone(),
+                    right_val,
+                    right_ty.clone(),
+                    SecurityLevel::Public,
+                );
                 let right_result = self.lower_expr(right_branch)?;
                 self.env = saved_env;
 
@@ -945,7 +964,8 @@ impl Lower {
                 let bind_ty = self.infer_type(binding);
 
                 let saved_env = self.env.clone();
-                self.env.bind(name.clone(), bind_var, bind_ty, SecurityLevel::Public);
+                self.env
+                    .bind(name.clone(), bind_var, bind_ty, SecurityLevel::Public);
                 let result = self.lower_expr(body)?;
                 self.env = saved_env;
 
@@ -960,7 +980,12 @@ impl Lower {
                 let placeholder = self.fresh_var();
 
                 let saved_env = self.env.clone();
-                self.env.bind(name.clone(), placeholder, bind_ty.clone(), SecurityLevel::Public);
+                self.env.bind(
+                    name.clone(),
+                    placeholder,
+                    bind_ty.clone(),
+                    SecurityLevel::Public,
+                );
 
                 // Lower the binding (lambda). This creates a closure that captures
                 // placeholder as the self-reference.
@@ -971,9 +996,10 @@ impl Lower {
                 // Check if the last emitted instruction for bind_var was a
                 // Closure that includes placeholder in its captures.
                 let needs_fix = {
-                    let func = self.program.functions.get(
-                        &self.current_func.unwrap_or(FuncId(0))
-                    );
+                    let func = self
+                        .program
+                        .functions
+                        .get(&self.current_func.unwrap_or(FuncId(0)));
                     func.and_then(|f| {
                         let block = f.blocks.iter().find(|b| b.id == self.current_block)?;
                         // Find the Closure instruction that produced bind_var
@@ -1005,7 +1031,8 @@ impl Lower {
                 }
 
                 // For the body, use bind_var as the resolved name
-                self.env.bind(name.clone(), bind_var, bind_ty, SecurityLevel::Public);
+                self.env
+                    .bind(name.clone(), bind_var, bind_ty, SecurityLevel::Public);
                 let result = self.lower_expr(body)?;
                 self.env = saved_env;
 
@@ -1090,7 +1117,12 @@ impl Lower {
                 // Lower handler
                 self.current_block = handler_block;
                 let handler_param = self.fresh_var();
-                self.env.bind(handler_var.clone(), handler_param, Ty::Unit, SecurityLevel::Public);
+                self.env.bind(
+                    handler_var.clone(),
+                    handler_param,
+                    Ty::Unit,
+                    SecurityLevel::Public,
+                );
                 let _handler_result = self.lower_expr(handler)?;
 
                 if let Some(func) = self.current_func {
@@ -1231,7 +1263,10 @@ impl Lower {
                     arg_vars.push(self.lower_expr(arg)?);
                 }
                 Ok(self.emit(
-                    Instruction::FFICall { name: name.clone(), args: arg_vars },
+                    Instruction::FFICall {
+                        name: name.clone(),
+                        args: arg_vars,
+                    },
                     ret_ty.clone(),
                     SecurityLevel::Public,
                     Effect::System,
@@ -1305,10 +1340,7 @@ mod tests {
     #[test]
     fn test_lower_pair() {
         let mut lower = Lower::new();
-        let pair = Expr::Pair(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Int(2)),
-        );
+        let pair = Expr::Pair(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)));
         let prog = lower.compile(&pair).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         // Should have 3 instructions: const 1, const 2, pair
@@ -1318,10 +1350,7 @@ mod tests {
     #[test]
     fn test_lower_fst() {
         let mut lower = Lower::new();
-        let pair = Expr::Pair(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Int(2)),
-        );
+        let pair = Expr::Pair(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)));
         let fst = Expr::Fst(Box::new(pair));
         let prog = lower.compile(&fst).unwrap();
         assert!(prog.function(FuncId::MAIN).is_some());
@@ -1373,9 +1402,10 @@ mod tests {
         let prog = lower.compile(&classify).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         // Check that classify instruction was emitted
-        let has_classify = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Classify(_))
-        });
+        let has_classify = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Classify(_)));
         assert!(has_classify);
     }
 
@@ -1388,9 +1418,10 @@ mod tests {
         let mut lower = Lower::new();
         let prog = lower.compile(&Expr::Bool(false)).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_false = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Const(Constant::Bool(false)))
-        });
+        let has_false = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Const(Constant::Bool(false))));
         assert!(has_false);
     }
 
@@ -1399,9 +1430,10 @@ mod tests {
         let mut lower = Lower::new();
         let prog = lower.compile(&Expr::String("hello".to_string())).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_string = main.blocks[0].instrs.iter().any(|i| {
-            matches!(&i.instr, Instruction::Const(Constant::String(s)) if s == "hello")
-        });
+        let has_string = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(&i.instr, Instruction::Const(Constant::String(s)) if s == "hello"));
         assert!(has_string);
     }
 
@@ -1412,16 +1444,14 @@ mod tests {
     #[test]
     fn test_lower_snd() {
         let mut lower = Lower::new();
-        let pair = Expr::Pair(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Int(2)),
-        );
+        let pair = Expr::Pair(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)));
         let snd = Expr::Snd(Box::new(pair));
         let prog = lower.compile(&snd).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_snd = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Snd(_))
-        });
+        let has_snd = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Snd(_)));
         assert!(has_snd);
     }
 
@@ -1431,9 +1461,10 @@ mod tests {
         let inl = Expr::Inl(Box::new(Expr::Int(42)), Ty::Bool);
         let prog = lower.compile(&inl).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_inl = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Inl(_))
-        });
+        let has_inl = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Inl(_)));
         assert!(has_inl);
     }
 
@@ -1443,9 +1474,10 @@ mod tests {
         let inr = Expr::Inr(Box::new(Expr::Bool(true)), Ty::Int);
         let prog = lower.compile(&inr).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_inr = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Inr(_))
-        });
+        let has_inr = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Inr(_)));
         assert!(has_inr);
     }
 
@@ -1478,9 +1510,10 @@ mod tests {
         let declassify = Expr::Declassify(classified, proof);
         let prog = lower.compile(&declassify).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_declassify = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Declassify(_, _))
-        });
+        let has_declassify = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Declassify(_, _)));
         assert!(has_declassify);
     }
 
@@ -1490,9 +1523,10 @@ mod tests {
         let prove = Expr::Prove(Box::new(Expr::Bool(true)));
         let prog = lower.compile(&prove).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_prove = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Prove(_))
-        });
+        let has_prove = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Prove(_)));
         assert!(has_prove);
     }
 
@@ -1503,9 +1537,10 @@ mod tests {
         let require = Expr::Require(Effect::Read, Box::new(Expr::Unit));
         let prog = lower.compile(&require).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_require = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::RequireCap(_))
-        });
+        let has_require = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::RequireCap(_)));
         assert!(has_require);
     }
 
@@ -1516,15 +1551,13 @@ mod tests {
     #[test]
     fn test_lower_grant() {
         let mut lower = Lower::new();
-        let grant = Expr::Grant(
-            Effect::Read,
-            Box::new(Expr::Unit),
-        );
+        let grant = Expr::Grant(Effect::Read, Box::new(Expr::Unit));
         let prog = lower.compile(&grant).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_grant = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::GrantCap(Effect::Read))
-        });
+        let has_grant = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::GrantCap(Effect::Read)));
         assert!(has_grant);
     }
 
@@ -1538,21 +1571,26 @@ mod tests {
         let ref_expr = Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public);
         let prog = lower.compile(&ref_expr).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_alloc = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Alloc { .. })
-        });
+        let has_alloc = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Alloc { .. }));
         assert!(has_alloc);
     }
 
     #[test]
     fn test_lower_deref() {
         let mut lower = Lower::new();
-        let deref = Expr::Deref(Box::new(Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public)));
+        let deref = Expr::Deref(Box::new(Expr::Ref(
+            Box::new(Expr::Int(42)),
+            SecurityLevel::Public,
+        )));
         let prog = lower.compile(&deref).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
-        let has_load = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::Load(_))
-        });
+        let has_load = main.blocks[0]
+            .instrs
+            .iter()
+            .any(|i| matches!(i.instr, Instruction::Load(_)));
         assert!(has_load);
     }
 
@@ -1580,19 +1618,17 @@ mod tests {
     fn test_lower_nested_pair() {
         let mut lower = Lower::new();
         let nested = Expr::Pair(
-            Box::new(Expr::Pair(
-                Box::new(Expr::Int(1)),
-                Box::new(Expr::Int(2)),
-            )),
+            Box::new(Expr::Pair(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))),
             Box::new(Expr::Int(3)),
         );
         let prog = lower.compile(&nested).unwrap();
         let main = prog.function(FuncId::MAIN).unwrap();
         // Should have multiple pair instructions
-        let pair_count = main.blocks[0].instrs.iter()
+        let pair_count = main.blocks[0]
+            .instrs
+            .iter()
             .filter(|i| matches!(i.instr, Instruction::Pair(_, _)))
             .count();
         assert!(pair_count >= 2);
     }
-
 }

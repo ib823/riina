@@ -54,9 +54,10 @@ impl Workspace {
             let member_dir = root.join(member_path);
             let member_manifest_path = member_dir.join("riina.toml");
             if !member_manifest_path.is_file() {
-                return Err(PkgError::Workspace(
-                    format!("member '{}' has no riina.toml", member_path)
-                ));
+                return Err(PkgError::Workspace(format!(
+                    "member '{}' has no riina.toml",
+                    member_path
+                )));
             }
             let manifest = Manifest::from_file(&member_manifest_path)?;
             members.push(WorkspaceMember {
@@ -98,7 +99,8 @@ impl Workspace {
 
     /// List member names.
     pub fn member_names(&self) -> Vec<String> {
-        self.members.iter()
+        self.members
+            .iter()
             .map(|m| m.manifest.package.name.clone())
             .collect()
     }
@@ -113,7 +115,11 @@ mod tests {
         let tmp = std::env::temp_dir().join("riina-ws-test-none");
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(&tmp).unwrap();
-        std::fs::write(tmp.join("riina.toml"), "[pakej]\nnama = \"x\"\nversi = \"0.1.0\"\n").unwrap();
+        std::fs::write(
+            tmp.join("riina.toml"),
+            "[pakej]\nnama = \"x\"\nversi = \"0.1.0\"\n",
+        )
+        .unwrap();
         let ws = Workspace::discover(&tmp).unwrap();
         assert!(ws.is_none());
         let _ = std::fs::remove_dir_all(&tmp);
@@ -125,20 +131,28 @@ mod tests {
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join("pkg-a")).unwrap();
 
-        std::fs::write(tmp.join("riina.toml"), r#"
+        std::fs::write(
+            tmp.join("riina.toml"),
+            r#"
 [pakej]
 nama = "root"
 versi = "0.1.0"
 
 [workspace]
 members = ["pkg-a"]
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
-        std::fs::write(tmp.join("pkg-a").join("riina.toml"), r#"
+        std::fs::write(
+            tmp.join("pkg-a").join("riina.toml"),
+            r#"
 [pakej]
 nama = "pkg-a"
 versi = "0.2.0"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let ws = Workspace::load(&tmp).unwrap().unwrap();
         assert_eq!(ws.members.len(), 1);

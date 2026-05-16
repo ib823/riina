@@ -7,16 +7,16 @@
 //!
 //! Bilingual names: Bahasa Melayu and English.
 
-pub(crate) mod teks;
-pub(crate) mod senarai;
-pub(crate) mod peta;
-pub(crate) mod set;
-pub(crate) mod matematik;
-pub(crate) mod penukaran;
-pub(crate) mod ujian;
-pub(crate) mod masa;
 pub(crate) mod fail;
 pub(crate) mod json;
+pub(crate) mod masa;
+pub(crate) mod matematik;
+pub(crate) mod penukaran;
+pub(crate) mod peta;
+pub(crate) mod senarai;
+pub(crate) mod set;
+pub(crate) mod teks;
+pub(crate) mod ujian;
 
 use crate::value::{Env, Value};
 use crate::{Error, Result};
@@ -55,24 +55,51 @@ pub fn register_builtins(env: &Env) -> Env {
     e = e.extend("println".to_string(), Value::Builtin("cetakln".to_string()));
 
     // String operations (existing)
-    e = e.extend("gabung_teks".to_string(), Value::Builtin("gabung_teks".to_string()));
-    e = e.extend("concat".to_string(), Value::Builtin("gabung_teks".to_string()));
+    e = e.extend(
+        "gabung_teks".to_string(),
+        Value::Builtin("gabung_teks".to_string()),
+    );
+    e = e.extend(
+        "concat".to_string(),
+        Value::Builtin("gabung_teks".to_string()),
+    );
     e = e.extend("panjang".to_string(), Value::Builtin("panjang".to_string()));
     e = e.extend("length".to_string(), Value::Builtin("panjang".to_string()));
 
     // Conversion (existing, moved to penukaran)
     e = e.extend("ke_teks".to_string(), Value::Builtin("ke_teks".to_string()));
-    e = e.extend("to_string".to_string(), Value::Builtin("ke_teks".to_string()));
-    e = e.extend("ke_nombor".to_string(), Value::Builtin("ke_nombor".to_string()));
-    e = e.extend("parse_int".to_string(), Value::Builtin("ke_nombor".to_string()));
+    e = e.extend(
+        "to_string".to_string(),
+        Value::Builtin("ke_teks".to_string()),
+    );
+    e = e.extend(
+        "ke_nombor".to_string(),
+        Value::Builtin("ke_nombor".to_string()),
+    );
+    e = e.extend(
+        "parse_int".to_string(),
+        Value::Builtin("ke_nombor".to_string()),
+    );
 
     // New conversion builtins
     e = e.extend("ke_bool".to_string(), Value::Builtin("ke_bool".to_string()));
     e = e.extend("to_bool".to_string(), Value::Builtin("ke_bool".to_string()));
-    e = e.extend("bool_ke_nombor".to_string(), Value::Builtin("bool_ke_nombor".to_string()));
-    e = e.extend("bool_to_int".to_string(), Value::Builtin("bool_ke_nombor".to_string()));
-    e = e.extend("nombor_ke_teks".to_string(), Value::Builtin("nombor_ke_teks".to_string()));
-    e = e.extend("int_to_string".to_string(), Value::Builtin("nombor_ke_teks".to_string()));
+    e = e.extend(
+        "bool_ke_nombor".to_string(),
+        Value::Builtin("bool_ke_nombor".to_string()),
+    );
+    e = e.extend(
+        "bool_to_int".to_string(),
+        Value::Builtin("bool_ke_nombor".to_string()),
+    );
+    e = e.extend(
+        "nombor_ke_teks".to_string(),
+        Value::Builtin("nombor_ke_teks".to_string()),
+    );
+    e = e.extend(
+        "int_to_string".to_string(),
+        Value::Builtin("nombor_ke_teks".to_string()),
+    );
 
     // String builtins (teks)
     for (bm, en, canonical) in teks::BUILTINS {
@@ -263,7 +290,12 @@ pub(crate) fn value_to_string(v: &Value) -> Result<String> {
 pub fn is_higher_order_builtin(name: &str) -> bool {
     matches!(
         name,
-        "senarai_peta" | "list_map" | "senarai_tapis" | "list_filter" | "senarai_lipat" | "list_fold"
+        "senarai_peta"
+            | "list_map"
+            | "senarai_tapis"
+            | "list_filter"
+            | "senarai_lipat"
+            | "list_fold"
     )
 }
 

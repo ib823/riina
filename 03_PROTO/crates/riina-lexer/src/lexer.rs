@@ -2,8 +2,8 @@
 
 //! Lexer Implementation
 
-use crate::token::{Token, TokenKind, Span};
 use crate::error::LexError;
+use crate::token::{Span, Token, TokenKind};
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -109,7 +109,7 @@ impl<'a> Lexer<'a> {
                                         depth -= 1;
                                     }
                                 }
-                                Some(_) => {} // Ignore other characters
+                                Some(_) => {}  // Ignore other characters
                                 None => break, // Unterminated, handled by next_token logic?
                             }
                         }
@@ -152,7 +152,7 @@ impl<'a> Lexer<'a> {
             '@' => TokenKind::At,
             '#' => TokenKind::Hash,
             '$' => TokenKind::Dollar,
-            
+
             '.' => {
                 if let Some('.') = self.peek() {
                     self.advance();
@@ -166,7 +166,7 @@ impl<'a> Lexer<'a> {
                     TokenKind::Dot
                 }
             }
-            
+
             ':' => {
                 if let Some(':') = self.peek() {
                     self.advance();
@@ -179,47 +179,145 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            '+' => if let Some('=') = self.peek() { self.advance(); TokenKind::PlusEq } else { TokenKind::Plus },
-            '-' => if let Some('=') = self.peek() { self.advance(); TokenKind::MinusEq }
-                   else if let Some('>') = self.peek() { self.advance(); TokenKind::Arrow }
-                   else { TokenKind::Minus },
-            '*' => if let Some('=') = self.peek() { self.advance(); TokenKind::StarEq } else { TokenKind::Star },
-            '/' => if let Some('=') = self.peek() { self.advance(); TokenKind::SlashEq } else { TokenKind::Slash },
-            '%' => if let Some('=') = self.peek() { self.advance(); TokenKind::PercentEq } else { TokenKind::Percent },
-            '^' => if let Some('=') = self.peek() { self.advance(); TokenKind::CaretEq } else { TokenKind::Caret },
-            
-            '&' => if let Some('=') = self.peek() { self.advance(); TokenKind::AndEq }
-                   else if let Some('&') = self.peek() { self.advance(); TokenKind::AndAnd }
-                   else { TokenKind::And },
-            
-            '|' => if let Some('|') = self.peek() { self.advance(); TokenKind::OrOr }
-                   else if let Some('>') = self.peek() { self.advance(); TokenKind::Pipe }
-                   else if let Some('=') = self.peek() { self.advance(); TokenKind::OrEq }
-                   else { TokenKind::Or },
+            '+' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::PlusEq
+                } else {
+                    TokenKind::Plus
+                }
+            }
+            '-' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::MinusEq
+                } else if let Some('>') = self.peek() {
+                    self.advance();
+                    TokenKind::Arrow
+                } else {
+                    TokenKind::Minus
+                }
+            }
+            '*' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::StarEq
+                } else {
+                    TokenKind::Star
+                }
+            }
+            '/' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::SlashEq
+                } else {
+                    TokenKind::Slash
+                }
+            }
+            '%' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::PercentEq
+                } else {
+                    TokenKind::Percent
+                }
+            }
+            '^' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::CaretEq
+                } else {
+                    TokenKind::Caret
+                }
+            }
 
-            '!' => if let Some('=') = self.peek() { self.advance(); TokenKind::Ne } else { TokenKind::Not },
-            '=' => if let Some('=') = self.peek() { self.advance(); TokenKind::EqEq }
-                   else if let Some('>') = self.peek() { self.advance(); TokenKind::FatArrow }
-                   else { TokenKind::Eq },
-            
-            '<' => if let Some('=') = self.peek() { self.advance(); TokenKind::Le }
-                   else if let Some('<') = self.peek() { 
-                       self.advance(); 
-                       if let Some('=') = self.peek() { self.advance(); TokenKind::ShlEq } else { TokenKind::Shl }
-                   } else { TokenKind::Lt },
-            
-            '>' => if let Some('=') = self.peek() { self.advance(); TokenKind::Ge }
-                   else if let Some('>') = self.peek() { 
-                       self.advance(); 
-                       if let Some('=') = self.peek() { self.advance(); TokenKind::ShrEq } else { TokenKind::Shr }
-                   } else { TokenKind::Gt },
+            '&' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::AndEq
+                } else if let Some('&') = self.peek() {
+                    self.advance();
+                    TokenKind::AndAnd
+                } else {
+                    TokenKind::And
+                }
+            }
+
+            '|' => {
+                if let Some('|') = self.peek() {
+                    self.advance();
+                    TokenKind::OrOr
+                } else if let Some('>') = self.peek() {
+                    self.advance();
+                    TokenKind::Pipe
+                } else if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::OrEq
+                } else {
+                    TokenKind::Or
+                }
+            }
+
+            '!' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::Ne
+                } else {
+                    TokenKind::Not
+                }
+            }
+            '=' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::EqEq
+                } else if let Some('>') = self.peek() {
+                    self.advance();
+                    TokenKind::FatArrow
+                } else {
+                    TokenKind::Eq
+                }
+            }
+
+            '<' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::Le
+                } else if let Some('<') = self.peek() {
+                    self.advance();
+                    if let Some('=') = self.peek() {
+                        self.advance();
+                        TokenKind::ShlEq
+                    } else {
+                        TokenKind::Shl
+                    }
+                } else {
+                    TokenKind::Lt
+                }
+            }
+
+            '>' => {
+                if let Some('=') = self.peek() {
+                    self.advance();
+                    TokenKind::Ge
+                } else if let Some('>') = self.peek() {
+                    self.advance();
+                    if let Some('=') = self.peek() {
+                        self.advance();
+                        TokenKind::ShrEq
+                    } else {
+                        TokenKind::Shr
+                    }
+                } else {
+                    TokenKind::Gt
+                }
+            }
 
             '"' => self.read_string(start)?,
             '\'' => self.read_char_or_lifetime(start)?,
-            
+
             _ if c.is_ascii_digit() => self.read_number(c),
             _ if is_ident_start(c) => self.read_identifier(c, start),
-            
+
             _ => return Err(LexError::UnexpectedChar(c, start)),
         };
 
@@ -254,7 +352,7 @@ impl<'a> Lexer<'a> {
     fn read_char_or_lifetime(&mut self, start: usize) -> Result<TokenKind, LexError> {
         // If it's a lifetime: 'ident
         // If it's a char: 'c' or '\n'
-        
+
         // Peek next
         let c1 = self.peek();
         match c1 {
@@ -330,7 +428,8 @@ impl<'a> Lexer<'a> {
             let mut lookahead = self.input.clone();
             lookahead.next(); // consume .
             if let Some(c) = lookahead.next() {
-                if c != '.' && !is_ident_start(c) { // 1.e5, 1.2
+                if c != '.' && !is_ident_start(c) {
+                    // 1.e5, 1.2
                     self.advance();
                     s.push('.');
                     s.push_str(&self.consume_while(|ch| ch.is_ascii_digit() || ch == '_'));

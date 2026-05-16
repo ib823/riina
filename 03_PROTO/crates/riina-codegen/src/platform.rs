@@ -134,15 +134,9 @@ pub fn platform_impl(target: Target, cap: PlatformCapability) -> PlatformImpl {
         }
 
         // === iOS ===
-        (Target::IosArm64, PlatformCapability::FileIO) => {
-            PlatformImpl::IosBridge("FileManager")
-        }
-        (Target::IosArm64, PlatformCapability::Network) => {
-            PlatformImpl::IosBridge("URLSession")
-        }
-        (Target::IosArm64, PlatformCapability::Console) => {
-            PlatformImpl::IosBridge("os_log")
-        }
+        (Target::IosArm64, PlatformCapability::FileIO) => PlatformImpl::IosBridge("FileManager"),
+        (Target::IosArm64, PlatformCapability::Network) => PlatformImpl::IosBridge("URLSession"),
+        (Target::IosArm64, PlatformCapability::Console) => PlatformImpl::IosBridge("os_log"),
         (Target::IosArm64, PlatformCapability::Crypto) => {
             PlatformImpl::IosBridge("Security.framework / CryptoKit")
         }
@@ -153,9 +147,7 @@ pub fn platform_impl(target: Target, cap: PlatformCapability) -> PlatformImpl {
         (Target::IosArm64, PlatformCapability::Threading) => {
             PlatformImpl::IosBridge("DispatchQueue")
         }
-        (Target::IosArm64, PlatformCapability::Sensors) => {
-            PlatformImpl::IosBridge("CoreMotion")
-        }
+        (Target::IosArm64, PlatformCapability::Sensors) => PlatformImpl::IosBridge("CoreMotion"),
         (Target::IosArm64, PlatformCapability::Biometrics) => {
             PlatformImpl::IosBridge("LocalAuthentication / LAContext")
         }
@@ -174,10 +166,20 @@ pub fn is_available(target: Target, cap: PlatformCapability) -> bool {
 pub fn available_capabilities(target: Target) -> Vec<PlatformCapability> {
     use PlatformCapability::*;
     let all = [
-        FileIO, Network, Console, Crypto, Time, Process,
-        Threading, Sensors, Biometrics, PushNotifications,
+        FileIO,
+        Network,
+        Console,
+        Crypto,
+        Time,
+        Process,
+        Threading,
+        Sensors,
+        Biometrics,
+        PushNotifications,
     ];
-    all.into_iter().filter(|cap| is_available(target, *cap)).collect()
+    all.into_iter()
+        .filter(|cap| is_available(target, *cap))
+        .collect()
 }
 
 /// C preprocessor conditional for platform-specific code emission.
@@ -218,12 +220,18 @@ mod tests {
 
     #[test]
     fn test_android_has_sensors() {
-        assert!(is_available(Target::AndroidArm64, PlatformCapability::Sensors));
+        assert!(is_available(
+            Target::AndroidArm64,
+            PlatformCapability::Sensors
+        ));
     }
 
     #[test]
     fn test_ios_has_biometrics() {
-        assert!(is_available(Target::IosArm64, PlatformCapability::Biometrics));
+        assert!(is_available(
+            Target::IosArm64,
+            PlatformCapability::Biometrics
+        ));
     }
 
     #[test]

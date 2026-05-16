@@ -37,7 +37,7 @@
 //!   | IRInr : var_id -> ir_instr.
 //! ```
 
-use riina_types::{Effect, SecurityLevel, Ty, Ident};
+use riina_types::{Effect, Ident, SecurityLevel, Ty};
 use std::collections::HashMap;
 
 /// Variable identifier in IR (SSA form)
@@ -227,7 +227,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // CONSTANTS (correspond to Expr::Unit, Expr::Bool, Expr::Int, Expr::String)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Load a constant value
     ///
     /// ```text
@@ -238,7 +237,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // VARIABLES (correspond to Expr::Var)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Copy a value from another variable
     ///
     /// ```text
@@ -249,7 +247,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // ARITHMETIC (binary and unary operations)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Binary operation
     ///
     /// ```text
@@ -267,7 +264,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // FUNCTIONS (correspond to Expr::Lam, Expr::App)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Create a closure
     ///
     /// Captures the current environment and creates a callable value.
@@ -275,10 +271,7 @@ pub enum Instruction {
     /// ```text
     /// v = closure func_id [capture1, capture2, ...]
     /// ```
-    Closure {
-        func: FuncId,
-        captures: Vec<VarId>,
-    },
+    Closure { func: FuncId, captures: Vec<VarId> },
 
     /// Fix a recursive closure: patches capture at `index` to point to
     /// the closure itself, enabling self-reference.
@@ -308,7 +301,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // PRODUCTS (correspond to Expr::Pair, Expr::Fst, Expr::Snd)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Construct a pair
     ///
     /// ```text
@@ -333,7 +325,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // SUMS (correspond to Expr::Inl, Expr::Inr, Expr::Case)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Inject left
     ///
     /// ```text
@@ -372,16 +363,12 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // REFERENCES (correspond to Expr::Ref, Expr::Deref, Expr::Assign)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Allocate a reference
     ///
     /// ```text
     /// v = ref init_val @ security_level
     /// ```
-    Alloc {
-        init: VarId,
-        level: SecurityLevel,
-    },
+    Alloc { init: VarId, level: SecurityLevel },
 
     /// Read from a reference
     ///
@@ -402,7 +389,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // SECURITY (correspond to Expr::Classify, Expr::Declassify, Expr::Prove)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Classify a value as secret
     ///
     /// ```text
@@ -427,21 +413,16 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // EFFECTS (correspond to Expr::Perform, Expr::Handle)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Perform an effect
     ///
     /// ```text
     /// v = perform effect payload
     /// ```
-    Perform {
-        effect: Effect,
-        payload: VarId,
-    },
+    Perform { effect: Effect, payload: VarId },
 
     // ═══════════════════════════════════════════════════════════════════
     // CAPABILITIES (correspond to Expr::Require, Expr::Grant)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Check capability is held
     ///
     /// ```text
@@ -459,7 +440,6 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // PHI NODES (SSA join points)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Phi node for SSA merge
     ///
     /// ```text
@@ -470,21 +450,16 @@ pub enum Instruction {
     // ═══════════════════════════════════════════════════════════════════
     // FFI (correspond to Expr::FFICall)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Foreign function call
     ///
     /// ```text
     /// v = ffi_call "name" [arg1, arg2, ...]
     /// ```
-    FFICall {
-        name: String,
-        args: Vec<VarId>,
-    },
+    FFICall { name: String, args: Vec<VarId> },
 
     // ═══════════════════════════════════════════════════════════════════
     // JALINAN (actors, choreography, CRDTs, content-addressed)
     // ═══════════════════════════════════════════════════════════════════
-
     /// Declare an actor type with initial state and message handler
     ///
     /// ```text
@@ -501,10 +476,7 @@ pub enum Instruction {
     /// ```text
     /// v = choreography_decl "Name" ["RoleA", "RoleB"]
     /// ```
-    ChoreographyDecl {
-        name: String,
-        roles: Vec<String>,
-    },
+    ChoreographyDecl { name: String, roles: Vec<String> },
 
     /// Spawn an actor instance
     ///
@@ -563,7 +535,10 @@ impl std::fmt::Display for Instruction {
                 }
                 Ok(())
             }
-            Self::FixClosure { closure, capture_index } => write!(f, "fix_closure {closure} [{capture_index}]"),
+            Self::FixClosure {
+                closure,
+                capture_index,
+            } => write!(f, "fix_closure {closure} [{capture_index}]"),
             Self::Call(func, arg) => write!(f, "call {func} {arg}"),
             Self::BuiltinCall { name, arg } => write!(f, "builtin_call \"{name}\" {arg}"),
             Self::Pair(l, r) => write!(f, "pair {l} {r}"),
@@ -607,7 +582,11 @@ impl std::fmt::Display for Instruction {
                 }
                 Ok(())
             }
-            Self::ActorDecl { name, init_state, handler } => {
+            Self::ActorDecl {
+                name,
+                init_state,
+                handler,
+            } => {
                 write!(f, "actor_decl \"{name}\" {init_state} {handler}")
             }
             Self::ChoreographyDecl { name, roles } => {
@@ -705,11 +684,23 @@ impl std::fmt::Display for Terminator {
         match self {
             Self::Return(v) => write!(f, "return {v}"),
             Self::Branch(bb) => write!(f, "br {bb}"),
-            Self::CondBranch { cond, then_block, else_block } => {
+            Self::CondBranch {
+                cond,
+                then_block,
+                else_block,
+            } => {
                 write!(f, "br_if {cond} {then_block} {else_block}")
             }
-            Self::Handle { body_block, handler_block, resume_var, result_block } => {
-                write!(f, "handle {body_block} {handler_block} {resume_var} -> {result_block}")
+            Self::Handle {
+                body_block,
+                handler_block,
+                resume_var,
+                result_block,
+            } => {
+                write!(
+                    f,
+                    "handle {body_block} {handler_block} {resume_var} -> {result_block}"
+                )
             }
             Self::Unreachable => write!(f, "unreachable"),
         }
@@ -974,7 +965,10 @@ mod tests {
         assert_eq!(Constant::Bool(false).to_string(), "false");
         assert_eq!(Constant::Int(42).to_string(), "42");
         assert_eq!(Constant::Int(100).to_string(), "100");
-        assert_eq!(Constant::String("hello".to_string()).to_string(), "\"hello\"");
+        assert_eq!(
+            Constant::String("hello".to_string()).to_string(),
+            "\"hello\""
+        );
     }
 
     #[test]
@@ -1055,22 +1049,10 @@ mod tests {
             Instruction::Pair(VarId::new(0), VarId::new(1)).to_string(),
             "pair v0 v1"
         );
-        assert_eq!(
-            Instruction::Fst(VarId::new(0)).to_string(),
-            "fst v0"
-        );
-        assert_eq!(
-            Instruction::Snd(VarId::new(0)).to_string(),
-            "snd v0"
-        );
-        assert_eq!(
-            Instruction::Inl(VarId::new(0)).to_string(),
-            "inl v0"
-        );
-        assert_eq!(
-            Instruction::Inr(VarId::new(0)).to_string(),
-            "inr v0"
-        );
+        assert_eq!(Instruction::Fst(VarId::new(0)).to_string(), "fst v0");
+        assert_eq!(Instruction::Snd(VarId::new(0)).to_string(), "snd v0");
+        assert_eq!(Instruction::Inl(VarId::new(0)).to_string(), "inl v0");
+        assert_eq!(Instruction::Inr(VarId::new(0)).to_string(), "inr v0");
     }
 
     #[test]
@@ -1091,10 +1073,7 @@ mod tests {
             Instruction::Declassify(VarId::new(0), VarId::new(1)).to_string(),
             "declassify v0 v1"
         );
-        assert_eq!(
-            Instruction::Prove(VarId::new(0)).to_string(),
-            "prove v0"
-        );
+        assert_eq!(Instruction::Prove(VarId::new(0)).to_string(), "prove v0");
         assert_eq!(
             Instruction::RequireCap(Effect::Read).to_string(),
             "require_cap Read"
@@ -1108,7 +1087,11 @@ mod tests {
             "grant_cap Read"
         );
         assert_eq!(
-            Instruction::Perform { effect: Effect::Write, payload: VarId::new(0) }.to_string(),
+            Instruction::Perform {
+                effect: Effect::Write,
+                payload: VarId::new(0)
+            }
+            .to_string(),
             "perform Write v0"
         );
     }
@@ -1116,13 +1099,14 @@ mod tests {
     #[test]
     fn test_instruction_display_memory() {
         assert_eq!(
-            Instruction::Alloc { init: VarId::new(0), level: SecurityLevel::Public }.to_string(),
+            Instruction::Alloc {
+                init: VarId::new(0),
+                level: SecurityLevel::Public
+            }
+            .to_string(),
             "alloc v0 @ Public"
         );
-        assert_eq!(
-            Instruction::Load(VarId::new(0)).to_string(),
-            "load v0"
-        );
+        assert_eq!(Instruction::Load(VarId::new(0)).to_string(), "load v0");
         assert_eq!(
             Instruction::Store(VarId::new(0), VarId::new(1)).to_string(),
             "store v0 v1"
@@ -1155,14 +1139,8 @@ mod tests {
 
     #[test]
     fn test_terminator_display() {
-        assert_eq!(
-            Terminator::Return(VarId::new(0)).to_string(),
-            "return v0"
-        );
-        assert_eq!(
-            Terminator::Branch(BlockId::new(1)).to_string(),
-            "br bb1"
-        );
+        assert_eq!(Terminator::Return(VarId::new(0)).to_string(), "return v0");
+        assert_eq!(Terminator::Branch(BlockId::new(1)).to_string(), "br bb1");
     }
 
     #[test]

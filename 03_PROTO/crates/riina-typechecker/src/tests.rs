@@ -2,23 +2,35 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::{Context, type_check, TypeError};
-    use riina_types::{BinOp, Expr, Ty, Effect, SecurityLevel};
+    use crate::{type_check, Context, TypeError};
+    use riina_types::{BinOp, Effect, Expr, SecurityLevel, Ty};
 
     // ── Literals ──
 
     #[test]
     fn test_literals() {
         let ctx = Context::new();
-        assert_eq!(type_check(&ctx, &Expr::Int(42)).unwrap(), (Ty::Int, Effect::Pure));
-        assert_eq!(type_check(&ctx, &Expr::Bool(true)).unwrap(), (Ty::Bool, Effect::Pure));
-        assert_eq!(type_check(&ctx, &Expr::Unit).unwrap(), (Ty::Unit, Effect::Pure));
+        assert_eq!(
+            type_check(&ctx, &Expr::Int(42)).unwrap(),
+            (Ty::Int, Effect::Pure)
+        );
+        assert_eq!(
+            type_check(&ctx, &Expr::Bool(true)).unwrap(),
+            (Ty::Bool, Effect::Pure)
+        );
+        assert_eq!(
+            type_check(&ctx, &Expr::Unit).unwrap(),
+            (Ty::Unit, Effect::Pure)
+        );
     }
 
     #[test]
     fn test_string_literal() {
         let ctx = Context::new();
-        assert_eq!(type_check(&ctx, &Expr::String("hello".into())).unwrap(), (Ty::String, Effect::Pure));
+        assert_eq!(
+            type_check(&ctx, &Expr::String("hello".into())).unwrap(),
+            (Ty::String, Effect::Pure)
+        );
     }
 
     // ── Variables ──
@@ -26,7 +38,10 @@ mod tests {
     #[test]
     fn test_var_found() {
         let ctx = Context::new().extend("x".into(), Ty::Int);
-        assert_eq!(type_check(&ctx, &Expr::Var("x".into())).unwrap(), (Ty::Int, Effect::Pure));
+        assert_eq!(
+            type_check(&ctx, &Expr::Var("x".into())).unwrap(),
+            (Ty::Int, Effect::Pure)
+        );
     }
 
     #[test]
@@ -44,7 +59,11 @@ mod tests {
     fn test_lam_app() {
         let ctx = Context::new();
         // fn(x: Int) x
-        let id_int = Expr::Lam("x".to_string(), Ty::Int, Box::new(Expr::Var("x".to_string())));
+        let id_int = Expr::Lam(
+            "x".to_string(),
+            Ty::Int,
+            Box::new(Expr::Var("x".to_string())),
+        );
 
         let (ty, _eff) = type_check(&ctx, &id_int).unwrap();
         match ty {
@@ -52,7 +71,7 @@ mod tests {
                 assert_eq!(*arg, Ty::Int);
                 assert_eq!(*ret, Ty::Int);
                 assert_eq!(fn_eff, Effect::Pure);
-            },
+            }
             _ => panic!("Expected Fn type"),
         }
 
@@ -67,7 +86,10 @@ mod tests {
         let f = Expr::Lam("x".into(), Ty::Int, Box::new(Expr::Var("x".into())));
         let app = Expr::App(Box::new(f), Box::new(Expr::Bool(true)));
         match type_check(&ctx, &app) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::Bool }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::Bool,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -77,7 +99,7 @@ mod tests {
         let ctx = Context::new();
         let app = Expr::App(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)));
         match type_check(&ctx, &app) {
-            Err(TypeError::ExpectedFunction(Ty::Int)) => {},
+            Err(TypeError::ExpectedFunction(Ty::Int)) => {}
             other => panic!("Expected ExpectedFunction, got {:?}", other),
         }
     }
@@ -114,7 +136,7 @@ mod tests {
         let ctx = Context::new();
         let fst = Expr::Fst(Box::new(Expr::Int(1)));
         match type_check(&ctx, &fst) {
-            Err(TypeError::ExpectedProduct(Ty::Int)) => {},
+            Err(TypeError::ExpectedProduct(Ty::Int)) => {}
             other => panic!("Expected ExpectedProduct, got {:?}", other),
         }
     }
@@ -124,7 +146,7 @@ mod tests {
         let ctx = Context::new();
         let snd = Expr::Snd(Box::new(Expr::Bool(false)));
         match type_check(&ctx, &snd) {
-            Err(TypeError::ExpectedProduct(Ty::Bool)) => {},
+            Err(TypeError::ExpectedProduct(Ty::Bool)) => {}
             other => panic!("Expected ExpectedProduct, got {:?}", other),
         }
     }
@@ -158,7 +180,10 @@ mod tests {
         // Inject Bool into left (expects Int)
         let inl = Expr::Inl(Box::new(Expr::Bool(true)), sum_ty);
         match type_check(&ctx, &inl) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::Bool }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::Bool,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -170,7 +195,10 @@ mod tests {
         // Inject Int into right (expects Bool)
         let inr = Expr::Inr(Box::new(Expr::Int(1)), sum_ty);
         match type_check(&ctx, &inr) {
-            Err(TypeError::TypeMismatch { expected: Ty::Bool, found: Ty::Int }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Bool,
+                found: Ty::Int,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -180,7 +208,7 @@ mod tests {
         let ctx = Context::new();
         let inl = Expr::Inl(Box::new(Expr::Int(1)), Ty::Int);
         match type_check(&ctx, &inl) {
-            Err(TypeError::ExpectedSum(Ty::Int)) => {},
+            Err(TypeError::ExpectedSum(Ty::Int)) => {}
             other => panic!("Expected ExpectedSum, got {:?}", other),
         }
     }
@@ -193,8 +221,10 @@ mod tests {
         // case scrutinee of inl x => x | inr y => 0
         let case_expr = Expr::Case(
             Box::new(scrutinee),
-            "x".into(), Box::new(Expr::Var("x".into())),
-            "y".into(), Box::new(Expr::Int(0)),
+            "x".into(),
+            Box::new(Expr::Var("x".into())),
+            "y".into(),
+            Box::new(Expr::Int(0)),
         );
         let (ty, eff) = type_check(&ctx, &case_expr).unwrap();
         assert_eq!(ty, Ty::Int);
@@ -209,11 +239,16 @@ mod tests {
         // Branches return different types
         let case_expr = Expr::Case(
             Box::new(scrutinee),
-            "x".into(), Box::new(Expr::Var("x".into())),  // Int
-            "y".into(), Box::new(Expr::Var("y".into())),  // Bool
+            "x".into(),
+            Box::new(Expr::Var("x".into())), // Int
+            "y".into(),
+            Box::new(Expr::Var("y".into())), // Bool
         );
         match type_check(&ctx, &case_expr) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::Bool }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::Bool,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -223,11 +258,13 @@ mod tests {
         let ctx = Context::new();
         let case_expr = Expr::Case(
             Box::new(Expr::Int(1)),
-            "x".into(), Box::new(Expr::Unit),
-            "y".into(), Box::new(Expr::Unit),
+            "x".into(),
+            Box::new(Expr::Unit),
+            "y".into(),
+            Box::new(Expr::Unit),
         );
         match type_check(&ctx, &case_expr) {
-            Err(TypeError::ExpectedSum(Ty::Int)) => {},
+            Err(TypeError::ExpectedSum(Ty::Int)) => {}
             other => panic!("Expected ExpectedSum, got {:?}", other),
         }
     }
@@ -254,7 +291,10 @@ mod tests {
             Box::new(Expr::Int(3)),
         );
         match type_check(&ctx, &if_expr) {
-            Err(TypeError::TypeMismatch { expected: Ty::Bool, found: Ty::Int }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Bool,
+                found: Ty::Int,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -266,13 +306,13 @@ mod tests {
         let if_err = Expr::If(
             Box::new(Expr::Bool(true)),
             Box::new(Expr::Int(1)),
-            Box::new(Expr::String("no".to_string()))
+            Box::new(Expr::String("no".to_string())),
         );
         match type_check(&ctx, &if_err) {
             Err(TypeError::TypeMismatch { expected, found }) => {
                 assert_eq!(expected, Ty::Int);
                 assert_eq!(found, Ty::String);
-            },
+            }
             _ => panic!("Expected TypeMismatch"),
         }
     }
@@ -288,7 +328,10 @@ mod tests {
             Box::new(Expr::Int(42)),
             Box::new(Expr::Var("x".into())),
         );
-        assert_eq!(type_check(&ctx, &let_expr).unwrap(), (Ty::Int, Effect::Pure));
+        assert_eq!(
+            type_check(&ctx, &let_expr).unwrap(),
+            (Ty::Int, Effect::Pure)
+        );
     }
 
     // ── LetRec ──
@@ -301,7 +344,11 @@ mod tests {
         let letrec = Expr::LetRec(
             "f".into(),
             fn_ty.clone(),
-            Box::new(Expr::Lam("x".into(), Ty::Int, Box::new(Expr::Var("x".into())))),
+            Box::new(Expr::Lam(
+                "x".into(),
+                Ty::Int,
+                Box::new(Expr::Var("x".into())),
+            )),
             Box::new(Expr::Var("f".into())),
         );
         let (ty, eff) = type_check(&ctx, &letrec).unwrap();
@@ -316,11 +363,15 @@ mod tests {
         let letrec = Expr::LetRec(
             "f".into(),
             Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Pure),
-            Box::new(Expr::Lam("x".into(), Ty::Int, Box::new(Expr::Var("x".into())))),
+            Box::new(Expr::Lam(
+                "x".into(),
+                Ty::Int,
+                Box::new(Expr::Var("x".into())),
+            )),
             Box::new(Expr::Unit),
         );
         match type_check(&ctx, &letrec) {
-            Err(TypeError::AnnotationMismatch { .. }) => {},
+            Err(TypeError::AnnotationMismatch { .. }) => {}
             other => panic!("Expected AnnotationMismatch, got {:?}", other),
         }
     }
@@ -354,7 +405,7 @@ mod tests {
         let ctx = Context::new();
         let deref = Expr::Deref(Box::new(Expr::Int(1)));
         match type_check(&ctx, &deref) {
-            Err(TypeError::ExpectedRef(Ty::Int)) => {},
+            Err(TypeError::ExpectedRef(Ty::Int)) => {}
             other => panic!("Expected ExpectedRef, got {:?}", other),
         }
     }
@@ -375,7 +426,10 @@ mod tests {
         let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Public);
         let assign = Expr::Assign(Box::new(r), Box::new(Expr::Bool(true)));
         match type_check(&ctx, &assign) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::Bool }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::Bool,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -385,7 +439,7 @@ mod tests {
         let ctx = Context::new();
         let assign = Expr::Assign(Box::new(Expr::Int(1)), Box::new(Expr::Int(2)));
         match type_check(&ctx, &assign) {
-            Err(TypeError::ExpectedRef(Ty::Int)) => {},
+            Err(TypeError::ExpectedRef(Ty::Int)) => {}
             other => panic!("Expected ExpectedRef, got {:?}", other),
         }
     }
@@ -505,14 +559,22 @@ mod tests {
     #[test]
     fn test_binop_add_string() {
         let ctx = Context::new();
-        let add = Expr::BinOp(BinOp::Add, Box::new(Expr::String("a".into())), Box::new(Expr::String("b".into())));
+        let add = Expr::BinOp(
+            BinOp::Add,
+            Box::new(Expr::String("a".into())),
+            Box::new(Expr::String("b".into())),
+        );
         assert_eq!(type_check(&ctx, &add).unwrap(), (Ty::String, Effect::Pure));
     }
 
     #[test]
     fn test_binop_add_mismatch() {
         let ctx = Context::new();
-        let add = Expr::BinOp(BinOp::Add, Box::new(Expr::Int(1)), Box::new(Expr::Bool(true)));
+        let add = Expr::BinOp(
+            BinOp::Add,
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Bool(true)),
+        );
         assert!(type_check(&ctx, &add).is_err());
     }
 
@@ -547,9 +609,16 @@ mod tests {
     #[test]
     fn test_binop_arith_non_int_lhs() {
         let ctx = Context::new();
-        let sub = Expr::BinOp(BinOp::Sub, Box::new(Expr::Bool(true)), Box::new(Expr::Int(1)));
+        let sub = Expr::BinOp(
+            BinOp::Sub,
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Int(1)),
+        );
         match type_check(&ctx, &sub) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::Bool }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::Bool,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -557,9 +626,16 @@ mod tests {
     #[test]
     fn test_binop_arith_non_int_rhs() {
         let ctx = Context::new();
-        let mul = Expr::BinOp(BinOp::Mul, Box::new(Expr::Int(1)), Box::new(Expr::String("x".into())));
+        let mul = Expr::BinOp(
+            BinOp::Mul,
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::String("x".into())),
+        );
         match type_check(&ctx, &mul) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::String }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::String,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -574,21 +650,33 @@ mod tests {
     #[test]
     fn test_binop_ne_bool() {
         let ctx = Context::new();
-        let ne = Expr::BinOp(BinOp::Ne, Box::new(Expr::Bool(true)), Box::new(Expr::Bool(false)));
+        let ne = Expr::BinOp(
+            BinOp::Ne,
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Bool(false)),
+        );
         assert_eq!(type_check(&ctx, &ne).unwrap(), (Ty::Bool, Effect::Pure));
     }
 
     #[test]
     fn test_binop_eq_string() {
         let ctx = Context::new();
-        let eq = Expr::BinOp(BinOp::Eq, Box::new(Expr::String("a".into())), Box::new(Expr::String("b".into())));
+        let eq = Expr::BinOp(
+            BinOp::Eq,
+            Box::new(Expr::String("a".into())),
+            Box::new(Expr::String("b".into())),
+        );
         assert_eq!(type_check(&ctx, &eq).unwrap(), (Ty::Bool, Effect::Pure));
     }
 
     #[test]
     fn test_binop_eq_type_mismatch() {
         let ctx = Context::new();
-        let eq = Expr::BinOp(BinOp::Eq, Box::new(Expr::Int(1)), Box::new(Expr::Bool(true)));
+        let eq = Expr::BinOp(
+            BinOp::Eq,
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Bool(true)),
+        );
         assert!(type_check(&ctx, &eq).is_err());
     }
 
@@ -623,9 +711,16 @@ mod tests {
     #[test]
     fn test_binop_comparison_non_int() {
         let ctx = Context::new();
-        let lt = Expr::BinOp(BinOp::Lt, Box::new(Expr::Bool(true)), Box::new(Expr::Int(1)));
+        let lt = Expr::BinOp(
+            BinOp::Lt,
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Int(1)),
+        );
         match type_check(&ctx, &lt) {
-            Err(TypeError::TypeMismatch { expected: Ty::Int, found: Ty::Bool }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Int,
+                found: Ty::Bool,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -633,23 +728,38 @@ mod tests {
     #[test]
     fn test_binop_and() {
         let ctx = Context::new();
-        let and = Expr::BinOp(BinOp::And, Box::new(Expr::Bool(true)), Box::new(Expr::Bool(false)));
+        let and = Expr::BinOp(
+            BinOp::And,
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Bool(false)),
+        );
         assert_eq!(type_check(&ctx, &and).unwrap(), (Ty::Bool, Effect::Pure));
     }
 
     #[test]
     fn test_binop_or() {
         let ctx = Context::new();
-        let or = Expr::BinOp(BinOp::Or, Box::new(Expr::Bool(false)), Box::new(Expr::Bool(true)));
+        let or = Expr::BinOp(
+            BinOp::Or,
+            Box::new(Expr::Bool(false)),
+            Box::new(Expr::Bool(true)),
+        );
         assert_eq!(type_check(&ctx, &or).unwrap(), (Ty::Bool, Effect::Pure));
     }
 
     #[test]
     fn test_binop_and_non_bool() {
         let ctx = Context::new();
-        let and = Expr::BinOp(BinOp::And, Box::new(Expr::Int(1)), Box::new(Expr::Bool(true)));
+        let and = Expr::BinOp(
+            BinOp::And,
+            Box::new(Expr::Int(1)),
+            Box::new(Expr::Bool(true)),
+        );
         match type_check(&ctx, &and) {
-            Err(TypeError::TypeMismatch { expected: Ty::Bool, found: Ty::Int }) => {},
+            Err(TypeError::TypeMismatch {
+                expected: Ty::Bool,
+                found: Ty::Int,
+            }) => {}
             other => panic!("Expected TypeMismatch, got {:?}", other),
         }
     }
@@ -709,9 +819,14 @@ mod tests {
     fn test_effect_accumulation_in_app() {
         let ctx = Context::new();
         // fn with System effect applied to a Read-effectful arg
-        let f = Expr::Lam("x".into(), Ty::Int, Box::new(
-            Expr::Perform(Effect::System, Box::new(Expr::Var("x".into())))
-        ));
+        let f = Expr::Lam(
+            "x".into(),
+            Ty::Int,
+            Box::new(Expr::Perform(
+                Effect::System,
+                Box::new(Expr::Var("x".into())),
+            )),
+        );
         let arg = Expr::Perform(Effect::Read, Box::new(Expr::Int(1)));
         let app = Expr::App(Box::new(f), Box::new(arg));
         let (_ty, eff) = type_check(&ctx, &app).unwrap();
@@ -753,24 +868,36 @@ mod tests {
 
 #[cfg(test)]
 mod formalized_tests {
-    use crate::{TypingContext, type_check_full, TypeError};
-    use riina_types::{Expr, Ty, Effect, SecurityLevel, StoreTy, Location};
+    use crate::{type_check_full, TypeError, TypingContext};
+    use riina_types::{Effect, Expr, Location, SecurityLevel, StoreTy, Ty};
 
     // ── Basic value typing with new context ──
 
     #[test]
     fn test_full_literals() {
         let mut ctx = TypingContext::new();
-        assert_eq!(type_check_full(&mut ctx, &Expr::Int(42)).unwrap(), (Ty::Int, Effect::Pure));
-        assert_eq!(type_check_full(&mut ctx, &Expr::Bool(true)).unwrap(), (Ty::Bool, Effect::Pure));
-        assert_eq!(type_check_full(&mut ctx, &Expr::Unit).unwrap(), (Ty::Unit, Effect::Pure));
+        assert_eq!(
+            type_check_full(&mut ctx, &Expr::Int(42)).unwrap(),
+            (Ty::Int, Effect::Pure)
+        );
+        assert_eq!(
+            type_check_full(&mut ctx, &Expr::Bool(true)).unwrap(),
+            (Ty::Bool, Effect::Pure)
+        );
+        assert_eq!(
+            type_check_full(&mut ctx, &Expr::Unit).unwrap(),
+            (Ty::Unit, Effect::Pure)
+        );
     }
 
     #[test]
     fn test_full_var() {
         let mut ctx = TypingContext::new();
         ctx = ctx.extend_gamma("x".into(), Ty::Int);
-        assert_eq!(type_check_full(&mut ctx, &Expr::Var("x".into())).unwrap(), (Ty::Int, Effect::Pure));
+        assert_eq!(
+            type_check_full(&mut ctx, &Expr::Var("x".into())).unwrap(),
+            (Ty::Int, Effect::Pure)
+        );
     }
 
     // ── Store Typing (Σ) tests ──
@@ -831,7 +958,11 @@ mod formalized_tests {
         let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Secret);
         let deref = Expr::Deref(Box::new(r));
         match type_check_full(&mut ctx, &deref) {
-            Err(TypeError::SecurityViolation { found, expected, context }) => {
+            Err(TypeError::SecurityViolation {
+                found,
+                expected,
+                context,
+            }) => {
                 assert_eq!(found, SecurityLevel::Secret);
                 assert_eq!(expected, SecurityLevel::Public);
                 assert_eq!(context, "dereference");
@@ -846,7 +977,11 @@ mod formalized_tests {
         let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Secret);
         let assign = Expr::Assign(Box::new(r), Box::new(Expr::Int(2)));
         match type_check_full(&mut ctx, &assign) {
-            Err(TypeError::SecurityViolation { found, expected, context }) => {
+            Err(TypeError::SecurityViolation {
+                found,
+                expected,
+                context,
+            }) => {
                 assert_eq!(found, SecurityLevel::Secret);
                 assert_eq!(expected, SecurityLevel::Public);
                 assert_eq!(context, "assignment");
@@ -935,7 +1070,10 @@ mod formalized_tests {
         match type_check_full(&mut ctx, &declassify) {
             Err(TypeError::InvalidDeclassification { .. }) => {}
             Err(TypeError::TypeMismatch { .. }) => {} // Type mismatch is also acceptable
-            other => panic!("Expected InvalidDeclassification or TypeMismatch, got {:?}", other),
+            other => panic!(
+                "Expected InvalidDeclassification or TypeMismatch, got {:?}",
+                other
+            ),
         }
     }
 
@@ -982,7 +1120,11 @@ mod formalized_tests {
         let r = Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::System);
         let deref = Expr::Deref(Box::new(r));
         match type_check_full(&mut ctx, &deref) {
-            Err(TypeError::SecurityViolation { found, expected, context }) => {
+            Err(TypeError::SecurityViolation {
+                found,
+                expected,
+                context,
+            }) => {
                 assert_eq!(found, SecurityLevel::System);
                 assert_eq!(expected, SecurityLevel::Internal);
                 assert_eq!(context, "dereference");

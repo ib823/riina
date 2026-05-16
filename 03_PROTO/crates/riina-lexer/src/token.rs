@@ -46,7 +46,7 @@ pub enum TokenKind {
 
     // Literals
     LiteralBool(bool),
-    LiteralInt(String, Option<String>), // value, suffix
+    LiteralInt(String, Option<String>),   // value, suffix
     LiteralFloat(String, Option<String>), // value, suffix
     LiteralChar(char),
     LiteralString(String),
@@ -124,14 +124,14 @@ pub enum TokenKind {
     KwSpeculationSafe,
     KwCombined,
     KwZeroize,
-    KwFst,            // fst / pertama
-    KwSnd,            // snd / kedua
-    KwRequire,        // require / perlukan
-    KwGrant,          // grant / beri
-    KwSome,           // Some / Ada
-    KwNone,           // None / Tiada
-    KwOk,             // Ok / Jadi
-    KwErr,            // Err / Gagal
+    KwFst,     // fst / pertama
+    KwSnd,     // snd / kedua
+    KwRequire, // require / perlukan
+    KwGrant,   // grant / beri
+    KwSome,    // Some / Ada
+    KwNone,    // None / Tiada
+    KwOk,      // Ok / Jadi
+    KwErr,     // Err / Gagal
     KwIn,
     KwIs,
     KwPure,
@@ -142,52 +142,52 @@ pub enum TokenKind {
     KwBorrow,
     KwCopy,
     KwClone,
-    KwLifetime,   // jangka / lifetime
+    KwLifetime, // jangka / lifetime
 
     // Logic keywords
-    KwAnd,        // dan / and
-    KwOr,         // atau / or
-    KwNot,        // bukan / not
+    KwAnd, // dan / and
+    KwOr,  // atau / or
+    KwNot, // bukan / not
 
     // Guard clause
-    KwGuard,      // pastikan / guard
+    KwGuard, // pastikan / guard
 
     // Operators & Punctuation
-    Pipe,         // |>
-    Plus,       // +
-    Minus,      // -
-    Star,       // *
-    Slash,      // /
-    Percent,    // %
-    And,        // &
-    Or,         // |
-    Caret,      // ^
-    Not,        // !
-    Shl,        // <<
-    Shr,        // >>
-    
-    PlusEq,     // +=
-    MinusEq,    // -=
-    StarEq,     // *=
-    SlashEq,    // /=
-    PercentEq,  // %=
-    AndEq,      // &=
-    OrEq,       // |=
-    CaretEq,    // ^=
-    ShlEq,      // <<=
-    ShrEq,      // >>=
+    Pipe,    // |>
+    Plus,    // +
+    Minus,   // -
+    Star,    // *
+    Slash,   // /
+    Percent, // %
+    And,     // &
+    Or,      // |
+    Caret,   // ^
+    Not,     // !
+    Shl,     // <<
+    Shr,     // >>
 
-    Eq,         // =
-    EqEq,       // ==
-    Ne,         // !=
-    Lt,         // <
-    Gt,         // >
-    Le,         // <=
-    Ge,         // >=
-    
-    AndAnd,     // &&
-    OrOr,       // ||
-    
+    PlusEq,    // +=
+    MinusEq,   // -=
+    StarEq,    // *=
+    SlashEq,   // /=
+    PercentEq, // %=
+    AndEq,     // &=
+    OrEq,      // |=
+    CaretEq,   // ^=
+    ShlEq,     // <<=
+    ShrEq,     // >>=
+
+    Eq,   // =
+    EqEq, // ==
+    Ne,   // !=
+    Lt,   // <
+    Gt,   // >
+    Le,   // <=
+    Ge,   // >=
+
+    AndAnd, // &&
+    OrOr,   // ||
+
     Dot,        // .
     DotDot,     // ..
     DotDotEq,   // ..=
@@ -202,14 +202,14 @@ pub enum TokenKind {
     Arrow,      // ->
     FatArrow,   // =>
     ColonColon, // ::
-    
+
     // Delimiters
-    LParen,     // (
-    RParen,     // )
-    LBracket,   // [
-    RBracket,   // ]
-    LBrace,     // {
-    RBrace,     // }
+    LParen,   // (
+    RParen,   // )
+    LBracket, // [
+    RBracket, // ]
+    LBrace,   // {
+    RBrace,   // }
 
     // End of File
     Eof,

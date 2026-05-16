@@ -9,9 +9,16 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub enum PkgError {
     /// I/O error with context path.
-    Io { path: PathBuf, source: std::io::Error },
+    Io {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     /// TOML parse error.
-    ManifestParse { file: PathBuf, line: usize, message: String },
+    ManifestParse {
+        file: PathBuf,
+        line: usize,
+        message: String,
+    },
     /// Missing required field in manifest.
     ManifestMissing { file: PathBuf, field: String },
     /// Invalid semver string.
@@ -21,13 +28,20 @@ pub enum PkgError {
     /// Dependency not found in registry.
     DependencyNotFound { name: String, req: String },
     /// Version conflict: no version satisfies all constraints.
-    VersionConflict { name: String, constraints: Vec<String> },
+    VersionConflict {
+        name: String,
+        constraints: Vec<String>,
+    },
     /// Dependency cycle detected.
     CycleDetected(Vec<String>),
     /// Effect escalation: dependency requires forbidden effect.
     EffectEscalation { dep: String, effect: String },
     /// Integrity check failed.
-    IntegrityMismatch { name: String, expected: String, actual: String },
+    IntegrityMismatch {
+        name: String,
+        expected: String,
+        actual: String,
+    },
     /// Package already exists in registry.
     AlreadyPublished { name: String, version: String },
     /// Workspace error.
@@ -40,7 +54,11 @@ impl fmt::Display for PkgError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Io { path, source } => write!(f, "I/O error at {}: {}", path.display(), source),
-            Self::ManifestParse { file, line, message } => {
+            Self::ManifestParse {
+                file,
+                line,
+                message,
+            } => {
                 write!(f, "{}:{}: {}", file.display(), line, message)
             }
             Self::ManifestMissing { file, field } => {
@@ -52,16 +70,30 @@ impl fmt::Display for PkgError {
                 write!(f, "dependency '{name}' not found matching {req}")
             }
             Self::VersionConflict { name, constraints } => {
-                write!(f, "version conflict for '{name}': {}", constraints.join(", "))
+                write!(
+                    f,
+                    "version conflict for '{name}': {}",
+                    constraints.join(", ")
+                )
             }
             Self::CycleDetected(cycle) => {
                 write!(f, "dependency cycle: {}", cycle.join(" -> "))
             }
             Self::EffectEscalation { dep, effect } => {
-                write!(f, "effect escalation: '{dep}' requires forbidden effect '{effect}'")
+                write!(
+                    f,
+                    "effect escalation: '{dep}' requires forbidden effect '{effect}'"
+                )
             }
-            Self::IntegrityMismatch { name, expected, actual } => {
-                write!(f, "integrity mismatch for '{name}': expected {expected}, got {actual}")
+            Self::IntegrityMismatch {
+                name,
+                expected,
+                actual,
+            } => {
+                write!(
+                    f,
+                    "integrity mismatch for '{name}': expected {expected}, got {actual}"
+                )
             }
             Self::AlreadyPublished { name, version } => {
                 write!(f, "'{name}' v{version} already published")
@@ -76,7 +108,10 @@ impl std::error::Error for PkgError {}
 
 impl PkgError {
     pub fn io(path: impl Into<PathBuf>, source: std::io::Error) -> Self {
-        Self::Io { path: path.into(), source }
+        Self::Io {
+            path: path.into(),
+            source,
+        }
     }
 }
 

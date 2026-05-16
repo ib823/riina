@@ -11,9 +11,9 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 #[allow(unused_imports)]
-use crate::{Parser, ParseError, ParseErrorKind};
+use crate::{ParseError, ParseErrorKind, Parser};
 #[allow(unused_imports)]
-use riina_types::{BinOp, Expr, Ty, SecurityLevel, Effect, TopLevelDecl, Program};
+use riina_types::{BinOp, Effect, Expr, Program, SecurityLevel, TopLevelDecl, Ty};
 
 // =============================================================================
 // LITERAL TESTS
@@ -37,8 +37,11 @@ fn test_parse_int_zero() {
     // Expected: Expr::Int(0)
     // Rationale: Zero is valid integer literal
     let mut p = Parser::new("0");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Int(0),
-        "Zero must parse as valid integer");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Int(0),
+        "Zero must parse as valid integer"
+    );
 }
 
 #[test]
@@ -47,8 +50,11 @@ fn test_parse_int_large() {
     // Expected: Expr::Int with large value
     // Rationale: Large integers common in crypto
     let mut p = Parser::new("999999999");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Int(999_999_999),
-        "Large integers must parse correctly");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Int(999_999_999),
+        "Large integers must parse correctly"
+    );
 }
 
 #[test]
@@ -57,8 +63,11 @@ fn test_parse_bool_false() {
     // Expected: Expr::Bool(false)
     // Rationale: Both boolean values must work
     let mut p = Parser::new("false");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Bool(false),
-        "false must parse as Expr::Bool(false)");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Bool(false),
+        "false must parse as Expr::Bool(false)"
+    );
 }
 
 #[test]
@@ -67,8 +76,11 @@ fn test_parse_string_empty() {
     // Expected: Expr::String("")
     // Rationale: Empty strings are valid
     let mut p = Parser::new("\"\"");
-    assert_eq!(p.parse_expr().unwrap(), Expr::String("".to_string()),
-        "Empty string must parse correctly");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::String("".to_string()),
+        "Empty string must parse correctly"
+    );
 }
 
 #[test]
@@ -77,8 +89,11 @@ fn test_parse_string_with_spaces() {
     // Expected: Expr::String with spaces preserved
     // Rationale: Whitespace in strings must be preserved
     let mut p = Parser::new("\"hello world\"");
-    assert_eq!(p.parse_expr().unwrap(), Expr::String("hello world".to_string()),
-        "Spaces in strings must be preserved");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::String("hello world".to_string()),
+        "Spaces in strings must be preserved"
+    );
 }
 
 #[test]
@@ -87,8 +102,11 @@ fn test_parse_string_with_escapes() {
     // Expected: Expr::String with interpreted escapes
     // Rationale: Escape sequences must be processed
     let mut p = Parser::new("\"hello\\nworld\"");
-    assert_eq!(p.parse_expr().unwrap(), Expr::String("hello\nworld".to_string()),
-        "Escape sequences in strings must be interpreted");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::String("hello\nworld".to_string()),
+        "Escape sequences in strings must be interpreted"
+    );
 }
 
 // =============================================================================
@@ -101,8 +119,11 @@ fn test_parse_var_simple() {
     // Expected: Expr::Var
     // Rationale: Basic variable parsing
     let mut p = Parser::new("x");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Var("x".to_string()),
-        "Simple variable must parse");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Var("x".to_string()),
+        "Simple variable must parse"
+    );
 }
 
 #[test]
@@ -111,9 +132,11 @@ fn test_parse_var_long_name() {
     // Expected: Expr::Var with full name
     // Rationale: No arbitrary length limits
     let mut p = Parser::new("very_long_variable_name_here");
-    assert_eq!(p.parse_expr().unwrap(),
+    assert_eq!(
+        p.parse_expr().unwrap(),
         Expr::Var("very_long_variable_name_here".to_string()),
-        "Long variable names must be preserved");
+        "Long variable names must be preserved"
+    );
 }
 
 #[test]
@@ -122,8 +145,11 @@ fn test_parse_var_with_numbers() {
     // Expected: Expr::Var
     // Rationale: Numbers allowed after first char
     let mut p = Parser::new("x123");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Var("x123".to_string()),
-        "Variables with numbers must parse");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Var("x123".to_string()),
+        "Variables with numbers must parse"
+    );
 }
 
 #[test]
@@ -132,8 +158,11 @@ fn test_parse_var_underscore_prefix() {
     // Expected: Expr::Var
     // Rationale: Underscore-prefixed vars for unused
     let mut p = Parser::new("_unused");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Var("_unused".to_string()),
-        "Underscore-prefixed variables must parse");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Var("_unused".to_string()),
+        "Underscore-prefixed variables must parse"
+    );
 }
 
 // =============================================================================
@@ -146,8 +175,7 @@ fn test_parse_unit() {
     // Expected: Expr::Unit
     // Rationale: Unit is fundamental type
     let mut p = Parser::new("()");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Unit,
-        "() must parse as Unit");
+    assert_eq!(p.parse_expr().unwrap(), Expr::Unit, "() must parse as Unit");
 }
 
 #[test]
@@ -156,8 +184,11 @@ fn test_parse_parenthesized_expr() {
     // Expected: Inner expression (parens stripped)
     // Rationale: Parentheses for grouping
     let mut p = Parser::new("(42)");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Int(42),
-        "Parenthesized expression must unwrap");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Int(42),
+        "Parenthesized expression must unwrap"
+    );
 }
 
 #[test]
@@ -166,8 +197,11 @@ fn test_parse_nested_parentheses() {
     // Expected: Inner expression
     // Rationale: Arbitrary nesting allowed
     let mut p = Parser::new("(((x)))");
-    assert_eq!(p.parse_expr().unwrap(), Expr::Var("x".to_string()),
-        "Nested parentheses must unwrap correctly");
+    assert_eq!(
+        p.parse_expr().unwrap(),
+        Expr::Var("x".to_string()),
+        "Nested parentheses must unwrap correctly"
+    );
 }
 
 // =============================================================================
@@ -233,7 +267,7 @@ fn test_parse_let() {
             assert_eq!(x, "x");
             assert_eq!(*e1, Expr::Int(1));
             assert_eq!(*e2, Expr::Int(2));
-        },
+        }
         _ => panic!("Expected Let"),
     }
 }
@@ -246,7 +280,7 @@ fn test_parse_if() {
             assert_eq!(*cond, Expr::Bool(true));
             assert_eq!(*e1, Expr::Int(1));
             assert_eq!(*e2, Expr::Int(2));
-        },
+        }
         _ => panic!("Expected If"),
     }
 }
@@ -258,7 +292,7 @@ fn test_parse_app() {
         Expr::App(f, x) => {
             assert_eq!(*f, Expr::Var("f".to_string()));
             assert_eq!(*x, Expr::Var("x".to_string()));
-        },
+        }
         _ => panic!("Expected App"),
     }
 }
@@ -271,7 +305,7 @@ fn test_parse_lam() {
             assert_eq!(x, "x");
             assert_eq!(ty, Ty::Int);
             assert_eq!(*body, Expr::Var("x".to_string()));
-        },
+        }
         _ => panic!("Expected Lam"),
     }
 }
@@ -283,7 +317,7 @@ fn test_parse_assignment() {
         Expr::Assign(lhs, rhs) => {
             assert_eq!(*lhs, Expr::Var("x".to_string()));
             assert_eq!(*rhs, Expr::Int(1));
-        },
+        }
         _ => panic!("Expected Assign"),
     }
 }
@@ -293,14 +327,12 @@ fn test_parse_ref_deref() {
     let mut p = Parser::new("!ref 1 @ Public");
     // Should parse as !(ref 1 @ Public) -> Deref(Ref(1, Public))
     match p.parse_expr().unwrap() {
-        Expr::Deref(e) => {
-            match *e {
-                Expr::Ref(inner, level) => {
-                    assert_eq!(*inner, Expr::Int(1));
-                    assert_eq!(level, SecurityLevel::Public);
-                },
-                _ => panic!("Expected Ref inside Deref"),
+        Expr::Deref(e) => match *e {
+            Expr::Ref(inner, level) => {
+                assert_eq!(*inner, Expr::Int(1));
+                assert_eq!(level, SecurityLevel::Public);
             }
+            _ => panic!("Expected Ref inside Deref"),
         },
         _ => panic!("Expected Deref"),
     }
@@ -316,7 +348,7 @@ fn test_parse_match() {
             assert_eq!(*e1, Expr::Int(1));
             assert_eq!(y, "y");
             assert_eq!(*e2, Expr::Int(2));
-        },
+        }
         _ => panic!("Expected Case"),
     }
 }
@@ -328,14 +360,14 @@ fn test_parse_perform_handle() {
         Expr::Handle(e, x, h) => {
             match *e {
                 Expr::Perform(eff, payload) => {
-                     assert_eq!(eff, Effect::Write);
-                     assert_eq!(*payload, Expr::String("data".to_string()));
-                },
+                    assert_eq!(eff, Effect::Write);
+                    assert_eq!(*payload, Expr::String("data".to_string()));
+                }
                 _ => panic!("Expected Perform inside Handle"),
             }
             assert_eq!(x, "eff");
             assert_eq!(*h, Expr::Int(0));
-        },
+        }
         _ => panic!("Expected Handle"),
     }
 }
@@ -344,11 +376,9 @@ fn test_parse_perform_handle() {
 fn test_parse_security() {
     let mut p = Parser::new("classify prove 1");
     match p.parse_expr().unwrap() {
-        Expr::Classify(e) => {
-            match *e {
-                Expr::Prove(inner) => assert_eq!(*inner, Expr::Int(1)),
-                _ => panic!("Expected Prove inside Classify"),
-            }
+        Expr::Classify(e) => match *e {
+            Expr::Prove(inner) => assert_eq!(*inner, Expr::Int(1)),
+            _ => panic!("Expected Prove inside Classify"),
         },
         _ => panic!("Expected Classify"),
     }
@@ -361,7 +391,7 @@ fn test_parse_declassify() {
         Expr::Declassify(e1, e2) => {
             assert_eq!(*e1, Expr::Var("x".to_string()));
             assert_eq!(*e2, Expr::Var("proof".to_string()));
-        },
+        }
         _ => panic!("Expected Declassify"),
     }
 }
@@ -373,7 +403,7 @@ fn test_parse_inl_inr() {
         Expr::Inl(e, ty) => {
             assert_eq!(*e, Expr::Int(1));
             assert_eq!(ty, Ty::Int);
-        },
+        }
         _ => panic!("Expected Inl"),
     }
 }
@@ -799,14 +829,12 @@ fn test_parse_deref_chain() {
     // Rationale: Multiple levels of indirection
     let mut p = Parser::new("!!r");
     match p.parse_expr().unwrap() {
-        Expr::Deref(e) => {
-            match *e {
-                Expr::Deref(inner) => {
-                    assert_eq!(*inner, Expr::Var("r".to_string()));
-                }
-                other => panic!("Expected inner Deref, got {:?}", other),
+        Expr::Deref(e) => match *e {
+            Expr::Deref(inner) => {
+                assert_eq!(*inner, Expr::Var("r".to_string()));
             }
-        }
+            other => panic!("Expected inner Deref, got {:?}", other),
+        },
         other => panic!("Expected Deref, got {:?}", other),
     }
 }
@@ -1025,7 +1053,10 @@ fn test_error_missing_with_in_declassify() {
     // Rationale: declassify requires proof
     let mut p = Parser::new("declassify x proof");
     let result = p.parse_expr();
-    assert!(result.is_err(), "declassify without 'with' must produce error");
+    assert!(
+        result.is_err(),
+        "declassify without 'with' must produce error"
+    );
 }
 
 // =============================================================================
@@ -1176,7 +1207,11 @@ fn test_parse_binop_precedence_mul_over_add() {
         Expr::BinOp(
             BinOp::Add,
             Box::new(Expr::Int(1)),
-            Box::new(Expr::BinOp(BinOp::Mul, Box::new(Expr::Int(2)), Box::new(Expr::Int(3))))
+            Box::new(Expr::BinOp(
+                BinOp::Mul,
+                Box::new(Expr::Int(2)),
+                Box::new(Expr::Int(3))
+            ))
         )
     );
 }
@@ -1216,7 +1251,11 @@ fn test_parse_binop_left_associative() {
         p.parse_expr().unwrap(),
         Expr::BinOp(
             BinOp::Sub,
-            Box::new(Expr::BinOp(BinOp::Sub, Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))),
+            Box::new(Expr::BinOp(
+                BinOp::Sub,
+                Box::new(Expr::Int(1)),
+                Box::new(Expr::Int(2))
+            )),
             Box::new(Expr::Int(3))
         )
     );
@@ -1230,7 +1269,11 @@ fn test_parse_binop_with_parens() {
         p.parse_expr().unwrap(),
         Expr::BinOp(
             BinOp::Mul,
-            Box::new(Expr::BinOp(BinOp::Add, Box::new(Expr::Int(1)), Box::new(Expr::Int(2)))),
+            Box::new(Expr::BinOp(
+                BinOp::Add,
+                Box::new(Expr::Int(1)),
+                Box::new(Expr::Int(2))
+            )),
             Box::new(Expr::Int(3))
         )
     );
@@ -1239,15 +1282,18 @@ fn test_parse_binop_with_parens() {
 #[test]
 fn test_parse_binop_comparison_ops() {
     for (src, op) in [
-        ("1 < 2", BinOp::Lt), ("1 > 2", BinOp::Gt),
-        ("1 <= 2", BinOp::Le), ("1 >= 2", BinOp::Ge),
+        ("1 < 2", BinOp::Lt),
+        ("1 > 2", BinOp::Gt),
+        ("1 <= 2", BinOp::Le),
+        ("1 >= 2", BinOp::Ge),
         ("1 != 2", BinOp::Ne),
     ] {
         let mut p = Parser::new(src);
         assert_eq!(
             p.parse_expr().unwrap(),
             Expr::BinOp(op, Box::new(Expr::Int(1)), Box::new(Expr::Int(2))),
-            "Failed for: {}", src
+            "Failed for: {}",
+            src
         );
     }
 }
@@ -1255,15 +1301,18 @@ fn test_parse_binop_comparison_ops() {
 #[test]
 fn test_parse_binop_all_arithmetic() {
     for (src, op) in [
-        ("1 + 2", BinOp::Add), ("1 - 2", BinOp::Sub),
-        ("1 * 2", BinOp::Mul), ("1 / 2", BinOp::Div),
+        ("1 + 2", BinOp::Add),
+        ("1 - 2", BinOp::Sub),
+        ("1 * 2", BinOp::Mul),
+        ("1 / 2", BinOp::Div),
         ("1 % 2", BinOp::Mod),
     ] {
         let mut p = Parser::new(src);
         assert_eq!(
             p.parse_expr().unwrap(),
             Expr::BinOp(op, Box::new(Expr::Int(1)), Box::new(Expr::Int(2))),
-            "Failed for: {}", src
+            "Failed for: {}",
+            src
         );
     }
 }
@@ -1275,7 +1324,10 @@ fn test_parse_binop_in_let() {
     match p.parse_expr().unwrap() {
         Expr::Let(name, bound, body) => {
             assert_eq!(name, "x");
-            assert_eq!(*bound, Expr::BinOp(BinOp::Add, Box::new(Expr::Int(2)), Box::new(Expr::Int(3))));
+            assert_eq!(
+                *bound,
+                Expr::BinOp(BinOp::Add, Box::new(Expr::Int(2)), Box::new(Expr::Int(3)))
+            );
             assert_eq!(*body, Expr::Var("x".to_string()));
         }
         other => panic!("Expected Let, got {:?}", other),
@@ -1381,7 +1433,12 @@ fn test_parse_program_function_decl() {
     let prog = p.parse_program().unwrap();
     assert_eq!(prog.decls.len(), 1);
     match &prog.decls[0] {
-        TopLevelDecl::Function { name, params, return_ty, .. } => {
+        TopLevelDecl::Function {
+            name,
+            params,
+            return_ty,
+            ..
+        } => {
             assert_eq!(name, "f");
             assert_eq!(params.len(), 1);
             assert_eq!(params[0].0, "x");
@@ -1436,7 +1493,6 @@ fn test_parse_program_desugar() {
 // ====================================================================
 // Extended Type Parsing Tests (§5.3.8)
 // ====================================================================
-
 #[test]
 fn test_parse_ty_list() {
     let mut p = Parser::new("fn(x: List<Int>) x");
@@ -1508,11 +1564,14 @@ fn test_parse_guard_simple() {
     // desugars to If(Var("x"), Int(42), Int(0))
     let mut p = Parser::new("guard x else { 0 }; 42");
     let result = p.parse_expr().unwrap();
-    assert_eq!(result, Expr::If(
-        Box::new(Expr::Var("x".to_string())),
-        Box::new(Expr::Int(42)),
-        Box::new(Expr::Int(0)),
-    ));
+    assert_eq!(
+        result,
+        Expr::If(
+            Box::new(Expr::Var("x".to_string())),
+            Box::new(Expr::Int(42)),
+            Box::new(Expr::Int(0)),
+        )
+    );
 }
 
 #[test]
@@ -1520,11 +1579,14 @@ fn test_parse_guard_bahasa() {
     // pastikan x lain { 0 }; 42
     let mut p = Parser::new("pastikan x lain { 0 }; 42");
     let result = p.parse_expr().unwrap();
-    assert_eq!(result, Expr::If(
-        Box::new(Expr::Var("x".to_string())),
-        Box::new(Expr::Int(42)),
-        Box::new(Expr::Int(0)),
-    ));
+    assert_eq!(
+        result,
+        Expr::If(
+            Box::new(Expr::Var("x".to_string())),
+            Box::new(Expr::Int(42)),
+            Box::new(Expr::Int(0)),
+        )
+    );
 }
 
 // ====================================================================
@@ -1536,10 +1598,13 @@ fn test_parse_pipe_simple() {
     // x |> f  desugars to App(f, x)
     let mut p = Parser::new("x |> f");
     let result = p.parse_expr().unwrap();
-    assert_eq!(result, Expr::App(
-        Box::new(Expr::Var("f".to_string())),
-        Box::new(Expr::Var("x".to_string())),
-    ));
+    assert_eq!(
+        result,
+        Expr::App(
+            Box::new(Expr::Var("f".to_string())),
+            Box::new(Expr::Var("x".to_string())),
+        )
+    );
 }
 
 #[test]
@@ -1547,13 +1612,16 @@ fn test_parse_pipe_chain() {
     // x |> f |> g  desugars to App(g, App(f, x))
     let mut p = Parser::new("x |> f |> g");
     let result = p.parse_expr().unwrap();
-    assert_eq!(result, Expr::App(
-        Box::new(Expr::Var("g".to_string())),
-        Box::new(Expr::App(
-            Box::new(Expr::Var("f".to_string())),
-            Box::new(Expr::Var("x".to_string())),
-        )),
-    ));
+    assert_eq!(
+        result,
+        Expr::App(
+            Box::new(Expr::Var("g".to_string())),
+            Box::new(Expr::App(
+                Box::new(Expr::Var("f".to_string())),
+                Box::new(Expr::Var("x".to_string())),
+            )),
+        )
+    );
 }
 
 #[test]
@@ -1561,10 +1629,13 @@ fn test_parse_pipe_with_literal() {
     // 42 |> f
     let mut p = Parser::new("42 |> f");
     let result = p.parse_expr().unwrap();
-    assert_eq!(result, Expr::App(
-        Box::new(Expr::Var("f".to_string())),
-        Box::new(Expr::Int(42)),
-    ));
+    assert_eq!(
+        result,
+        Expr::App(
+            Box::new(Expr::Var("f".to_string())),
+            Box::new(Expr::Int(42)),
+        )
+    );
 }
 
 #[test]
@@ -1652,14 +1723,20 @@ fn test_parse_bm_security_level_rahsia() {
 fn test_parse_fn_type() {
     let mut p = Parser::new("Fn(Int, Bool)");
     let ty = p.parse_ty().unwrap();
-    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Pure));
+    assert_eq!(
+        ty,
+        Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Pure)
+    );
 }
 
 #[test]
 fn test_parse_fn_type_with_effect() {
     let mut p = Parser::new("Fn(Int, Bool, Write)");
     let ty = p.parse_ty().unwrap();
-    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Write));
+    assert_eq!(
+        ty,
+        Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Write)
+    );
 }
 
 #[test]
@@ -1687,7 +1764,10 @@ fn test_parse_capability_type() {
 fn test_parse_unknown_type_errors() {
     let mut p = Parser::new("FooBarBaz");
     let result = p.parse_ty();
-    assert!(result.is_err(), "Unknown type name should return error, not Unit");
+    assert!(
+        result.is_err(),
+        "Unknown type name should return error, not Unit"
+    );
 }
 
 // =============================================================================
@@ -1890,12 +1970,18 @@ fn test_parse_effect_alloc_bm() {
 fn test_parse_fn_type_with_effect_mut() {
     let mut p = Parser::new("Fn(Int, Bool, Mut)");
     let ty = p.parse_ty().unwrap();
-    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Mut));
+    assert_eq!(
+        ty,
+        Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Mut)
+    );
 }
 
 #[test]
 fn test_parse_fn_type_with_effect_alloc() {
     let mut p = Parser::new("Fn(Int, Bool, Alloc)");
     let ty = p.parse_ty().unwrap();
-    assert_eq!(ty, Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Alloc));
+    assert_eq!(
+        ty,
+        Ty::Fn(Box::new(Ty::Int), Box::new(Ty::Bool), Effect::Alloc)
+    );
 }

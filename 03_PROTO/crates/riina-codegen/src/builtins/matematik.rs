@@ -71,7 +71,9 @@ pub fn apply(name: &str, arg: &Value) -> Result<Option<Value>> {
             // Int -> Int (0..n exclusive)
             let n = extract_int(arg, "rawak")?;
             if n == 0 {
-                return Err(Error::InvalidOperation("random(0) is undefined".to_string()));
+                return Err(Error::InvalidOperation(
+                    "random(0) is undefined".to_string(),
+                ));
             }
             // Simple PRNG using thread-local state
             use std::collections::hash_map::DefaultHasher;
@@ -135,24 +137,42 @@ mod tests {
 
     #[test]
     fn test_mutlak() {
-        assert_eq!(apply("mutlak", &Value::Int(42)).unwrap(), Some(Value::Int(42)));
+        assert_eq!(
+            apply("mutlak", &Value::Int(42)).unwrap(),
+            Some(Value::Int(42))
+        );
     }
 
     #[test]
     fn test_minimum_maksimum() {
-        assert_eq!(apply("minimum", &pair_i(3, 7)).unwrap(), Some(Value::Int(3)));
-        assert_eq!(apply("maksimum", &pair_i(3, 7)).unwrap(), Some(Value::Int(7)));
+        assert_eq!(
+            apply("minimum", &pair_i(3, 7)).unwrap(),
+            Some(Value::Int(3))
+        );
+        assert_eq!(
+            apply("maksimum", &pair_i(3, 7)).unwrap(),
+            Some(Value::Int(7))
+        );
     }
 
     #[test]
     fn test_kuasa() {
-        assert_eq!(apply("kuasa", &pair_i(2, 10)).unwrap(), Some(Value::Int(1024)));
+        assert_eq!(
+            apply("kuasa", &pair_i(2, 10)).unwrap(),
+            Some(Value::Int(1024))
+        );
     }
 
     #[test]
     fn test_punca() {
-        assert_eq!(apply("punca", &Value::Int(16)).unwrap(), Some(Value::Int(4)));
-        assert_eq!(apply("punca", &Value::Int(15)).unwrap(), Some(Value::Int(3)));
+        assert_eq!(
+            apply("punca", &Value::Int(16)).unwrap(),
+            Some(Value::Int(4))
+        );
+        assert_eq!(
+            apply("punca", &Value::Int(15)).unwrap(),
+            Some(Value::Int(3))
+        );
     }
 
     #[test]
@@ -178,7 +198,10 @@ mod tests {
     fn test_log2() {
         assert_eq!(apply("log2", &Value::Int(1)).unwrap(), Some(Value::Int(0)));
         assert_eq!(apply("log2", &Value::Int(8)).unwrap(), Some(Value::Int(3)));
-        assert_eq!(apply("log2", &Value::Int(1024)).unwrap(), Some(Value::Int(10)));
+        assert_eq!(
+            apply("log2", &Value::Int(1024)).unwrap(),
+            Some(Value::Int(10))
+        );
         assert!(apply("log2", &Value::Int(0)).is_err());
     }
 
