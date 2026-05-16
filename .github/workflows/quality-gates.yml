@@ -1,0 +1,68 @@
+# Public quality gates — text-only checks defined in
+# scripts/public-quality-gates.sh.
+#
+# What this verifies (no Coq toolchain required):
+#   * Artifact hygiene (no tracked .vo/.aux/.glob, etc.)
+#   * .gitignore coverage for Coq build artifacts
+#   * Required trust docs exist
+#   * Public-doc drift guard (forbidden stale claim strings)
+#   * Proof-ledger freshness (PROOF_STATUS.md, AXIOMS.md vs current corpus)
+#   * Active-build Coq hygiene (Admitted/Axioms/assumptions counts via grep)
+#   * metrics.json alignment vs active build
+#   * VERSION ↔ git tag alignment
+#   * Public claim integrity (no overclaim phrases in website copy)
+#   * Independent-audit claim readiness
+#
+# The script regenerates reports/public_quality_status.json. The job uploads
+# that file as an artifact and fails the build if any gate is FAIL.
+#
+# Reproduce locally:
+#   bash scripts/public-quality-gates.sh
+
+name: quality-gates
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gates-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  public-quality-gates:
+    name: public-quality-gates.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The script reads VERSION and asks git for refs/tags/v$VERSION,
+          # so the corresponding tag must be present in the runner clone.
+          fetch-depth: 0
+
+      - name: Verify required tools are present
+        run: |
+          set -euo pipefail
+          python3 --version
+          jq --version
+
+      - name: Run public quality gates
+        id: gates
+        run: bash scripts/public-quality-gates.sh
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-quality-status
+          path: reports/public_quality_status.json
+          if-no-files-found: warn
+          retention-days: 30

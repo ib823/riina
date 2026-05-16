@@ -1,0 +1,73 @@
+# Security gates — secret pattern and Trojan-source scanning.
+#
+# Calls scripts/security-gates.sh with --no-signing-check, because signed
+# commits are not produced inside GitHub-hosted runners. Signed-commit
+# enforcement for the repository is configured server-side via GitHub
+# branch protection rules (see docs/CI.md for the policy).
+#
+# Three sub-checks (all from scripts/security-gates.sh):
+#   1. Signed-commit policy        — SKIPPED in CI (see above).
+#   2. Secret pattern scanning     — on files changed in the event range.
+#   3. Trojan-source bidi scan     — across .v/.rs/.rii/.md/.sh/.py files.
+#
+# Reproduce locally:
+#   bash scripts/security-gates.sh
+#   bash scripts/security-gates.sh --no-signing-check --range origin/main..HEAD
+
+name: security
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly scan of HEAD on Mondays at 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  security-gates:
+    name: security-gates.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve scan range
+        id: range
+        run: |
+          set -euo pipefail
+          case "${{ github.event_name }}" in
+            pull_request)
+              git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+              echo "range=origin/${{ github.base_ref }}..HEAD" >> "$GITHUB_OUTPUT"
+              ;;
+            push)
+              before="${{ github.event.before }}"
+              if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+                echo "range=HEAD" >> "$GITHUB_OUTPUT"
+              else
+                echo "range=${before}..HEAD" >> "$GITHUB_OUTPUT"
+              fi
+              ;;
+            *)
+              echo "range=HEAD" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Run security gates (--no-signing-check)
+        run: |
+          bash scripts/security-gates.sh \
+            --no-signing-check \
+            --range "${{ steps.range.outputs.range }}"

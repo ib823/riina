@@ -24,4 +24,4 @@ A Rust program can compile and run while silently leaking secrets to stdout, log
 
 Rust compiles. RIINA refuses. The compiler proves the attack is impossible.
 
-This is not a linter warning. This is a mathematical guarantee backed by 4,885 machine-checked theorems in Coq.
+This is not a linter warning. This is a mathematical guarantee backed by the machine-checked Coq theorems in this repository (live count in `PROOF_STATUS.md`).

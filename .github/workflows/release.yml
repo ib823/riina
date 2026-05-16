@@ -1,0 +1,107 @@
+# Release-artifact workflow.
+#
+# Triggered when a tag matching v*.*.* is pushed (e.g., v0.2.0).
+#
+# This workflow is intentionally narrow: it builds and publishes the source
+# tarball + SHA256SUMS for the tagged commit. Everything pre-tag (version
+# bump, CHANGELOG finalization, website releases update, signed tag
+# creation) is performed locally by `scripts/release.sh` before the tag
+# is pushed — see docs/CI.md for the full release procedure.
+#
+# Sanity check before publishing:
+#   * VERSION file content must exactly equal the tag suffix (e.g. "0.2.0"
+#     for tag "v0.2.0"). Mismatch fails the workflow.
+#
+# Reproduce locally:
+#   git archive --format=tar.gz --prefix="riina-$V/" "v$V" -o "dist/riina-$V-source.tar.gz"
+#   (cd dist && sha256sum "riina-$V-source.tar.gz" > SHA256SUMS)
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g., v0.2.0). Must already exist."
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: source tarball + SHA256SUMS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF##refs/tags/}"
+          fi
+          case "$tag" in
+            v*) ;;
+            *) echo "ERROR: tag '$tag' does not start with 'v'"; exit 1 ;;
+          esac
+          version="${tag#v}"
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "ERROR: tag '$tag' is not a v<semver> form"; exit 1 ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+          fetch-depth: 1
+
+      - name: Verify VERSION matches tag
+        run: |
+          set -euo pipefail
+          file_version="$(tr -d ' \n' < VERSION)"
+          if [ "$file_version" != "${{ steps.tag.outputs.version }}" ]; then
+            echo "ERROR: VERSION='$file_version' does not match tag='${{ steps.tag.outputs.version }}'"
+            exit 1
+          fi
+
+      - name: Build source tarball
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          tarball="dist/riina-${{ steps.tag.outputs.version }}-source.tar.gz"
+          git archive \
+            --format=tar.gz \
+            --prefix="riina-${{ steps.tag.outputs.version }}/" \
+            HEAD \
+            -o "$tarball"
+          (cd dist && sha256sum "riina-${{ steps.tag.outputs.version }}-source.tar.gz" > SHA256SUMS)
+          ls -la dist/
+
+      - name: Upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.tag.outputs.tag }}"
+          # Create the release if it does not already exist; otherwise, upload to it.
+          if ! gh release view "$tag" --json tagName >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --title "RIINA $tag" \
+              --notes "Source tarball and SHA256SUMS for $tag. See CHANGELOG.md for release notes." \
+              dist/riina-${{ steps.tag.outputs.version }}-source.tar.gz \
+              dist/SHA256SUMS
+          else
+            gh release upload "$tag" \
+              --clobber \
+              dist/riina-${{ steps.tag.outputs.version }}-source.tar.gz \
+              dist/SHA256SUMS
+          fi

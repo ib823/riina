@@ -6,8 +6,8 @@ Scope: strict execution tracker from current mechanized Coq core to full multi-l
 
 ## Live Baseline (must match L0 sources)
 
-- Active Coq build: `7740 Qed`, `0 Admitted`, `0 active axioms`, `0 active assumptions`
-- Claim levels: `overall=mechanized`, `coq=mechanized`, `lean/isabelle/tlaplus/alloy=compiled`, `fstar/smt/verus/kani/tv=generated`
+- Active Coq build: live counts in `PROOF_STATUS.md` and `website/public/metrics.json`. Snapshot at last regeneration: `7,025 Qed`, `0 Admitted`, `0 active axioms`, `0 active assumptions`. `_CoqProject` declares 297 active files; 37 entries currently reference deleted files (pending cleanup).
+- Claim levels (snapshot from `website/public/metrics.json`): `overall=mechanized`, `coq=mechanized`, all other lanes (`lean/isabelle/fstar/tlaplus/alloy/smt/verus/kani/tv`)=`generated`. Lean lane carries 177 `sorry` tactics and 10 axioms; non-Coq lanes need toolchain runs to be promoted.
 - Independent external audit: `false`
 - Easier-gap checks (items 1/2/9/12): `PASS`
 - Medium-gap checks (items 1/2/3/4/9/12): `PASS`

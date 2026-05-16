@@ -829,4 +829,4 @@ All security properties proven in Coq (Rocq 9.1):
 - **Effect safety**: Effects tracked and enforced
 - **Information flow control**: Multi-level security lattice
 
-Proofs: 4,885 Qed (active build), 0 admits, 4 justified axioms.
+Proofs: Coq active build has 0 admits and 0 active axioms; live Qed count and per-lane claim levels in `PROOF_STATUS.md`, `AXIOMS.md`, and `website/public/metrics.json`.

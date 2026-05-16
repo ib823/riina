@@ -1,6 +1,9 @@
 # Contributing to RIINA™
 
-**Verification:** 11,905 Coq Qed (compiled, 0 Admitted, 0 active axioms) | 10 prover lanes tracked with claim levels | 2294 Rust tests
+**Verification:** active-build Coq corpus (0 Admitted, 0 active axioms) +
+10 prover lanes tracked with claim levels + Rust test suites in `03_PROTO`
+and `05_TOOLING`. Live counts are published in `PROOF_STATUS.md` and in
+`website/public/metrics.json`.
 
 Thank you for your interest in RIINA. This guide covers how to contribute effectively.
 
@@ -22,8 +25,8 @@ bash 00_SETUP/scripts/verify_setup.sh
 # Build the compiler
 cd 03_PROTO && cargo build --release -p riinac && cd ..
 
-# Run all tests (should show 2294 passing)
-cd 03_PROTO && cargo test --all && cd ..
+# Run all tests
+cd 03_PROTO && cargo test --workspace && cd ..
 
 # Try it out
 ./03_PROTO/target/release/riinac run 07_EXAMPLES/demos/selamat_datang.rii
@@ -124,6 +127,68 @@ Before submitting a PR, run the verification gate:
 # Full check (+ Coq audit) — required for proof changes
 ./03_PROTO/target/release/riinac verify --full
 ```
+
+## Continuous Integration
+
+Five GitHub Actions workflows run on every push to `main` / `claude/**` and
+on every pull request to `main`. They mirror — and are intended to replace —
+the manual `scripts/godzilla-pipeline.sh` invocation for the subset of checks
+that do not require a Rocq/Lean/Isabelle/F* toolchain.
+
+| Workflow              | File                                | What it runs                                                                          | Reproduce locally                                                       |
+| --------------------- | ----------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `ci`                  | `.github/workflows/ci.yml`          | `cargo build --release --workspace` and `cargo test --workspace` on both Rust workspaces | `(cd 03_PROTO && cargo build --release --workspace && cargo test --workspace)` and the same in `05_TOOLING` |
+| `quality-gates`       | `.github/workflows/quality-gates.yml` | `bash scripts/public-quality-gates.sh`                                                | `bash scripts/public-quality-gates.sh`                                  |
+| `security`            | `.github/workflows/security.yml`    | `bash scripts/security-gates.sh --no-signing-check --range <event-range>`             | `bash scripts/security-gates.sh`                                        |
+| `website`             | `.github/workflows/website.yml`     | `npm install && npx vite build` in `website/` (only when `website/**` changes)        | `(cd website && npm install && npx vite build)`                         |
+| `release`             | `.github/workflows/release.yml`     | On `v*.*.*` tag push: build source tarball + SHA256SUMS, attach to GitHub Release    | See `scripts/release.sh` for the full pre-tag pipeline                  |
+
+### What is NOT in CI
+
+The following gates are part of `scripts/godzilla-pipeline.sh` but are **not**
+wired into GitHub Actions today, by design:
+
+- **Coq / Lean / Isabelle / F* proof checks.** They require provisioning the
+  formal toolchain (`scripts/provision-formal-tools.sh`) and tens of CPU-minutes
+  per run. Run them locally before submitting proof changes.
+- **`riinac verify --full`.** Drives the Coq audit; same toolchain constraint.
+- **Deep verify level 4 (`05_TOOLING/scripts/verify.sh`).** Same constraint.
+- **`cargo clippy -- -D warnings` and `cargo fmt --check`.** Listed in the
+  coding standards above; currently fail on the committed tree and are tracked
+  as a separate cleanup task before they can become required CI gates. Run them
+  locally with `cargo clippy --workspace -- -D warnings` and `cargo fmt --check`.
+
+### Signed-commit policy
+
+Signed commits are mandatory for `main`. CI cannot verify this (runner commits
+are unsigned by definition), so the policy is enforced server-side via
+**GitHub branch protection**:
+
+- Settings → Branches → Branch protection rule for `main` → "Require signed
+  commits".
+
+The `security` workflow passes `--no-signing-check` to `scripts/security-gates.sh`
+precisely because of this — never use that flag in local pre-push runs.
+
+### Known CI failures at the time of this writing
+
+These are surfaced honestly by CI rather than masked. Each is tracked as a
+separate cleanup task:
+
+- **`ci / rust (03_PROTO)`** — `cargo test --workspace` fails to compile in
+  `riina-codegen` lib tests. The tests reference `riina_types::Expr` variants
+  that no longer exist (`ActorDecl`, `ChoreographyBlock`, `Spawn`, `ActorSend`,
+  `ActorRecv`, `CRDTMerge`, `ContentHash`). The release build is unaffected.
+- **`quality-gates / public-quality-gates.sh`** — two gates currently FAIL:
+  - `proof_ledger_freshness`: `PROOF_STATUS.md` / `AXIOMS.md` are stale
+    relative to the current `_CoqProject` scope (the corpus has been
+    refactored; the ledger has not been regenerated). Run
+    `bash scripts/update-proof-ledger.sh` to refresh — but note this also
+    surfaces that `_CoqProject` references roughly 37 `.v` files that no
+    longer exist in the worktree, which must be reconciled first.
+  - `metrics_alignment`: `website/public/metrics.json` overstates the active
+    Qed count (12 385 vs the 7 025 currently in the active build). Regenerate
+    via `bash scripts/generate-metrics.sh` once the ledger is reconciled.
 
 ## Communication
 

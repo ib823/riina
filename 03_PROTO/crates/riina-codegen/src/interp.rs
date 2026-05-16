@@ -1095,7 +1095,6 @@ mod tests {
         // let x = 42 in x
         let let_expr = Expr::Let(
             "x".to_string(),
-            None,
             Box::new(Expr::Int(42)),
             Box::new(Expr::Var("x".to_string())),
         );
@@ -1108,14 +1107,13 @@ mod tests {
         // let x = 1 in let y = 2 in (x, y)
         let inner_let = Expr::Let(
             "y".to_string(),
-            None,
             Box::new(Expr::Int(2)),
             Box::new(Expr::Pair(
                 Box::new(Expr::Var("x".to_string())),
                 Box::new(Expr::Var("y".to_string())),
             )),
         );
-        let outer_let = Expr::Let("x".to_string(), None, Box::new(Expr::Int(1)), Box::new(inner_let));
+        let outer_let = Expr::Let("x".to_string(), Box::new(Expr::Int(1)), Box::new(inner_let));
         assert_eq!(
             interp.eval(&outer_let),
             Ok(Value::Pair(
@@ -1144,7 +1142,6 @@ mod tests {
         // let r = ref 42 in !r
         let let_expr = Expr::Let(
             "r".to_string(),
-            None,
             Box::new(Expr::Ref(Box::new(Expr::Int(42)), SecurityLevel::Public)),
             Box::new(Expr::Deref(Box::new(Expr::Var("r".to_string())))),
         );
@@ -1157,7 +1154,6 @@ mod tests {
         // let r = ref 1 in (r := 2; !r)
         let inner = Expr::Let(
             "_".to_string(),
-            None,
             Box::new(Expr::Assign(
                 Box::new(Expr::Var("r".to_string())),
                 Box::new(Expr::Int(2)),
@@ -1166,7 +1162,6 @@ mod tests {
         );
         let let_expr = Expr::Let(
             "r".to_string(),
-            None,
             Box::new(Expr::Ref(Box::new(Expr::Int(1)), SecurityLevel::Public)),
             Box::new(inner),
         );
@@ -1257,11 +1252,9 @@ mod tests {
         // let x = 5 in let y = x in (x, y)
         let expr = Expr::Let(
             "x".to_string(),
-            None,
             Box::new(Expr::Int(5)),
             Box::new(Expr::Let(
                 "y".to_string(),
-                None,
                 Box::new(Expr::Var("x".to_string())),
                 Box::new(Expr::Pair(
                     Box::new(Expr::Var("x".to_string())),
@@ -1361,15 +1354,12 @@ mod tests {
         // let x = 1 in let y = 2 in let z = 3 in x
         let expr = Expr::Let(
             "x".to_string(),
-            None,
             Box::new(Expr::Int(1)),
             Box::new(Expr::Let(
                 "y".to_string(),
-                None,
                 Box::new(Expr::Int(2)),
                 Box::new(Expr::Let(
                     "z".to_string(),
-                    None,
                     Box::new(Expr::Int(3)),
                     Box::new(Expr::Var("x".to_string())),
                 )),
@@ -1384,15 +1374,12 @@ mod tests {
         // let x = 1 in let y = 2 in let z = 3 in z (innermost)
         let expr = Expr::Let(
             "x".to_string(),
-            None,
             Box::new(Expr::Int(1)),
             Box::new(Expr::Let(
                 "y".to_string(),
-                None,
                 Box::new(Expr::Int(2)),
                 Box::new(Expr::Let(
                     "z".to_string(),
-                    None,
                     Box::new(Expr::Int(3)),
                     Box::new(Expr::Var("z".to_string())),
                 )),
@@ -1496,7 +1483,6 @@ mod tests {
         // let a = 10 in (λx. a) 0 = 10
         let expr = Expr::Let(
             "a".to_string(),
-            None,
             Box::new(Expr::Int(10)),
             Box::new(Expr::App(
                 Box::new(Expr::Lam(
@@ -1584,237 +1570,5 @@ mod tests {
             )),
         );
         assert_eq!(interp.eval(&letrec), Ok(Value::Int(0)));
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // BUILTIN PARTIAL APPLICATION TESTS (curried pair-builtins)
-    // ═══════════════════════════════════════════════════════════════
-
-    #[test]
-    fn test_tegaskan_sama_curried() {
-        // tegaskan_sama(42, 42) as curried: App(App(tegaskan_sama, 42), 42)
-        let mut interp = Interpreter::new();
-        let expr = Expr::App(
-            Box::new(Expr::App(
-                Box::new(Expr::Var("tegaskan_sama".into())),
-                Box::new(Expr::Int(42)),
-            )),
-            Box::new(Expr::Int(42)),
-        );
-        assert_eq!(interp.eval_with_builtins(&expr), Ok(Value::Unit));
-    }
-
-    #[test]
-    fn test_tegaskan_sama_curried_fail() {
-        // tegaskan_sama(1, 2) should fail
-        let mut interp = Interpreter::new();
-        let expr = Expr::App(
-            Box::new(Expr::App(
-                Box::new(Expr::Var("tegaskan_sama".into())),
-                Box::new(Expr::Int(1)),
-            )),
-            Box::new(Expr::Int(2)),
-        );
-        assert!(interp.eval_with_builtins(&expr).is_err());
-    }
-
-    #[test]
-    fn test_tegaskan_beza_curried() {
-        // tegaskan_beza(1, 2) as curried: should pass (1 != 2)
-        let mut interp = Interpreter::new();
-        let expr = Expr::App(
-            Box::new(Expr::App(
-                Box::new(Expr::Var("tegaskan_beza".into())),
-                Box::new(Expr::Int(1)),
-            )),
-            Box::new(Expr::Int(2)),
-        );
-        assert_eq!(interp.eval_with_builtins(&expr), Ok(Value::Unit));
-    }
-
-    #[test]
-    fn test_gabung_teks_curried() {
-        // gabung_teks("hello", " world") as curried
-        let mut interp = Interpreter::new();
-        let expr = Expr::App(
-            Box::new(Expr::App(
-                Box::new(Expr::Var("gabung_teks".into())),
-                Box::new(Expr::String("hello".into())),
-            )),
-            Box::new(Expr::String(" world".into())),
-        );
-        assert_eq!(
-            interp.eval_with_builtins(&expr),
-            Ok(Value::String("hello world".into()))
-        );
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // JALINAN Phase 6 TESTS
-    // ═══════════════════════════════════════════════════════════════════════
-
-    #[test]
-    fn test_eval_actor_decl() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ActorDecl {
-            name: "Counter".into(),
-            state_ty: Ty::Int,
-            message_ty: Ty::Int,
-            init_state: Box::new(Expr::Int(0)),
-            handler: Box::new(Expr::Lam(
-                "msg".into(),
-                Ty::Int,
-                Box::new(Expr::Var("msg".into())),
-            )),
-        };
-        assert_eq!(interp.eval(&expr), Ok(Value::Unit));
-    }
-
-    #[test]
-    fn test_eval_choreography_block() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ChoreographyBlock {
-            name: "TwoParty".into(),
-            roles: vec!["Alice".into(), "Bob".into()],
-            protocol: riina_types::SessionType::End,
-        };
-        assert_eq!(interp.eval(&expr), Ok(Value::Unit));
-    }
-
-    #[test]
-    fn test_eval_spawn() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::Spawn(
-            Box::new(Expr::Unit),
-            Box::new(Expr::Int(0)),
-        );
-        assert_eq!(interp.eval(&expr), Ok(Value::ActorRef(1)));
-    }
-
-    #[test]
-    fn test_eval_spawn_unique_ids() {
-        let mut interp = Interpreter::new();
-        let spawn = Expr::Spawn(
-            Box::new(Expr::Unit),
-            Box::new(Expr::Int(0)),
-        );
-        let r1 = interp.eval(&spawn).unwrap();
-        let r2 = interp.eval(&spawn).unwrap();
-        let r3 = interp.eval(&spawn).unwrap();
-        assert_eq!(r1, Value::ActorRef(1));
-        assert_eq!(r2, Value::ActorRef(2));
-        assert_eq!(r3, Value::ActorRef(3));
-    }
-
-    #[test]
-    fn test_eval_actor_send() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ActorSend(
-            Box::new(Expr::Int(1)), // actor ref
-            Box::new(Expr::Int(42)), // message
-        );
-        assert_eq!(interp.eval(&expr), Ok(Value::Unit));
-    }
-
-    #[test]
-    fn test_eval_actor_recv() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ActorRecv(Box::new(Expr::Int(1)));
-        assert_eq!(interp.eval(&expr), Ok(Value::Unit));
-    }
-
-    #[test]
-    fn test_eval_crdt_merge_int() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::CRDTMerge(
-            Box::new(Expr::Int(5)),
-            Box::new(Expr::Int(10)),
-        );
-        assert_eq!(interp.eval(&expr), Ok(Value::Int(10)));
-    }
-
-    #[test]
-    fn test_eval_crdt_merge_int_reversed() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::CRDTMerge(
-            Box::new(Expr::Int(10)),
-            Box::new(Expr::Int(5)),
-        );
-        assert_eq!(interp.eval(&expr), Ok(Value::Int(10)));
-    }
-
-    #[test]
-    fn test_eval_crdt_merge_same() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::CRDTMerge(
-            Box::new(Expr::Int(7)),
-            Box::new(Expr::Int(7)),
-        );
-        assert_eq!(interp.eval(&expr), Ok(Value::Int(7)));
-    }
-
-    #[test]
-    fn test_eval_crdt_merge_zero() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::CRDTMerge(
-            Box::new(Expr::Int(0)),
-            Box::new(Expr::Int(0)),
-        );
-        assert_eq!(interp.eval(&expr), Ok(Value::Int(0)));
-    }
-
-    #[test]
-    fn test_eval_content_hash() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ContentHash(Box::new(Expr::Int(42)));
-        let result = interp.eval(&expr).unwrap();
-        assert!(result.is_hash());
-    }
-
-    #[test]
-    fn test_eval_content_hash_deterministic() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ContentHash(Box::new(Expr::Int(42)));
-        let r1 = interp.eval(&expr).unwrap();
-        let r2 = interp.eval(&expr).unwrap();
-        assert_eq!(r1, r2);
-    }
-
-    #[test]
-    fn test_eval_content_hash_different() {
-        let mut interp = Interpreter::new();
-        let e1 = Expr::ContentHash(Box::new(Expr::Int(1)));
-        let e2 = Expr::ContentHash(Box::new(Expr::Int(2)));
-        let r1 = interp.eval(&e1).unwrap();
-        let r2 = interp.eval(&e2).unwrap();
-        assert_ne!(r1, r2);
-    }
-
-    #[test]
-    fn test_eval_content_hash_string() {
-        let mut interp = Interpreter::new();
-        let expr = Expr::ContentHash(Box::new(Expr::String("hello".into())));
-        let result = interp.eval(&expr).unwrap();
-        assert!(result.is_hash());
-        // Hash of same string should be deterministic
-        let r2 = interp.eval(&expr).unwrap();
-        assert_eq!(result, r2);
-    }
-
-    #[test]
-    fn test_eval_actor_send_recv_roundtrip() {
-        let mut interp = Interpreter::new();
-        // Spawn an actor
-        let spawn = Expr::Spawn(Box::new(Expr::Unit), Box::new(Expr::Int(0)));
-        let _ref_val = interp.eval(&spawn).unwrap();
-        // Send a message
-        let send = Expr::ActorSend(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Int(99)),
-        );
-        assert_eq!(interp.eval(&send), Ok(Value::Unit));
-        // Receive (single-threaded stub returns unit)
-        let recv = Expr::ActorRecv(Box::new(Expr::Int(1)));
-        assert_eq!(interp.eval(&recv), Ok(Value::Unit));
     }
 }

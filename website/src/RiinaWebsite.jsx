@@ -97,14 +97,17 @@ const RiinaWebsite = () => {
   // Release data (auto-updated by scripts/release.sh)
   const releases = [
     // RELEASES_MARKER
+    // NOTE: 0.3.0 was prepared but is not yet tagged in git
+    // (VERSION=0.2.0; latest tag=v0.2.0). Highlights are draft and will be
+    // finalized when scripts/release.sh actually ships the release.
     {
       version: '0.3.0',
       date: '2026-03-19',
       highlights: [
-        '12,385 Coq Qed across 310 files — 0 Admitted, 0 axioms',
-        '74,228 total proof artifacts across 10 provers',
-        '19 Rust crates, 2,476 tests passing',
+        'Live proof and prover counts in PROOF_STATUS.md and metrics.json',
+        'Public quality gates green; CI wired into GitHub Actions',
         'JALINAN actors, CAHAYA UI framework, Blockchain/Syariah keywords',
+        '[draft] not yet tagged — see VERSION file for current release',
       ],
     },
     {
