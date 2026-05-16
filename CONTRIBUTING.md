@@ -154,9 +154,12 @@ wired into GitHub Actions today, by design:
 - **`riinac verify --full`.** Drives the Coq audit; same toolchain constraint.
 - **Deep verify level 4 (`05_TOOLING/scripts/verify.sh`).** Same constraint.
 - **`cargo clippy -- -D warnings` and `cargo fmt --check`.** Listed in the
-  coding standards above; currently fail on the committed tree and are tracked
-  as a separate cleanup task before they can become required CI gates. Run them
-  locally with `cargo clippy --workspace -- -D warnings` and `cargo fmt --check`.
+  coding standards above. `05_TOOLING` is currently clean on both;
+  `03_PROTO` is clean on `cargo fmt --check` but `cargo clippy -- -D warnings`
+  still has lints to resolve (tracked as a separate cleanup task) before
+  either can be promoted to a required CI gate. Run them locally with
+  `cargo clippy --workspace -- -D warnings` and `cargo fmt --check` in each
+  workspace directory.
 
 ### Signed-commit policy
 
@@ -175,20 +178,11 @@ precisely because of this — never use that flag in local pre-push runs.
 These are surfaced honestly by CI rather than masked. Each is tracked as a
 separate cleanup task:
 
-- **`ci / rust (03_PROTO)`** — `cargo test --workspace` fails to compile in
-  `riina-codegen` lib tests. The tests reference `riina_types::Expr` variants
-  that no longer exist (`ActorDecl`, `ChoreographyBlock`, `Spawn`, `ActorSend`,
-  `ActorRecv`, `CRDTMerge`, `ContentHash`). The release build is unaffected.
-- **`quality-gates / public-quality-gates.sh`** — two gates currently FAIL:
-  - `proof_ledger_freshness`: `PROOF_STATUS.md` / `AXIOMS.md` are stale
-    relative to the current `_CoqProject` scope (the corpus has been
-    refactored; the ledger has not been regenerated). Run
-    `bash scripts/update-proof-ledger.sh` to refresh — but note this also
-    surfaces that `_CoqProject` references roughly 37 `.v` files that no
-    longer exist in the worktree, which must be reconciled first.
-  - `metrics_alignment`: `website/public/metrics.json` overstates the active
-    Qed count (12 385 vs the 7 025 currently in the active build). Regenerate
-    via `bash scripts/generate-metrics.sh` once the ledger is reconciled.
+- **`cargo clippy --workspace -- -D warnings` (03_PROTO).** Still flags
+  lints across the prototype workspace (unwrap/expect in tests, casts,
+  qualifications, etc.); not yet wired into CI as a required gate.
+  Tracked as a separate cleanup task. The `05_TOOLING` workspace is
+  already `-D warnings`-clean.
 
 ## Communication
 
