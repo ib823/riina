@@ -1,0 +1,57 @@
+# Website build verification.
+#
+# Runs `vite build` directly (bypassing the `prebuild` script that regenerates
+# metrics.json and wasm). CI verifies the website builds with the *committed*
+# inputs; metrics drift is enforced separately by the quality-gates workflow.
+#
+# Reproduce locally:
+#   cd website
+#   npm ci
+#   npx vite build
+
+name: website
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "website/**"
+      - ".github/workflows/website.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "website/**"
+      - ".github/workflows/website.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: vite build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        # The repository intentionally gitignores package-lock.json
+        # (see .gitignore:41), so `npm ci` cannot be used.
+        run: npm install --no-audit --no-fund
+
+      - name: Build (skipping prebuild side-effects)
+        run: npx vite build

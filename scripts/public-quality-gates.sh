@@ -232,10 +232,10 @@ METRICS_DETAIL="metrics_qed=$metrics_qed metrics_active_files=$metrics_active_fi
 version="$(tr -d ' \n' < "$REPO_ROOT/VERSION")"
 if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
   VERSION_STATUS="PASS"
-  VERSION_DETAIL="version=$version tag=v$version"
+  VERSION_DETAIL="version=$version tag=v$version present"
 else
   VERSION_STATUS="FAIL"
-  VERSION_DETAIL="version=$version tag=v$version_missing"
+  VERSION_DETAIL="version=$version tag=v$version missing"
   OVERALL="FAIL"
 fi
 

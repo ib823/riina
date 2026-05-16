@@ -73,8 +73,8 @@ for rel in "${active_coq_files[@]}"; do
   grep -nE '^[[:space:]]*Parameter[[:space:]]+val_rel_n_step_up[[:space:]]' "$path" | sed "s|^|$rel:|" >> "$tmp_active_assumption_sites" || true
 done
 
-global_admitted="$(find "$REPO_ROOT/02_FORMAL" -name "*.v" -type f -exec grep -Eh '^[[:space:]]*Admitted\.' {} + 2>/dev/null | wc -l | tr -d " ")"
-global_axioms="$(find "$REPO_ROOT/02_FORMAL" -name "*.v" -type f -exec grep -Eh '^[[:space:]]*Axiom[[:space:]]+' {} + 2>/dev/null | wc -l | tr -d " ")"
+global_admitted="$( { find "$REPO_ROOT/02_FORMAL" -name "*.v" -type f -exec grep -Eh '^[[:space:]]*Admitted\.' {} + 2>/dev/null || true; } | wc -l | tr -d " ")"
+global_axioms="$( { find "$REPO_ROOT/02_FORMAL" -name "*.v" -type f -exec grep -Eh '^[[:space:]]*Axiom[[:space:]]+' {} + 2>/dev/null || true; } | wc -l | tr -d " ")"
 
 cat > "$tmp_status" <<EOF
 # RIINA Proof Status

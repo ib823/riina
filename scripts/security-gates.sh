@@ -23,16 +23,27 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 RANGES=()
+SKIP_SIGNING_CHECK=0
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/security-gates.sh [--range <git-range>]...
+  bash scripts/security-gates.sh [--range <git-range>]... [--no-signing-check]
+
+Options:
+  --range <range>       Restrict the secret scan to files changed in a git range.
+                        May be repeated. Default: origin/main..HEAD, else HEAD~1..HEAD,
+                        else HEAD.
+  --no-signing-check    Skip the local commit.gpgsign / signed-commit verification step.
+                        Intended ONLY for CI environments where signed-commit policy is
+                        enforced server-side via GitHub branch protection. Local
+                        pre-push runs MUST NOT pass this flag.
 
 Examples:
   bash scripts/security-gates.sh
   bash scripts/security-gates.sh --range origin/main..HEAD
   bash scripts/security-gates.sh --range <old>..<new> --range <old2>..<new2>
+  bash scripts/security-gates.sh --no-signing-check --range origin/main..HEAD
 EOF
 }
 
@@ -45,6 +56,10 @@ while [ $# -gt 0 ]; do
       fi
       RANGES+=("$2")
       shift 2
+      ;;
+    --no-signing-check)
+      SKIP_SIGNING_CHECK=1
+      shift
       ;;
     -h|--help)
       usage
@@ -78,37 +93,42 @@ for r in "${RANGES[@]}"; do
 done
 
 # Step 1: commit signature policy is mandatory
-echo "[1/3] Enforcing signed-commit policy..."
-GPG_SIGN="$(git config --get commit.gpgsign 2>/dev/null || echo "false")"
-if [ "$GPG_SIGN" != "true" ]; then
-  echo -e "${RED}FAIL: commit.gpgsign=false (or unset). Signed commits are mandatory.${NC}"
-  echo "Run: git config --global commit.gpgsign true"
-  exit 1
-fi
-
-UNSIGNED=""
-for range in "${RANGES[@]}"; do
-  COMMITS="$(git rev-list "$range" 2>/dev/null || true)"
-  if [ -z "$COMMITS" ]; then
-    continue
+if [ "$SKIP_SIGNING_CHECK" -eq 1 ]; then
+  echo "[1/3] Signed-commit policy: SKIPPED (--no-signing-check)"
+  echo -e "${YELLOW}      Signed-commit enforcement is the caller's responsibility (e.g., GitHub branch protection).${NC}"
+else
+  echo "[1/3] Enforcing signed-commit policy..."
+  GPG_SIGN="$(git config --get commit.gpgsign 2>/dev/null || echo "false")"
+  if [ "$GPG_SIGN" != "true" ]; then
+    echo -e "${RED}FAIL: commit.gpgsign=false (or unset). Signed commits are mandatory.${NC}"
+    echo "Run: git config --global commit.gpgsign true"
+    exit 1
   fi
 
-  while IFS= read -r sha; do
-    [ -z "$sha" ] && continue
-    sig="$(git log --format='%G?' -n 1 "$sha" 2>/dev/null || echo "?")"
-    case "$sig" in
-      G|U) : ;;
-      *) UNSIGNED+="$sha $sig ($range)"$'\n' ;;
-    esac
-  done <<< "$COMMITS"
-done
+  UNSIGNED=""
+  for range in "${RANGES[@]}"; do
+    COMMITS="$(git rev-list "$range" 2>/dev/null || true)"
+    if [ -z "$COMMITS" ]; then
+      continue
+    fi
 
-if [ -n "$UNSIGNED" ]; then
-  echo -e "${RED}FAIL: Unsigned/unverified commits detected in outgoing range(s):${NC}"
-  printf '%s' "$UNSIGNED"
-  exit 1
+    while IFS= read -r sha; do
+      [ -z "$sha" ] && continue
+      sig="$(git log --format='%G?' -n 1 "$sha" 2>/dev/null || echo "?")"
+      case "$sig" in
+        G|U) : ;;
+        *) UNSIGNED+="$sha $sig ($range)"$'\n' ;;
+      esac
+    done <<< "$COMMITS"
+  done
+
+  if [ -n "$UNSIGNED" ]; then
+    echo -e "${RED}FAIL: Unsigned/unverified commits detected in outgoing range(s):${NC}"
+    printf '%s' "$UNSIGNED"
+    exit 1
+  fi
+  echo -e "${GREEN}      Signed-commit policy passed${NC}"
 fi
-echo -e "${GREEN}      Signed-commit policy passed${NC}"
 
 # Step 2: secret detection on changed files in outgoing range(s)
 echo "[2/3] Scanning changed files for secrets..."

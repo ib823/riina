@@ -8,6 +8,19 @@ Security properties in RIINA are tracked as a mix of machine-checked proofs, com
 
 **[Try the Playground](https://ib823.github.io/riina/#playground)** | **[RIINA vs Rust](07_EXAMPLES/showcase/riina_vs_rust/)** | **[Website](https://ib823.github.io/riina/)**
 
+[![ci](https://github.com/ib823/riina/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ib823/riina/actions/workflows/ci.yml)
+[![quality-gates](https://github.com/ib823/riina/actions/workflows/quality-gates.yml/badge.svg?branch=main)](https://github.com/ib823/riina/actions/workflows/quality-gates.yml)
+[![security](https://github.com/ib823/riina/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/ib823/riina/actions/workflows/security.yml)
+[![website](https://github.com/ib823/riina/actions/workflows/website.yml/badge.svg?branch=main)](https://github.com/ib823/riina/actions/workflows/website.yml)
+
+> **CI scope.** The badges above cover the checks that do not require a
+> Rocq/Lean/Isabelle/F* toolchain: Rust build and tests for both workspaces,
+> the public-quality gates from `scripts/public-quality-gates.sh`, the
+> secret/Trojan-source scans from `scripts/security-gates.sh`, and the
+> Vite website build. Coq and other prover lanes are still verified locally
+> via `scripts/godzilla-pipeline.sh`. See [CONTRIBUTING.md](CONTRIBUTING.md#continuous-integration)
+> for the full CI matrix and the list of currently failing gates.
+
 ```
   ██████╗ ██╗██╗███╗   ██╗ █████╗
   ██╔══██╗██║██║████╗  ██║██╔══██╗
