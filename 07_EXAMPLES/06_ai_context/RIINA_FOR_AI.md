@@ -1,6 +1,6 @@
 # RIINA for AI Assistants
 
-**Verification:** 11,905 Coq Qed (compiled, 0 Admitted, 0 active axioms) | 10 prover lanes tracked with claim levels | 2294 Rust tests
+**Verification:** Coq active build is 0 Admitted / 0 active axioms; live Qed count and per-lane claim levels in `PROOF_STATUS.md`, `AXIOMS.md`, and `website/public/metrics.json`. Non-Coq lanes (Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV) are currently at claim level `generated`. Regenerate metrics with `bash scripts/generate-metrics.sh --fast`.
 
 ## What is RIINA?
 
@@ -135,7 +135,7 @@ RIINA's security properties are proven in Coq:
 - **Capability safety** (capabilities cannot be forged)
 - **Taint tracking correctness** (tainted data properly tracked)
 
-The proofs are in `02_FORMAL/coq/` with 4,885 Qed proofs (active build) and 0 admits.
+The proofs are in `02_FORMAL/coq/` — the active build has 0 admits and 0 active axioms; the live Qed count is in `PROOF_STATUS.md`.
 
 ## Compiler
 

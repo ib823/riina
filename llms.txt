@@ -7,7 +7,7 @@ RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formal
 - File extension: `.rii`
 - Keywords: Bahasa Melayu (Malaysian) + English dual syntax
 - Repository: https://github.com/ib823/riina
-- Formal proofs: 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) + 7,924 Lean + 8,072 Isabelle
+- Formal proofs: live counts and per-lane claim levels are published in `PROOF_STATUS.md`, `AXIOMS.md`, and `website/public/metrics.json` — regenerate with `bash scripts/generate-metrics.sh --fast`. At the time of this writing the active Coq build has 7,025 Qed proofs, 0 Admitted, 0 active axioms. Non-Coq lanes (Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV) are currently at claim level `generated`.
 - Verification: 10-prover (Coq, Lean 4, Isabelle/HOL, F*, TLA+, Alloy, Z3/CVC5, Verus, Kani, TV)
 - Security: 6-level information flow lattice, mandatory effect tracking
 - License: Proprietary
@@ -17,7 +17,7 @@ RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formal
 - [Full AI Reference](llms-full.txt): Complete language reference for AI agents (~30K tokens)
 - [Language Spec](04_SPECS/language/RIINA_LANGUAGE_REFERENCE_AI.md): Canonical AI-optimized reference
 - [Examples](07_EXAMPLES/): 130+ example .rii files across 9 categories
-- [Formal Proofs](02_FORMAL/coq/): Coq proof library (7,929 Qed proofs)
+- [Formal Proofs](02_FORMAL/coq/): Coq proof library (live Qed count in `PROOF_STATUS.md`)
 
 ## Quick Syntax
 

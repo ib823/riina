@@ -1,184 +1,123 @@
 {
-  "generated": "2026-03-19T23:22:53Z",
-  "generatedHuman": "March 19, 2026 at 23:22 UTC",
-  "version": "0.3.0",
+  "generated": "2026-05-16T13:52:39Z",
+  "generatedHuman": "May 16, 2026 at 13:52 UTC",
+  "version": "0.2.0",
   "session": 0,
   "git": {
-    "commit": "10675022",
-    "branch": "main"
+    "commit": "6fbe69f0",
+    "branch": "claude/assess-codebase-3D6Ab"
   },
   "proofs": {
-    "qedActive": 12385,
-    "qedDeprecated": 758,
-    "qedTotal": 13143,
+    "qedActive": 7025,
+    "qedDeprecated": 0,
+    "qedTotal": 7025,
     "admitted": 0,
     "axioms": 0,
     "assumptions": 0,
     "axiomsJustified": true
   },
   "coq": {
-    "filesTotal": 349,
-    "filesActive": 309,
-    "domains": 252,
-    "prover": "Rocq 9.1.1"
+    "filesTotal": 260,
+    "filesActive": 297,
+    "domains": 205,
+    "prover": "Coq 8.20.1"
   },
   "lean": {
-    "theorems": 12576,
-    "sorry": 0,
-    "axioms": 15,
-    "files": 325,
-    "lines": 134813,
+    "theorems": 10146,
+    "sorry": 177,
+    "axioms": 10,
+    "files": 287,
+    "lines": 106868,
     "prover": "Lean 4"
   },
   "isabelle": {
-    "lemmas": 12931,
-    "lemmasRaw": 12931,
-    "compiledTheories": 1,
-    "compiledLemmas": 5,
-    "smokeBuildOk": true,
-    "smokeSession": "RIINA_CORE",
-    "quarantined": false,
+    "lemmas": 9935,
     "sorry": 0,
-    "sorryVerified": true,
-    "axioms": 0,
-    "files": 368,
-    "lines": 125911,
+    "axioms": 1,
+    "files": 285,
+    "lines": 100576,
     "prover": "Isabelle/HOL"
   },
   "fstar": {
-    "lemmas": 22,
-    "lemmasRaw": 22,
-    "compiledLemmas": 3,
-    "smokeBuildOk": true,
-    "smokeModule": "RIINA.Active.CryptographicSecurityActive",
-    "quarantined": false,
-    "files": 315,
+    "lemmas": 7899,
+    "files": 268,
     "prover": "F*"
   },
   "tlaplus": {
-    "theorems": 12282,
-    "theoremsRaw": 12282,
-    "compiledTheorems": 5,
-    "smokeBuildOk": true,
-    "smokeSpec": "RIINA.Active.TelusProcurementProtocol",
-    "quarantined": false,
-    "files": 317,
+    "theorems": 8981,
+    "files": 268,
     "prover": "TLA+"
   },
   "alloy": {
-    "assertions": 11627,
-    "assertionsRaw": 11627,
-    "compiledAssertions": 6,
-    "smokeBuildOk": true,
-    "smokeModel": "RIINA.Active.TelusProcurementAccessControl",
-    "quarantined": false,
-    "files": 306,
+    "assertions": 8715,
+    "files": 266,
     "prover": "Alloy 6"
   },
   "smt": {
-    "assertions": 12405,
-    "assertionsRaw": 12405,
-    "quarantined": false,
-    "files": 317,
+    "assertions": 8981,
+    "files": 268,
     "prover": "Z3/CVC5 (SMT-LIB)"
   },
   "verus": {
-    "proofs": 0,
-    "proofsRaw": 6395,
-    "quarantined": true,
-    "files": 323,
+    "proofs": 8715,
+    "files": 266,
     "prover": "Verus"
   },
   "kani": {
-    "harnesses": 0,
-    "harnessesRaw": 5664,
-    "quarantined": true,
-    "files": 307,
+    "harnesses": 8715,
+    "files": 266,
     "prover": "Kani"
   },
   "tv": {
-    "validations": 0,
-    "validationsRaw": 17463,
-    "quarantined": true,
-    "files": 316,
+    "validations": 12858,
+    "files": 268,
     "prover": "Translation Validation"
   },
   "multiProver": {
-    "tripleProverTheorems": 10745,
-    "totalProofsAllProvers": 74228,
+    "tripleProverTheorems": 8417,
+    "totalProofsAllProvers": 91970,
     "totalProvers": 10,
     "proverList": ["Coq", "Lean 4", "Isabelle/HOL", "F*", "TLA+", "Alloy 6", "Z3/CVC5", "Verus", "Kani", "Translation Validation"],
-    "sorry": 0,
+    "sorry": 177,
     "status": "ACTIVE_COQ_MECHANIZED"
   },
   "quality": {
     "coqCompiled": true,
-    "leanCompiled": true,
-    "isabelleCompiled": true,
-    "fstarStatus": "compiled",
-    "tlaplusStatus": "mechanized",
-    "alloyStatus": "compiled",
-    "smtStatus": "mechanized",
+    "leanCompiled": false,
+    "isabelleCompiled": false,
+    "fstarStatus": "generated",
+    "tlaplusStatus": "generated",
+    "alloyStatus": "generated",
+    "smtStatus": "generated",
     "verusStatus": "generated",
     "kaniStatus": "generated",
     "tvStatus": "generated",
-    "runtimeProofStatus": "generated",
-    "nonCoqMechanization": {
-      "reportFresh": true,
-      "overallMechanized": false,
-      "source": "strict_report",
-      "pending": {
-        "lean": "require full-lane lake build and zero sorry/axioms across 02_FORMAL/lean/RIINA",
-        "isabelle": "none",
-        "fstar": "partial CryptographicSecurityActive smoke build verified; full Active+Domains F* compilation still pending",
-        "tlaplus": "none",
-        "alloy": "partial TelusProcurementAccessControl smoke model checked; full-lane executable Alloy checks across corpus still pending",
-        "smt": "none",
-        "verus": "require full-lane Verus checks and zero generated placeholders",
-        "kani": "require full-lane Kani checks and zero generated placeholders",
-        "tv": "require full-lane TV checks and zero generated placeholders"
-      },
-      "backlog": {
-        "leanSorry": 0,
-        "leanAxioms": 15,
-        "isabelleSorry": 0,
-        "fstarGeneratedFiles": 7,
-        "smtGeneratedFiles": 0,
-        "verusGeneratedFiles": 10,
-        "kaniGeneratedFiles": 1,
-        "tvGeneratedFiles": 7
-      }
-    },
     "coqTiers": {
-      "core": 1621,
-      "domain": 10764,
-      "domainTrivial": 1939
+      "core": 882,
+      "domain": 6143,
+      "domainTrivial": 767
     }
   },
   "claimLevels": {
     "legend": ["generated", "compiled", "mechanized", "independently_audited"],
-    "overall": "generated",
+    "overall": "mechanized",
     "independentlyAudited": false,
     "coq": "mechanized",
-    "lean": "mechanized",
-    "isabelle": "mechanized",
-    "fstar": "compiled",
-    "tlaplus": "mechanized",
-    "alloy": "compiled",
-    "smt": "mechanized",
+    "lean": "generated",
+    "isabelle": "generated",
+    "fstar": "generated",
+    "tlaplus": "generated",
+    "alloy": "generated",
+    "smt": "generated",
     "verus": "generated",
     "kani": "generated",
-    "tv": "generated",
-    "runtimeProofArchitecture": "generated"
+    "tv": "generated"
   },
   "rust": {
-    "tests": 2476,
-    "testsVerified": 2476,
-    "testsEstimated": 2472,
-    "testsSource": "cached_verified",
-    "crates": 19
+    "tests": 857,
+    "crates": 15
   },
-  "examples": 155,
+  "examples": 121,
   "status": {
     "build": "passing",
     "grade": "A",

@@ -40,8 +40,8 @@ Every country needs a constitution — the foundational law that all other laws 
 - **Effect Safety** — Every side effect (reading a file, sending a network request, accessing the clock) must be declared. A function that claims to be pure (no side effects) is proven to actually be pure. You cannot hide a network call inside a math function.
 - **Declassification Correctness** — When secrets do need to be revealed (e.g., showing the last 4 digits of a credit card), this can only happen through an explicit, auditable process with a proof that the policy is followed.
 
-**Current state:** 7,740 completed proofs (Qed), 0 incomplete proofs (admits), 0 active axioms, 244 active proof files.
-**Audit update:** 2026-02-04 (Codex audit sync).
+**Current state:** Active Coq build is 0 Admitted / 0 active axioms. Live Qed and active-file counts are published in `PROOF_STATUS.md` and `website/public/metrics.json`; regenerate with `bash scripts/generate-metrics.sh --fast`.
+**Audit update:** 2026-05-16 (post-CI-wiring sync).
 
 The production-active build is now axiom-free. Historical/archived files may still contain assumptions, but active security guarantees are proved without active axioms.
 
@@ -178,7 +178,7 @@ RIINA was constructed in eight phases, each building on the previous:
 |-------|------|---------------|--------|
 | 1 | Compiler Completion | The core compiler: lexer, parser, type checker, code generator, REPL | Done |
 | 2 | Standard Library | 88 built-in functions across 9 modules | Done |
-| 3 | Formal Verification | 7,740 machine-verified proofs, 0 incomplete proofs, 0 active axioms | Stable |
+| 3 | Formal Verification | Coq active build at 0 Admitted / 0 active axioms; live Qed count in `PROOF_STATUS.md` | Stable |
 | 4 | Developer Experience | Formatter, language server, doc generator, VS Code extension, 130 examples | Done |
 | 5 | Ecosystem | Package manager, CI/CD, Docker, Nix, release system, Proprietary license | Done |
 | 6 | Adoption | C FFI, demo apps, community setup, enterprise compliance, public repository | Done |
@@ -217,14 +217,14 @@ Post-quantum cryptographic algorithms can be implemented in RIINA and their corr
 
 These numbers reflect the current verified state of the codebase:
 
-| Metric | Value |
+| Metric | Value (regenerate with `bash scripts/generate-metrics.sh --fast`) |
 |--------|-------|
-| Machine-verified proofs (Qed) | 7,740 (active build) |
+| Machine-verified proofs (Qed, Coq active build) | see `PROOF_STATUS.md` |
 | Incomplete proofs (admits) | 0 |
 | Active axioms (production-active build) | 0 |
-| Active proof files | 244 |
-| Rust tests | 852 |
-| Compiler crates | 15 |
+| Active proof files | see `PROOF_STATUS.md` (note: `_CoqProject` currently has 37 stale entries pending cleanup) |
+| Rust tests | static `#[test]` count in `website/public/metrics.json` |
+| Compiler crates (03_PROTO + 05_TOOLING) | 28 |
 | Example programs | 130 |
 | Standard library builtins | 88 |
 | Compliance profiles | 15 |

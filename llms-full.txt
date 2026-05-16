@@ -2,7 +2,7 @@
 
 Version: 0.2.0 | File extension: `.rii` | Prover: Coq 8.20.1
 
-RIINA (Rigorous Immutable Invariant, No Assumptions) is the world's first formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system. All security properties are mathematically proven: 7,929 Coq Qed proofs (compiled, 0 Admitted, 1 policy axiom), verified across 10 independent provers. If AI-generated code compiles, it is provably secure by construction.
+RIINA (Rigorous Immutable Invariant, No Assumptions) is a formally verified programming language with Bahasa Melayu (Malaysian Malay) keywords, information flow control, and an effect type system. Live verified state is published in `PROOF_STATUS.md`, `AXIOMS.md`, and `website/public/metrics.json` (regenerate with `bash scripts/generate-metrics.sh --fast`). At the time of writing the active Coq build is at 7,025 Qed proofs (0 Admitted, 0 active axioms); non-Coq lanes (Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV) are at claim level `generated`. If AI-generated code compiles, the *active-Coq* security properties hold by construction; other lanes' guarantees are tracked per claim level.
 
 ---
 
@@ -832,8 +832,7 @@ All security properties proven in Coq 8.20.1:
 - **Effect safety**: Effects tracked and enforced
 - **Information flow control**: Multi-level security lattice
 
-Proofs: 7,929 Coq Qed (compiled, 0 Admitted, 1 policy axiom) + 7,924 Lean 4 + 8,072 Isabelle/HOL. 10 independent provers total.
-Triple-prover verification: Coq 8.20.1 (primary) + Lean 4 (119 theorems) + Isabelle/HOL (138 lemmas).
+Proof counts and per-lane claim levels are published in `PROOF_STATUS.md`, `AXIOMS.md`, and `website/public/metrics.json`. Coq is the primary mechanized lane; the other nine lanes (Lean 4, Isabelle/HOL, F*, TLA+, Alloy, SMT, Verus, Kani, Translation Validation) are currently at claim level `generated` pending end-to-end prover-toolchain runs.
 
 ---
 
