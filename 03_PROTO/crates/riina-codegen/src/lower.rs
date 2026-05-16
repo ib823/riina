@@ -1332,7 +1332,6 @@ mod tests {
         let mut lower = Lower::new();
         let let_expr = Expr::Let(
             "x".to_string(),
-            None,
             Box::new(Expr::Int(42)),
             Box::new(Expr::Var("x".to_string())),
         );
@@ -1566,11 +1565,9 @@ mod tests {
         let mut lower = Lower::new();
         let nested = Expr::Let(
             "x".to_string(),
-            None,
             Box::new(Expr::Int(1)),
             Box::new(Expr::Let(
                 "y".to_string(),
-                None,
                 Box::new(Expr::Int(2)),
                 Box::new(Expr::Var("x".to_string())),
             )),
@@ -1598,114 +1595,4 @@ mod tests {
         assert!(pair_count >= 2);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // JALINAN Phase 6 LOWERING TESTS
-    // ═══════════════════════════════════════════════════════════════════════
-
-    #[test]
-    fn test_lower_actor_decl() {
-        let mut lower = Lower::new();
-        let expr = Expr::ActorDecl {
-            name: "Counter".into(),
-            state_ty: Ty::Int,
-            message_ty: Ty::Int,
-            init_state: Box::new(Expr::Int(0)),
-            handler: Box::new(Expr::Lam(
-                "msg".into(),
-                Ty::Int,
-                Box::new(Expr::Var("msg".into())),
-            )),
-        };
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_actor_decl = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::ActorDecl { .. })
-        });
-        assert!(has_actor_decl);
-    }
-
-    #[test]
-    fn test_lower_choreography_block() {
-        let mut lower = Lower::new();
-        let expr = Expr::ChoreographyBlock {
-            name: "Protocol".into(),
-            roles: vec!["A".into(), "B".into()],
-            protocol: riina_types::SessionType::End,
-        };
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_choreo = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::ChoreographyDecl { .. })
-        });
-        assert!(has_choreo);
-    }
-
-    #[test]
-    fn test_lower_spawn() {
-        let mut lower = Lower::new();
-        let expr = Expr::Spawn(
-            Box::new(Expr::Unit),
-            Box::new(Expr::Int(0)),
-        );
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_spawn = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::ActorSpawn(_, _))
-        });
-        assert!(has_spawn);
-    }
-
-    #[test]
-    fn test_lower_actor_send() {
-        let mut lower = Lower::new();
-        let expr = Expr::ActorSend(
-            Box::new(Expr::Int(1)),
-            Box::new(Expr::Int(42)),
-        );
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_send = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::ActorSend(_, _))
-        });
-        assert!(has_send);
-    }
-
-    #[test]
-    fn test_lower_actor_recv() {
-        let mut lower = Lower::new();
-        let expr = Expr::ActorRecv(Box::new(Expr::Int(1)));
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_recv = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::ActorRecv(_))
-        });
-        assert!(has_recv);
-    }
-
-    #[test]
-    fn test_lower_crdt_merge() {
-        let mut lower = Lower::new();
-        let expr = Expr::CRDTMerge(
-            Box::new(Expr::Int(5)),
-            Box::new(Expr::Int(10)),
-        );
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_merge = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::CRDTMerge(_, _))
-        });
-        assert!(has_merge);
-    }
-
-    #[test]
-    fn test_lower_content_hash() {
-        let mut lower = Lower::new();
-        let expr = Expr::ContentHash(Box::new(Expr::Int(42)));
-        let prog = lower.compile(&expr).unwrap();
-        let main = prog.function(FuncId::MAIN).unwrap();
-        let has_hash = main.blocks[0].instrs.iter().any(|i| {
-            matches!(i.instr, Instruction::ContentHash(_))
-        });
-        assert!(has_hash);
-    }
 }
