@@ -128,7 +128,6 @@ fn type_err(expected: &str, found: &Value, ctx: &str) -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
 
     #[test]
     fn test_fail_tulis_baca() {

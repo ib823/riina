@@ -295,12 +295,12 @@ pub fn build_scaffolding(
 
     // Write source files
     fs::write(
-        src_dir.join(&format!("{}.swift", config.framework_name)),
+        src_dir.join(format!("{}.swift", config.framework_name)),
         &swift_bridge,
     )?;
     fs::write(src_dir.join("riina_bridge.c"), &c_bridge)?;
     fs::write(
-        src_dir.join(&format!("{}-Bridging-Header.h", config.framework_name)),
+        src_dir.join(format!("{}-Bridging-Header.h", config.framework_name)),
         &bridging_header,
     )?;
     fs::write(output_dir.join("Package.swift"), &package_swift)?;

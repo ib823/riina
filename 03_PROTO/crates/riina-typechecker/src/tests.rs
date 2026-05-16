@@ -1,6 +1,11 @@
 // Copyright (c) 2026 The RIINA Authors. All rights reserved.
 
+// `lib.rs` declares this file with `#[cfg(test)] mod tests;`, so the
+// inner module re-uses the same name. The repetition is the standard
+// `tests.rs` + inner `mod tests` pattern, kept here so the file is
+// self-contained.
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{type_check, Context, TypeError};
     use riina_types::{BinOp, Effect, Expr, SecurityLevel, Ty};

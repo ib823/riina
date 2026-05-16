@@ -914,7 +914,6 @@ mod tests {
 
     #[test]
     fn test_format_security_ref() {
-        let cfg = FmtConfig::default();
         let mut out = String::new();
         fmt_ty(&mut out, &Ty::Ref(Box::new(Ty::Int), SecurityLevel::Secret));
         assert_eq!(out, "Ruj<Nombor>@Rahsia");

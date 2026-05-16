@@ -407,8 +407,9 @@ impl StoreTy {
     /// This is used for strong updates where the type of a location changes.
     /// Returns `true` if the location existed and was updated.
     pub fn update(&mut self, loc: Location, ty: Ty, sl: SecurityLevel) -> bool {
-        if self.bindings.contains_key(&loc) {
-            self.bindings.insert(loc, (ty, sl));
+        use std::collections::hash_map::Entry;
+        if let Entry::Occupied(mut e) = self.bindings.entry(loc) {
+            e.insert((ty, sl));
             true
         } else {
             false

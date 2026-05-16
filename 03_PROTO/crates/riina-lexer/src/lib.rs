@@ -10,8 +10,11 @@
 //! Mode: ULTRA KIASU | FUCKING PARANOID | ZERO TRUST | ZERO LAZINESS
 
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used)]
-#![warn(clippy::pedantic)]
+// Strict deny applies to production code only; in test code `.unwrap()` on
+// `lexer.next_token()` is the idiomatic way to express "this token must
+// parse — fail the test loudly if it doesn't".
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
+#![cfg_attr(not(test), warn(clippy::pedantic))]
 
 mod error;
 mod lexer;

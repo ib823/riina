@@ -1387,7 +1387,7 @@ fn compile_isabelle(isabelle_dir: &Path) -> CheckResult {
             name: "Isabelle Compilation".into(),
             passed: false,
             blocking: false,
-            details: format!("{msg}"),
+            details: msg.clone(),
         },
     };
 
@@ -1552,6 +1552,12 @@ fn verify_metrics_accuracy(
 /// Cross-validate proof counts across all ten provers.
 /// Checks that Lean and Isabelle theorem counts are within 50% of the Coq domain count.
 /// Also aggregates counts from all 7 additional provers.
+///
+/// Each prover's directory is passed individually so the call site
+/// explicitly enumerates which lane it is feeding — bundling into a
+/// struct of `PathBuf` would have ten identically-typed fields and so
+/// would not reduce the swap-by-mistake risk that the lint targets.
+#[allow(clippy::too_many_arguments)]
 fn cross_validate_provers(
     coq_dir: &Path,
     lean_dir: &Path,
@@ -1622,7 +1628,7 @@ fn newest_mtime(dir: &Path, ext: &str) -> Option<SystemTime> {
                 } else if path.extension().and_then(|e| e.to_str()) == Some(ext) {
                     if let Ok(meta) = fs::metadata(&path) {
                         if let Ok(mt) = meta.modified() {
-                            if best.map_or(true, |b| mt > b) {
+                            if best.is_none_or(|b| mt > b) {
                                 *best = Some(mt);
                             }
                         }
@@ -1637,7 +1643,10 @@ fn newest_mtime(dir: &Path, ext: &str) -> Option<SystemTime> {
 }
 
 /// Check if transpiled prover files are stale relative to Coq source files.
-/// Returns non-blocking warnings for each stale prover.
+/// Returns non-blocking warnings for each stale prover. See the note on
+/// `cross_validate_provers` for why each prover directory is passed
+/// individually rather than via a struct.
+#[allow(clippy::too_many_arguments)]
 fn check_transpiler_staleness(
     repo: &Path,
     coq_dir: &Path,

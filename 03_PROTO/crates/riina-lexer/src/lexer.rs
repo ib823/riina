@@ -131,6 +131,11 @@ impl<'a> Lexer<'a> {
     /// - A string literal is not properly terminated
     /// - A character literal is not properly terminated
     /// - An invalid escape sequence is encountered
+    // The dispatch is a single linear `match` over every token-start
+    // character class; splitting it into helpers would scatter the
+    // contiguous tokenization rules across several functions for no
+    // readability gain.
+    #[allow(clippy::too_many_lines)]
     pub fn next_token(&mut self) -> Result<Token, LexError> {
         self.skip_whitespace();
 

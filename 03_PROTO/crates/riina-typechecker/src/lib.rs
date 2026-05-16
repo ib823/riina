@@ -1384,10 +1384,10 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
                     } else if t1 == Ty::Int && t2 == Ty::Int {
                         Ok((Ty::Int, eff))
                     } else {
-                        return Err(TypeError::TypeMismatch {
+                        Err(TypeError::TypeMismatch {
                             expected: t1,
                             found: t2,
-                        });
+                        })
                     }
                 }
                 BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {

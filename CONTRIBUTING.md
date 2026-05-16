@@ -151,12 +151,10 @@ wired into GitHub Actions today, by design:
 - **`riinac verify --full`.** Drives the Coq audit; same toolchain constraint.
 - **Deep verify level 4 (`05_TOOLING/scripts/verify.sh`).** Same constraint.
 - **`cargo clippy -- -D warnings` and `cargo fmt --check`.** Listed in the
-  coding standards above. `05_TOOLING` is currently clean on both;
-  `03_PROTO` is clean on `cargo fmt --check` but `cargo clippy -- -D warnings`
-  still has lints to resolve (tracked as a separate cleanup task) before
-  either can be promoted to a required CI gate. Run them locally with
-  `cargo clippy --workspace -- -D warnings` and `cargo fmt --check` in each
-  workspace directory.
+  coding standards above. Both `05_TOOLING` and `03_PROTO` are clean on
+  `cargo fmt --check` and `cargo clippy --workspace --all-targets -- -D warnings`,
+  but neither is wired into CI as a required gate yet — promote them once
+  the next round of changes has been reviewed.
 
 ### Signed-commit policy
 
@@ -172,14 +170,12 @@ precisely because of this — never use that flag in local pre-push runs.
 
 ### Known CI failures at the time of this writing
 
-These are surfaced honestly by CI rather than masked. Each is tracked as a
-separate cleanup task:
-
-- **`cargo clippy --workspace -- -D warnings` (03_PROTO).** Still flags
-  lints across the prototype workspace (unwrap/expect in tests, casts,
-  qualifications, etc.); not yet wired into CI as a required gate.
-  Tracked as a separate cleanup task. The `05_TOOLING` workspace is
-  already `-D warnings`-clean.
+None. Both workspaces (`03_PROTO`, `05_TOOLING`) pass `cargo build`,
+`cargo test`, `cargo fmt --check`, and `cargo clippy --workspace --all-targets -- -D warnings`;
+`bash scripts/public-quality-gates.sh`, `bash scripts/audit-docs.sh`, and
+`bash scripts/security-gates.sh --no-signing-check` all pass locally.
+Promoting the clippy/fmt commands to required CI gates is the natural
+next step once the change has been reviewed.
 
 ## Communication
 

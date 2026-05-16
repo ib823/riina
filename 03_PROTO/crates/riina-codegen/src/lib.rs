@@ -414,7 +414,7 @@ mod tests {
         let program = compile(&expr).unwrap();
         let main = program.function(ir::FuncId::MAIN).unwrap();
         // Should have multiple blocks for branching
-        assert!(main.blocks.len() >= 1);
+        assert!(!main.blocks.is_empty());
     }
 
     /// Test conditional branching false branch

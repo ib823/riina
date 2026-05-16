@@ -378,8 +378,8 @@ mod tests {
             .map(|i| arena.alloc(TestNode { value: i }))
             .collect();
 
-        for (i, idx) in indices.iter().enumerate() {
-            assert_eq!(arena.get(*idx).value, i as i32);
+        for (i, idx) in (0_i32..).zip(indices.iter()) {
+            assert_eq!(arena.get(*idx).value, i);
         }
     }
 
