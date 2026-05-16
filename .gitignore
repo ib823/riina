@@ -23,6 +23,9 @@
 *.tar.gz
 dist/
 
+# VS Code extension build output
+riina-vscode/out/
+
 # IDE & tool artifacts
 .DS_Store
 .gemini/
