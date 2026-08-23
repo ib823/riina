@@ -1053,6 +1053,18 @@ impl Lower {
                             (Ty::Decimal, _) | (_, Ty::Decimal) => Ty::Decimal,
                             (Ty::Fixed, _) | (_, Ty::Fixed) => Ty::Fixed,
                             (Ty::FixedBin, _) | (_, Ty::FixedBin) => Ty::FixedBin,
+                            // `+` on strings is concatenation, not arithmetic.
+                            // Typing the result `Int` made the WASM backend
+                            // print `cetakln("i=" + ke_teks(i))` through its
+                            // integer (itoa) path, so the program emitted the
+                            // heap ADDRESS of the joined string as a decimal
+                            // number. (The concat itself was right; only the
+                            // result's static type was wrong. C dispatches on a
+                            // runtime tag, so it was unaffected — this was a
+                            // WASM-only silent wrong answer.)
+                            (Ty::String, _) | (_, Ty::String) if matches!(op, BinOp::Add) => {
+                                Ty::String
+                            }
                             _ => Ty::Int,
                         }
                     }

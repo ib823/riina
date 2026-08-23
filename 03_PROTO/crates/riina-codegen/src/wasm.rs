@@ -54,7 +54,7 @@ use crate::wasm_encode::{
 };
 use crate::{Error, Result};
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// Initial heap pointer offset (after data section).
 /// Aligned to 16 bytes.
@@ -4765,7 +4765,10 @@ impl WasmBackend {
         // Start at the entry block's index (via block_map, since blocks may
         // share a BlockId and the map keeps the last — e.g. hand-built test IR).
         let entry_idx = block_map.get(&func.entry).copied().unwrap_or(0);
-        self.emit_structured(entry_idx, None, func, &ctx, &block_map, &mut code)?;
+        let mut ctrl = Ctrl::new(func, &block_map);
+        self.emit_structured(
+            entry_idx, None, func, &ctx, &block_map, &mut code, &mut ctrl,
+        )?;
 
         if code.is_empty() || !matches!(code.last(), Some(&b) if b == Op::Return as u8) {
             wasm_i64c(&mut code, 0);
@@ -4786,6 +4789,7 @@ impl WasmBackend {
     /// to the merge `Phi`. This is what makes a *nested* if/else correct: its
     /// exit is an inner merge block, which is the block the lowerer keys the
     /// outer `Phi` entry by; the entry block (an inner `CondBranch`) is not.
+    #[allow(clippy::too_many_arguments)] // an emitter context plus the CFG walk's own state
     fn emit_structured(
         &self,
         entry: usize,
@@ -4794,12 +4798,26 @@ impl WasmBackend {
         ctx: &EmitCtx<'_>,
         block_map: &HashMap<BlockId, usize>,
         code: &mut Vec<u8>,
+        ctrl: &mut Ctrl,
     ) -> Result<Option<usize>> {
         let mut cur = entry;
         loop {
             if Some(cur) == stop {
                 return Ok(None);
             }
+
+            // A loop header we are not already inside: open the `block`/`loop`
+            // pair and emit the whole loop, then continue at its exit.
+            if ctrl.headers.contains(&cur) && !ctrl.frames.iter().any(|f| f.header == cur) {
+                match self.emit_loop(cur, func, ctx, block_map, code, ctrl)? {
+                    Some(next) => {
+                        cur = next;
+                        continue;
+                    }
+                    None => return Ok(None),
+                }
+            }
+
             let block = &func.blocks[cur];
             self.emit_block_instrs(block, ctx, code)?;
             match &block.terminator {
@@ -4824,21 +4842,33 @@ impl WasmBackend {
                             // merge block, not the region's entry CondBranch).
                             return Ok(Some(cur));
                         }
-                        // A BACK edge — the CFG of a `selagi`/`ulang` loop. This
-                        // emitter only knows how to structure forward if/else
-                        // regions; following the edge would walk the same blocks
-                        // forever. WASM needs real `loop`/`br_if` nesting, which
-                        // is not built yet, so refuse the module rather than emit
-                        // something that silently runs the body once (which is
-                        // exactly the bug real loops were introduced to fix).
-                        if t <= cur {
+                        // `lanjut` / `putus`: an edge to an enclosing loop's header
+                        // or exit, from somewhere inside it (typically an `if` arm,
+                        // so deeper than the loop body's own top level). Both become
+                        // an unconditional `br` to the right label depth; control
+                        // does not come back, so the region diverges here.
+                        if let Some(depth) = ctrl.br_depth_to_header(t) {
+                            code.push(Op::Br as u8);
+                            wasm_encode::encode_uleb128(depth as u64, code);
+                            return Ok(None);
+                        }
+                        if let Some(depth) = ctrl.br_depth_to_exit(t) {
+                            code.push(Op::Br as u8);
+                            wasm_encode::encode_uleb128(depth as u64, code);
+                            return Ok(None);
+                        }
+                        // A back edge that is NOT to an enclosing loop is a
+                        // CFG shape this emitter cannot structure. Refuse
+                        // rather than walk it forever or emit something wrong.
+                        if ctrl.is_back_edge(cur, t) {
                             return Err(Error::InvalidOperation(
-                                "the WASM backend cannot yet compile `selagi`/`ulang` loops \
-                                 (they need structured loop/br_if lowering). Use `riinac run`, \
-                                 or `riinac build` for a native binary."
+                                "the WASM backend cannot structure this control flow \
+                                 (an irreducible back edge). Build for the native target."
                                     .to_string(),
                             ));
                         }
+                        // Every remaining edge is forward, so the walk makes
+                        // progress and terminates.
                         cur = t;
                     }
                     None => return Ok(None),
@@ -4854,26 +4884,17 @@ impl WasmBackend {
                         return Ok(None);
                     };
                     // The merge is where the two branches rejoin: the Branch
-                    // target of the then (or else) branch.
-                    let merge = Self::branch_target(&func.blocks[then_idx], block_map)
-                        .or_else(|| Self::branch_target(&func.blocks[else_idx], block_map));
-
-                    // A "merge" that points BACKWARDS is not a merge — it is the
-                    // back edge of a `selagi`/`ulang` loop, whose header this
-                    // block is. Continuing would re-emit the header forever
-                    // (the emitter's own walk has no visited set). Structuring a
-                    // loop needs real `loop`/`br_if` nesting, which is not built
-                    // yet, so refuse the module: a backend that cannot express a
-                    // construct fails closed rather than emitting something that
-                    // silently runs the body once (REQ-78).
-                    if merge.is_some_and(|m| m <= cur) {
-                        return Err(Error::InvalidOperation(
-                            "the WASM backend cannot yet compile `selagi`/`ulang` loops \
-                             (they need structured loop/br_if lowering). Use `riinac run`, \
-                             or `riinac build` for a native binary."
-                                .to_string(),
-                        ));
-                    }
+                    // target of the then (or else) branch. An arm that leaves via
+                    // `putus`/`lanjut` has no merge of its own, so prefer the arm
+                    // that does rejoin forwards.
+                    let merge = [then_idx, else_idx]
+                        .into_iter()
+                        .filter_map(|b| {
+                            let m = Self::branch_target(&func.blocks[b], block_map)?;
+                            (!ctrl.is_back_edge(b, m) && !ctrl.targets_enclosing_loop(m))
+                                .then_some(m)
+                        })
+                        .next();
 
                     if let Some(local) = ctx.var_map.get(cond) {
                         code.push(Op::LocalGet as u8);
@@ -4883,12 +4904,13 @@ impl WasmBackend {
                     code.push(Op::If as u8);
                     // Each branch pushes its i64 phi contribution as the block result.
                     code.push(ValType::I64 as u8);
+                    ctrl.depth += 1;
                     // Emit each branch region, then push its contribution to the
                     // merge phi from the region's EXIT block (its merge
                     // predecessor), falling back to the entry block when the
                     // region diverges (no exit-to-merge).
                     let then_exit =
-                        self.emit_structured(then_idx, merge, func, ctx, block_map, code)?;
+                        self.emit_structured(then_idx, merge, func, ctx, block_map, code, ctrl)?;
                     self.emit_phi_value_for_branch(
                         &func.blocks[then_exit.unwrap_or(then_idx)],
                         &func.blocks,
@@ -4898,7 +4920,7 @@ impl WasmBackend {
                     )?;
                     code.push(Op::Else as u8);
                     let else_exit =
-                        self.emit_structured(else_idx, merge, func, ctx, block_map, code)?;
+                        self.emit_structured(else_idx, merge, func, ctx, block_map, code, ctrl)?;
                     self.emit_phi_value_for_branch(
                         &func.blocks[else_exit.unwrap_or(else_idx)],
                         &func.blocks,
@@ -4907,6 +4929,7 @@ impl WasmBackend {
                         code,
                     )?;
                     code.push(Op::End as u8);
+                    ctrl.depth -= 1;
                     // Store the if/else result into the merge's phi local.
                     if let Some(m) = merge {
                         for instr in &func.blocks[m].instrs {
@@ -4923,10 +4946,10 @@ impl WasmBackend {
                         Some(m) => cur = m,
                         None => {
                             // No merge: BOTH arms diverge (each ends in a
-                            // `return`), so nothing rejoins. The `if` was
-                            // still typed `(result i64)`, so its result is
-                            // sitting on the operand stack with no phi local
-                            // to receive it — wasmtime rejects that as
+                            // `return`, or leaves the enclosing loop), so nothing
+                            // rejoins. The `if` was still typed `(result i64)`, so
+                            // its result is sitting on the operand stack with no
+                            // phi local to receive it — wasmtime rejects that as
                             // "values remaining on stack at end of block".
                             //
                             // Control genuinely cannot reach here, so say so:
@@ -4943,6 +4966,102 @@ impl WasmBackend {
                 Some(Terminator::Handle { .. }) | None => return Ok(None),
             }
         }
+    }
+
+    /// Emit one `selagi`/`ulang` loop as WASM structured control flow, given its
+    /// header block. Returns the block index to continue at (the loop's exit), or
+    /// `None` if the loop cannot be left by falling out of it.
+    ///
+    /// The CFG the lowerer builds is
+    ///
+    /// ```text
+    ///   header:  <cond>        CondBranch(cond, body, exit)
+    ///   body:    <body>        Branch(header)          // the back edge
+    ///   exit:    ...
+    /// ```
+    ///
+    /// and the shape emitted for it is
+    ///
+    /// ```wat
+    ///   block                ;; br 1 from the loop body == leave  (putus)
+    ///     loop               ;; br 0 from the loop body == repeat (lanjut)
+    ///       <cond>
+    ///       i32.eqz
+    ///       br_if 1          ;; condition false -> leave
+    ///       <body>
+    ///       br 0             ;; back edge
+    ///     end
+    ///   end
+    /// ```
+    ///
+    /// The condition lives INSIDE the `loop`, so it is re-evaluated every
+    /// iteration — that is what makes it a loop rather than a guarded block.
+    fn emit_loop(
+        &self,
+        header: usize,
+        func: &Function,
+        ctx: &EmitCtx<'_>,
+        block_map: &HashMap<BlockId, usize>,
+        code: &mut Vec<u8>,
+        ctrl: &mut Ctrl,
+    ) -> Result<Option<usize>> {
+        let Some(Terminator::CondBranch {
+            cond,
+            then_block,
+            else_block,
+        }) = &func.blocks[header].terminator
+        else {
+            // A back edge onto a block that does not test a condition is not a
+            // shape this lowerer produces. Refuse rather than guess.
+            return Err(Error::InvalidOperation(
+                "the WASM backend cannot structure a loop whose header does not \
+                 end in a conditional branch. Build for the native target."
+                    .to_string(),
+            ));
+        };
+        let (Some(&body_idx), Some(&exit_idx)) =
+            (block_map.get(then_block), block_map.get(else_block))
+        else {
+            return Ok(None);
+        };
+
+        code.push(Op::Block as u8);
+        code.push(0x40); // void blocktype
+        code.push(Op::Loop as u8);
+        code.push(0x40);
+        ctrl.depth += 2;
+        ctrl.frames.push(LoopFrame {
+            header,
+            exit: exit_idx,
+            depth_inside: ctrl.depth,
+        });
+
+        // The condition is part of the header block's instructions.
+        self.emit_block_instrs(&func.blocks[header], ctx, code)?;
+        if let Some(local) = ctx.var_map.get(cond) {
+            code.push(Op::LocalGet as u8);
+            wasm_encode::encode_uleb128(*local as u64, code);
+            code.push(Op::I32WrapI64 as u8); // bool cell -> i32 condition
+        }
+        code.push(Op::I32Eqz as u8); // leave when the condition is FALSE
+        code.push(Op::BrIf as u8);
+        wasm_encode::encode_uleb128(1, code); // out of the `loop`, to the `block` end
+
+        // The body, up to the back edge.
+        let body_exit =
+            self.emit_structured(body_idx, Some(header), func, ctx, block_map, code, ctrl)?;
+        if body_exit.is_some() {
+            // Fell through to the back edge: repeat.
+            code.push(Op::Br as u8);
+            wasm_encode::encode_uleb128(0, code);
+        }
+
+        code.push(Op::End as u8); // loop
+        code.push(Op::End as u8); // block
+        ctrl.depth -= 2;
+        ctrl.frames.pop();
+
+        Ok(Some(exit_idx))
     }
 
     /// The block index a block unconditionally branches to, if any.
@@ -6944,6 +7063,202 @@ struct EmitCtx<'a> {
     itoa_p: u32,
     /// Base index of 6 extra scratch i32 locals (string builtins).
     scratch: u32,
+}
+
+/// One enclosing `selagi`/`ulang` loop, while its body is being emitted.
+///
+/// Every loop is emitted as a `block` wrapping a `loop`, so from a point at
+/// control depth `d` inside it:
+///
+/// - `br (d - depth_inside)`     re-enters the `loop`  — `lanjut` (continue)
+/// - `br (d - depth_inside + 1)` leaves the `block`    — `putus`  (break)
+struct LoopFrame {
+    /// Block index of the loop header (the block that tests the condition).
+    header: usize,
+    /// Block index the loop falls out to when the condition is false.
+    exit: usize,
+    /// `Ctrl::depth` immediately after this loop's `block`/`loop` were opened.
+    depth_inside: u32,
+}
+
+/// Structured-control-flow state threaded through `emit_structured`.
+///
+/// WASM has no `goto`: a jump is `br N`, where `N` counts *enclosing control
+/// frames* outward from the branch site. So turning the IR's CFG edges back
+/// into branches needs two things the CFG does not carry — which blocks are
+/// loop headers, and how deeply nested the current emission point is.
+struct Ctrl {
+    /// Blocks that are the target of a back edge, i.e. loop headers.
+    headers: HashSet<usize>,
+    /// Every back edge, as (source, target) block indices.
+    back_edges: HashSet<(usize, usize)>,
+    /// Loops currently open, outermost first.
+    frames: Vec<LoopFrame>,
+    /// Number of control frames (`block`/`loop`/`if`) open right now.
+    depth: u32,
+}
+
+impl Ctrl {
+    /// Find the loop headers of a function: the target of every back edge,
+    /// where a back edge is an edge `u -> v` whose target dominates its source.
+    ///
+    /// Dominance, not block order. The lowerer allocates a loop's exit block
+    /// *before* the body it follows, so `putus` branches to a LOWER index than
+    /// the block it leaves — index order would call that a back edge and invent
+    /// a loop around the exit. It also leaves unreachable blocks behind (the
+    /// one opened after a `putus` for whatever follows it textually), which
+    /// branch into the middle of the loop they were cut out of. Reachability
+    /// plus dominance rejects both, and accepts exactly the real back edge.
+    fn new(func: &Function, block_map: &HashMap<BlockId, usize>) -> Self {
+        let n = func.blocks.len();
+        let entry = block_map.get(&func.entry).copied().unwrap_or(0);
+        let mut ctrl = Self {
+            headers: HashSet::new(),
+            back_edges: HashSet::new(),
+            frames: Vec::new(),
+            depth: 0,
+        };
+        if n == 0 || entry >= n {
+            return ctrl;
+        }
+
+        let mut succs: Vec<Vec<usize>> = vec![Vec::new(); n];
+        for (i, block) in func.blocks.iter().enumerate() {
+            let targets: &[&BlockId] = match &block.terminator {
+                Some(Terminator::Branch(t)) => &[t],
+                Some(Terminator::CondBranch {
+                    then_block,
+                    else_block,
+                    ..
+                }) => &[then_block, else_block],
+                _ => &[],
+            };
+            for t in targets {
+                if let Some(&idx) = block_map.get(t) {
+                    succs[i].push(idx);
+                }
+            }
+        }
+
+        // Reachable blocks in reverse postorder. Anything unreachable is dead
+        // code the emitter never walks, so its edges must not shape the output.
+        let mut postorder = Vec::new();
+        let mut seen = vec![false; n];
+        let mut stack = vec![(entry, 0usize)];
+        seen[entry] = true;
+        while let Some((b, i)) = stack.pop() {
+            if i < succs[b].len() {
+                stack.push((b, i + 1));
+                let s = succs[b][i];
+                if !seen[s] {
+                    seen[s] = true;
+                    stack.push((s, 0));
+                }
+            } else {
+                postorder.push(b);
+            }
+        }
+        let rpo: Vec<usize> = postorder.iter().rev().copied().collect();
+        let mut rpo_num = vec![usize::MAX; n];
+        for (i, &b) in rpo.iter().enumerate() {
+            rpo_num[b] = i;
+        }
+
+        let mut preds: Vec<Vec<usize>> = vec![Vec::new(); n];
+        for &b in &rpo {
+            for &s in &succs[b] {
+                preds[s].push(b);
+            }
+        }
+
+        // Cooper/Harvey/Kennedy: keep only the IMMEDIATE dominator of each
+        // block and walk the tree for the (few) dominance queries below. The
+        // textbook set-of-dominators fixpoint is quadratic in block count —
+        // measured 1.8x slower than the rest of WASM emission on a function
+        // with ~2,400 blocks, and worsening — while this is near-linear.
+        const NONE: usize = usize::MAX;
+        fn intersect(mut a: usize, mut b: usize, idom: &[usize], rpo_num: &[usize]) -> usize {
+            while a != b {
+                while rpo_num[a] > rpo_num[b] {
+                    a = idom[a];
+                }
+                while rpo_num[b] > rpo_num[a] {
+                    b = idom[b];
+                }
+            }
+            a
+        }
+        let mut idom = vec![NONE; n];
+        idom[entry] = entry;
+        let mut changed = true;
+        while changed {
+            changed = false;
+            for &b in &rpo {
+                if b == entry {
+                    continue;
+                }
+                let mut candidate = NONE;
+                for &p in &preds[b] {
+                    if idom[p] == NONE {
+                        continue; // not yet processed on this pass
+                    }
+                    candidate = if candidate == NONE {
+                        p
+                    } else {
+                        intersect(p, candidate, &idom, &rpo_num)
+                    };
+                }
+                if candidate != NONE && idom[b] != candidate {
+                    idom[b] = candidate;
+                    changed = true;
+                }
+            }
+        }
+        let dominates = |v: usize, mut u: usize| loop {
+            if u == v {
+                return true;
+            }
+            if u == entry || idom[u] == NONE || idom[u] == u {
+                return false;
+            }
+            u = idom[u];
+        };
+
+        for &b in &rpo {
+            for &s in &succs[b] {
+                if dominates(s, b) {
+                    ctrl.back_edges.insert((b, s));
+                    ctrl.headers.insert(s);
+                }
+            }
+        }
+        ctrl
+    }
+
+    /// Whether the edge `from -> to` closes a loop.
+    fn is_back_edge(&self, from: usize, to: usize) -> bool {
+        self.back_edges.contains(&(from, to))
+    }
+
+    /// `br` depth that re-enters the enclosing loop headed by `block`, if any.
+    fn br_depth_to_header(&self, block: usize) -> Option<u32> {
+        let frame = self.frames.iter().rev().find(|f| f.header == block)?;
+        Some(self.depth - frame.depth_inside)
+    }
+
+    /// `br` depth that leaves the enclosing loop whose exit is `block`, if any.
+    fn br_depth_to_exit(&self, block: usize) -> Option<u32> {
+        let frame = self.frames.iter().rev().find(|f| f.exit == block)?;
+        Some(self.depth - frame.depth_inside + 1)
+    }
+
+    /// Whether `block` is an enclosing loop's header or exit — i.e. reaching it
+    /// is a `lanjut`/`putus`, not an if/else rejoining at a merge.
+    fn targets_enclosing_loop(&self, block: usize) -> bool {
+        self.frames
+            .iter()
+            .any(|f| f.header == block || f.exit == block)
+    }
 }
 
 impl Backend for WasmBackend {
