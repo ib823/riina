@@ -200,7 +200,7 @@
     "testsSource": "full_cargo_test",
     "crates": 20
   },
-  "examples": 169,
+  "examples": 172,
   "status": {
     "build": "passing",
     "grade": "A",

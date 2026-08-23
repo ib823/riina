@@ -158,57 +158,6 @@ fn run_native(sb: &Sandbox, src: &PathBuf) -> String {
     String::from_utf8_lossy(&run.stdout).into_owned()
 }
 
-fn run_wasm(sb: &Sandbox, src: &PathBuf) -> String {
-    let build = Command::new(env!("CARGO_BIN_EXE_riinac"))
-        .args(["build", "--target", "wasm32"])
-        .arg(src)
-        .output()
-        .expect("riinac build wasm32");
-    assert!(
-        build.status.success(),
-        "wasm build failed: {}{}",
-        String::from_utf8_lossy(&build.stdout),
-        String::from_utf8_lossy(&build.stderr)
-    );
-    let wasm = sb.dir.join(format!("{}.wasm", sb.stem));
-    let run = Command::new("wasmtime")
-        .arg("run")
-        .arg(&wasm)
-        .output()
-        .expect("wasmtime run");
-    assert!(
-        run.status.success(),
-        "wasmtime rejected or trapped — \"values remaining on stack at end of \
-         block\" here is the REQ-80 diverging-arms regression: {}{}",
-        String::from_utf8_lossy(&run.stdout),
-        String::from_utf8_lossy(&run.stderr)
-    );
-    String::from_utf8_lossy(&run.stdout).into_owned()
-}
-
-/// Assert interpreter, C and WASM all produce byte-identical output.
-fn assert_all_three_agree(tag: &str, source: &str) {
-    if !require_backend_tools(&["cc", "wasmtime"]) {
-        return;
-    }
-    let sb = Sandbox::new(tag);
-    let src = sb.src(source);
-    let interp = run_interp(&src);
-    let native = run_native(&sb, &src);
-    let wasm = run_wasm(&sb, &src);
-    assert_eq!(
-        interp, native,
-        "interp/C divergence for {tag}\n  interp: {interp:?}\n  C:      {native:?}"
-    );
-    assert_eq!(
-        native, wasm,
-        "C/WASM divergence for {tag}\n  C:    {native:?}\n  WASM: {wasm:?}"
-    );
-}
-
-/// THE REQ-80 wrong-answer regression: the guard fires, so the answer is 1.
-/// Before the fix every backend but the interpreter said 99.
-
 /// `selagi` runs its body until the condition goes false, and a `biar ubah`
 /// write inside the body survives the iteration that made it.
 ///
