@@ -1933,8 +1933,28 @@ impl Lower {
                 let saved_env = self.env.clone();
 
                 // 1. Placeholders for every name, all in scope for every body.
-                let placeholders: Vec<VarId> =
-                    bindings.iter().map(|_| self.fresh_var()).collect();
+                //
+                // Each is EMITTED as a real (dummy) value rather than taken from
+                // `fresh_var`. A bare fresh VarId has no defining instruction,
+                // and the WASM backend builds its locals from instruction
+                // RESULTS — so a capture of such a var emitted nothing at all
+                // and the module failed validation with "not enough arguments on
+                // the stack for i64.store". C happened to survive it because
+                // `emit_var_declarations` also walks operands, so the variable
+                // existed (holding garbage) until `FixClosure` overwrote it.
+                // Defining the placeholder makes both backends agree, and the
+                // value is never read: every capture of it is patched in pass 3.
+                let placeholders: Vec<VarId> = bindings
+                    .iter()
+                    .map(|_| {
+                        self.emit(
+                            Instruction::Const(Constant::Unit),
+                            Ty::Any,
+                            SecurityLevel::Public,
+                            Effect::Pure,
+                        )
+                    })
+                    .collect();
                 for ((name, ty, _), placeholder) in bindings.iter().zip(&placeholders) {
                     self.env.bind(
                         name.clone(),
@@ -2019,7 +2039,15 @@ impl Lower {
                 // The lambda captures the placeholder VarId. After the closure is
                 // created, we emit FixClosure to patch the self-capture.
                 let bind_ty = ty_ann.clone();
-                let placeholder = self.fresh_var();
+                // Emitted, not `fresh_var` — see the LetRecGroup arm: an
+                // undefined VarId gets no WASM local, so capturing it produces
+                // an invalid module.
+                let placeholder = self.emit(
+                    Instruction::Const(Constant::Unit),
+                    Ty::Any,
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                );
 
                 let saved_env = self.env.clone();
                 self.env.bind(

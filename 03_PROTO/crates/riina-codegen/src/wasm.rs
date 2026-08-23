@@ -4736,7 +4736,11 @@ impl WasmBackend {
                 code.push(Op::I32WrapI64 as u8); // cell -> i32 address
                 code.push(Op::I64Load as u8);
                 code.push(0x02); // align 4
-                code.push(((i + 1) * 8) as u8); // offset (8-byte cells)
+                // A memarg offset is LEB128, not a raw byte: capture 15 is at
+                // offset 128, which needs two bytes. Pushing it raw silently
+                // truncated, so a closure with 16+ captures read and wrote the
+                // wrong cells.
+                wasm_encode::encode_uleb128(((i + 1) * 8) as u64, &mut code);
                 if let Some(&local) = var_to_local.get(&cap_var) {
                     code.push(Op::LocalSet as u8);
                     wasm_encode::encode_uleb128(local as u64, &mut code);
@@ -6150,8 +6154,7 @@ impl WasmBackend {
                     Self::emit_local_get(cap, ctx.var_map, code);
                     code.push(Op::I64Store as u8);
                     code.push(0x02); // align 4
-                    let offset = ((i + 1) * 8) as u8;
-                    code.push(offset);
+                    wasm_encode::encode_uleb128(((i + 1) * 8) as u64, code);
                 }
                 // Push ptr for generic LocalSet
                 if let Some(result_var) = result {
@@ -6176,8 +6179,7 @@ impl WasmBackend {
                 }
                 code.push(Op::I64Store as u8);
                 code.push(0x02);
-                let offset = ((capture_index + 1) * 8) as u8;
-                code.push(offset);
+                wasm_encode::encode_uleb128(((capture_index + 1) * 8) as u64, code);
                 // Result is the closure ptr
                 Self::emit_local_get(closure, ctx.var_map, code);
             }

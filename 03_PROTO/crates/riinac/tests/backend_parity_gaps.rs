@@ -153,9 +153,34 @@ fn run_native(sb: &Sandbox, src: &PathBuf) -> String {
     String::from_utf8_lossy(&run.stdout).into_owned()
 }
 
-/// `selagi` runs its body until the condition goes false, and a `biar ubah`
-/// write inside the body survives the iteration that made it.
-///
+fn run_wasm(sb: &Sandbox, src: &PathBuf) -> String {
+    let build = Command::new(env!("CARGO_BIN_EXE_riinac"))
+        .args(["build", "--target", "wasm32"])
+        .arg(src)
+        .output()
+        .expect("riinac build wasm32");
+    assert!(
+        build.status.success(),
+        "wasm build failed: {}{}",
+        String::from_utf8_lossy(&build.stdout),
+        String::from_utf8_lossy(&build.stderr)
+    );
+    let wasm = sb.dir.join(format!("{}.wasm", sb.stem));
+    let run = Command::new("wasmtime")
+        .arg("run")
+        .arg(&wasm)
+        .output()
+        .expect("wasmtime run");
+    assert!(
+        run.status.success(),
+        "wasmtime rejected or trapped — \"not enough arguments on the stack for \
+         i64.store\" here means a group placeholder lost its local: {}{}",
+        String::from_utf8_lossy(&run.stdout),
+        String::from_utf8_lossy(&run.stderr)
+    );
+    String::from_utf8_lossy(&run.stdout).into_owned()
+}
+
 /// Compound values render identically in both backends.
 ///
 /// Nesting, empty lists, pairs and a bare `cetakln` of a list are all included:
@@ -215,6 +240,14 @@ fungsi utama() -> Nombor kesan Tulis {
     if require_backend_tools(&["cc"]) {
         assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
     }
+    // WASM too. The group's closures capture its placeholders, and a
+    // placeholder with no defining instruction gets no WASM local — the module
+    // then fails validation with "not enough arguments on the stack for
+    // i64.store". C tolerated it (its variable declarations walk operands), so
+    // this leg is what actually pins the placeholders being real emitted values.
+    if require_backend_tools(&["cc", "wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
+    }
 }
 
 /// Genuine mutual recursion — each function calls the other, so neither
@@ -253,6 +286,9 @@ fungsi utama() -> Nombor kesan Tulis {
     assert_eq!(interp, "betul\nsalah\nsalah\n3628800\n", "interpreter");
     if require_backend_tools(&["cc"]) {
         assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["cc", "wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
     }
 }
 
