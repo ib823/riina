@@ -307,13 +307,17 @@ impl VarEnv {
     }
 }
 
-/// Compute the set of free variables in an expression.
-/// A variable is free if it is referenced but not bound within the expression.
-/// Expand a mutually-recursive binding GROUP into a nested `LetRec` chain
-/// (backward-reference scoping). Codegen (C/WASM) does not need forward
-/// references — the corpus's forward-ref/module examples are exercised through
-/// the typechecker + interpreter, and the C/WASM differential set uses none —
-/// so treating a group as a chain here is sound and never crashes.
+/// Expand a mutually-recursive binding GROUP into a nested `LetRec` chain.
+///
+/// NOT used for lowering any more — a chain scopes backwards only, so a forward
+/// call inside a group failed codegen with `unbound variable: <callee>` while
+/// type-checking and interpreting fine. `Expr::LetRecGroup` is now lowered
+/// directly, with placeholders for every member.
+///
+/// It survives for the two ANALYSES where the distinction cannot matter: a
+/// group and a chain bind exactly the same names to exactly the same
+/// expressions, so they have the same free variables and the same effects. Do
+/// not reach for it when lowering.
 fn letrec_group_to_chain(bindings: &[(riina_types::Ident, riina_types::Ty, Expr)], cont: &Expr) -> Expr {
     let mut result = cont.clone();
     for (name, ty, e) in bindings.iter().rev() {
@@ -1905,9 +1909,109 @@ impl Lower {
                 Ok(result)
             }
 
+            // REQ-44: a mutually-recursive binding GROUP — every top-level
+            // `fungsi` in a file, and every function in an imported module.
+            //
+            // This used to expand into a nested `LetRec` CHAIN, which gives
+            // backward-reference scoping only: a function could call one
+            // declared ABOVE it but not below. So a forward call type-checked
+            // and interpreted fine and then failed `riinac build` with
+            // `unbound variable: <callee>` (or `<module>_<callee>` for an
+            // imported module, where declaration order is not even the author's
+            // to control). Definition-before-use is a C constraint that has no
+            // business leaking into RIINA's surface.
+            //
+            // Lowered properly here in three passes, generalising the
+            // single-binding placeholder/FixClosure trick to the whole group:
+            //   1. bind every group name to a fresh placeholder VarId, so any
+            //      member's body can reference any sibling, in either direction;
+            //   2. lower each binding — each closure captures the placeholders
+            //      it actually referenced;
+            //   3. patch every captured placeholder to the sibling's real
+            //      closure now that all of them exist.
             Expr::LetRecGroup(bindings, cont) => {
-                // Codegen: expand the group to a nested LetRec chain and lower.
-                self.lower_expr(&letrec_group_to_chain(bindings, cont))
+                let saved_env = self.env.clone();
+
+                // 1. Placeholders for every name, all in scope for every body.
+                let placeholders: Vec<VarId> =
+                    bindings.iter().map(|_| self.fresh_var()).collect();
+                for ((name, ty, _), placeholder) in bindings.iter().zip(&placeholders) {
+                    self.env.bind(
+                        name.clone(),
+                        *placeholder,
+                        ty.clone(),
+                        SecurityLevel::Public,
+                    );
+                }
+
+                // 2. Lower each binding. `honour_return` is suppressed across a
+                // DECLARATION for the same reason as the single-binding case: a
+                // zero-parameter function's body is spliced in directly, so a
+                // `Terminator::Return` here would return from the enclosing
+                // function (REQ-80).
+                let mut bind_vars: Vec<VarId> = Vec::with_capacity(bindings.len());
+                for (_, _, binding) in bindings.iter() {
+                    let saved_honour = self.honour_return;
+                    self.honour_return = false;
+                    let var = self.lower_expr(binding)?;
+                    self.honour_return = saved_honour;
+                    bind_vars.push(var);
+                }
+
+                // 3. Patch. A binding may have opened new blocks, so the closure
+                // that produced `bind_var` is looked up across the whole
+                // function, not just the current block.
+                for (member, bind_var) in bind_vars.iter().enumerate() {
+                    let captures: Vec<VarId> = self
+                        .current_func
+                        .and_then(|id| self.program.functions.get(&id))
+                        .and_then(|f| {
+                            f.blocks.iter().find_map(|block| {
+                                block.instrs.iter().find_map(|ai| {
+                                    if ai.result != *bind_var {
+                                        return None;
+                                    }
+                                    match &ai.instr {
+                                        Instruction::Closure { captures, .. } => {
+                                            Some(captures.clone())
+                                        }
+                                        _ => None,
+                                    }
+                                })
+                            })
+                        })
+                        .unwrap_or_default();
+
+                    for (capture_index, captured) in captures.iter().enumerate() {
+                        if let Some(sibling) =
+                            placeholders.iter().position(|p| p == captured)
+                        {
+                            // A member capturing its OWN placeholder is ordinary
+                            // self-recursion; the same patch covers both, since
+                            // `bind_vars[member] == bind_vars[sibling]` then.
+                            let _ = member;
+                            self.emit(
+                                Instruction::FixClosure {
+                                    closure: *bind_var,
+                                    capture_index,
+                                    value: bind_vars[sibling],
+                                },
+                                Ty::Unit,
+                                SecurityLevel::Public,
+                                Effect::Pure,
+                            );
+                        }
+                    }
+                }
+
+                // 4. Rebind each name to its real closure for the continuation.
+                for ((name, ty, _), bind_var) in bindings.iter().zip(&bind_vars) {
+                    self.env
+                        .bind(name.clone(), *bind_var, ty.clone(), SecurityLevel::Public);
+                }
+                let result = self.lower_expr(cont)?;
+                self.env = saved_env;
+                Ok(result)
             }
 
             Expr::LetRec(name, ty_ann, binding, body) => {
@@ -1975,6 +2079,7 @@ impl Lower {
                         Instruction::FixClosure {
                             closure: bind_var,
                             capture_index,
+                            value: bind_var,
                         },
                         Ty::Unit,
                         SecurityLevel::Public,

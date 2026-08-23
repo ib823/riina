@@ -2028,26 +2028,23 @@ static riina_value_t* riina_builtin_qmn(riina_value_t* arg) {
         self.writeln("");
 
         // Helper: format a value as a string for printing
+        // Rendering a value is ONE recursive routine, `riina_format_alloc`,
+        // defined once the list and map types are in scope (see
+        // `emit_value_formatter`). `riina_format` and `ke_teks` both delegate to
+        // it, so the two can no longer disagree.
+        //
+        // Both used to be flat tag switches ending in `default: "<value>"`, so
+        // every compound value printed as the literal text `<value>` while the
+        // interpreter printed `[2, 4, 6]` — a silent cross-backend divergence in
+        // ordinary `cetakln(senarai)` output.
+        //
+        // The result is heap-allocated and deliberately not freed, matching the
+        // rest of this runtime (`riina_string`, `riina_list_push`); a formatted
+        // value's lifetime is the program's.
+        self.writeln("static char* riina_format_alloc(riina_value_t* v);");
+        self.writeln("");
         self.writeln("static const char* riina_format(riina_value_t* v) {");
-        self.writeln("    static char buf[256];");
-        self.writeln("    switch (v->tag) {");
-        self.writeln("        case RIINA_TAG_UNIT: return \"()\";");
-        self.writeln(
-            "        case RIINA_TAG_BOOL: return v->data.bool_val ? \"betul\" : \"salah\";",
-        );
-        self.writeln("        case RIINA_TAG_INT:");
-        self.writeln("            if (v->int_signed_bits)");
-        self.writeln("                snprintf(buf, sizeof(buf), \"%lld\", (long long)riina_sext(v->data.int_val, v->int_signed_bits));");
-        self.writeln("            else");
-        self.writeln("                snprintf(buf, sizeof(buf), \"%llu\", (unsigned long long)v->data.int_val);");
-        self.writeln("            return buf;");
-        self.writeln("        case RIINA_TAG_STRING: return v->data.string_val.data;");
-        self.writeln("        case RIINA_TAG_BIGINT: return riina_bigint_to_str(v);");
-        self.writeln("        case RIINA_TAG_DECIMAL: return riina_decimal_to_str(v);");
-        self.writeln("        case RIINA_TAG_FIXED: return riina_fixed_to_str(v);");
-        self.writeln("        case RIINA_TAG_FIXEDBIN: return riina_fixedbin_to_str(v);");
-        self.writeln("        default: return \"<value>\";");
-        self.writeln("    }");
+        self.writeln("    return riina_format_alloc(v);");
         self.writeln("}");
         self.writeln("");
 
@@ -2078,26 +2075,11 @@ static riina_value_t* riina_builtin_qmn(riina_value_t* arg) {
 
         // ke_teks (to_string)
         self.writeln("static riina_value_t* riina_builtin_ke_teks(riina_value_t* arg) {");
-        self.writeln("    char buf[256];");
-        self.writeln("    switch (arg->tag) {");
-        self.writeln("        case RIINA_TAG_UNIT: return riina_string(\"()\");");
-        self.writeln("        case RIINA_TAG_BOOL: return riina_string(arg->data.bool_val ? \"betul\" : \"salah\");");
-        self.writeln("        case RIINA_TAG_INT:");
-        // A signed sized int renders as its signed value (the interpreter is the
-        // reference: `ke_teks(0i8 - 3i8)` is "-3", not the masked "253"). Same
-        // tag-driven branch as riina_format — this one had been left unsigned-only.
-        self.writeln("            if (arg->int_signed_bits)");
-        self.writeln("                snprintf(buf, sizeof(buf), \"%lld\", (long long)riina_sext(arg->data.int_val, arg->int_signed_bits));");
-        self.writeln("            else");
-        self.writeln("                snprintf(buf, sizeof(buf), \"%llu\", (unsigned long long)arg->data.int_val);");
-        self.writeln("            return riina_string(buf);");
-        self.writeln("        case RIINA_TAG_STRING: return arg;");
-        self.writeln("        case RIINA_TAG_BIGINT: return riina_string(riina_bigint_to_str(arg));");
-        self.writeln("        case RIINA_TAG_DECIMAL: return riina_string(riina_decimal_to_str(arg));");
-        self.writeln("        case RIINA_TAG_FIXED: return riina_string(riina_fixed_to_str(arg));");
-        self.writeln("        case RIINA_TAG_FIXEDBIN: return riina_string(riina_fixedbin_to_str(arg));");
-        self.writeln("        default: return riina_string(\"<value>\");");
-        self.writeln("    }");
+        // A string is already its own rendering; returning it avoids a copy and
+        // keeps `ke_teks(s) == s` identical to the interpreter. Everything else
+        // goes through the one shared formatter.
+        self.writeln("    if (arg->tag == RIINA_TAG_STRING) return arg;");
+        self.writeln("    return riina_string(riina_format_alloc(arg));");
         self.writeln("}");
         self.writeln("");
 
@@ -2409,6 +2391,8 @@ static riina_value_t* riina_builtin_qmn(riina_value_t* arg) {
         self.writeln("");
         self.writeln("#define RIINA_MAP_DATA(v) ((riina_map_t*)(v)->data.wrapped_val)");
         self.writeln("");
+
+        self.emit_value_formatter();
 
         // ═══════════════════════════════════════════════════════════════════
         // STRING BUILTINS (teks)
@@ -4326,6 +4310,122 @@ static riina_value_t* riina_builtin_qmn(riina_value_t* arg) {
         Ok(())
     }
 
+    /// Emit `riina_format_alloc` — the single recursive value renderer the C
+    /// backend uses for `cetak`, `cetakln` and `ke_teks`.
+    ///
+    /// It mirrors the interpreter's `builtins::format_value` case for case, and
+    /// that is the point: before this existed both C entry points were flat tag
+    /// switches ending in `default: "<value>"`, so any compound value —
+    /// a list, a pair, a map — printed as the literal text `<value>` under
+    /// `riinac build` while the interpreter printed `[2, 4, 6]`. The program ran
+    /// and lied, which is the failure mode this backend takes most seriously.
+    ///
+    /// Emitted here rather than beside `riina_format` because it needs
+    /// `riina_list_t` and `riina_map_t`, which are declared further down the
+    /// prelude; `riina_format` carries the forward declaration.
+    ///
+    /// Note the string case: a string renders as its own text, WITHOUT quotes,
+    /// so `ke_teks(["a", "b"])` is `[a, b]`. That matches `format_value`, not
+    /// `Display` (which quotes) — the interpreter's own two renderings differ
+    /// and `format_value` is the one `ke_teks` uses.
+    fn emit_value_formatter(&mut self) {
+        // Growable string buffer — the pieces of a nested value are not
+        // bounded, so the old `static char buf[256]` could not have worked
+        // recursively even if the cases had existed.
+        self.writeln("typedef struct { char* data; size_t len; size_t cap; } riina_sbuf_t;");
+        self.writeln("static void riina_sbuf_push(riina_sbuf_t* b, const char* s) {");
+        self.writeln("    size_t n = strlen(s);");
+        self.writeln("    if (b->len + n + 1 > b->cap) {");
+        self.writeln("        size_t cap = b->cap ? b->cap : 32;");
+        self.writeln("        while (cap < b->len + n + 1) cap *= 2;");
+        self.writeln("        b->data = (char*)realloc(b->data, cap);");
+        self.writeln("        if (!b->data) abort();");
+        self.writeln("        b->cap = cap;");
+        self.writeln("    }");
+        self.writeln("    memcpy(b->data + b->len, s, n + 1);");
+        self.writeln("    b->len += n;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static char* riina_dup_cstr(const char* s) {");
+        self.writeln("    size_t n = strlen(s);");
+        self.writeln("    char* out = (char*)malloc(n + 1);");
+        self.writeln("    if (!out) abort();");
+        self.writeln("    memcpy(out, s, n + 1);");
+        self.writeln("    return out;");
+        self.writeln("}");
+        self.writeln("");
+        self.writeln("static char* riina_format_alloc(riina_value_t* v) {");
+        self.writeln("    char buf[256];");
+        self.writeln("    riina_sbuf_t b = { NULL, 0, 0 };");
+        self.writeln("    char* part;");
+        self.writeln("    switch (v->tag) {");
+        self.writeln("        case RIINA_TAG_UNIT: return riina_dup_cstr(\"()\");");
+        self.writeln("        case RIINA_TAG_BOOL:");
+        self.writeln("            return riina_dup_cstr(v->data.bool_val ? \"betul\" : \"salah\");");
+        self.writeln("        case RIINA_TAG_INT:");
+        self.writeln("            if (v->int_signed_bits)");
+        self.writeln("                snprintf(buf, sizeof(buf), \"%lld\", (long long)riina_sext(v->data.int_val, v->int_signed_bits));");
+        self.writeln("            else");
+        self.writeln("                snprintf(buf, sizeof(buf), \"%llu\", (unsigned long long)v->data.int_val);");
+        self.writeln("            return riina_dup_cstr(buf);");
+        self.writeln("        case RIINA_TAG_STRING: return riina_dup_cstr(v->data.string_val.data);");
+        self.writeln("        case RIINA_TAG_BIGINT: return riina_dup_cstr(riina_bigint_to_str(v));");
+        self.writeln("        case RIINA_TAG_DECIMAL: return riina_dup_cstr(riina_decimal_to_str(v));");
+        self.writeln("        case RIINA_TAG_FIXED: return riina_dup_cstr(riina_fixed_to_str(v));");
+        self.writeln("        case RIINA_TAG_FIXEDBIN: return riina_dup_cstr(riina_fixedbin_to_str(v));");
+        // `(a, b)` — matches format_value's Pair case.
+        self.writeln("        case RIINA_TAG_PAIR:");
+        self.writeln("            riina_sbuf_push(&b, \"(\");");
+        self.writeln("            part = riina_format_alloc(v->data.pair_val.fst);");
+        self.writeln("            riina_sbuf_push(&b, part); free(part);");
+        self.writeln("            riina_sbuf_push(&b, \", \");");
+        self.writeln("            part = riina_format_alloc(v->data.pair_val.snd);");
+        self.writeln("            riina_sbuf_push(&b, part); free(part);");
+        self.writeln("            riina_sbuf_push(&b, \")\");");
+        self.writeln("            return b.data;");
+        // `inl v` / `inr v` — the interpreter falls through to Display here.
+        self.writeln("        case RIINA_TAG_SUM_LEFT:");
+        self.writeln("        case RIINA_TAG_SUM_RIGHT:");
+        self.writeln("            riina_sbuf_push(&b, v->tag == RIINA_TAG_SUM_LEFT ? \"inl \" : \"inr \");");
+        self.writeln("            part = riina_format_alloc(v->data.sum_val);");
+        self.writeln("            riina_sbuf_push(&b, part); free(part);");
+        self.writeln("            return b.data;");
+        // `[a, b, c]`
+        self.writeln("        case RIINA_TAG_LIST: {");
+        self.writeln("            riina_list_t* l = RIINA_LIST_DATA(v);");
+        self.writeln("            riina_sbuf_push(&b, \"[\");");
+        self.writeln("            for (size_t i = 0; i < l->len; i++) {");
+        self.writeln("                if (i > 0) riina_sbuf_push(&b, \", \");");
+        self.writeln("                part = riina_format_alloc(l->items[i]);");
+        self.writeln("                riina_sbuf_push(&b, part); free(part);");
+        self.writeln("            }");
+        self.writeln("            riina_sbuf_push(&b, \"]\");");
+        self.writeln("            return b.data;");
+        self.writeln("        }");
+        // `{"k": v, ...}` — keys ARE quoted here, unlike a bare string value.
+        self.writeln("        case RIINA_TAG_MAP: {");
+        self.writeln("            riina_map_t* m = RIINA_MAP_DATA(v);");
+        self.writeln("            riina_sbuf_push(&b, \"{\");");
+        self.writeln("            int first = 1;");
+        self.writeln("            for (riina_map_entry_t* e = m->head; e; e = e->next) {");
+        self.writeln("                if (!first) riina_sbuf_push(&b, \", \");");
+        self.writeln("                first = 0;");
+        self.writeln("                riina_sbuf_push(&b, \"\\\"\");");
+        self.writeln("                riina_sbuf_push(&b, e->key);");
+        self.writeln("                riina_sbuf_push(&b, \"\\\": \");");
+        self.writeln("                part = riina_format_alloc(e->value);");
+        self.writeln("                riina_sbuf_push(&b, part); free(part);");
+        self.writeln("            }");
+        self.writeln("            riina_sbuf_push(&b, \"}\");");
+        self.writeln("            return b.data;");
+        self.writeln("        }");
+        // Closures, refs, capabilities: not renderable in either backend.
+        self.writeln("        default: return riina_dup_cstr(\"<value>\");");
+        self.writeln("    }");
+        self.writeln("}");
+        self.writeln("");
+    }
+
     /// Emit variable declarations for a function
     fn emit_var_declarations(&mut self, func: &Function) -> Result<()> {
         let mut vars: HashSet<VarId> = HashSet::new();
@@ -4555,12 +4655,16 @@ static riina_value_t* riina_builtin_qmn(riina_value_t* arg) {
             Instruction::FixClosure {
                 closure,
                 capture_index,
+                value,
             } => {
-                // Patch a closure's capture to point to itself (recursive closure).
-                let closure_name = self.var_name(closure);
+                // Patch one of a closure's capture slots. `value` is the closure
+                // itself for plain recursion, or a sibling in a mutually
+                // recursive group (which is how a forward call resolves).
                 self.writeln(&format!(
-                    "{}->data.closure_val.captures[{}] = {}; /* fix recursive self-capture */",
-                    closure_name, capture_index, closure_name
+                    "{}->data.closure_val.captures[{}] = {}; /* fix closure capture */",
+                    self.var_name(closure),
+                    capture_index,
+                    self.var_name(value)
                 ));
             }
 

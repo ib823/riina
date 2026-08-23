@@ -6164,12 +6164,13 @@ impl WasmBackend {
             Instruction::FixClosure {
                 closure,
                 capture_index,
+                value,
             } => {
-                // Patch captures[capture_index] with closure pointer itself
+                // Patch captures[capture_index] with `value` — the closure
+                // itself for plain recursion, a sibling for a group.
                 Self::emit_local_get(closure, ctx.var_map, code);
                 code.push(Op::I32WrapI64 as u8); // ptr cell -> i32 addr
-                // Duplicate (the closure ptr value to store)
-                if let Some(local) = ctx.var_map.get(closure) {
+                if let Some(local) = ctx.var_map.get(value) {
                     code.push(Op::LocalGet as u8);
                     wasm_encode::encode_uleb128(*local as u64, code);
                 }
@@ -7612,6 +7613,7 @@ mod tests {
                     Instruction::FixClosure {
                         closure: v0,
                         capture_index: 0,
+                        value: v0,
                     },
                     v1,
                 ),

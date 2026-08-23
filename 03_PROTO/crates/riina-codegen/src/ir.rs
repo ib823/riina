@@ -282,6 +282,11 @@ pub enum Instruction {
     FixClosure {
         closure: VarId,
         capture_index: usize,
+        /// What to write into the slot. For ordinary self-recursion this is
+        /// `closure` itself; for a mutually-recursive GROUP it is a SIBLING's
+        /// closure, which is what lets one top-level function call another
+        /// declared after it (REQ-44 forward references).
+        value: VarId,
     },
 
     /// Call a function
@@ -552,7 +557,8 @@ impl std::fmt::Display for Instruction {
             Self::FixClosure {
                 closure,
                 capture_index,
-            } => write!(f, "fix_closure {closure} [{capture_index}]"),
+                value,
+            } => write!(f, "fix_closure {closure} [{capture_index}] = {value}"),
             Self::Call(func, arg) => write!(f, "call {func} {arg}"),
             Self::BuiltinCall { name, arg } => write!(f, "builtin_call \"{name}\" {arg}"),
             Self::MakeList(elems) => {

@@ -1585,7 +1585,22 @@ impl<'a> Parser<'a> {
         let lhs = self.parse_or()?;
         if let Some(TokenKind::ColonEq) = self.peek().map(|t| &t.kind) {
             self.consume(TokenKind::ColonEq)?;
-            let rhs = self.parse_expr()?;
+            // The right-hand side is ONE expression, not the rest of the block.
+            //
+            // This used to call `parse_expr`, which parses a whole statement
+            // sequence — so `r := 100; cetakln(!r);` was read as
+            // `r := (100; cetakln(!r))`, quietly swallowing every following
+            // statement into the assigned value. It surfaced only as a type
+            // error on the assignment (`expected Int, found Unit`), or not at
+            // all when the sequence happened to end in the right type, and it
+            // made `:=` unusable in statement position — the corpus's own
+            // `all_examples.rii` `contoh_ruj` did not type-check because of it.
+            //
+            // `parse_control_flow` is the same level `biar x = <here>;` uses:
+            // it takes a full expression including `kalau`/`padan` forms, and
+            // stops at the `;`, leaving `parse_stmt_sequence` to sequence what
+            // follows.
+            let rhs = self.parse_control_flow()?;
             Ok(Expr::Assign(Box::new(lhs), Box::new(rhs)))
         } else {
             Ok(lhs)
