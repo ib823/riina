@@ -32,11 +32,17 @@
 //!
 //! # The WASM half
 //!
-//! `emit_structured` only knows how to structure FORWARD if/else regions, so a
-//! loop's back edge would walk the same blocks forever. It now refuses the
-//! module instead, and `loops_are_refused_by_the_wasm_backend` pins that: a
-//! backend that cannot express a construct must fail closed, never silently
-//! emit something that runs the body once (REQ-78).
+//! `emit_structured` used to know only FORWARD if/else regions, so a loop's
+//! back edge would have walked the same blocks forever; the backend refused
+//! the module instead (REQ-78 fail-closed). It now emits real structured
+//! control flow — a `block` wrapping a `loop`, with `br_if` for the exit test,
+//! `br 0` for the back edge and `lanjut`, and `br 1` for `putus` — so WASM is
+//! a third independent implementation of loop semantics to differ against.
+//!
+//! Three of the four backends therefore reach a loop by different routes: the
+//! interpreter iterates directly, C follows a CFG back edge through `goto`, and
+//! WASM re-enters a structured `loop` by label depth. Agreement between those
+//! is much stronger evidence than any hand-written expectation.
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -158,6 +164,40 @@ fn run_native(sb: &Sandbox, src: &PathBuf) -> String {
     String::from_utf8_lossy(&run.stdout).into_owned()
 }
 
+/// Build `src` for `wasm32` and run the module under wasmtime.
+///
+/// The WASM backend is the one that has to *reconstruct* structure from the
+/// CFG, so a loop shape it gets wrong shows up either as a module wasmtime
+/// rejects (a bad `br` depth is a validation error, not a wrong answer) or as
+/// output that disagrees with the other two backends. Both are caught here.
+fn run_wasm(sb: &Sandbox, src: &PathBuf) -> String {
+    let build = Command::new(env!("CARGO_BIN_EXE_riinac"))
+        .args(["build", "--target", "wasm32"])
+        .arg(src)
+        .output()
+        .expect("riinac build --target wasm32");
+    assert!(
+        build.status.success(),
+        "wasm build failed: {}{}",
+        String::from_utf8_lossy(&build.stdout),
+        String::from_utf8_lossy(&build.stderr)
+    );
+    let wasm = sb.dir.join(format!("{}.wasm", sb.stem));
+    let run = Command::new("wasmtime")
+        .arg("run")
+        .arg(&wasm)
+        .output()
+        .expect("wasmtime run");
+    assert!(
+        run.status.success(),
+        "wasmtime rejected or trapped on the module (exit {:?}): {}{}",
+        run.status.code(),
+        String::from_utf8_lossy(&run.stdout),
+        String::from_utf8_lossy(&run.stderr)
+    );
+    String::from_utf8_lossy(&run.stdout).into_owned()
+}
+
 /// `selagi` runs its body until the condition goes false, and a `biar ubah`
 /// write inside the body survives the iteration that made it.
 ///
@@ -183,6 +223,9 @@ fungsi utama() -> Nombor kesan Tulis {
     assert_eq!(interp, expected, "interpreter");
     if require_backend_tools(&["cc"]) {
         assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
     }
 }
 
@@ -215,6 +258,9 @@ fungsi utama() -> Nombor kesan Tulis {
     assert_eq!(interp, expected, "interpreter");
     if require_backend_tools(&["cc"]) {
         assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
     }
 }
 
@@ -272,6 +318,9 @@ fungsi utama() -> Nombor kesan Tulis {
     if require_backend_tools(&["cc"]) {
         assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
     }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
+    }
 }
 
 /// `pulang` inside a loop unwinds to the enclosing FUNCTION, not to the loop.
@@ -303,6 +352,9 @@ fungsi utama() -> Nombor kesan Tulis {
     assert_eq!(interp, "8\n", "interpreter");
     if require_backend_tools(&["cc"]) {
         assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
     }
 }
 
@@ -424,15 +476,18 @@ fungsi utama() -> Nombor kesan Tulis {
     }
 }
 
-/// The WASM backend refuses a loop rather than miscompiling it.
+/// The WASM backend compiles a loop, and gets the same answer as the other two.
 ///
-/// `emit_structured` handles forward if/else regions only; a back edge needs
-/// real `loop`/`br_if` nesting, which is not built. Failing closed is the
-/// standing rule for a backend that cannot express a construct (REQ-78) — the
-/// alternative, silently emitting the old one-shot shape, is the bug.
+/// This replaces `loops_are_refused_by_the_wasm_backend`. The refusal was
+/// honest but temporary: `emit_structured` handled forward if/else regions
+/// only, so a back edge had no structure to map onto and the backend failed
+/// closed (REQ-78) rather than emit the one-shot shape loops were introduced to
+/// fix. It now emits a `block` wrapping a `loop`, so the construct is expressed
+/// rather than refused — and the assertion flips from "must fail" to "must
+/// agree".
 #[test]
-fn loops_are_refused_by_the_wasm_backend() {
-    let sb = Sandbox::new("wasmrefuse");
+fn a_loop_compiles_to_wasm_and_agrees() {
+    let sb = Sandbox::new("wasmloop");
     let src = sb.src(
         r#"
 fungsi utama() -> Nombor kesan Tulis {
@@ -445,25 +500,199 @@ fungsi utama() -> Nombor kesan Tulis {
 }
 "#,
     );
+    let interp = run_interp(&src);
+    assert_eq!(interp, "3\n", "interpreter");
+    if require_backend_tools(&["cc"]) {
+        assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
+    }
+}
+
+/// Nested loops, `putus` and `lanjut` from inside an `if` arm, a loop inside an
+/// `if` arm, and `selagi betul` left only by `putus` — all in one program.
+///
+/// Each of these is a distinct label-depth calculation in the WASM emitter, and
+/// an off-by-one in any of them is silent: `br 1` where `br 2` was meant still
+/// validates, it just leaves the wrong loop. Only the ANSWER catches that,
+/// which is why this is differential rather than a byte-comparison on the
+/// emitted module.
+#[test]
+fn nested_loops_and_loop_control_agree_across_backends() {
+    let sb = Sandbox::new("wasmnest");
+    let src = sb.src(
+        r#"
+fungsi utama() -> Nombor kesan Tulis {
+    biar ubah i = 0;
+    biar ubah jum = 0;
+    selagi i < 5 {
+        biar ubah j = 0;
+        selagi j < 4 {
+            kalau j == 2 { j = j + 1; lanjut; } lain { () };
+            jum = jum + (i * 10 + j);
+            j = j + 1;
+        };
+        i = i + 1;
+    };
+    cetakln(ke_teks(jum));
+
+    biar ubah k = 0;
+    kalau jum > 0 {
+        selagi k < 3 { k = k + 1; };
+        ()
+    } lain {
+        k = 99;
+        ()
+    };
+    cetakln(ke_teks(k));
+
+    biar ubah m = 0;
+    selagi betul {
+        m = m + 1;
+        kalau m == 7 { putus; } lain { () };
+    };
+    cetakln(ke_teks(m));
+    pulang 0;
+}
+"#,
+    );
+    // 320 = sum over i in 0..5, j in {0,1,3} of (i*10 + j); k = 3; m = 7.
+    let interp = run_interp(&src);
+    assert_eq!(interp, "320\n3\n7\n", "interpreter");
+    if require_backend_tools(&["cc"]) {
+        assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
+    }
+}
+
+/// `pulang` from inside a loop, in a callee, on WASM.
+///
+/// An early return unwinds past the `block`/`loop` frames the emitter opened.
+/// WASM's `return` does that correctly only if the frames were balanced in the
+/// first place; an unbalanced one is a validation error, so wasmtime refusing
+/// the module is the failure mode this pins.
+#[test]
+fn pulang_out_of_a_wasm_loop_unwinds_the_function() {
+    let sb = Sandbox::new("wasmret");
+    let src = sb.src(
+        r#"
+fungsi cari(had: Nombor) -> Nombor kesan Bersih {
+    biar ubah i = 1;
+    selagi i < 1000 {
+        kalau i * i > had { pulang i; } lain { () };
+        i = i + 1;
+    };
+    0 - 1
+}
+
+fungsi gcd(a: Nombor, b: Nombor) -> Nombor kesan Bersih {
+    biar ubah x = a;
+    biar ubah y = b;
+    selagi y != 0 {
+        biar t = y;
+        y = x % y;
+        x = t;
+    };
+    x
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    cetakln(ke_teks(cari(50)));
+    cetakln(ke_teks(cari(10000)));
+    cetakln(ke_teks(gcd(1071, 462)));
+    pulang 0;
+}
+"#,
+    );
+    let interp = run_interp(&src);
+    assert_eq!(interp, "8\n101\n21\n", "interpreter");
+    if require_backend_tools(&["cc"]) {
+        assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
+    }
+}
+
+/// `"..." + ke_teks(n)` prints the JOINED STRING on WASM, not a heap address.
+///
+/// The lowerer typed every `+` result `Int` unless an operand was in the
+/// numeric tower, so a string concatenation came out `Ty::Int`. The concat
+/// itself was emitted correctly — only the static type was wrong — but
+/// `cetakln` dispatches on that type in the WASM backend (values are untagged
+/// i32 there, unlike C's runtime tags), so it sent the result pointer through
+/// the integer path and printed a small decimal number. Every `cetakln("x=" +
+/// ...)` in the corpus printed an address, silently, on WASM only.
+#[test]
+fn string_concatenation_prints_as_a_string_on_wasm() {
+    let sb = Sandbox::new("wasmconcat");
+    let src = sb.src(
+        r#"
+fungsi utama() -> Nombor kesan Tulis {
+    biar ubah i = 0;
+    selagi i < 3 {
+        cetakln("i=" + ke_teks(i) + "!");
+        i = i + 1;
+    };
+    cetakln("akhir=" + ke_teks(i));
+    pulang 0;
+}
+"#,
+    );
+    let interp = run_interp(&src);
+    assert_eq!(interp, "i=0!\ni=1!\ni=2!\nakhir=3\n", "interpreter");
+    if require_backend_tools(&["cc"]) {
+        assert_eq!(run_native(&sb, &src), interp, "C backend disagrees");
+    }
+    if require_backend_tools(&["wasmtime"]) {
+        assert_eq!(run_wasm(&sb, &src), interp, "WASM backend disagrees");
+    }
+}
+
+/// `untuk` is still refused by WASM — for the LIST reason, not a loop reason.
+///
+/// `untuk` is sugar for `senarai_peta` over a closure, so it never went through
+/// `emit_structured`'s loop path and the loop work does not unblock it. What
+/// blocks it is list literals, which the WASM backend declares unsupported
+/// (REQ-79) and fails closed on. Pinning the *message* keeps the two gaps from
+/// being confused: a future regression that made loops fail again would fail
+/// this test with the wrong reason rather than pass by coincidence.
+#[test]
+fn untuk_is_refused_by_wasm_for_the_list_gap_not_the_loop_gap() {
+    let sb = Sandbox::new("wasmuntuk");
+    let src = sb.src(
+        r#"
+fungsi utama() -> Nombor kesan Tulis {
+    biar ubah jumlah = 0;
+    untuk x dalam [1, 2, 3, 4, 5] {
+        jumlah = jumlah + x;
+    };
+    cetakln(ke_teks(jumlah));
+    pulang 0;
+}
+"#,
+    );
+    assert_eq!(run_interp(&src), "15\n", "interpreter");
     let out = Command::new(env!("CARGO_BIN_EXE_riinac"))
         .args(["build", "--target", "wasm32"])
         .arg(&src)
         .output()
         .expect("riinac build wasm32");
-    assert!(
-        !out.status.success(),
-        "the WASM backend must FAIL on a loop, not emit a module that runs the \
-         body once: {}{}",
-        String::from_utf8_lossy(&out.stdout),
-        String::from_utf8_lossy(&out.stderr)
-    );
     let msg = format!(
         "{}{}",
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr)
     );
     assert!(
-        msg.contains("selagi") || msg.contains("loop"),
-        "the refusal should name loops as the reason, got: {msg}"
+        !out.status.success(),
+        "WASM cannot build list literals yet, so this must fail closed: {msg}"
+    );
+    assert!(
+        msg.contains("list"),
+        "the refusal must name LISTS as the reason — a loop-shaped refusal here \
+         would be a regression in the loop lowering, got: {msg}"
     );
 }

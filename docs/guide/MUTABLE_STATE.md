@@ -121,9 +121,20 @@ Writes to an enclosing `biar ubah` slot from inside a `untuk` body do survive
 |---|---|---|
 | Interpreter (`riinac run`) | yes | yes |
 | C (`riinac build`) | yes | yes |
-| WASM (`riinac build --target wasm32`) | **refused** | yes |
+| WASM (`riinac build --target wasm32`) | yes | **refused** |
 
-The WASM emitter structures forward `if`/`else` regions only; a loop's back edge
-needs real `loop`/`br_if` nesting, which is not built yet. It fails closed with
-a message naming loops, rather than emitting the old one-shot shape — a backend
-that cannot express a construct must refuse it (REQ-78).
+The WASM emitter reconstructs structured control flow from the IR's CFG. A
+`selagi`/`ulang` loop becomes a `block` wrapping a `loop`: the condition is
+re-tested inside the `loop` so it sees the body's writes, `br_if` leaves when it
+goes false, `br 0` is the back edge (and `lanjut`), and `br 1` is `putus`.
+
+Which edges close a loop is decided by **dominance**, not block order. The
+lowerer allocates a loop's exit block before the body it follows, so `putus`
+branches to a lower-numbered block than the one it leaves; and it leaves an
+unreachable block behind after a `putus` for whatever followed it textually.
+Index order would read both as back edges and invent loops that are not there.
+
+`untuk` is refused on WASM, but for an unrelated reason: it desugars to
+`senarai_peta` over a list literal, and list literals are not supported by that
+backend yet (REQ-79). As always the refusal is explicit — a backend that cannot
+express a construct must fail closed rather than emit a stub (REQ-78).

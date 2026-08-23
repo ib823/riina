@@ -83,6 +83,8 @@ All of it silently wrong, none of it diagnosed:
 - `dasar`, `lajur`, `sahkan` and `luaran` are keywords, so they cannot be used
   as module, variable or function names — hence `peraturan`, `medan` and
   `semak_rahsia`.
-- `riinac build --target wasm32` refuses this program: the WASM emitter cannot
-  structure a loop's back edge yet, and fails closed rather than emitting the
-  old one-shot shape.
+- `riinac build --target wasm32` still refuses this program, but no longer
+  because of its loops — those compile now, to a `block`/`loop` pair with
+  `br_if`. What it refuses is the `panjang` builtin, which that backend has not
+  implemented; it fails closed rather than emit a stub that returns a wrong
+  length (REQ-78).
