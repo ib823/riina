@@ -83,13 +83,14 @@ join `EffectWrite`, `EDeref` joins `EffectRead`. Those rules mirror Coq
 (no-read-up on a dereference, no-write-down on an assignment), and are not
 weakened for convenience.
 
-Two sharp edges:
+`r := e;` in statement position assigns just `e`; the statements after it run
+as written. (Until 2026-08 the right-hand side was parsed greedily, so
+`r := 100; f();` read as `r := (100; f())`, swallowing the rest of the block
+into the assigned value — the workaround was to bind it, `biar _ = (r := 100);`.
+That is no longer needed.)
 
-- `:=` in **statement position** parses its right-hand side greedily, so
-  `r := 100; f();` reads as `r := (100; f())`. Bind it instead:
-  `biar _ = (r := 100);`.
-- Assignment carries `Tulis`, not `Ubah`, despite `Ubah` being the effect whose
-  name means "mutate".
+One sharp edge remains: assignment carries `Tulis`, not `Ubah`, despite `Ubah`
+being the effect whose name means "mutate".
 
 ## Loops
 

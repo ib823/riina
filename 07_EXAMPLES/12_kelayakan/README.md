@@ -75,10 +75,11 @@ All of it silently wrong, none of it diagnosed:
 
 ## Notes on the surface language
 
-- Definitions precede uses inside each module. The C backend lowers a top-level
-  group as a backward-reference chain, so a forward call inside a module
-  type-checks and interprets but fails `riinac build` with
-  `unbound variable: <module>_<callee>`.
+- Definitions still precede uses here, but they no longer have to: a forward
+  call used to type-check and interpret fine and then fail `riinac build` with
+  `unbound variable: <module>_<callee>`, because codegen lowered a top-level
+  group as a backward-reference chain. Groups are lowered properly now, so
+  declaration order is the author's choice again.
 - `dasar`, `lajur`, `sahkan` and `luaran` are keywords, so they cannot be used
   as module, variable or function names — hence `peraturan`, `medan` and
   `semak_rahsia`.

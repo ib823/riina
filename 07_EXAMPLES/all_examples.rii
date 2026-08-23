@@ -297,7 +297,13 @@ fungsi sulit_contoh() -> Rahsia<Teks> kesan Bersih {
 /// Mutable references at a security level. ruj e @Level creates, !e dereferences.
 /// ──────────────────────────────────────────────────────────────────────────────
 
-fungsi contoh_ruj() -> Nombor kesan Bersih {
+/// A `ruj` cell is FIRST CLASS — it can be aliased, returned, stored — so
+/// reading one carries `Baca` and writing one carries `Tulis`. Those rules
+/// mirror Coq `Typing.v` T_Deref/T_Assign and are not weakened for
+/// convenience, which is why this cannot be `kesan Bersih` (it was, and did
+/// not type-check). For local state that should stay pure, use a `biar ubah`
+/// slot instead — see docs/guide/MUTABLE_STATE.md.
+fungsi contoh_ruj() -> Nombor kesan (Tulis | Baca) {
     biar r = ruj 42 @Awam;
     biar nilai = !r;
     r := 100;
