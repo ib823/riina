@@ -112,6 +112,9 @@ fn any_child(expr: &Expr, f: &mut dyn FnMut(&Expr) -> bool) -> bool {
         | Expr::IntN { .. }
         | Expr::String(_)
         | Expr::Var(_)
+        | Expr::SlotGet(_)
+        | Expr::Break
+        | Expr::Continue
         | Expr::Loc(_)
         | Expr::ChoreographyBlock { .. }
         | Expr::UIColor(_, _, _)
@@ -135,12 +138,15 @@ fn any_child(expr: &Expr, f: &mut dyn FnMut(&Expr) -> bool) -> bool {
         | Expr::ActorRecv(e)
         | Expr::ContentHash(e)
         | Expr::ContractDeploy(e)
+        | Expr::SlotSet(_, e)
         | Expr::ZakatCalculate(e) => f(e),
 
         // Two sub-expressions.
         Expr::App(a, b)
         | Expr::Pair(a, b)
         | Expr::Let(_, _, a, b)
+        | Expr::LetMut(_, a, b)
+        | Expr::While(a, b)
         | Expr::LetRec(_, _, a, b)
         | Expr::Handle(a, _, b)
         | Expr::Assign(a, b)

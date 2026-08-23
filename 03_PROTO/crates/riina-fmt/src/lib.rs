@@ -102,9 +102,13 @@ fn fmt_decl(out: &mut String, decl: &TopLevelDecl, level: usize, cfg: &FmtConfig
             indent(out, level, cfg);
             out.push('}');
         }
-        TopLevelDecl::Binding { name, value } => {
+        TopLevelDecl::Binding {
+            name,
+            value,
+            is_mut,
+        } => {
             indent(out, level, cfg);
-            out.push_str("biar ");
+            out.push_str(if *is_mut { "biar ubah " } else { "biar " });
             out.push_str(name);
             out.push_str(" = ");
             fmt_expr(out, value, level, cfg);
@@ -325,6 +329,43 @@ fn fmt_expr(out: &mut String, expr: &Expr, level: usize, cfg: &FmtConfig) {
             out.push('\n');
             indent(out, level, cfg);
             out.push('}');
+        }
+        Expr::While(cond, body) => {
+            indent(out, level, cfg);
+            out.push_str("selagi ");
+            fmt_expr_inline(out, cond, cfg);
+            out.push_str(" {\n");
+            fmt_expr(out, body, level + 1, cfg);
+            out.push('\n');
+            indent(out, level, cfg);
+            out.push('}');
+        }
+        Expr::Break => {
+            indent(out, level, cfg);
+            out.push_str("putus");
+        }
+        Expr::Continue => {
+            indent(out, level, cfg);
+            out.push_str("lanjut");
+        }
+        Expr::SlotGet(name) => {
+            indent(out, level, cfg);
+            out.push_str(name);
+        }
+        Expr::SlotSet(name, value) => {
+            indent(out, level, cfg);
+            out.push_str(name);
+            out.push_str(" = ");
+            fmt_expr_inline(out, value, cfg);
+        }
+        Expr::LetMut(name, value, body) => {
+            indent(out, level, cfg);
+            out.push_str("biar ubah ");
+            out.push_str(name);
+            out.push_str(" = ");
+            fmt_expr_inline(out, value, cfg);
+            out.push_str(";\n");
+            fmt_expr(out, body, level, cfg);
         }
         Expr::Let(name, _, value, body) => {
             indent(out, level, cfg);
@@ -603,6 +644,29 @@ fn fmt_expr_inline(out: &mut String, expr: &Expr, cfg: &FmtConfig) {
             out.push_str(" } lain { ");
             fmt_expr_inline(out, else_br, cfg);
             out.push_str(" }");
+        }
+        Expr::While(cond, body) => {
+            out.push_str("selagi ");
+            fmt_expr_inline(out, cond, cfg);
+            out.push_str(" { ");
+            fmt_expr_inline(out, body, cfg);
+            out.push_str(" }");
+        }
+        Expr::Break => out.push_str("putus"),
+        Expr::Continue => out.push_str("lanjut"),
+        Expr::SlotGet(name) => out.push_str(name),
+        Expr::SlotSet(name, value) => {
+            out.push_str(name);
+            out.push_str(" = ");
+            fmt_expr_inline(out, value, cfg);
+        }
+        Expr::LetMut(name, value, body) => {
+            out.push_str("biar ubah ");
+            out.push_str(name);
+            out.push_str(" = ");
+            fmt_expr_inline(out, value, cfg);
+            out.push_str("; ");
+            fmt_expr_inline(out, body, cfg);
         }
         Expr::Let(name, _, value, body) => {
             out.push_str("biar ");

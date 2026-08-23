@@ -44,6 +44,15 @@ pub enum ParseErrorKind {
     /// instead of letting deeply nested input (e.g. `((((…`) overflow the stack
     /// — a denial-of-service guard on untrusted input (REQ-30).
     NestingTooDeep,
+    /// `putus`/`lanjut` used outside any `selagi`/`ulang` body. Reported rather
+    /// than ignored: until 2026-08 both desugared to `()` anywhere they appeared,
+    /// so a misplaced loop-control statement silently did nothing.
+    LoopControlOutsideLoop(&'static str),
+    /// `biar ubah sekali/paling/mesti x` — a mutable slot with a linearity
+    /// qualifier. The two do not combine ("use exactly once" vs "assign
+    /// repeatedly"), and a slot carries no linearity, so this is reported
+    /// rather than silently dropping the qualifier.
+    MutWithLinearity,
 }
 
 impl fmt::Display for ParseErrorKind {
@@ -58,6 +67,14 @@ impl fmt::Display for ParseErrorKind {
             ParseErrorKind::InvalidEffect => write!(f, "Invalid effect"),
             ParseErrorKind::InvalidSessionType => write!(f, "Invalid session type"),
             ParseErrorKind::NestingTooDeep => write!(f, "Expression nesting too deep"),
+            ParseErrorKind::LoopControlOutsideLoop(kw) => write!(
+                f,
+                "`{kw}` is only valid inside a `selagi` or `ulang` loop body"
+            ),
+            ParseErrorKind::MutWithLinearity => write!(
+                f,
+                "`ubah` cannot be combined with a linearity qualifier"
+            ),
         }
     }
 }
@@ -76,6 +93,8 @@ impl ParseErrorKind {
             ParseErrorKind::InvalidEffect => "P0007",
             ParseErrorKind::InvalidSessionType => "P0008",
             ParseErrorKind::NestingTooDeep => "P0009",
+            ParseErrorKind::LoopControlOutsideLoop(_) => "P0010",
+            ParseErrorKind::MutWithLinearity => "P0011",
         }
     }
 
@@ -97,6 +116,12 @@ impl ParseErrorKind {
             }
             ParseErrorKind::ExpectedExpression => {
                 "Expected an expression. This can be a value (42, \"hello\", betul), variable, function call, or operator expression".to_string()
+            }
+            ParseErrorKind::LoopControlOutsideLoop(kw) => {
+                format!("`{kw}` needs an enclosing loop. Wrap the code in `selagi <syarat> {{ ... }}` or `ulang {{ ... }}`, or delete the `{kw}`")
+            }
+            ParseErrorKind::MutWithLinearity => {
+                "Drop either `ubah` (for a mutable slot) or the linearity qualifier `sekali`/`paling`/`mesti` (for a use-counted binding)".to_string()
             }
             ParseErrorKind::InvalidSecurityLevel => {
                 "Invalid security level. Valid levels: Awam, Dalaman, Sesi, Pengguna, Sistem, Rahsia".to_string()
@@ -169,6 +194,23 @@ pub struct Parser<'a> {
     /// Set while parsing the declaration that directly follows an `awam`, so
     /// the name is captured wherever the decl parser finally produces it.
     pending_pub: bool,
+    /// Lexical binding stack, innermost last, recording whether each name was
+    /// introduced with `ubah`. Consulted to decide whether a name read is a
+    /// plain [`Expr::Var`] or a mutable-slot read, and whether `x = e;` is a
+    /// slot write or the legacy shadowing rebind. A shadowing immutable binding
+    /// pushes `(name, false)`, so an inner `biar x` correctly hides an outer
+    /// `biar ubah x`.
+    binding_scope: Vec<(Ident, bool)>,
+    /// Number of `selagi`/`ulang` bodies currently open. `putus`/`lanjut` are
+    /// only meaningful inside one, so a zero depth turns them into a parse error
+    /// instead of a silently-ignored statement (which is what they were until
+    /// 2026-08 — both desugared to `()`).
+    ///
+    /// A `untuk` body deliberately does NOT raise this. `untuk` desugars to
+    /// `senarai_peta` over a closure, and neither the interpreter's builtin nor
+    /// the C runtime's can honour a break or a continue raised inside it — so
+    /// `putus` there is rejected rather than accepted and ignored.
+    loop_depth: usize,
 }
 
 /// A surface match pattern, used only during `padan` compilation. The AST has
@@ -250,6 +292,8 @@ impl<'a> Parser<'a> {
             imports: Vec::new(),
             public_names: Vec::new(),
             pending_pub: false,
+            binding_scope: Vec::new(),
+            loop_depth: 0,
         }
     }
 
@@ -518,8 +562,10 @@ impl<'a> Parser<'a> {
             Some(TokenKind::KwFn) => self.parse_function_decl(),
             Some(TokenKind::KwLet) => {
                 self.consume(TokenKind::KwLet)?;
-                // Optional `ubah` (mut) modifier, accepted and ignored.
-                if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut)) {
+                // Optional `ubah` (mut) modifier: a top-level mutable slot,
+                // exactly as inside a function.
+                let is_mut = matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut));
+                if is_mut {
                     self.consume(TokenKind::KwMut)?;
                 }
                 let name = self.parse_binding_name()?;
@@ -532,9 +578,13 @@ impl<'a> Parser<'a> {
                 self.consume(TokenKind::Eq)?;
                 let value = self.parse_control_flow()?;
                 self.consume(TokenKind::Semi)?;
+                // A top-level binding scopes over every declaration that
+                // follows, so it stays on the scope stack (nothing pops it).
+                self.binding_scope.push((name.clone(), is_mut));
                 Ok(TopLevelDecl::Binding {
                     name,
                     value: Box::new(value),
+                    is_mut,
                 })
             }
             _ => {
@@ -586,9 +636,11 @@ impl<'a> Parser<'a> {
                 (Effect::Pure, vec![Effect::Pure])
             };
 
-        // Body in braces
+        // Body in braces. Parameters shadow any outer `biar ubah` of the same
+        // name, so a parameter read stays a plain `Var`.
         self.consume(TokenKind::LBrace)?;
-        let body = self.parse_expr()?;
+        let scope: Vec<(Ident, bool)> = params.iter().map(|(n, _)| (n.clone(), false)).collect();
+        let body = self.with_bindings(&scope, Self::parse_expr)?;
         self.consume(TokenKind::RBrace)?;
 
         Ok(TopLevelDecl::Function {
@@ -742,10 +794,11 @@ impl<'a> Parser<'a> {
         // Check if this is a let-binding
         if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwLet)) {
             self.consume(TokenKind::KwLet)?;
-            // Optional `ubah` (mut) modifier: `biar ubah x = e`. Accepted and
-            // ignored — the binding AST carries no mutability flag (matching how
-            // `ubah` is handled on function parameters).
-            if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut)) {
+            // Optional `ubah` (mut) modifier: `biar ubah x = e` binds a real
+            // mutable slot (see `Expr::LetMut`). Without it the binding is
+            // immutable, as before.
+            let is_mut = matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwMut));
+            if is_mut {
                 self.consume(TokenKind::KwMut)?;
             }
             let linearity = match self.peek().map(|t| &t.kind) {
@@ -778,11 +831,15 @@ impl<'a> Parser<'a> {
                 self.consume(TokenKind::Eq)?;
                 let e1 = self.parse_control_flow()?;
                 self.consume(TokenKind::Semi)?;
-                let body = if self.at_sequence_end() {
-                    Expr::Unit
-                } else {
-                    self.parse_stmt_sequence()?
-                };
+                let scope: Vec<(Ident, bool)> =
+                    names.iter().map(|n| (n.clone(), false)).collect();
+                let body = self.with_bindings(&scope, |p| {
+                    if p.at_sequence_end() {
+                        Ok(Expr::Unit)
+                    } else {
+                        p.parse_stmt_sequence()
+                    }
+                })?;
                 let tmp = self.fresh_var("padTup");
                 // Bind the names from the temp via Fst/Snd projection; the last
                 // element is the final `Snd` of the left-nested pair chain.
@@ -807,32 +864,70 @@ impl<'a> Parser<'a> {
             let e1 = self.parse_control_flow()?;
             self.consume(TokenKind::Semi)?;
             // A trailing binding with nothing after it (`biar x = e;` then `}`/EOF)
-            // yields Unit as the block's value.
-            let e2 = if self.at_sequence_end() {
-                Expr::Unit
-            } else {
-                self.parse_stmt_sequence()?
-            };
+            // yields Unit as the block's value. The name is in scope for the rest
+            // of the sequence, shadowing any outer binding of the same name.
+            let e2 = self.with_bindings(&[(name.clone(), is_mut)], |p| {
+                if p.at_sequence_end() {
+                    Ok(Expr::Unit)
+                } else {
+                    p.parse_stmt_sequence()
+                }
+            })?;
+            if is_mut {
+                // A slot has no linearity slot to carry, and "use exactly once"
+                // does not combine with "assign repeatedly" anyway. Reject the
+                // pair rather than silently dropping the qualifier.
+                if linearity.is_some() {
+                    return Err(ParseError {
+                        kind: ParseErrorKind::MutWithLinearity,
+                        span: self.current_span,
+                    });
+                }
+                return Ok(Expr::LetMut(name, Box::new(e1), Box::new(e2)));
+            }
             return Ok(Expr::Let(name, linearity, Box::new(e1), Box::new(e2)));
         }
 
-        // Statement-position reassignment: `x = e;` rebinds `x` for the rest of
-        // the sequence (shadowing). RIINA bindings are immutable, so a true
-        // mutation has no AST node; for straight-line accumulator code
-        // (`x = x + 1;`) rebinding is observationally equivalent — later
-        // references see the new value. Detected as `ident =` where the next
-        // token is a single `=` (not `==`). Field/element assignments
-        // (`obj.f = e`) are not rebindable and fall through to normal parsing.
+        // Statement-position assignment: `x = e;`.
+        //
+        // For a `biar ubah` name this is a real slot write, visible to every
+        // later read of `x` — including reads OUTSIDE the enclosing block, which
+        // is the whole point: `kalau c { jumlah = jumlah + 1; }` inside a loop
+        // has to accumulate.
+        //
+        // For any other name it keeps the historical meaning — rebinding `x`
+        // (shadowing) for the rest of this sequence. That is observationally
+        // equivalent for straight-line code and keeps programs that never say
+        // `ubah` working exactly as before, but it does NOT escape the block, so
+        // `biar ubah` is the form to reach for.
+        //
+        // Detected as `ident =` where the next token is a single `=` (not `==`).
+        // Field/element assignments (`obj.f = e`) fall through to normal parsing.
         if let Some(name) = self.peek_simple_reassignment() {
             self.parse_ident()?; // consume the name
             self.consume(TokenKind::Eq)?;
             let value = self.parse_control_flow()?;
             self.consume(TokenKind::Semi)?;
-            let rest = if self.at_sequence_end() {
-                Expr::Var(name.clone())
-            } else {
-                self.parse_stmt_sequence()?
-            };
+            if self.is_slot(&name) {
+                let rest = if self.at_sequence_end() {
+                    Expr::Unit
+                } else {
+                    self.parse_stmt_sequence()?
+                };
+                return Ok(Expr::Let(
+                    "_".to_string(),
+                    None,
+                    Box::new(Expr::SlotSet(name, Box::new(value))),
+                    Box::new(rest),
+                ));
+            }
+            let rest = self.with_bindings(&[(name.clone(), false)], |p| {
+                if p.at_sequence_end() {
+                    Ok(Expr::Var(name.clone()))
+                } else {
+                    p.parse_stmt_sequence()
+                }
+            })?;
             return Ok(Expr::Let(name, None, Box::new(value), Box::new(rest)));
         }
 
@@ -981,6 +1076,38 @@ impl<'a> Parser<'a> {
     /// reassignment, with a single `=` — not `==`, and not `ident.field =`),
     /// return the identifier name. Uses a two-token clone-based lookahead so the
     /// real stream is untouched.
+    /// True when `name` currently resolves to a `biar ubah` slot.
+    fn is_slot(&self, name: &str) -> bool {
+        self.binding_scope
+            .iter()
+            .rev()
+            .find(|(n, _)| n == name)
+            .is_some_and(|(_, is_mut)| *is_mut)
+    }
+
+    /// Read a name: a mutable slot reads through [`Expr::SlotGet`], everything
+    /// else stays an ordinary [`Expr::Var`].
+    fn name_ref(&self, name: Ident) -> Expr {
+        if self.is_slot(&name) {
+            Expr::SlotGet(name)
+        } else {
+            Expr::Var(name)
+        }
+    }
+
+    /// Parse `body_fn` with `names` in scope, then restore the previous scope.
+    fn with_bindings<T>(
+        &mut self,
+        names: &[(Ident, bool)],
+        body_fn: impl FnOnce(&mut Self) -> Result<T, ParseError>,
+    ) -> Result<T, ParseError> {
+        let mark = self.binding_scope.len();
+        self.binding_scope.extend(names.iter().cloned());
+        let out = body_fn(self);
+        self.binding_scope.truncate(mark);
+        out
+    }
+
     fn peek_simple_reassignment(&mut self) -> Option<Ident> {
         let mut ahead = self.lexer.clone();
         let name = match ahead.next().map(|t| t.kind) {
@@ -1240,11 +1367,15 @@ impl<'a> Parser<'a> {
             Some(TokenKind::KwFor) => self.parse_for_in(),
             Some(TokenKind::KwWhile) => self.parse_while(),
             Some(TokenKind::KwLoop) => self.parse_loop(),
-            // `putus` (break) / `lanjut` (continue). Loops currently desugar to
-            // a single bounded iteration, so loop control has no extra runtime
-            // effect to model — both desugar to a no-op `()` that typechecks in
-            // statement position. An optional `'label` is accepted and ignored.
+            // `putus` (break) / `lanjut` (continue) — real loop control over the
+            // innermost enclosing `selagi`/`ulang`/`untuk` body. Until 2026-08
+            // both desugared to a no-op `()`, so a `putus` in a loop silently did
+            // nothing. An optional `'label` is still accepted and ignored (only
+            // the innermost loop is targeted); using either outside a loop is a
+            // parse error rather than a statement that quietly disappears.
             Some(TokenKind::KwBreak) | Some(TokenKind::KwContinue) => {
+                let is_break = matches!(self.peek().map(|t| &t.kind), Some(TokenKind::KwBreak));
+                let span = self.peek().map(|t| t.span).unwrap_or(self.current_span);
                 self.next();
                 if matches!(
                     self.peek().map(|t| &t.kind),
@@ -1252,7 +1383,17 @@ impl<'a> Parser<'a> {
                 ) {
                     self.next();
                 }
-                Ok(Expr::Unit)
+                if self.loop_depth == 0 {
+                    return Err(ParseError {
+                        kind: ParseErrorKind::LoopControlOutsideLoop(if is_break {
+                            "putus"
+                        } else {
+                            "lanjut"
+                        }),
+                        span,
+                    });
+                }
+                Ok(if is_break { Expr::Break } else { Expr::Continue })
             }
             // CAHAYA Phase J5 block forms
             Some(TokenKind::KwDisplay) => self.parse_display(),
@@ -1286,7 +1427,10 @@ impl<'a> Parser<'a> {
         self.consume(TokenKind::KwIn)?;
         let iter = self.parse_pipe()?;
         self.consume(TokenKind::LBrace)?;
-        let body = self.parse_expr()?;
+        // The loop variable shadows any outer `biar ubah` of the same name.
+        let scope: Vec<(Ident, bool)> =
+            pattern_names.iter().map(|n| (n.clone(), false)).collect();
+        let body = self.with_bindings(&scope, Self::parse_expr)?;
         self.consume(TokenKind::RBrace)?;
         // Desugar `untuk x dalam iter { body }` to a list map over the iterable,
         // applying the body as a per-element closure:
@@ -1322,20 +1466,17 @@ impl<'a> Parser<'a> {
         self.consume(TokenKind::KwWhile)?;
         let cond = self.parse_pipe()?;
         self.consume(TokenKind::LBrace)?;
-        let body = self.parse_expr()?;
+        let body = self.parse_loop_body()?;
         self.consume(TokenKind::RBrace)?;
-        // Desugar: selagi cond { body } → if cond { body; () } else { () }
-        // Full looping requires runtime support; for now emit single-iteration conditional
-        Ok(Expr::If(
-            Box::new(cond),
-            Box::new(Expr::Let(
-                "_".to_string(),
-                None,
-                Box::new(body),
-                Box::new(Expr::Unit),
-            )),
-            Box::new(Expr::Unit),
-        ))
+        Ok(Expr::While(Box::new(cond), Box::new(body)))
+    }
+
+    /// Parse a loop body, with `putus`/`lanjut` enabled for its extent.
+    fn parse_loop_body(&mut self) -> Result<Expr, ParseError> {
+        self.loop_depth += 1;
+        let body = self.parse_expr();
+        self.loop_depth -= 1;
+        body
     }
 
     /// Parse infinite loop:
@@ -1344,14 +1485,13 @@ impl<'a> Parser<'a> {
     fn parse_loop(&mut self) -> Result<Expr, ParseError> {
         self.consume(TokenKind::KwLoop)?;
         self.consume(TokenKind::LBrace)?;
-        let body = self.parse_expr()?;
+        let body = self.parse_loop_body()?;
         self.consume(TokenKind::RBrace)?;
-        // Desugar: ulang { body } → body; () (single iteration for now)
-        Ok(Expr::Let(
-            "_".to_string(),
-            None,
+        // `ulang { body }` is `selagi betul { body }` — an unbounded loop that
+        // only `putus` or `pulang` leaves.
+        Ok(Expr::While(
+            Box::new(Expr::Bool(true)),
             Box::new(body),
-            Box::new(Expr::Unit),
         ))
     }
 
@@ -1961,7 +2101,7 @@ impl<'a> Parser<'a> {
                 if is_ctor && !matches!(self.peek().map(|t| &t.kind), Some(TokenKind::Dot)) {
                     return Ok(Expr::String(s));
                 }
-                Ok(Expr::Var(s))
+                Ok(self.name_ref(s))
             }
             // List literal `[e1, e2, ...]`. A trailing comma is allowed; `[]` is
             // the empty list.
@@ -2031,7 +2171,7 @@ impl<'a> Parser<'a> {
             Some(ref k) if Self::soft_keyword_spelling(k).is_some() => {
                 let name = Self::soft_keyword_spelling(k).unwrap().to_string();
                 self.next();
-                Ok(Expr::Var(name))
+                Ok(self.name_ref(name))
             }
             Some(kind) => Err(ParseError {
                 kind: ParseErrorKind::UnexpectedToken(kind),
@@ -2104,15 +2244,19 @@ impl<'a> Parser<'a> {
             self.consume(TokenKind::Arrow)?;
             let _ret = self.parse_ty()?;
         }
-        // Body: a `{ ... }` block or a bare control-flow expression.
-        let body = if matches!(self.peek().map(|t| &t.kind), Some(TokenKind::LBrace)) {
-            self.consume(TokenKind::LBrace)?;
-            let b = self.parse_stmt_sequence()?;
-            self.consume(TokenKind::RBrace)?;
-            b
-        } else {
-            self.parse_control_flow()?
-        };
+        // Body: a `{ ... }` block or a bare control-flow expression. As for a
+        // named function, parameters shadow an outer `biar ubah` of the same name.
+        let scope: Vec<(Ident, bool)> = params.iter().map(|(n, _)| (n.clone(), false)).collect();
+        let body = self.with_bindings(&scope, |p| {
+            if matches!(p.peek().map(|t| &t.kind), Some(TokenKind::LBrace)) {
+                p.consume(TokenKind::LBrace)?;
+                let b = p.parse_stmt_sequence()?;
+                p.consume(TokenKind::RBrace)?;
+                Ok(b)
+            } else {
+                p.parse_control_flow()
+            }
+        })?;
         // Curry parameters into nested lambdas (right-fold). A no-parameter
         // `fungsi()` becomes a single Unit-typed parameter (a thunk).
         if params.is_empty() {

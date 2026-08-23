@@ -5740,7 +5740,7 @@ mod jalinan_phase6_tests {
 // ===========================================================================
 #[cfg(test)]
 mod gate_b_parity {
-    use crate::{is_dual, type_check_full, TypeError, TypingContext};
+    use crate::{is_dual, type_check, type_check_full, types_compatible, Context, TypeError, TypingContext};
     use riina_types::{Effect, Expr, Linearity, SecurityLevel, SessionType, Ty};
 
     // ── Property 1: Capability safety — Coq T_Require / T_Grant (Typing.v:207-213)
@@ -6324,5 +6324,166 @@ mod gate_b_parity {
             ),
             "the deprecation rule must fire only at algorithm-selection sites"
         );
+    }
+
+    // ── Loops and mutable locals (While / Break / Continue / LetMut / Slot) ──
+    //
+    // These nodes are new surface constructs with no Coq counterpart yet, so the
+    // rules live only here and in `type_check`'s legacy mirror. Both paths are
+    // exercised: the legacy one is still reachable and used to be the place a
+    // missing arm went unnoticed.
+
+    #[test]
+    fn while_is_unit_and_joins_both_effects() {
+        let mut ctx = TypingContext::new();
+        // selagi betul { cetak-free body } : Unit
+        let loop_expr = Expr::While(Box::new(Expr::Bool(true)), Box::new(Expr::Int(1)));
+        assert_eq!(
+            type_check_full(&mut ctx, &loop_expr).unwrap(),
+            (Ty::Unit, Effect::Pure)
+        );
+        // The body's effect propagates to the loop, once, however many times it
+        // would run.
+        let effectful = Expr::While(
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Perform(Effect::Write, Box::new(Expr::Unit))),
+        );
+        let (ty, eff) = type_check_full(&mut ctx, &effectful).unwrap();
+        assert_eq!(ty, Ty::Unit);
+        assert_eq!(eff, Effect::Write);
+    }
+
+    #[test]
+    fn while_rejects_a_non_boolean_condition() {
+        let mut ctx = TypingContext::new();
+        let bad = Expr::While(Box::new(Expr::Int(1)), Box::new(Expr::Unit));
+        assert!(matches!(
+            type_check_full(&mut ctx, &bad),
+            Err(TypeError::TypeMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn break_and_continue_unify_with_any_branch() {
+        let mut ctx = TypingContext::new();
+        // Like `pulang`, they never yield to their context, so they take `Any`
+        // and must not force the sibling branch's type.
+        assert_eq!(
+            type_check_full(&mut ctx, &Expr::Break).unwrap(),
+            (Ty::Any, Effect::Pure)
+        );
+        assert_eq!(
+            type_check_full(&mut ctx, &Expr::Continue).unwrap(),
+            (Ty::Any, Effect::Pure)
+        );
+        let branch = Expr::If(
+            Box::new(Expr::Bool(true)),
+            Box::new(Expr::Break),
+            Box::new(Expr::Int(7)),
+        );
+        let (ty, _) = type_check_full(&mut ctx, &branch).unwrap();
+        assert!(types_compatible(&ty, &Ty::Int), "got {ty:?}");
+    }
+
+    #[test]
+    fn a_slot_read_has_the_element_type_and_no_effect() {
+        let mut ctx = TypingContext::new();
+        // biar ubah x = 42; x
+        let e = Expr::LetMut(
+            "x".into(),
+            Box::new(Expr::Int(42)),
+            Box::new(Expr::SlotGet("x".into())),
+        );
+        assert_eq!(
+            type_check_full(&mut ctx, &e).unwrap(),
+            (Ty::Int, Effect::Pure)
+        );
+    }
+
+    #[test]
+    fn a_slot_write_is_unit_and_stays_pure() {
+        let mut ctx = TypingContext::new();
+        // biar ubah x = 0; x = 1
+        // Deliberately Pure: a slot cannot escape its binder, so unlike
+        // `ruj`/`:=` (which join EffectWrite, mirroring Coq T_Assign) a local
+        // counter does not make its enclosing function effectful.
+        let e = Expr::LetMut(
+            "x".into(),
+            Box::new(Expr::Int(0)),
+            Box::new(Expr::SlotSet("x".into(), Box::new(Expr::Int(1)))),
+        );
+        assert_eq!(
+            type_check_full(&mut ctx, &e).unwrap(),
+            (Ty::Unit, Effect::Pure)
+        );
+    }
+
+    #[test]
+    fn a_slot_write_must_match_the_slot_type() {
+        let mut ctx = TypingContext::new();
+        let e = Expr::LetMut(
+            "x".into(),
+            Box::new(Expr::Int(0)),
+            Box::new(Expr::SlotSet("x".into(), Box::new(Expr::String("no".into())))),
+        );
+        assert!(matches!(
+            type_check_full(&mut ctx, &e),
+            Err(TypeError::TypeMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn slot_access_needs_a_binding() {
+        let mut ctx = TypingContext::new();
+        assert!(matches!(
+            type_check_full(&mut ctx, &Expr::SlotGet("hantu".into())),
+            Err(TypeError::VarNotFound(_))
+        ));
+        assert!(matches!(
+            type_check_full(
+                &mut ctx,
+                &Expr::SlotSet("hantu".into(), Box::new(Expr::Int(1)))
+            ),
+            Err(TypeError::VarNotFound(_))
+        ));
+    }
+
+    #[test]
+    fn legacy_type_check_mirrors_the_loop_and_slot_rules() {
+        // `type_check` is the deprecated path but still reachable; a missing arm
+        // here is exactly the kind of gap that goes unnoticed.
+        let ctx = Context::new();
+        assert_eq!(
+            type_check(&ctx, &Expr::While(Box::new(Expr::Bool(true)), Box::new(Expr::Int(1)))).unwrap(),
+            (Ty::Unit, Effect::Pure)
+        );
+        assert!(matches!(
+            type_check(&ctx, &Expr::While(Box::new(Expr::Int(0)), Box::new(Expr::Unit))),
+            Err(TypeError::TypeMismatch { .. })
+        ));
+        assert_eq!(
+            type_check(&ctx, &Expr::Break).unwrap(),
+            (Ty::Any, Effect::Pure)
+        );
+        assert_eq!(
+            type_check(&ctx, &Expr::Continue).unwrap(),
+            (Ty::Any, Effect::Pure)
+        );
+        let e = Expr::LetMut(
+            "x".into(),
+            Box::new(Expr::Int(42)),
+            Box::new(Expr::SlotGet("x".into())),
+        );
+        assert_eq!(type_check(&ctx, &e).unwrap(), (Ty::Int, Effect::Pure));
+        let w = Expr::LetMut(
+            "x".into(),
+            Box::new(Expr::Int(0)),
+            Box::new(Expr::SlotSet("x".into(), Box::new(Expr::Int(1)))),
+        );
+        assert_eq!(type_check(&ctx, &w).unwrap(), (Ty::Unit, Effect::Pure));
+        assert!(matches!(
+            type_check(&ctx, &Expr::SlotGet("hantu".into())),
+            Err(TypeError::VarNotFound(_))
+        ));
     }
 }

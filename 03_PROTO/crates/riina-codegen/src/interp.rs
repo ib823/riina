@@ -646,6 +646,85 @@ impl Interpreter {
                 Err(Error::Return(Box::new(v)))
             }
 
+            // E_While: `selagi cond { body }` — evaluate `cond`, and while it is
+            // true evaluate `body` and repeat. The loop's own value is `()`.
+            //
+            // `putus`/`lanjut` arrive as the `Error::Break`/`Error::Continue`
+            // control-flow signals and are caught HERE, by the innermost loop.
+            // `Error::Return` is deliberately NOT caught: `pulang` inside a loop
+            // must unwind past it to the enclosing function, which is why the
+            // loop is a real node rather than a desugaring into a closure.
+            Expr::While(cond, body) => {
+                loop {
+                    let keep_going = match self.eval_with_env(env, cond)? {
+                        Value::Bool(b) => b,
+                        other => {
+                            return Err(Error::TypeMismatch {
+                                expected: "bool".to_string(),
+                                found: format!("{other:?}"),
+                                context: "selagi condition".to_string(),
+                            })
+                        }
+                    };
+                    if !keep_going {
+                        break;
+                    }
+                    match self.eval_with_env(env, body) {
+                        Ok(_) => {}
+                        Err(Error::Continue) => {}
+                        Err(Error::Break) => break,
+                        Err(e) => return Err(e),
+                    }
+                }
+                Ok(Value::Unit)
+            }
+
+            // E_Break / E_Continue: raise the loop-control signal for the
+            // innermost enclosing `While` to catch.
+            Expr::Break => Err(Error::Break),
+            Expr::Continue => Err(Error::Continue),
+
+            // E_LetMut: `biar ubah x = e1; e2` — allocate a mutable slot holding
+            // `e1` and bind `x` to it for `e2`. The slot lives in the same store
+            // as `ruj` cells, at `Awam` (public), so a write inside a nested
+            // block or loop body is visible to every later read.
+            Expr::LetMut(name, init, body) => {
+                let init_val = self.eval_with_env(env, init)?;
+                let loc = self.store.alloc(init_val, SecurityLevel::Public);
+                let slot = Value::Ref(RefCell {
+                    location: loc,
+                    level: SecurityLevel::Public,
+                });
+                let new_env = env.extend(name.clone(), slot);
+                self.eval_with_env(&new_env, body)
+            }
+
+            // E_SlotGet / E_SlotSet: read and write a `biar ubah` slot. No
+            // security check is needed — a slot is always `Awam` and, unlike a
+            // `ruj` cell, cannot be aliased or escape its binder.
+            Expr::SlotGet(name) => match env.lookup(name) {
+                Some(Value::Ref(cell)) => {
+                    let (val, _level) = self.store.read_with_level(cell.location)?;
+                    Ok(val.clone())
+                }
+                Some(other) => Ok(other.clone()),
+                None => Err(Error::UnboundVariable(name.clone())),
+            },
+            Expr::SlotSet(name, value_expr) => {
+                let new_val = self.eval_with_env(env, value_expr)?;
+                match env.lookup(name) {
+                    Some(Value::Ref(cell)) => {
+                        let loc = cell.location;
+                        self.store.write(loc, new_val)?;
+                        Ok(Value::Unit)
+                    }
+                    Some(_) => Err(Error::InvalidOperation(format!(
+                        "`{name}` is not a mutable binding; declare it with `biar ubah`"
+                    ))),
+                    None => Err(Error::UnboundVariable(name.clone())),
+                }
+            }
+
             // E_LetRec: Recursive let binding (fix-point)
             // For a recursive function, we wrap the body in an expression
             // that re-binds the function name on each call.

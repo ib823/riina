@@ -3867,6 +3867,74 @@ pub fn type_check_full(ctx: &mut TypingContext, expr: &Expr) -> Result<(Ty, Effe
 
             Ok((result_ty, eff1.join(eff2).join(eff3)))
         }
+        // ── Loops and mutable locals (compiler-level; no Coq counterpart yet) ──
+        //
+        // T_While: Γ ⊢ cond : Bool, ε₁ →  Γ ⊢ body : _, ε₂ →
+        //          Γ ⊢ (while cond body) : Unit, ε₁ ⊔ ε₂
+        //
+        // The body's own type is discarded (a loop body is evaluated for its
+        // effects), and the loop itself always yields `()`. Effects are the join
+        // of both — a body that prints makes the loop `Tulis`, once, however many
+        // times it runs.
+        Expr::While(cond, body) => {
+            let (t_cond, eff_cond) = type_check_full(ctx, cond)?;
+            let (inner_cond, _) = strip_label(&t_cond);
+            if !matches!(inner_cond, Ty::Bool | Ty::Any) {
+                return Err(TypeError::TypeMismatch {
+                    expected: Ty::Bool,
+                    found: t_cond,
+                });
+            }
+            let (_t_body, eff_body) = type_check_full(ctx, body)?;
+            Ok((Ty::Unit, eff_cond.join(eff_body)))
+        }
+        // `putus` / `lanjut` never yield to their evaluation context, so — like
+        // `pulang` — they take type `Any` and unify with any sibling branch type.
+        // The parser has already rejected them outside a loop.
+        Expr::Break | Expr::Continue => Ok((Ty::Any, Effect::Pure)),
+
+        // T_LetMut: Γ ⊢ e₁ : T, ε₁ →  Γ, x:Ref(T,Awam) ⊢ e₂ : U, ε₂ →
+        //           Γ ⊢ (biar ubah x = e₁; e₂) : U, ε₁ ⊔ ε₂
+        //
+        // NOTE the absent `⊔ EffectWrite`: unlike T_Ref/T_Deref/T_Assign (which
+        // mirror Coq `Typing.v` and must not be weakened), a slot is not first
+        // class. `SlotGet`/`SlotSet` name a binder directly, so the cell can
+        // never be aliased, returned or stored — reading and writing it is
+        // unobservable outside the binding, the standard encapsulated-state
+        // argument. A local counter therefore stays `kesan Bersih`.
+        Expr::LetMut(x, e1, e2) => {
+            let (t1, eff1) = type_check_full(ctx, e1)?;
+            let mut inner = ctx.extend_gamma(x.clone(), Ty::Ref(Box::new(t1), SecurityLevel::Public));
+            let (t2, eff2) = type_check_full(&mut inner, e2)?;
+            Ok((t2, eff1.join(eff2)))
+        }
+        Expr::SlotGet(x) => {
+            let ty = ctx
+                .lookup_var(x)
+                .cloned()
+                .ok_or_else(|| TypeError::VarNotFound(x.clone()))?;
+            match ty {
+                Ty::Ref(inner, _) => Ok((*inner, Effect::Pure)),
+                other => Ok((other, Effect::Pure)),
+            }
+        }
+        Expr::SlotSet(x, e) => {
+            let (t_val, eff) = type_check_full(ctx, e)?;
+            let slot_ty = ctx
+                .lookup_var(x)
+                .cloned()
+                .ok_or_else(|| TypeError::VarNotFound(x.clone()))?;
+            if let Ty::Ref(inner, _) = slot_ty {
+                let (assigned, _) = strip_label(&t_val);
+                if !types_compatible(&inner, assigned) {
+                    return Err(TypeError::TypeMismatch {
+                        expected: *inner,
+                        found: assigned.clone(),
+                    });
+                }
+            }
+            Ok((Ty::Unit, eff))
+        }
         Expr::Let(x, linearity, e1, e2) => {
             let (t1, eff1) = type_check_full(ctx, e1)?;
             let new_ctx = match linearity {
@@ -4826,6 +4894,39 @@ pub fn type_check(ctx: &Context, expr: &Expr) -> Result<(Ty, Effect), TypeError>
             let result_ty = join_branch_types(t2, t3);
 
             Ok((result_ty, eff1.join(eff2).join(eff3)))
+        }
+        // See `type_check_full` for the rules; this legacy path mirrors them.
+        Expr::While(cond, body) => {
+            let (t_cond, eff_cond) = type_check(ctx, cond)?;
+            if t_cond != Ty::Bool && t_cond != Ty::Any {
+                return Err(TypeError::TypeMismatch {
+                    expected: Ty::Bool,
+                    found: t_cond,
+                });
+            }
+            let (_t_body, eff_body) = type_check(ctx, body)?;
+            Ok((Ty::Unit, eff_cond.join(eff_body)))
+        }
+        Expr::Break | Expr::Continue => Ok((Ty::Any, Effect::Pure)),
+        Expr::LetMut(x, e1, e2) => {
+            let (t1, eff1) = type_check(ctx, e1)?;
+            let ctx_new = ctx.extend(x.clone(), Ty::Ref(Box::new(t1), SecurityLevel::Public));
+            let (t2, eff2) = type_check(&ctx_new, e2)?;
+            Ok((t2, eff1.join(eff2)))
+        }
+        Expr::SlotGet(x) => {
+            let ty = ctx
+                .lookup(x)
+                .cloned()
+                .ok_or_else(|| TypeError::VarNotFound(x.clone()))?;
+            match ty {
+                Ty::Ref(inner, _) => Ok((*inner, Effect::Pure)),
+                other => Ok((other, Effect::Pure)),
+            }
+        }
+        Expr::SlotSet(_x, e) => {
+            let (_t, eff) = type_check(ctx, e)?;
+            Ok((Ty::Unit, eff))
         }
         Expr::Let(x, _, e1, e2) => {
             let (t1, eff1) = type_check(ctx, e1)?;

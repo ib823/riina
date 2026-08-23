@@ -20,7 +20,7 @@
 | F* / TLA+ / Alloy / SMT | 1 active smoke artifact each; rest are generated corpora (`metrics.json` is authoritative) |
 | Total proofs | See `website/public/metrics.json` (single source of truth) |
 | Rust tests | 3,266 proto + 323 tooling = 3,589 (20 proto crates, 4 tooling crates; re-derived 2026-08-12) |
-| Examples | 169 .rii files |
+| Examples | 172 .rii files |
 | Claims | Coq mechanized; Lean active-lane audit-grep mechanized (per-file elaboration gaps still exist outside default `lake build RIINA` target); Isabelle/F*/TLA+/Alloy/SMT smoke-mechanized; Verus/Kani/TV generated |
 
 **Active gaps a new session must NOT forget:**

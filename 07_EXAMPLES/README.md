@@ -1,13 +1,13 @@
 # RIINA Examples
 
-This directory contains 147 `.rii` example files across 18 category directories.
+This directory contains 172 `.rii` example files across 20 category directories.
 
 ## ⚠️ Parser-support status (honest)
 
 These examples document the **intended** RIINA language surface. The *shipped*
 compiler (`03_PROTO/target/release/riinac`) accepts a narrower grammar than many
-of the examples assume. As of this writing, **94 of the 169 examples pass
-`riinac check`** end-to-end (re-measured 2026-08-11; and all 28 of `00_basics/`), and closing the
+of the examples assume. As of this writing, **97 of the 172 examples pass
+`riinac check`** end-to-end (re-measured 2026-08-23; and all 28 of `00_basics/`), and closing the
 remaining gap is active work (`RIINA_MASTER_PLAN.md` Gate B).
 
 Separately, passing `riinac check` does **not** imply the example can be
@@ -37,8 +37,19 @@ Recently added grammar support:
 - **List literals `[e1, e2, ...]`** and list `+` concatenation; record literals
   and field access.
 - **Guard clauses** (`pastikan cond lain { ... };`) and the `|>` pipe operator.
-- **Loop control** — `putus` (break) and `lanjut` (continue) inside
-  `selagi` / `ulang` / `untuk`.
+- **Real loops.** `selagi` (while) and `ulang` (loop) iterate until their
+  condition goes false or a `putus` leaves them; `putus` (break) and `lanjut`
+  (continue) are real control flow. Both used to be sugar that ran the body at
+  most ONCE (`selagi c { b }` became `if c { b; () }`) with `putus`/`lanjut`
+  desugaring to `()`, so a loop type-checked, formatted and read like a loop
+  while doing none of the iterating. `putus`/`lanjut` are accepted in
+  `selagi`/`ulang` bodies; inside a `untuk` body they are a parse error (P0010)
+  rather than a statement that silently disappears.
+- **`biar ubah` is a real mutable binding.** A write is visible to every later
+  read, including outside the block that made it — which is what makes a loop
+  accumulator work. It carries NO effect (a slot cannot escape its binder), so a
+  counting loop stays `kesan Bersih`. See
+  [docs/guide/MUTABLE_STATE.md](../docs/guide/MUTABLE_STATE.md).
 - **`!` as logical-not** on booleans (in addition to its deref meaning on refs).
 - **Top-level `jenis` declarations** — record (`jenis Name { ... }`), generic
   (`jenis Name<T> { ... }`), alias (`jenis Name = T;`), and marker (`jenis Name`)
@@ -74,7 +85,7 @@ riinac run   examples.rii   # interpret
 
 ## Examples that currently pass `riinac check`
 
-The whole `00_basics/` directory (20 files) now type- and effect-checks, so those
+The whole `00_basics/` directory (28 files) now type- and effect-checks, so those
 are the best starting points. Many files in `01_security/`, `02_effects/`,
 `04_compliance/`, and `08_jalinan/` also pass. The exact set moves as the parser
 is extended, so regenerate it rather than trusting a hand-maintained list:
