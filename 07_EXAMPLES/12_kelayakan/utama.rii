@@ -1,0 +1,96 @@
+// utama.rii — the effect boundary and the report.
+//
+// This is the ONLY file in the program that declares an effect. `peraturan.rii`
+// and `pengesah.rii` are `kesan Bersih` throughout, mutable accumulators and
+// all, so the whole of the policy and comparison logic is checkably free of
+// I/O. Everything that reaches a terminal reaches it from here.
+//
+//   riinac run   07_EXAMPLES/12_kelayakan/utama.rii   # interpreted
+//   riinac build 07_EXAMPLES/12_kelayakan/utama.rii   # native binary via C
+
+guna peraturan;
+guna pengesah;
+
+fungsi garis() -> Teks kesan Bersih {
+    teks_ulang(("-", 46))
+}
+
+/// One row of the policy table.
+fungsi lapor_satu(kata: Teks, larangan: Senarai<Teks>) -> Nombor kesan Tulis {
+    biar mata = peraturan::skor(kata, larangan);
+    biar medan = teks_pad_kanan((kata, (18, " ")));
+    cetakln(medan + " " + teks_pad_kiri((ke_teks(mata), (3, " "))) + "  "
+            + peraturan::gred(mata)
+            + "  [kelas " + ke_teks(peraturan::bilangan_kelas(kata))
+            + ", ulangan " + ke_teks(peraturan::ulangan_terpanjang(kata)) + "]");
+    mata
+}
+
+/// A self-check that would have PASSED under one-shot loops while the verifier
+/// was wide open: two distinct secrets sharing their first character.
+///
+/// Printing the outcome rather than asserting keeps the example runnable on
+/// both backends; the same case is asserted in the compiler's own test suite.
+fungsi ujian_banding_menolak_awalan_sepadan() -> Benar kesan Tulis {
+    biar salah_terima = pengesah::banding_masa_tetap("rahsia-2026", "rahsia-2027");
+    biar betul_terima = pengesah::banding_masa_tetap("rahsia-2026", "rahsia-2026");
+    kalau salah_terima {
+        cetakln("GAGAL: awalan sepadan diterima sebagai sama");
+    } lain {
+        kalau betul_terima {
+            cetakln("LULUS: banding masa-tetap membezakan akhiran");
+        } lain {
+            cetakln("GAGAL: rahsia yang betul ditolak");
+        };
+    };
+    betul_terima && !salah_terima
+}
+
+fungsi utama() -> Nombor kesan Tulis {
+    biar larangan = ["kata laluan", "123456", "qwerty", "admin", "rahsia"];
+
+    cetakln("Audit dasar kata laluan");
+    cetakln(garis());
+    cetakln(teks_pad_kanan(("kata laluan", (18, " "))) + " skor  gred");
+    cetakln(garis());
+
+    biar calon = [
+        "admin",
+        "aaaaaaaa",
+        "Ahmad2026",
+        "Sungai#Kelantan7",
+        "x",
+    ];
+
+    biar ubah jumlah = 0;
+    biar ubah bil = 0;
+    biar ubah terbaik = 0;
+    biar ubah nama_terbaik = "(tiada)";
+
+    untuk kata dalam calon {
+        biar mata = lapor_satu(kata, larangan);
+        jumlah = jumlah + mata;
+        bil = bil + 1;
+        kalau mata > terbaik {
+            terbaik = mata;
+            nama_terbaik = kata;
+        };
+    };
+
+    cetakln(garis());
+    cetakln("purata skor  : " + ke_teks(jumlah / bil) + " (" + ke_teks(bil) + " calon)");
+    cetakln("calon terbaik: " + nama_terbaik + " (" + ke_teks(terbaik) + ")");
+    cetakln("");
+
+    cetakln("Pengesahan rahsia (masa tetap)");
+    cetakln(garis());
+    biar lulus = ujian_banding_menolak_awalan_sepadan();
+    kalau pengesah::semak_rahsia("rahsia-2026", "rahsia-2026") {
+        cetakln("LULUS: rahsia yang betul disahkan");
+    } lain {
+        cetakln("GAGAL: rahsia yang betul ditolak");
+    };
+
+    kalau lulus { pulang 0; };
+    pulang 1;
+}

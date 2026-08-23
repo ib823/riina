@@ -1,0 +1,149 @@
+// peraturan.rii — password-policy scoring, as a PURE module.
+//
+// Every function here is `kesan Bersih`: no I/O, no network, no clock. The
+// scoring loops keep a running total in `biar ubah` slots, which the effect
+// system treats as local state rather than as observable writes — so a counting
+// loop does not force its caller to declare `Tulis`.
+//
+// These are also the loops that motivated real iteration. Scored under the old
+// one-shot `selagi`, every password below came back with the character class of
+// its FIRST letter and a longest-run of 1.
+//
+// Definitions precede their uses on purpose: the C backend lowers a top-level
+// group as a backward-reference chain, so a forward call inside a module
+// type-checks and interprets but fails `riinac build` with
+// `unbound variable: peraturan_<callee>`.
+
+/// Is `bit` set in the bitset `set`?
+awam fungsi ada_bit(p: (Nombor, Nombor)) -> Benar kesan Bersih {
+    biar set = pertama(p);
+    biar bit = kedua(p);
+    (set / bit) % 2 == 1
+}
+
+/// Set-union of a bitset and one bit. RIINA's surface grammar has no bitwise
+/// `|` yet, so the bit is added only when absent.
+awam fungsi kelas_tambah(p: (Nombor, Nombor)) -> Nombor kesan Bersih {
+    biar semasa = pertama(p);
+    biar bit = kedua(p);
+    kalau ada_bit((semasa, bit)) { semasa } lain { semasa + bit }
+}
+
+/// Character classes present in `kata`, as a 4-bit set:
+///   1 = lowercase, 2 = uppercase, 4 = digit, 8 = other (symbol/space).
+awam fungsi kelas_aksara(kata: Teks) -> Nombor kesan Bersih {
+    biar n = panjang(kata);
+    biar ubah kelas = 0;
+    biar ubah i = 0;
+    selagi i < n {
+        biar c = teks_aksara_di((kata, i));
+        biar besar = teks_huruf_besar(c);
+        biar kecil = teks_huruf_kecil(c);
+        kalau teks_mengandungi(("0123456789", c)) {
+            kelas = kelas_tambah((kelas, 4));
+        } lain {
+            // A letter is the only character whose upper- and lower-case forms
+            // differ; which of the two it already equals says which case it is.
+            kalau besar == kecil {
+                kelas = kelas_tambah((kelas, 8));
+            } lain {
+                kalau c == kecil {
+                    kelas = kelas_tambah((kelas, 1));
+                } lain {
+                    kelas = kelas_tambah((kelas, 2));
+                };
+            };
+        };
+        i = i + 1;
+    };
+    kelas
+}
+
+/// How many distinct character classes `kata` uses (0..4).
+awam fungsi bilangan_kelas(kata: Teks) -> Nombor kesan Bersih {
+    biar kelas = kelas_aksara(kata);
+    biar ubah bil = 0;
+    biar ubah bit = 1;
+    selagi bit <= 8 {
+        kalau ada_bit((kelas, bit)) {
+            bil = bil + 1;
+        };
+        bit = bit * 2;
+    };
+    bil
+}
+
+/// The longest run of one repeated character ("aaab" -> 3).
+awam fungsi ulangan_terpanjang(kata: Teks) -> Nombor kesan Bersih {
+    biar n = panjang(kata);
+    kalau n == 0 { pulang 0; };
+    biar ubah terbaik = 1;
+    biar ubah semasa = 1;
+    biar ubah i = 1;
+    selagi i < n {
+        kalau teks_aksara_di((kata, i)) == teks_aksara_di((kata, i - 1)) {
+            semasa = semasa + 1;
+        } lain {
+            semasa = 1;
+        };
+        kalau semasa > terbaik {
+            terbaik = semasa;
+        };
+        i = i + 1;
+    };
+    terbaik
+}
+
+/// True when `kata` appears in the banned list, compared case-insensitively.
+awam fungsi dalam_senarai_larangan(kata: Teks, larangan: Senarai<Teks>) -> Benar kesan Bersih {
+    biar rendah = teks_huruf_kecil(kata);
+    biar ubah jumpa = salah;
+    untuk calon dalam larangan {
+        kalau rendah == calon {
+            jumpa = betul;
+        };
+    };
+    jumpa
+}
+
+/// Policy score out of 100. Length carries the most weight, then class
+/// diversity; repetition and banned words are penalties.
+///
+/// The length loop stops at `putus` once it has awarded its 50-point cap.
+/// Short-circuiting here is fine — every input to this function is PUBLIC.
+/// `pengesah::banding_masa_tetap` is the deliberate contrast: it compares
+/// secret-derived data and so must never leave a loop early.
+awam fungsi skor(kata: Teks, larangan: Senarai<Teks>) -> Nombor kesan Bersih {
+    kalau dalam_senarai_larangan(kata, larangan) { pulang 0; };
+
+    biar n = panjang(kata);
+    biar ubah mata = 0;
+
+    // Up to 50 points for length: 5 per character past the 4th.
+    biar ubah i = 4;
+    selagi i < n {
+        kalau mata >= 50 { putus; };
+        mata = mata + 5;
+        i = i + 1;
+    };
+
+    // 12 points per distinct character class.
+    mata = mata + bilangan_kelas(kata) * 12;
+
+    // 8 points off per character in the longest repeated run past the second.
+    biar ulang_panjang = ulangan_terpanjang(kata);
+    kalau ulang_panjang > 2 {
+        biar denda = (ulang_panjang - 2) * 8;
+        kalau denda >= mata { mata = 0; } lain { mata = mata - denda; };
+    };
+
+    kalau mata > 100 { 100 } lain { mata }
+}
+
+/// A one-word verdict for a score.
+awam fungsi gred(mata: Nombor) -> Teks kesan Bersih {
+    kalau mata >= 80 { pulang "kukuh"; };
+    kalau mata >= 55 { pulang "sederhana"; };
+    kalau mata >= 30 { pulang "lemah"; };
+    "ditolak"
+}

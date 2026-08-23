@@ -30,6 +30,9 @@ fn walk_inner(expr: &Expr, rules: &[ComplianceRule], out: &mut Vec<ComplianceVio
         | Expr::IntN { .. }
         | Expr::String(_)
         | Expr::Var(_)
+        | Expr::SlotGet(_)
+        | Expr::Break
+        | Expr::Continue
         | Expr::Loc(_) => {}
 
         Expr::Lam(_, _, body)
@@ -44,6 +47,7 @@ fn walk_inner(expr: &Expr, rules: &[ComplianceRule], out: &mut Vec<ComplianceVio
         | Expr::Return(body)
         | Expr::Require(_, body)
         | Expr::Grant(_, body)
+        | Expr::SlotSet(_, body)
         | Expr::Perform(_, body) => {
             walk_inner(body, rules, out);
         }
@@ -57,7 +61,11 @@ fn walk_inner(expr: &Expr, rules: &[ComplianceRule], out: &mut Vec<ComplianceVio
             walk_inner(a, rules, out);
         }
 
-        Expr::Let(_, _, v, b) | Expr::LetRec(_, _, v, b) | Expr::Handle(v, _, b) => {
+        Expr::Let(_, _, v, b)
+        | Expr::LetMut(_, v, b)
+        | Expr::While(v, b)
+        | Expr::LetRec(_, _, v, b)
+        | Expr::Handle(v, _, b) => {
             walk_inner(v, rules, out);
             walk_inner(b, rules, out);
         }

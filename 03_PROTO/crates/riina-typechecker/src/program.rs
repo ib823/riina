@@ -214,6 +214,26 @@ fn summarize_expr(expr: &Expr, env: &CapabilityEnv) -> ExprSummary {
         Expr::If(cond, then_branch, else_branch) => {
             summarize_branching(cond, then_branch, else_branch, env, env)
         }
+        // A loop's capability demand is its condition's plus its body's — a loop
+        // requires nothing a single pass would not, only possibly more often.
+        Expr::While(cond, body) => ExprSummary {
+            exec: summarize_seq(cond, body, env).exec,
+            callable: None,
+        },
+        Expr::Break | Expr::Continue => ExprSummary::default(),
+        Expr::SlotGet(_) => ExprSummary::default(),
+        Expr::SlotSet(_, value) => ExprSummary {
+            exec: summarize_expr(value, env).exec,
+            callable: None,
+        },
+        Expr::LetMut(name, value, body) => {
+            let value_summary = summarize_expr(value, env);
+            let body_summary = summarize_expr(body, &shadow_callable(env, name));
+            ExprSummary {
+                exec: compose_exec(&value_summary.exec, &body_summary.exec),
+                callable: body_summary.callable,
+            }
+        }
         Expr::Let(name, _, value, body) => {
             let value_summary = summarize_expr(value, env);
             let mut body_env = shadow_callable(env, name);
@@ -397,7 +417,7 @@ fn validate_capabilities(program: &Program) -> Result<(), TypeError> {
                 let summary = summarize_function(name, params, body, &env);
                 env.insert(name.clone(), summary);
             }
-            TopLevelDecl::Binding { name, value } => {
+            TopLevelDecl::Binding { name, value, .. } => {
                 let value_summary = summarize_expr(value, &env);
                 program_exec = compose_exec(&program_exec, &value_summary.exec);
 
@@ -544,7 +564,7 @@ fn validate_top_level_decls(program: &Program) -> Result<(), TypeError> {
                 }
                 // Signature already in ctx from pass 1.
             }
-            TopLevelDecl::Binding { name, value } => {
+            TopLevelDecl::Binding { name, value, is_mut } => {
                 let mut binding_ctx = ctx.clone();
                 let (ty, eff) = type_check_full(&mut binding_ctx, value)?;
                 // Top-level bindings: reject side effects except actor operations
@@ -557,7 +577,15 @@ fn validate_top_level_decls(program: &Program) -> Result<(), TypeError> {
                         found: eff,
                     });
                 }
-                ctx = ctx.extend_gamma(name.clone(), ty);
+                // A `biar ubah` top-level binding is a mutable SLOT, so it is
+                // recorded at the slot's type (`Ref`) — that is what
+                // `SlotGet`/`SlotSet` look for. Without this a top-level
+                // counter would not type-check against its own writes.
+                ctx = if *is_mut {
+                    ctx.extend_gamma(name.clone(), Ty::Ref(Box::new(ty), riina_types::SecurityLevel::Public))
+                } else {
+                    ctx.extend_gamma(name.clone(), ty)
+                };
             }
             TopLevelDecl::ExternBlock { decls, .. } => {
                 for decl in decls {

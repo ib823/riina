@@ -709,8 +709,15 @@ pub enum TopLevelDecl {
         effect_set: Vec<Effect>,
         body: Box<Expr>,
     },
-    /// biar name = expr;
-    Binding { name: Ident, value: Box<Expr> },
+    /// `biar name = expr;` at top level. `is_mut` records a `biar ubah`, which
+    /// becomes an [`Expr::LetMut`] slot rather than an immutable [`Expr::Let`] —
+    /// without it a top-level `selagi` counting down a top-level counter never
+    /// terminates, because the write is discarded.
+    Binding {
+        name: Ident,
+        value: Box<Expr>,
+        is_mut: bool,
+    },
     /// Expression at top level (the program's main expression)
     Expr(Box<Expr>),
     /// luaran "C" { ... } — extern block for FFI declarations
@@ -1005,9 +1012,17 @@ impl Program {
                     };
                     result = Expr::Let(bind_name, None, e, Box::new(result));
                 }
-                TopLevelDecl::Binding { name, value } => {
+                TopLevelDecl::Binding {
+                    name,
+                    value,
+                    is_mut,
+                } => {
                     result = flush(&mut pending, result);
-                    result = Expr::Let(name, None, value, Box::new(result));
+                    result = if is_mut {
+                        Expr::LetMut(name, value, Box::new(result))
+                    } else {
+                        Expr::Let(name, None, value, Box::new(result))
+                    };
                 }
                 TopLevelDecl::ExternBlock { decls: edecls, .. } => {
                     result = flush(&mut pending, result);
@@ -1074,6 +1089,51 @@ pub enum Expr {
     /// type is `Any` (it never returns to its evaluation context), so it unifies
     /// with any branch/sequence type.
     Return(Box<Expr>),
+    /// `selagi cond { body }` — iterate `body` while `cond` evaluates to true.
+    ///
+    /// A real loop, not a desugaring. Until 2026-08 `selagi` was rewritten by the
+    /// parser into `if cond { body; () } else { ()}`, which executed the body at
+    /// most ONCE while presenting itself as a loop — silently wrong output with
+    /// no diagnostic. A dedicated node keeps `pulang` unwinding to the enclosing
+    /// FUNCTION (a lambda-based desugaring would have caught it one iteration
+    /// out) and gives `putus`/`lanjut` a scope to name.
+    ///
+    /// The loop's own value is always `()`; RIINA's mutable state lives in `ruj`
+    /// cells (the store), so nothing is carried between iterations in a binding
+    /// and the CFG needs no loop-header phi.
+    While(Box<Expr>, Box<Expr>),
+    /// `putus` — exit the innermost enclosing loop. Type `Any` (it never returns
+    /// to its evaluation context), so it unifies with any branch type.
+    Break,
+    /// `lanjut` — skip to the next iteration of the innermost enclosing loop.
+    /// Type `Any`, as for `Break`.
+    Continue,
+
+    // ── Mutable locals ────────────────────────────────────────────────────
+    // A `biar ubah x` binding is a genuine mutable SLOT, distinct from both an
+    // immutable `biar` and a first-class `ruj` cell.
+    //
+    // Until 2026-08 `ubah` was decorative: `x = e;` re-parsed as a shadowing
+    // `biar`, so a write inside a `kalau`/loop body was discarded at the closing
+    // brace with no diagnostic. Real loops make that unfixable by convention —
+    // an accumulator that resets every iteration either loops forever or answers
+    // wrong — so the slot is now real.
+    //
+    // Slots are deliberately NOT `Ref`/`Deref`/`Assign`: those carry
+    // `Effect::Read`/`Effect::Write` because a `ruj` cell is first class and can
+    // escape, and their rules mirror Coq `Typing.v` T_Ref/T_Deref/T_Assign,
+    // which must not be weakened. A slot cannot escape — the parser emits
+    // `SlotGet`/`SlotSet` only for names it has in lexical scope and never
+    // exposes the slot itself as a value — so reading and writing one is
+    // observationally pure, the standard encapsulated-state result. Like `While`,
+    // `Return` and `BinOp`, these are compiler-level nodes with no counterpart in
+    // `foundations/Syntax.v` yet; see `docs/guide/MUTABLE_STATE.md`.
+    /// `biar ubah x = e1; e2` — bind a fresh mutable slot for the extent of `e2`.
+    LetMut(Ident, Box<Expr>, Box<Expr>),
+    /// Read the mutable slot bound to this name.
+    SlotGet(Ident),
+    /// `x = e` — write the mutable slot bound to this name. Value is `()`.
+    SlotSet(Ident, Box<Expr>),
 
     // Effects
     /// perform ε e

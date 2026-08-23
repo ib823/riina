@@ -3333,9 +3333,119 @@ fn test_parse_top_level_biar_type_annotation() {
 
 #[test]
 fn test_parse_biar_ubah_mut_binding() {
-    // `biar ubah x = e` (mutable binding) parses; the modifier is accepted.
+    // `biar ubah x = e` binds a real mutable SLOT, not a plain `Let`, and a read
+    // of the name goes through `SlotGet`. Before 2026-08 `ubah` was parsed and
+    // discarded, so a write inside a nested block vanished at the closing brace.
     let mut p = Parser::new("biar ubah i = 0; i");
-    assert!(matches!(p.parse_expr().unwrap(), Expr::Let(ref n, _, _, _) if n == "i"));
+    match p.parse_expr().unwrap() {
+        Expr::LetMut(name, init, body) => {
+            assert_eq!(name, "i");
+            assert_eq!(*init, Expr::Int(0));
+            assert_eq!(*body, Expr::SlotGet("i".to_string()));
+        }
+        other => panic!("expected LetMut, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_biar_without_ubah_is_still_immutable() {
+    // No `ubah` — an ordinary `Let`, and the name reads as a plain `Var`.
+    let mut p = Parser::new("biar i = 0; i");
+    match p.parse_expr().unwrap() {
+        Expr::Let(name, _, _, body) => {
+            assert_eq!(name, "i");
+            assert_eq!(*body, Expr::Var("i".to_string()));
+        }
+        other => panic!("expected Let, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_assignment_to_a_slot_is_a_slot_write() {
+    // `x = e;` on a `biar ubah` name is a slot WRITE, so what follows is
+    // sequenced after it rather than nested inside a shadowing rebind.
+    let mut p = Parser::new("biar ubah i = 0; i = 1; i");
+    let Expr::LetMut(_, _, body) = p.parse_expr().unwrap() else {
+        panic!("expected LetMut");
+    };
+    let Expr::Let(_, _, write, rest) = *body else {
+        panic!("expected the write to be sequenced");
+    };
+    assert_eq!(*write, Expr::SlotSet("i".to_string(), Box::new(Expr::Int(1))));
+    assert_eq!(*rest, Expr::SlotGet("i".to_string()));
+}
+
+#[test]
+fn test_inner_immutable_binding_shadows_an_outer_slot() {
+    // An inner `biar x` hides an outer `biar ubah x`, so the inner read must be
+    // a plain `Var` — reading it as a slot would look through to the wrong cell.
+    let mut p = Parser::new("biar ubah x = 0; biar x = 9; x");
+    let Expr::LetMut(_, _, body) = p.parse_expr().unwrap() else {
+        panic!("expected LetMut");
+    };
+    let Expr::Let(_, _, _, inner) = *body else {
+        panic!("expected the shadowing Let");
+    };
+    assert_eq!(*inner, Expr::Var("x".to_string()));
+}
+
+#[test]
+fn test_selagi_parses_as_a_real_loop() {
+    // `selagi` is a loop node. It used to desugar to `if cond { body; () }`,
+    // which ran the body at most ONCE while presenting itself as a loop.
+    let mut p = Parser::new("selagi betul { 1 }");
+    assert!(matches!(p.parse_expr().unwrap(), Expr::While(_, _)));
+}
+
+#[test]
+fn test_ulang_parses_as_an_unbounded_loop() {
+    let mut p = Parser::new("ulang { 1 }");
+    match p.parse_expr().unwrap() {
+        Expr::While(cond, _) => assert_eq!(*cond, Expr::Bool(true)),
+        other => panic!("expected While, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_putus_and_lanjut_inside_a_loop() {
+    // Both are real control flow now, not the no-op `()` they used to be.
+    let mut p = Parser::new("ulang { putus }");
+    match p.parse_expr().unwrap() {
+        Expr::While(_, body) => assert_eq!(*body, Expr::Break),
+        other => panic!("expected While, got {other:?}"),
+    }
+    let mut p = Parser::new("ulang { lanjut }");
+    match p.parse_expr().unwrap() {
+        Expr::While(_, body) => assert_eq!(*body, Expr::Continue),
+        other => panic!("expected While, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_ubah_with_a_linearity_qualifier_is_rejected() {
+    // Silently dropping the qualifier is the failure mode being avoided.
+    let mut p = Parser::new("biar ubah sekali x = 0; x");
+    let err = p
+        .parse_expr()
+        .expect_err("`biar ubah sekali` must not parse");
+    assert!(matches!(err.kind, ParseErrorKind::MutWithLinearity));
+}
+
+#[test]
+fn test_putus_outside_a_loop_is_rejected() {
+    // Silently ignoring it (the old behaviour) hid a real mistake.
+    let mut p = Parser::new("putus");
+    let err = p.parse_expr().expect_err("`putus` outside a loop must not parse");
+    assert!(matches!(
+        err.kind,
+        ParseErrorKind::LoopControlOutsideLoop("putus")
+    ));
+    let mut p = Parser::new("lanjut");
+    let err = p.parse_expr().expect_err("`lanjut` outside a loop must not parse");
+    assert!(matches!(
+        err.kind,
+        ParseErrorKind::LoopControlOutsideLoop("lanjut")
+    ));
 }
 
 #[test]

@@ -37,8 +37,19 @@ Recently added grammar support:
 - **List literals `[e1, e2, ...]`** and list `+` concatenation; record literals
   and field access.
 - **Guard clauses** (`pastikan cond lain { ... };`) and the `|>` pipe operator.
-- **Loop control** — `putus` (break) and `lanjut` (continue) inside
-  `selagi` / `ulang` / `untuk`.
+- **Real loops.** `selagi` (while) and `ulang` (loop) iterate until their
+  condition goes false or a `putus` leaves them; `putus` (break) and `lanjut`
+  (continue) are real control flow. Both used to be sugar that ran the body at
+  most ONCE (`selagi c { b }` became `if c { b; () }`) with `putus`/`lanjut`
+  desugaring to `()`, so a loop type-checked, formatted and read like a loop
+  while doing none of the iterating. `putus`/`lanjut` are accepted in
+  `selagi`/`ulang` bodies; inside a `untuk` body they are a parse error (P0010)
+  rather than a statement that silently disappears.
+- **`biar ubah` is a real mutable binding.** A write is visible to every later
+  read, including outside the block that made it — which is what makes a loop
+  accumulator work. It carries NO effect (a slot cannot escape its binder), so a
+  counting loop stays `kesan Bersih`. See
+  [docs/guide/MUTABLE_STATE.md](../docs/guide/MUTABLE_STATE.md).
 - **`!` as logical-not** on booleans (in addition to its deref meaning on refs).
 - **Top-level `jenis` declarations** — record (`jenis Name { ... }`), generic
   (`jenis Name<T> { ... }`), alias (`jenis Name = T;`), and marker (`jenis Name`)

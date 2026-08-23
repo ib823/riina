@@ -354,11 +354,29 @@ fn free_vars(expr: &Expr) -> HashSet<Ident> {
             fv.extend(free_vars(e2));
             fv
         }
-        Expr::Let(name, _, e1, e2) => {
+        Expr::Let(name, _, e1, e2) | Expr::LetMut(name, e1, e2) => {
             let mut fv = free_vars(e1);
             let mut fv2 = free_vars(e2);
             fv2.remove(name);
             fv.extend(fv2);
+            fv
+        }
+        // A slot read/write references its binder, exactly as `Var` does — a
+        // closure that touches an enclosing `biar ubah` must capture it.
+        Expr::SlotGet(name) => {
+            let mut s = HashSet::new();
+            s.insert(name.clone());
+            s
+        }
+        Expr::SlotSet(name, value) => {
+            let mut fv = free_vars(value);
+            fv.insert(name.clone());
+            fv
+        }
+        Expr::Break | Expr::Continue => HashSet::new(),
+        Expr::While(cond, body) => {
+            let mut fv = free_vars(cond);
+            fv.extend(free_vars(body));
             fv
         }
         Expr::LetRec(name, _, e1, e2) => {
@@ -504,6 +522,11 @@ pub struct Lower {
     /// position — where all but a handful of them sit — and no worse than
     /// before anywhere else.
     honour_return: bool,
+    /// Stack of `(header_block, exit_block)` for the loops currently being
+    /// lowered, innermost last. `putus` branches to the exit, `lanjut` back to
+    /// the header. The parser has already rejected either outside a loop, so a
+    /// pop from an empty stack would be an internal error, not user input.
+    loop_targets: Vec<(BlockId, BlockId)>,
 }
 
 impl Lower {
@@ -520,6 +543,7 @@ impl Lower {
             fn_returns_struct: HashMap::new(),
             var_struct: HashMap::new(),
             honour_return: false,
+            loop_targets: Vec::new(),
         }
     }
 
@@ -591,10 +615,12 @@ impl Lower {
                 self.harvest_struct_info(a);
                 self.harvest_struct_info(b);
             }
-            Expr::Let(_, _, a, b) => {
+            Expr::Let(_, _, a, b) | Expr::LetMut(_, a, b) | Expr::While(a, b) => {
                 self.harvest_struct_info(a);
                 self.harvest_struct_info(b);
             }
+            Expr::SlotSet(_, a) => self.harvest_struct_info(a),
+            Expr::Break | Expr::Continue | Expr::SlotGet(_) => {}
             Expr::If(a, b, c) | Expr::Case(a, _, b, _, c) => {
                 self.harvest_struct_info(a);
                 self.harvest_struct_info(b);
@@ -673,6 +699,7 @@ impl Lower {
             Expr::Lam(_, _, b)
             | Expr::Return(b)
             | Expr::Let(_, _, _, b)
+            | Expr::LetMut(_, _, b)
             | Expr::LetRec(_, _, _, b)
             | Expr::LetRecGroup(_, b) => Self::result_struct_name(b),
             Expr::If(_, t, f) => {
@@ -956,9 +983,19 @@ impl Lower {
                     Ty::Unit
                 }
             }
-            Expr::Assign(_, _) => Ty::Unit,
+            Expr::Assign(_, _) | Expr::SlotSet(_, _) | Expr::While(_, _) => Ty::Unit,
+            // `putus`/`lanjut` never yield to their context (as for `pulang`).
+            Expr::Break | Expr::Continue => Ty::Any,
+            // A slot read has the slot's element type; the binding records the
+            // `Ref` wrapper, so peel it.
+            Expr::SlotGet(name) => match self.env.lookup(name).and_then(|v| self.env.types.get(&v)) {
+                Some(Ty::Ref(inner, _)) => (**inner).clone(),
+                Some(other) => other.clone(),
+                None => Ty::Any,
+            },
             Expr::If(_, t, _)
             | Expr::Let(_, _, _, t)
+            | Expr::LetMut(_, _, t)
             | Expr::LetRec(_, _, _, t)
             | Expr::LetRecGroup(_, t)
             | Expr::Case(_, _, t, _, _) => self.infer_type(t),
@@ -1125,7 +1162,12 @@ impl Lower {
                 .infer_effect(c)
                 .join(self.infer_effect(t))
                 .join(self.infer_effect(f)),
-            Expr::Let(_, _, e1, e2) => self.infer_effect(e1).join(self.infer_effect(e2)),
+            Expr::Let(_, _, e1, e2) | Expr::LetMut(_, e1, e2) | Expr::While(e1, e2) => {
+                self.infer_effect(e1).join(self.infer_effect(e2))
+            }
+            // Slot access is effect-free by construction (see `Expr::LetMut`).
+            Expr::SlotGet(_) | Expr::Break | Expr::Continue => Effect::Pure,
+            Expr::SlotSet(_, e) => self.infer_effect(e),
             Expr::App(e1, e2) => {
                 let base = self.infer_effect(e1).join(self.infer_effect(e2));
                 if let Ty::Fn(_, _, eff) = self.infer_type(e1) {
@@ -2054,6 +2096,30 @@ impl Lower {
             }
 
             Expr::Deref(ref_expr) => {
+                // `!` is overloaded: dereference on a reference, logical
+                // negation on a boolean (the corpus writes `kalau !sah`). The
+                // typechecker accepts both and the interpreter dispatches on the
+                // runtime value, but the IR's `Load` is a memory read in every
+                // backend — so a boolean `!` used to lower to a load of a
+                // non-address. C aborted at runtime ("load on non-ref"); WASM,
+                // which has no runtime tag to check, read whatever i64 sat at
+                // address 0 or 1. Resolve the overload HERE, where the operand's
+                // type is known, so every backend gets the same answer.
+                if matches!(self.infer_type(ref_expr), Ty::Bool) {
+                    let operand = self.lower_expr(ref_expr)?;
+                    let false_var = self.emit(
+                        Instruction::Const(Constant::Bool(false)),
+                        Ty::Bool,
+                        SecurityLevel::Public,
+                        Effect::Pure,
+                    );
+                    return Ok(self.emit(
+                        Instruction::BinOp(IrBinOp::Eq, operand, false_var),
+                        Ty::Bool,
+                        SecurityLevel::Public,
+                        self.infer_effect(ref_expr),
+                    ));
+                }
                 let ref_var = self.lower_expr(ref_expr)?;
                 let inner_ty = if let Ty::Ref(t, _) = self.infer_type(ref_expr) {
                     *t
@@ -2106,6 +2172,137 @@ impl Lower {
                     self.current_block = self.new_block()?;
                 }
                 Ok(value)
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // LOOPS (Expr::While, Expr::Break, Expr::Continue)
+            // ═══════════════════════════════════════════════════════════════
+            //
+            // Lowered to the natural three-block shape, with the back edge that
+            // makes it an actual loop:
+            //
+            //     current ──▶ header ──cond──▶ body ──▶ (back to header)
+            //                    │
+            //                    └─false──▶ exit
+            //
+            // The condition is re-evaluated in `header` on every pass, so it
+            // observes writes the body made. Nothing is carried between
+            // iterations in an SSA value — RIINA's mutable state is `ruj` cells
+            // and `biar ubah` slots, both of which live in the store and are
+            // reached by Load/Store — so the header needs no phi.
+            Expr::While(cond, body) => {
+                let header = self.new_block()?;
+                let body_block = self.new_block()?;
+                let exit = self.new_block()?;
+
+                self.terminate_if_open(self.current_block, Terminator::Branch(header));
+
+                self.current_block = header;
+                let cond_var = self.lower_expr(cond)?;
+                self.terminate_if_open(
+                    self.current_block,
+                    Terminator::CondBranch {
+                        cond: cond_var,
+                        then_block: body_block,
+                        else_block: exit,
+                    },
+                );
+
+                self.loop_targets.push((header, exit));
+                self.current_block = body_block;
+                let _ = self.lower_expr(body)?;
+                self.terminate_if_open(self.current_block, Terminator::Branch(header));
+                self.loop_targets.pop();
+
+                self.current_block = exit;
+                Ok(self.emit(
+                    Instruction::Const(Constant::Unit),
+                    Ty::Unit,
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                ))
+            }
+
+            // `putus` / `lanjut` terminate their block with a jump to the
+            // innermost loop's exit / header. As with `pulang`, whatever follows
+            // textually still lowers, into a block nothing branches to.
+            Expr::Break | Expr::Continue => {
+                let Some(&(header, exit)) = self.loop_targets.last() else {
+                    return Err(Error::InvalidOperation(
+                        "`putus`/`lanjut` outside a loop reached lowering".to_string(),
+                    ));
+                };
+                let target = if matches!(expr, Expr::Break) { exit } else { header };
+                self.terminate_if_open(self.current_block, Terminator::Branch(target));
+                self.current_block = self.new_block()?;
+                Ok(self.emit(
+                    Instruction::Const(Constant::Unit),
+                    Ty::Unit,
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                ))
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // MUTABLE LOCALS (Expr::LetMut, Expr::SlotGet, Expr::SlotSet)
+            // ═══════════════════════════════════════════════════════════════
+            //
+            // A slot is a store cell, so it reuses the reference instructions —
+            // `Alloc`/`Load`/`Store` — and inherits their C and WASM lowering
+            // unchanged. What differs from `ruj` is the effect: a slot cannot be
+            // aliased or escape its binder, so it stays `Effect::Pure` (see
+            // `Expr::LetMut` in riina-types).
+            Expr::LetMut(name, init, body) => {
+                let init_var = self.lower_expr(init)?;
+                let inner_ty = self.infer_type(init);
+                let slot_ty = Ty::Ref(Box::new(inner_ty), SecurityLevel::Public);
+                let slot = self.emit(
+                    Instruction::Alloc {
+                        init: init_var,
+                        level: SecurityLevel::Public,
+                    },
+                    slot_ty.clone(),
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                );
+
+                let saved_env = self.env.clone();
+                let saved_struct = self.var_struct.clone();
+                self.env
+                    .bind(name.clone(), slot, slot_ty, SecurityLevel::Public);
+                self.var_struct.remove(name);
+                let result = self.lower_expr(body)?;
+                self.env = saved_env;
+                self.var_struct = saved_struct;
+                Ok(result)
+            }
+
+            Expr::SlotGet(name) => {
+                let slot = self
+                    .env
+                    .lookup(name)
+                    .ok_or_else(|| Error::UnboundVariable(name.clone()))?;
+                let inner_ty = self.infer_type(expr);
+                Ok(self.emit(
+                    Instruction::Load(slot),
+                    inner_ty,
+                    SecurityLevel::Public,
+                    Effect::Pure,
+                ))
+            }
+
+            Expr::SlotSet(name, value) => {
+                let slot = self
+                    .env
+                    .lookup(name)
+                    .ok_or_else(|| Error::UnboundVariable(name.clone()))?;
+                let val_var = self.lower_expr(value)?;
+                Ok(self.emit(
+                    Instruction::Store(slot, val_var),
+                    Ty::Unit,
+                    SecurityLevel::Public,
+                    self.infer_effect(value),
+                ))
             }
 
             // SECURITY (Expr::Classify, Expr::Declassify, Expr::Prove)

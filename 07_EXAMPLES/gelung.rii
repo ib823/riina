@@ -1,18 +1,25 @@
 // gelung.rii — Loop and conditional test
 // RIINA = Rigorous Immutable Invariant — Normalized Axiom
+//
+// `selagi` and `ulang` are real loops: the body runs until the condition goes
+// false, or until `putus` leaves it. A loop therefore needs something that
+// CHANGES between iterations — `biar ubah`, a mutable slot. A plain `biar` is
+// immutable, so `biar x = 10; selagi x > 0 { ... }` never terminates.
 
-biar x = 10;
+biar ubah x = 10;
 
 selagi x > 0 {
-    cetakln(ke_teks(x))
+    cetakln(ke_teks(x));
+    x = x - 1;
 };
 
 ulang {
-    cetakln("sekali sahaja")
+    cetakln("sekali sahaja");
+    putus;
 };
 
-kalau x == 10 {
-    cetakln("x ialah sepuluh")
+kalau x == 0 {
+    cetakln("x ialah kosong")
 } lain {
-    cetakln("x bukan sepuluh")
+    cetakln("x bukan kosong")
 }

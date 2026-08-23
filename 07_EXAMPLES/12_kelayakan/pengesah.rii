@@ -1,0 +1,60 @@
+// pengesah.rii — constant-time secret verification.
+//
+// `banding_masa_tetap` is the reason this example exists. It compares two
+// strings by looking at EVERY position of both, accumulating differences
+// instead of returning at the first one, so its running time does not depend
+// on how many leading characters matched. A comparison that returns early
+// leaks the length of the matching prefix through timing, and a few thousand
+// timed guesses recover a secret one character at a time.
+//
+// Which makes it exactly the wrong thing to build on a loop that does not
+// loop. Before real iteration landed, `selagi` was rewritten into
+// `if cond { body; () }`: this function inspected position 0 and stopped, so
+// `beza` was 0 for ANY two strings sharing a first character, and the verifier
+// below accepted them as equal. Not a timing side-channel — an outright
+// authentication bypass, in a function whose whole purpose was to be safe.
+// `ujian_banding_menolak_awalan_sepadan` in `utama.rii` pins that case.
+
+/// Difference accumulator over one position: adds 1 when the characters differ.
+/// Kept branch-free in spirit — both operands are always read.
+awam fungsi beza_aksara(a: Teks, b: Teks) -> Nombor kesan Bersih {
+    kalau a == b { 0 } lain { 1 }
+}
+
+/// Constant-time string equality.
+///
+/// The loop runs over the full length of the LONGER string every time, so the
+/// number of iterations reveals only the lengths (which are not secret here),
+/// never the position of the first mismatch. There is deliberately no `putus`
+/// in this loop: leaving early is the bug this function exists to avoid.
+awam fungsi banding_masa_tetap(a: Teks, b: Teks) -> Benar kesan Bersih {
+    biar na = panjang(a);
+    biar nb = panjang(b);
+    biar n = kalau na > nb { na } lain { nb };
+
+    biar ubah beza = beza_aksara(ke_teks(na), ke_teks(nb));
+    biar ubah i = 0;
+    selagi i < n {
+        // Out-of-range positions read as "", which differs from any real
+        // character — so a length mismatch keeps accumulating rather than
+        // ending the scan.
+        biar ca = kalau i < na { teks_aksara_di((a, i)) } lain { "" };
+        biar cb = kalau i < nb { teks_aksara_di((b, i)) } lain { "" };
+        beza = beza + beza_aksara(ca, cb);
+        i = i + 1;
+    };
+    beza == 0
+}
+
+/// Verify a candidate against a SECRET reference.
+///
+/// The reference is `sulit` (classified), so it cannot reach a print sink: the
+/// only thing that leaves this function is the verdict, and only through an
+/// explicit `dedah ... dengan bukti ...`. That declassification is the single
+/// auditable point where secret-derived data becomes public — which is the
+/// property the whole exercise is protecting, and why the comparison feeding it
+/// must not leak through timing first.
+awam fungsi semak_rahsia(rujukan: Teks, calon: Teks) -> Benar kesan Bersih {
+    biar sepadan = banding_masa_tetap(rujukan, calon);
+    dedah (sulit sepadan) dengan bukti (sulit sepadan)
+}

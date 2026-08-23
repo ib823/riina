@@ -465,7 +465,7 @@ fn rename_decl(decl: &mut TopLevelDecl, map: &HashMap<Ident, Ident>) {
                 }
             });
         }
-        TopLevelDecl::Binding { name, value } => {
+        TopLevelDecl::Binding { name, value, .. } => {
             if let Some(new) = map.get(name) {
                 name.clone_from(new);
             }
@@ -546,7 +546,26 @@ fn walk_free_idents<F: FnMut(&mut Ident)>(e: &mut Expr, bound: &mut Vec<Ident>, 
             }
         }
 
+        // A mutable-slot read/write names its slot, so both are reference sites.
+        Expr::SlotGet(name) => {
+            if !bound.contains(name) {
+                f(name);
+            }
+        }
+        Expr::SlotSet(name, value) => {
+            if !bound.contains(name) {
+                f(name);
+            }
+            walk_free_idents(value, bound, f);
+        }
+
         // ── binders ──────────────────────────────────────────────────────
+        Expr::LetMut(name, value, body) => {
+            walk_free_idents(value, bound, f); // value is OUTSIDE the binding
+            bound.push(name.clone());
+            walk_free_idents(body, bound, f);
+            bound.pop();
+        }
         Expr::Lam(param, _, body) => {
             bound.push(param.clone());
             walk_free_idents(body, bound, f);
@@ -599,6 +618,8 @@ fn walk_free_idents<F: FnMut(&mut Ident)>(e: &mut Expr, bound: &mut Vec<Ident>, 
         | Expr::IntN { .. }
         | Expr::String(_)
         | Expr::Loc(_)
+        | Expr::Break
+        | Expr::Continue
         | Expr::UIColor(..)
         | Expr::UIStyleDecl { .. }
         | Expr::ChoreographyBlock { .. } => {}
@@ -634,6 +655,7 @@ fn walk_free_idents<F: FnMut(&mut Ident)>(e: &mut Expr, bound: &mut Vec<Ident>, 
         | Expr::ContentVerify(a, b)
         | Expr::UIText(a, b)
         | Expr::UIButton(a, b)
+        | Expr::While(a, b)
         | Expr::UIContrastCheck(a, b) => {
             walk_free_idents(a, bound, f);
             walk_free_idents(b, bound, f);

@@ -197,6 +197,15 @@ pub enum Error {
     /// level (outside any function) is caught by the top-level `eval` entry.
     /// Boxed to keep `Error` small (it is the only otherwise-large variant).
     Return(Box<Value>),
+    /// Non-error control-flow signal: `putus` (break) is unwinding to the
+    /// innermost enclosing loop, which discards it and stops iterating. Never
+    /// surfaced to the user — the parser rejects `putus` outside a loop, and the
+    /// interpreter's `While` rule always catches it.
+    Break,
+    /// Non-error control-flow signal: `lanjut` (continue) is unwinding to the
+    /// innermost enclosing loop, which discards it and starts the next
+    /// iteration. Caught exactly like [`Error::Break`].
+    Continue,
 }
 
 impl std::fmt::Display for Error {
@@ -234,6 +243,8 @@ impl std::fmt::Display for Error {
                 write!(f, "constant-time violation(s): {}", msgs.join("; "))
             }
             Self::Return(_) => write!(f, "internal: uncaught early-return signal"),
+            Self::Break => write!(f, "internal: uncaught `putus` signal"),
+            Self::Continue => write!(f, "internal: uncaught `lanjut` signal"),
         }
     }
 }
