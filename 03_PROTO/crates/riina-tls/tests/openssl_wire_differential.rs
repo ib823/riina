@@ -116,6 +116,17 @@ impl Drop for TempDir {
 /// failing test leaks an `openssl s_server` holding a port.
 struct Reaper(Child);
 
+impl Reaper {
+    /// Whether the child has already exited.
+    ///
+    /// An `s_server` that lost the race for its port exits almost immediately —
+    /// and, unhelpfully, with status 0. So the *fact* of having exited is the
+    /// signal; the status tells you nothing.
+    fn has_exited(&mut self) -> bool {
+        matches!(self.0.try_wait(), Ok(Some(_)))
+    }
+}
+
 impl Drop for Reaper {
     fn drop(&mut self) {
         let _ = self.0.kill();
@@ -196,10 +207,29 @@ fn parses_a_real_openssl_client_hello() {
 
     let (mut sock, _) = listener.accept().expect("accept s_client");
     sock.set_read_timeout(Some(Duration::from_secs(10))).ok();
-    let mut buf = vec![0u8; 16 * 1024];
-    let n = sock.read(&mut buf).expect("read ClientHello");
-    assert!(n > 0, "openssl sent nothing");
-    buf.truncate(n);
+
+    // Read until a WHOLE record is present, rather than assuming the first
+    // read returns one. TCP is a byte stream: a single `read` is entitled to
+    // return a prefix, and under load it does. Taking whatever the first read
+    // yielded would fail in `parse_record` — reporting a parser bug where the
+    // real fault is a short read. `exchange_client_hello` below already reads
+    // this way; this side was the inconsistent one.
+    let mut buf = Vec::new();
+    let mut chunk = [0u8; 8192];
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while Instant::now() < deadline {
+        match sock.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => {
+                buf.extend_from_slice(&chunk[..n]);
+                if parse_record(&buf).is_ok() {
+                    break;
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    assert!(!buf.is_empty(), "openssl sent nothing");
 
     // Record → handshake → ClientHello, all with our own parser.
     let rec = parse_record(&buf).expect("parse record");
@@ -283,15 +313,72 @@ fn make_ed25519_cert(dir: &Path) -> (PathBuf, PathBuf) {
     (cert, key)
 }
 
+/// Whether `s_server` has announced that it is listening.
+///
+/// `s_server` prints a bare `ACCEPT` line once its `bind()` and `listen()` have
+/// succeeded, so this is a positive statement from the child about *our* port —
+/// not an inference from the outside.
+fn announced_accept(log: &Path) -> bool {
+    std::fs::read_to_string(log)
+        .map(|s| s.lines().any(|l| l.trim() == "ACCEPT"))
+        .unwrap_or(false)
+}
+
 /// Start `openssl s_server` and connect to it.
 ///
 /// `s_server` must bind the port itself, so the port cannot be reserved for it
-/// in advance. Rather than assume the guess was free, retry on a fresh port
-/// when the server does not come up — a lost race then costs a retry instead
-/// of a spurious failure.
-fn openssl_server(cert: &Path, key: &Path) -> (Reaper, TcpStream) {
-    for attempt in 1..=4 {
-        let port = candidate_port();
+/// in advance: `candidate_port` binds an ephemeral port and drops it, leaving a
+/// window in which a sibling test can take the same number.
+///
+/// # Why a successful `connect` is not proof
+///
+/// The previous version polled `TcpStream::connect` and treated the first
+/// success as "the server is up". It is not. When two tests draw the same port,
+/// one `s_server` binds it and the other fails with `Address already in use`
+/// and **exits with status 0** — so the loser's `connect` then succeeds against
+/// the *winner's* server. That server was started with `-naccept 1`, has already
+/// spent its one accept on its own client, and closes; the intruding connection
+/// is reset, and the test dies on `write_all` with a broken pipe, ~0.2s in.
+///
+/// Observed 1 run in 60 under parallel load, and once in CI. The failure looks
+/// nothing like a port race — no timeout, no "did not come up" — which is why
+/// the earlier retry-on-timeout logic never fired.
+///
+/// So the child is now made to *say* it bound the port: `s_server` prints
+/// `ACCEPT` after `bind()`/`listen()` succeed, and only then do we connect. A
+/// child that lost the race exits without printing it, which `has_exited`
+/// detects immediately and which costs a retry on a fresh port rather than a
+/// connection to somebody else's server.
+///
+/// `-quiet` had to go, because it suppresses the `ACCEPT` line. That has one
+/// consequence worth knowing: a non-quiet `s_server` also multiplexes its own
+/// **stdin** into the session and shuts the connection down when stdin reaches
+/// EOF. With `Stdio::null()` that EOF is immediate, so the server closed on
+/// every client before answering. stdin is therefore an open pipe that is never
+/// written to and never closed — `Child` owns the write end for as long as the
+/// `Reaper` lives, so the server stays up. Nothing on the wire changes either
+/// way; `-quiet` only ever governed the server's own stdout.
+fn openssl_server(cert: &Path, key: &Path, dir: &Path) -> (Reaper, TcpStream) {
+    openssl_server_on(cert, key, dir, candidate_port)
+}
+
+/// [`openssl_server`] with the port source injected, so the retry path can be
+/// exercised on purpose rather than waited for.
+///
+/// A real collision is rare — 240 stress runs under load produced none — which
+/// is exactly why it needs a deterministic test: a recovery path that only runs
+/// once in hundreds of CI runs is a recovery path nobody has ever seen work.
+fn openssl_server_on(
+    cert: &Path,
+    key: &Path,
+    dir: &Path,
+    mut next_port: impl FnMut() -> u16,
+) -> (Reaper, TcpStream) {
+    for attempt in 1..=6 {
+        let port = next_port();
+        let log = dir.join(format!("s_server-{attempt}.log"));
+        let out = std::fs::File::create(&log).expect("create s_server log");
+        let err = out.try_clone().expect("clone s_server log handle");
         let child = Command::new("openssl")
             .args([
                 "s_server",
@@ -308,35 +395,63 @@ fn openssl_server(cert: &Path, key: &Path) -> (Reaper, TcpStream) {
                 "x25519",
                 "-naccept",
                 "1",
-                "-quiet",
             ])
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            // An open pipe, deliberately: see the note above. `child.stdin` is
+            // left in place rather than `take()`n, so the write end stays open
+            // for the child's lifetime and it never sees EOF.
+            .stdin(Stdio::piped())
+            .stdout(Stdio::from(out))
+            .stderr(Stdio::from(err))
             .spawn()
             .expect("spawn openssl s_server");
-        let reaper = Reaper(child);
+        let mut reaper = Reaper(child);
 
-        // Wait for the server to bind rather than sleeping a fixed amount.
+        // Wait for OUR child to announce the bind, or to die trying.
         let deadline = Instant::now() + Duration::from_secs(10);
-        let mut connected = None;
+        let mut bound = false;
         loop {
-            if let Ok(s) = TcpStream::connect(("127.0.0.1", port)) {
-                connected = Some(s);
+            // Checked before liveness: a child that bound and then exited still
+            // bound, and the log is the durable record of it.
+            if announced_accept(&log) {
+                bound = true;
                 break;
             }
-            if Instant::now() >= deadline {
+            if reaper.has_exited() || Instant::now() >= deadline {
                 break;
             }
-            std::thread::sleep(Duration::from_millis(25));
+            std::thread::sleep(Duration::from_millis(20));
         }
-        if let Some(s) = connected {
-            s.set_read_timeout(Some(Duration::from_secs(15))).ok();
-            return (reaper, s);
+
+        if bound {
+            match TcpStream::connect(("127.0.0.1", port)) {
+                Ok(s) => {
+                    s.set_read_timeout(Some(Duration::from_secs(15))).ok();
+                    return (reaper, s);
+                }
+                Err(e) => {
+                    eprintln!(
+                        "s_server announced ACCEPT on {port} but connect failed ({e}); retrying"
+                    )
+                }
+            }
+        } else {
+            let why = std::fs::read_to_string(&log).unwrap_or_default();
+            let why = why
+                .lines()
+                .find(|l| l.contains("error") || l.contains("Address already in use"))
+                .unwrap_or("no diagnostic")
+                .trim()
+                .to_string();
+            eprintln!(
+                "openssl s_server never announced ACCEPT on port {port} \
+                 (attempt {attempt}): {why}; retrying on a fresh port"
+            );
         }
-        eprintln!("openssl s_server did not come up on port {port} (attempt {attempt}); retrying");
     }
-    panic!("openssl s_server never came up on any candidate port");
+    panic!(
+        "openssl s_server never announced ACCEPT on any of 6 candidate ports — \
+         this is not the ordinary port race, which a retry absorbs"
+    );
 }
 
 /// Send `hello_msg` as a handshake record and require a ServerHello back.
@@ -419,6 +534,58 @@ fn assert_agreed(sh: &ServerHello, expect_session_id: &[u8]) {
     );
 }
 
+/// A port that is already taken costs a retry, not a failure — and the server
+/// we end up talking to is demonstrably our own.
+///
+/// This pins the bug that made these tests flaky. `candidate_port` binds an
+/// ephemeral port and drops it, so a sibling test can take the number in the
+/// gap. The old code then polled `TcpStream::connect` and accepted the first
+/// success as "the server is up", which is false: the loser's `s_server` exits
+/// (status 0, unhelpfully) and the connect lands on the *winner's* server —
+/// already spent, since it runs with `-naccept 1`. The connection is reset and
+/// the test dies on `write_all`, about 0.2s in, looking nothing like a port
+/// race.
+///
+/// Here the first port handed out is one this test holds open, so `s_server`
+/// cannot possibly bind it. Under the old logic `connect` would have succeeded
+/// against this very listener and the test would have hung or failed; under the
+/// current logic the missing `ACCEPT` forces a fresh port, and the handshake
+/// that follows proves the connection reached a real OpenSSL server.
+#[test]
+fn an_occupied_port_costs_a_retry_not_a_failure() {
+    if !require_openssl() {
+        return;
+    }
+    let dir = TempDir::new("retry");
+    let (cert, key) = make_ed25519_cert(dir.path());
+
+    // Held for the whole attempt: `s_server` must fail to bind this one.
+    let (blocker, taken) = bound_listener();
+
+    let mut handed = 0usize;
+    let (_reap, mut sock) = openssl_server_on(&cert, &key, dir.path(), || {
+        handed += 1;
+        if handed == 1 {
+            taken
+        } else {
+            candidate_port()
+        }
+    });
+    assert!(
+        handed >= 2,
+        "the occupied port should have forced a second attempt, but only {handed} was handed out"
+    );
+    drop(blocker);
+
+    // The server we did get is real: it completes the exchange.
+    let session_id = vec![0x7Cu8; 32];
+    let hello = riina_client_hello([0x09u8; 32])
+        .encode()
+        .expect("encode hello");
+    let sh = exchange_client_hello(&mut sock, &hello);
+    assert_agreed(&sh, &session_id);
+}
+
 // ---------------------------------------------------------------------------
 // 2. Encode: OpenSSL must accept OUR ClientHello
 // ---------------------------------------------------------------------------
@@ -437,7 +604,7 @@ fn openssl_server_accepts_our_client_hello() {
     }
     let dir = TempDir::new("srv");
     let (cert, key) = make_ed25519_cert(dir.path());
-    let (_reap, mut sock) = openssl_server(&cert, &key);
+    let (_reap, mut sock) = openssl_server(&cert, &key, dir.path());
 
     // A syntactically valid but cryptographically arbitrary share: this test
     // checks that OpenSSL *parses and accepts* our hello, and it never gets as
@@ -463,7 +630,7 @@ fn openssl_server_accepts_the_handshakes_own_client_hello() {
     }
     let dir = TempDir::new("hs");
     let (cert, key) = make_ed25519_cert(dir.path());
-    let (_reap, mut sock) = openssl_server(&cert, &key);
+    let (_reap, mut sock) = openssl_server(&cert, &key, dir.path());
 
     // Real OS entropy, exactly as a live handshake would use.
     let rnd = ClientRandomness::from_os().expect("OS CSPRNG");
@@ -491,7 +658,7 @@ fn openssl_refuses_the_unregistered_private_suite() {
     }
     let dir = TempDir::new("priv");
     let (cert, key) = make_ed25519_cert(dir.path());
-    let (_reap, mut sock) = openssl_server(&cert, &key);
+    let (_reap, mut sock) = openssl_server(&cert, &key, dir.path());
 
     let rnd = ClientRandomness::from_os().expect("OS CSPRNG");
     let (_client, hello) =
