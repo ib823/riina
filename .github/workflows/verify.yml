@@ -7,6 +7,8 @@
 # Jobs are independent; each maps to a gate-relevant invariant:
 #   rust-proto / rust-tooling -> "build: passing" + the 2,579-test claim
 #   docs-audit                -> scripts/audit-docs.sh (metrics vs docs parity)
+#                                + mirror-propagate-metrics.sh --check (banner
+#                                  drift gate: soft in audit-docs.sh, hard here)
 #   coq                       -> Admitted=0 / Axiom=0 in the active _CoqProject set
 #
 # NOTE: CLAUDE.md historically forbade external CI ("RIINA uses `riinac verify`
@@ -185,6 +187,16 @@ jobs:
           fetch-depth: 0 # audit-docs.sh uses git history
       - name: scripts/audit-docs.sh
         run: bash scripts/audit-docs.sh
+      # audit-docs.sh reports a stale **Verification:** banner as a WARNING and
+      # still exits 0, and its banner check only looks at the Qed count — a
+      # banner quoting the wrong Rust test count passes it silently. This step
+      # is the hard gate: every banner must match website/public/metrics.json on
+      # BOTH numbers, or the job fails with the offending line and its fix.
+      #
+      # Same drift-gate idiom as sbom-freshness above: the script is the source
+      # of truth, --check makes it read-only, and CI just runs it.
+      - name: scripts/mirror-propagate-metrics.sh --check
+        run: bash scripts/mirror-propagate-metrics.sh --check
 
   coq:
     name: Coq active build (Rocq 9.1.1)
