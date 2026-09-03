@@ -1,0 +1,219 @@
+{
+  "generated": "2026-09-03T07:39:15Z",
+  "generatedHuman": "September 03, 2026 at 07:39 UTC",
+  "version": "0.4.0",
+  "session": 0,
+  "git": {
+    "commit": "346b48137",
+    "branch": "main"
+  },
+  "proofs": {
+    "qedActive": 12678,
+    "qedDeprecated": 758,
+    "qedTotal": 13436,
+    "admitted": 0,
+    "axioms": 0,
+    "assumptions": 0,
+    "axiomsJustified": true
+  },
+  "coq": {
+    "filesTotal": 371,
+    "filesActive": 331,
+    "domains": 252,
+    "prover": "Rocq 9.1.1"
+  },
+  "lean": {
+    "theorems": 12576,
+    "theoremsNote": "Count of theorem DECLARATIONS in the generated port, not verified proofs",
+    "sorry": 0,
+    "sorryVerified": false,
+    "sorryNote": "0 literal sorry in the strict lane; 2 literal sorry exist in Properties/_wip; most proofs are non-elaborating (not visible to grep)",
+    "axioms": 0,
+    "files": 325,
+    "lines": 134910,
+    "elaborationMeasured": "2026-06-01 (Lean 4.16.0)",
+    "filesTotal": 326,
+    "filesElaboratingClean": 7,
+    "theoremsElaborating": 215,
+    "defaultBuildTheorems": 0,
+    "defaultBuildNote": "lake build RIINA passes but builds only the 0-theorem Domains/All shim; see 02_FORMAL/lean/COMPILATION_STATUS.md",
+    "prover": "Lean 4"
+  },
+  "isabelle": {
+    "lemmas": 12931,
+    "lemmasRaw": 12931,
+    "compiledTheories": 0,
+    "compiledLemmas": 0,
+    "smokeBuildOk": false,
+    "smokeSession": "RIINA_CORE",
+    "quarantined": false,
+    "sorry": 0,
+    "sorryVerified": false,
+    "axioms": 0,
+    "files": 368,
+    "lines": 126237,
+    "prover": "Isabelle/HOL"
+  },
+  "fstar": {
+    "lemmas": 22,
+    "lemmasRaw": 22,
+    "lemmasRawNote": "Corpus-wide count of `lemma_`-named declarations; NOT all verified",
+    "compiledLemmas": 0,
+    "smokeBuildOk": false,
+    "smokeVerified": "2026-06-01 (F* 2025.12.15): 'All verification conditions discharged successfully'",
+    "smokeLemmas": 3,
+    "smokeContent": "3 trivial lemmas (constant-time u8 eq reflexive/symmetric, zeroize length) — NOT the named crypto algorithms",
+    "smokeModule": "RIINA.Active.CryptographicSecurityActive",
+    "corpusAdmits": 11935,
+    "quarantined": false,
+    "files": 315,
+    "prover": "F*"
+  },
+  "tlaplus": {
+    "theorems": 5,
+    "theoremsRaw": 12284,
+    "compiledTheorems": 5,
+    "smokeBuildOk": true,
+    "smokeVerified": "2026-06-01 (TLA2Tools): smoke check passed",
+    "smokeSpec": "RIINA.Active.TelusProcurementProtocol",
+    "smokeNote": "theoremsRaw is the corpus-wide THEOREM count; only the smoke-spec theorems are TLC-checked",
+    "quarantined": true,
+    "files": 317,
+    "prover": "TLA+"
+  },
+  "alloy": {
+    "assertions": 11627,
+    "assertionsRaw": 11627,
+    "compiledAssertions": 6,
+    "smokeBuildOk": true,
+    "smokeVerified": "2026-06-01 (Alloy 6.2.0): smoke check passed",
+    "smokeModel": "RIINA.Active.TelusProcurementAccessControl",
+    "smokeNote": "assertionsRaw is the corpus-wide check count; only the smoke-model assertions are bounded-checked",
+    "quarantined": false,
+    "files": 306,
+    "prover": "Alloy 6"
+  },
+  "smt": {
+    "assertions": 12433,
+    "assertionsRaw": 12433,
+    "compiledAssertions": 25,
+    "smokeBuildOk": true,
+    "smokeVerified": "2026-06-01 (Z3 4.8.12): 25 unsat (security-lattice properties)",
+    "smokeModule": "RIINA.Active.SecurityLatticeVerification",
+    "smokeNote": "assertionsRaw is the corpus-wide assert count; only the 25 lattice properties in the smoke file actually verify (the prior '11,843 verified' figure was a counting error)",
+    "quarantined": false,
+    "files": 318,
+    "prover": "Z3/CVC5 (SMT-LIB)"
+  },
+  "verus": {
+    "proofs": 0,
+    "proofsRaw": 6395,
+    "quarantined": true,
+    "files": 323,
+    "prover": "Verus"
+  },
+  "kani": {
+    "harnesses": 0,
+    "harnessesRaw": 5664,
+    "quarantined": true,
+    "files": 307,
+    "prover": "Kani"
+  },
+  "tv": {
+    "validations": 0,
+    "validationsRaw": 17463,
+    "quarantined": true,
+    "files": 316,
+    "prover": "Translation Validation"
+  },
+  "multiProver": {
+    "tripleProverTheorems": 10745,
+    "totalProofsAllProvers": 62272,
+    "totalProvers": 10,
+    "proverList": ["Coq", "Lean 4", "Isabelle/HOL", "F*", "TLA+", "Alloy 6", "Z3/CVC5", "Verus", "Kani", "Translation Validation"],
+    "sorry": 0,
+    "status": "ACTIVE_COQ_MECHANIZED"
+  },
+  "quality": {
+    "coqCompiled": true,
+    "leanCompiled": false,
+    "isabelleCompiled": false,
+    "fstarStatus": "retired",
+    "tlaplusStatus": "generated",
+    "alloyStatus": "generated",
+    "smtStatus": "mechanized",
+    "verusStatus": "generated",
+    "kaniStatus": "generated",
+    "tvStatus": "generated",
+    "runtimeProofStatus": "generated",
+    "nonCoqMechanization": {
+      "reportFresh": true,
+      "overallMechanized": false,
+      "source": "strict_report",
+      "pending": {
+        "lean": "require full-lane lake build and zero sorry/axioms across 02_FORMAL/lean/RIINA",
+        "isabelle": "require full RIINA+RIINA_Domains build and zero sorry across Isabelle corpus (local Isabelle enforcement: ERROR: pinned local Isabelle not found at ./05_TOOLING/tools/isabelle/current/bin/isabelle. Run: bash scripts/provision-smoke-toolchains.sh      or: bash scripts/provision-isabelle.sh)",
+        "fstar": "require full Active+Domains F* compilation with zero generated placeholders (local F* enforcement: ERROR: pinned local F* not found at ./05_TOOLING/tools/fstar/current/bin/fstar.exe. Run: bash scripts/provision-smoke-toolchains.sh      or: bash scripts/provision-fstar.sh)",
+        "tlaplus": "TelusProcurementProtocol smoke model checked (5 theorems); lane stays generated until full-lane SANY checks across TLA corpus",
+        "alloy": "TelusProcurementAccessControl smoke model checked (6 assertions); lane stays generated until full-lane Alloy checks across corpus",
+        "smt": "none",
+        "verus": "require full-lane Verus checks and zero generated placeholders",
+        "kani": "require full-lane Kani checks and zero generated placeholders",
+        "tv": "require full-lane TV checks and zero generated placeholders"
+      },
+      "backlog": {
+        "leanSorry": 0,
+        "leanAxioms": 0,
+        "isabelleSorry": 0,
+        "fstarGeneratedFiles": 7,
+        "smtGeneratedFiles": 0,
+        "verusGeneratedFiles": 10,
+        "kaniGeneratedFiles": 1,
+        "tvGeneratedFiles": 7
+      }
+    },
+    "coqTiers": {
+      "core": 1827,
+      "domain": 10851,
+      "domainTrivial": 1951
+    }
+  },
+  "claimLevels": {
+    "legend": ["retired", "generated", "compiled", "mechanized", "independently_audited"],
+    "overall": "generated",
+    "independentlyAudited": false,
+    "coq": "mechanized",
+    "lean": "generated",
+    "isabelle": "retired",
+    "fstar": "retired",
+    "tlaplus": "generated",
+    "alloy": "generated",
+    "smt": "mechanized",
+    "verus": "generated",
+    "kani": "generated",
+    "tv": "generated",
+    "runtimeProofArchitecture": "generated"
+  },
+  "rust": {
+    "tests": 3342,
+    "testsVerified": 3342,
+    "testsEstimated": 0,
+    "testsSource": "full_cargo_test",
+    "crates": 18
+  },
+  "examples": 172,
+  "status": {
+    "build": "passing",
+    "grade": "A",
+    "threats": "1231+"
+  },
+  "milestones": [
+    { "date": "2026-02-07", "event": "10-lane verification corpus published (Coq, Lean, Isabelle, F*, TLA+, Alloy, SMT, Verus, Kani, TV) — claim levels apply per lane" },
+    { "date": "2026-02-07", "event": "Lean 4 lane integrated into public metrics (see claim levels for current status)" },
+    { "date": "2026-02-07", "event": "SMT assertion corpus integrated into public metrics" },
+    { "date": "2026-02-06", "event": "Proof depth 20+ across all 250 domain files" },
+    { "date": "2026-02-06", "event": "Cross-prover mapping milestone recorded (current quality flags are authoritative)" },
+    { "date": "2026-02-10", "event": "Axiom token elimination: 4 → 0 (active-build explicit assumptions now 0)" },
+    { "date": "2026-02-01", "event": "Phase 7 complete: Platform Universality" }
+  ]
+}
