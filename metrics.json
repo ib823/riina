@@ -1,0 +1,227 @@
+{
+  "generated": "2026-10-23T03:38:23Z",
+  "generatedHuman": "October 23, 2026 at 03:38 UTC",
+  "version": "0.4.0",
+  "session": 0,
+  "git": {
+    "commit": "71b776650",
+    "branch": "main"
+  },
+  "proofs": {
+    "admitted": 0,
+    "axioms": 0,
+    "assumptions": 0,
+    "assumptionsScope": "Parameter val_rel_n_step_up only (the former NI step-up assumption); see parameters and sectionHypotheses",
+    "parameters": 29,
+    "parametersNote": "Coq Parameter declarations: the documented Trusted Computing Base (axioms in all but name); proved jointly satisfiable in domains/PhysicalSecurity.v",
+    "sectionHypotheses": 4,
+    "sectionHypothesesNote": "Section Hypothesis declarations; they become premises of exported theorems. All are premises of termination/ReducibilityFull.v well_typed_SN, which are refutable (REQ-84) - the theorem is conditional/vacuous, not a termination guarantee",
+    "kernelWeakeningConstructs": 0,
+    "vacuityFindings": 1318,
+    "vacuityFindingsNote": "scripts/detect-vacuous-proofs.py patterns (True conclusions, reflexivity on hard-coded records, := False definitions, definitional tautologies); ratcheted by audit-docs.sh",
+    "axiomsJustified": true,
+    "countingPolicy": {
+      "coreMechanizedQed": 1679,
+      "modelMechanizedQedNonvacuous": 9719,
+      "excludedQed": 1443,
+      "note": "The only Coq numbers to publish (mandate S2.7). core = Qed in foundations, type_system, properties, effects and termination, plus the compiler-link file crypto/AlgorithmPolicy.v; model = every other active file (domain, industry, compliance, crypto and runtime models: facts about their own definitions, not verified systems); excluded = proofs flagged by scripts/detect-vacuous-proofs.py, proofs resting on a premise the build refutes, counterexample proofs, every Example and Remark proof, and listed test files. The three add up to internal.coqQedActive. Vacuity patterns are heuristics, so excluded is a lower bound; the full counterexample triage is REQ-104. Computed by scripts/coq-counting-policy.py"
+    }
+  },
+  "coq": {
+    "filesTotal": 375,
+    "filesActive": 335,
+    "domains": 252,
+    "prover": "Rocq 9.1.1"
+  },
+  "lean": {
+    "theorems": 0,
+    "theoremsNote": "Declarations in the lane, not verified proofs. The generated port was archived out of main on 2026-10-20 (ruling D6); the REQ-67(b) hand-written re-proof has not started",
+    "sorry": 0,
+    "sorryVerified": false,
+    "sorryNote": "literal sorry tokens in the lane (the generated port, which did not elaborate, is archived)",
+    "axioms": 0,
+    "files": 0,
+    "lines": 0,
+    "corpusArchived": "2026-10-20: generated port removed from main (ruling D6, REQ-29 path D2); preserved at commit fd23fbdb8",
+    "prover": "Lean 4"
+  },
+  "isabelle": {
+    "lemmas": 0,
+    "compiledTheories": 0,
+    "compiledLemmas": 0,
+    "smokeBuildOk": false,
+    "smokeSession": "RIINA_CORE",
+    "quarantined": false,
+    "sorry": 0,
+    "sorryVerified": false,
+    "axioms": 0,
+    "files": 0,
+    "lines": 0,
+    "prover": "Isabelle/HOL"
+  },
+  "fstar": {
+    "lemmas": 3,
+    "compiledLemmas": 0,
+    "smokeBuildOk": false,
+    "smokeVerified": "2026-06-01 (F* 2025.12.15): 'All verification conditions discharged successfully'",
+    "smokeLemmas": 3,
+    "smokeContent": "3 trivial lemmas (constant-time u8 eq reflexive/symmetric, zeroize length) — NOT the named crypto algorithms",
+    "smokeModule": "RIINA.Active.CryptographicSecurityActive",
+    "corpusArchived": "2026-10-20: the generated corpus (~11,935 admits) was removed from main; preserved at commit fd23fbdb8",
+    "quarantined": false,
+    "files": 1,
+    "prover": "F*"
+  },
+  "tlaplus": {
+    "theorems": 5,
+    "compiledTheorems": 5,
+    "smokeBuildOk": true,
+    "smokeVerified": "2026-06-01 (TLA2Tools): smoke check passed",
+    "smokeSpec": "RIINA.Active.TelusProcurementProtocol",
+    "smokeNote": "Only the smoke-spec theorems are TLC-checked",
+    "quarantined": true,
+    "files": 3,
+    "prover": "TLA+"
+  },
+  "alloy": {
+    "assertions": 6,
+    "compiledAssertions": 6,
+    "smokeBuildOk": true,
+    "smokeVerified": "2026-06-01 (Alloy 6.2.0): smoke check passed",
+    "smokeModel": "RIINA.Active.TelusProcurementAccessControl",
+    "smokeNote": "Only the smoke-model assertions are bounded-checked",
+    "quarantined": true,
+    "files": 3,
+    "prover": "Alloy 6"
+  },
+  "smt": {
+    "assertions": 37,
+    "compiledAssertions": 25,
+    "smokeBuildOk": true,
+    "smokeVerified": "2026-06-01 (Z3 4.8.12): 25 unsat (security-lattice properties)",
+    "smokeModule": "RIINA.Active.SecurityLatticeVerification",
+    "smokeNote": "The lane's claim is the REQ-67a scoped set (02_FORMAL/smt/SCOPED_SET.txt), checked by scripts/verify-smt.sh for exact unsat counts; the generated corpus was archived 2026-10-20.",
+    "quarantined": false,
+    "files": 4,
+    "prover": "Z3/CVC5 (SMT-LIB)"
+  },
+  "verus": {
+    "proofs": 0,
+    "quarantined": true,
+    "files": 1,
+    "prover": "Verus"
+  },
+  "kani": {
+    "harnesses": 0,
+    "quarantined": true,
+    "files": 3,
+    "prover": "Kani"
+  },
+  "tv": {
+    "validations": 0,
+    "quarantined": true,
+    "files": 2,
+    "prover": "Translation Validation"
+  },
+  "multiProver": {
+    "status": "ACTIVE_COQ_MECHANIZED",
+    "note": "No cross-prover total is published: counts of different kinds are never summed (owner ruling D6, 2026-10-20). Each lane carries its own claim level under claimLevels."
+  },
+  "quality": {
+    "coqCompiled": true,
+    "leanCompiled": false,
+    "isabelleCompiled": false,
+    "fstarStatus": "retired",
+    "tlaplusStatus": "generated",
+    "alloyStatus": "generated",
+    "smtStatus": "mechanized",
+    "verusStatus": "generated",
+    "kaniStatus": "generated",
+    "tvStatus": "generated",
+    "runtimeProofStatus": "generated",
+    "nonCoqMechanization": {
+      "reportFresh": true,
+      "overallMechanized": false,
+      "source": "strict_report",
+      "pending": {
+        "lean": "require full-lane lake build and zero sorry/axioms across 02_FORMAL/lean/RIINA",
+        "isabelle": "require full RIINA+RIINA_Domains build and zero sorry across Isabelle corpus (local Isabelle enforcement: ERROR: pinned local Isabelle not found at ./05_TOOLING/tools/isabelle/current/bin/isabelle. Run: bash scripts/provision-smoke-toolchains.sh      or: bash scripts/provision-isabelle.sh)",
+        "fstar": "require full Active+Domains F* compilation with zero generated placeholders (local F* enforcement: ERROR: pinned local F* not found at ./05_TOOLING/tools/fstar/current/bin/fstar.exe. Run: bash scripts/provision-smoke-toolchains.sh      or: bash scripts/provision-fstar.sh)",
+        "tlaplus": "TelusProcurementProtocol smoke model checked (5 theorems); lane stays generated until full-lane SANY checks across TLA corpus",
+        "alloy": "TelusProcurementAccessControl smoke model checked (6 assertions); lane stays generated until full-lane Alloy checks across corpus",
+        "smt": "none",
+        "verus": "require full-lane Verus checks and zero generated placeholders",
+        "kani": "require full-lane Kani checks and zero generated placeholders",
+        "tv": "none"
+      },
+      "backlog": {
+        "leanSorry": 0,
+        "leanAxioms": 0,
+        "isabelleSorry": 0,
+        "fstarGeneratedFiles": 0,
+        "smtGeneratedFiles": 0,
+        "verusGeneratedFiles": 0,
+        "kaniGeneratedFiles": 0,
+        "tvGeneratedFiles": 0
+      }
+    }
+  },
+  "claimLevels": {
+    "legend": ["retired", "generated", "compiled", "mechanized", "independently_audited"],
+    "overall": "generated",
+    "independentlyAudited": false,
+    "coq": "mechanized",
+    "lean": "generated",
+    "isabelle": "retired",
+    "fstar": "retired",
+    "tlaplus": "generated",
+    "alloy": "generated",
+    "smt": "mechanized",
+    "verus": "generated",
+    "kani": "generated",
+    "tv": "generated",
+    "runtimeProofArchitecture": "generated"
+  },
+  "rust": {
+    "tests": 3661,
+    "testsVerified": 3661,
+    "testsEstimated": 0,
+    "testsSource": "full_cargo_test",
+    "crates": 18
+  },
+  "examples": 172,
+  "compliance": {"perProfile": {"bnm": 20, "cmmc": 63, "cra": 15, "do-178c": 48, "dora": 14, "esg-sdg": 30, "fda-21cfr": 18, "gdpr": 34, "hipaa": 33, "iec-62443": 32, "iso-27001": 59, "itar": 12, "mas-trm": 20, "nerc-cip": 20, "nis2": 13, "nist-800-53": 81, "pci-dss": 56, "pdpa": 20, "sox": 18}, "profiles": 19, "rules": 606},
+  "internal": {
+    "note": "Inputs to the repository's own checks, not claims; never quote them on a public surface (mandate S2.7, REQ-119). A raw Qed total mixes proved, vacuous, example and counterexample proofs; a lane's raw count is declarations, not proofs.",
+    "coqQedActive": 12841,
+    "coqQedDeprecated": 758,
+    "coqQedTotal": 13599,
+    "coqTierCore": 1986,
+    "coqTierDomain": 10855,
+    "coqTierDomainTrivial": 1951,
+    "isabelleLemmasRaw": 0,
+    "fstarLemmasRaw": 3,
+    "tlaplusTheoremsRaw": 15,
+    "alloyAssertionsRaw": 25,
+    "smtAssertionsRaw": 149,
+    "verusProofsRaw": 4,
+    "kaniHarnessesRaw": 25,
+    "tvValidationsRaw": 34
+  },
+  "status": {
+    "build": "passing",
+    "verifiedCommit": "a30ae01bd",
+    "verifiedMode": "full",
+    "source": "VERIFICATION_MANIFEST.md, written by riinac verify; passing means a full-mode PASS at verifiedCommit"
+  },
+  "milestones": [
+    { "date": "2026-02-07", "event": "Generated multi-prover corpus published: Coq plus nine machine-generated mirrors, never independent verification (archived 2026-10-20)" },
+    { "date": "2026-10-20", "event": "Generated non-Coq corpora archived out of main and cross-prover totals removed (REQ-29 path D2 executed, ruling D6); Coq is the mechanized lane, plus the scoped SMT set" },
+    { "date": "2026-02-07", "event": "Lean 4 lane integrated into public metrics (see claim levels for current status)" },
+    { "date": "2026-02-07", "event": "SMT assertion corpus integrated into public metrics" },
+    { "date": "2026-02-06", "event": "Proof depth 20+ across all 250 domain files" },
+    { "date": "2026-02-06", "event": "Cross-prover mapping milestone recorded (current quality flags are authoritative)" },
+    { "date": "2026-02-10", "event": "Axiom token elimination: 4 → 0 (active-build explicit assumptions now 0)" },
+    { "date": "2026-02-01", "event": "Phase 7 complete: Platform Universality" }
+  ]
+}
